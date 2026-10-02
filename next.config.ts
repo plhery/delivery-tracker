@@ -86,6 +86,14 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // A parcel link's address is the capability to read the parcel.
+        source: '/p/:path*',
+        headers: [
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+        ],
+      },
+      {
         source: '/sw.js',
         headers: [
           { key: 'Cache-Control', value: 'no-store, max-age=0, must-revalidate' },

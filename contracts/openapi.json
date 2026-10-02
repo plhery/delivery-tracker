@@ -5094,6 +5094,223 @@
           }
         }
       }
+    },
+    "/api/public/detect": {
+      "post": {
+        "operationId": "detectCarrierWithoutAccount",
+        "summary": "Detect a carrier before signing in; answers like /api/carriers/detect",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CarrierDetectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Carrier verified with its tracking service, or unknown",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarrierDetectionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid tracking number"
+          },
+          "429": {
+            "description": "Too many detections"
+          }
+        }
+      }
+    },
+    "/api/public/parcels": {
+      "post": {
+        "operationId": "lookUpParcel",
+        "summary": "Follow one parcel without an account",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicLookupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new link, its owner key (returned this once) and the parcel",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicLookupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
+            "description": "Too many lookups. Retry-After says when to try again; scope daily means today's allowance is used up.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/api/public/parcels/{linkId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ParcelLinkId"
+        }
+      ],
+      "get": {
+        "operationId": "getPublicParcel",
+        "summary": "Read a parcel through its link; records that the link was opened",
+        "security": [],
+        "parameters": [
+          {
+            "name": "X-Parcel-Key",
+            "in": "header",
+            "required": false,
+            "description": "The owner key of the lookup. With it the caller is the link's owner.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The link as its caller may use it, and the parcel",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicParcelResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Parcel unavailable: an unknown, forgotten, expired or malformed link, never told apart",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "forgetPublicParcel",
+        "summary": "Forget a lookup; the parcel goes with its last link",
+        "security": [],
+        "parameters": [
+          {
+            "name": "X-Parcel-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Forgotten"
+          },
+          "404": {
+            "description": "Parcel unavailable: an unknown link and a wrong or missing key are never told apart",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/api/packages/claim": {
+      "post": {
+        "operationId": "claimParcels",
+        "summary": "Keep parcels from links in the signed-in account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimParcelsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "One result per link, in request order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimParcelsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5122,6 +5339,15 @@
         "schema": {
           "type": "string",
           "format": "uuid"
+        }
+      },
+      "ParcelLinkId": {
+        "name": "linkId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^[2-9A-HJ-NP-Za-km-z]{12}$"
         }
       }
     },
@@ -5967,6 +6193,13 @@
             "type": "string",
             "format": "uuid",
             "description": "Present when a package creation conflict identifies the existing owned parcel."
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "daily"
+            ],
+            "description": "Present on a 429 when the day's lookups without an account are used up; signing in lifts the limit."
           }
         }
       },
@@ -6806,6 +7039,406 @@
             "pattern": "^[0-9a-f]{64}$",
             "minLength": 64,
             "maxLength": 64
+          }
+        }
+      },
+      "ParcelLink": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A capability link to one parcel, as its caller may use it.",
+        "required": [
+          "id",
+          "role",
+          "kind",
+          "createdAt",
+          "forgetAt",
+          "numberShown",
+          "canKeep"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[2-9A-HJ-NP-Za-km-z]{12}$"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "viewer"
+            ],
+            "description": "owner when the request carried the link's owner key."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "lookup",
+              "shared"
+            ],
+            "description": "lookup: made without an account. shared: belongs to an account."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "forgetAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the lookup is forgotten as things stand; null for a shared link."
+          },
+          "numberShown": {
+            "type": "boolean",
+            "description": "False when the tracking number is masked for this role."
+          },
+          "canKeep": {
+            "type": "boolean",
+            "description": "Whether the caller may keep the parcel after signing in: the owner, or a viewer of a link that shows its number."
+          }
+        }
+      },
+      "ParcelNumberHint": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "The ends of a masked tracking number: up to four leading and three trailing characters, fewer for a short number.",
+        "required": [
+          "head",
+          "tail"
+        ],
+        "properties": {
+          "head": {
+            "type": "string"
+          },
+          "tail": {
+            "type": "string"
+          }
+        }
+      },
+      "PublicPackage": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "A parcel as a link shows it: PackageRow's fields, without anything private to an account.",
+        "required": [
+          "id",
+          "tracking_number",
+          "number_hint",
+          "label",
+          "carrier",
+          "created_at",
+          "expected_delivery",
+          "last_status_text",
+          "last_synced_at",
+          "sync_status",
+          "sync_error",
+          "tracking_url",
+          "dpd_postcode",
+          "carrier_data",
+          "archived_at",
+          "notifications_muted",
+          "tracking_events"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tracking_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Null when masked for the caller; number_hint then carries its ends."
+          },
+          "number_hint": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParcelNumberHint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "label": {
+            "type": "string",
+            "description": "Always empty: a name stays on the device that chose it."
+          },
+          "carrier": {
+            "$ref": "#/components/schemas/CarrierId"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the parcel was first followed, never earlier than the link."
+          },
+          "expected_delivery": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_status_text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_synced_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "sync_status": {
+            "$ref": "#/components/schemas/SyncStatus"
+          },
+          "sync_error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A tracking failure code (carrier:<kind>) or null; diagnostic text is never sent."
+          },
+          "tracking_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Always null: a stored link is a private credential."
+          },
+          "dpd_postcode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Always null."
+          },
+          "carrier_data": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "The carrier details a link may show. Every other stored key stays on the server.",
+            "properties": {
+              "active_tracking_carrier": {
+                "$ref": "#/components/schemas/CarrierId"
+              },
+              "active_tracking_number": {
+                "type": "string",
+                "description": "Only when the number is shown."
+              },
+              "original_carrier": {
+                "$ref": "#/components/schemas/CarrierId"
+              },
+              "original_tracking_number": {
+                "type": "string",
+                "description": "Only when the number is shown."
+              },
+              "tracking_provider": {
+                "type": "string"
+              },
+              "carrier_answered": {
+                "type": "boolean"
+              },
+              "auto_changed_from": {
+                "$ref": "#/components/schemas/CarrierId"
+              },
+              "auto_changed_to": {
+                "$ref": "#/components/schemas/CarrierId"
+              },
+              "auto_changed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "sender_name": {
+                "type": "string"
+              },
+              "swiss_post_ready": {
+                "type": "boolean"
+              },
+              "expected_delivery_from": {
+                "type": "string"
+              },
+              "pickup_point": {
+                "type": "string"
+              },
+              "dimensions_text": {
+                "type": "string"
+              },
+              "weight_kg": {
+                "type": "number",
+                "minimum": 0
+              },
+              "destination_country": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              }
+            }
+          },
+          "archived_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Always null."
+          },
+          "notifications_muted": {
+            "type": "boolean",
+            "description": "Always false."
+          },
+          "tracking_events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackingEventRow"
+            }
+          }
+        }
+      },
+      "PublicParcelResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "link",
+          "package"
+        ],
+        "properties": {
+          "link": {
+            "$ref": "#/components/schemas/ParcelLink"
+          },
+          "package": {
+            "$ref": "#/components/schemas/PublicPackage"
+          }
+        }
+      },
+      "PublicLookupRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "CreatePackageRequest without a name.",
+        "required": [
+          "trackingNumber"
+        ],
+        "properties": {
+          "trackingNumber": {
+            "type": "string",
+            "description": "Normalizes to an uppercase alphanumeric tracking number between 4 and 40 characters and containing at least one digit.",
+            "pattern": "^(?=.*[0-9])[A-Za-z0-9 .-]+$"
+          },
+          "carrier": {
+            "$ref": "#/components/schemas/CarrierId"
+          },
+          "trackingUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Required for Planzer shared-link and Dachser shipments. These capability URLs are private credentials."
+          },
+          "dpdPostcode": {
+            "type": "string",
+            "pattern": "^(?=.{3,10}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
+            "description": "Recipient postcode, for the carriers that take one; see CreatePackageRequest."
+          }
+        }
+      },
+      "PublicLookupResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "link",
+          "key",
+          "package"
+        ],
+        "properties": {
+          "link": {
+            "$ref": "#/components/schemas/ParcelLink"
+          },
+          "key": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$",
+            "description": "The owner key. Returned this once; the server keeps only its hash."
+          },
+          "package": {
+            "$ref": "#/components/schemas/PublicPackage"
+          }
+        }
+      },
+      "ClaimParcelLink": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string",
+            "description": "The owner key, when this device made the lookup."
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "The name the parcel had on the device."
+          }
+        }
+      },
+      "ClaimParcelsRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "links"
+        ],
+        "properties": {
+          "links": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/ClaimParcelLink"
+            }
+          }
+        }
+      },
+      "ClaimParcelResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "outcome"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "kept",
+              "already",
+              "quota",
+              "unavailable"
+            ],
+            "description": "kept: now in the box. already: the number was there. quota: the box is full. unavailable: unknown link, or no right to keep it."
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The parcel in the box, for kept and already."
+          }
+        }
+      },
+      "ClaimParcelsResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "results"
+        ],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClaimParcelResult"
+            }
           }
         }
       }

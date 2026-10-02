@@ -36,6 +36,9 @@ Key server modules:
 
 - `auth.ts` validates the bearer token and builds a PostgREST client carrying the
   user's JWT. `api.ts` adds logging and per-account rate limits.
+- `publicParcels.ts` decides what a parcel link shows, hashes owner keys and keys the daily
+  lookup counters. The routes under `/api/public` are the only ones without sign-in that
+  write.
 - `background.ts` runs the scheduler. `public.sync_jobs` is the durable, deduplicated
   queue, and workers claim jobs with leases, so deploys, crashes and replicas never lose
   or double-run work. This is the only code path with cross-account access.
@@ -57,8 +60,25 @@ Key server modules:
 - **Ownership**: every private request needs a valid Supabase token. Reads go through
   PostgREST with that token, so RLS is the final check. Writes use owner-bound database
   functions that re-validate, enforce quotas and can't target another account.
-- **Service role**: used only for scheduled carrier work, push delivery and account
-  deletion. It never reaches the browser.
+- **Service role**: used only for scheduled carrier work, push delivery, account
+  deletion and parcels followed without an account. It never reaches the browser.
+- **Parcel links**: a parcel followed without an account has no owner and is reached
+  through `/p/<id>`. The id (12 symbols, about 70 bits) is the capability to read it.
+  - The device that made the lookup also gets an owner key, once; the database keeps its
+    SHA-256. With the key (`X-Parcel-Key`) the caller sees the full tracking number, may
+    forget the parcel, and may keep it after signing in.
+  - Anyone else with the link is a viewer: the number is masked to its ends, and the answer
+    is built from an allow-list. The name, postcode, private tracking link, routing state,
+    recipient's name and internal ids never leave the server, for either role.
+  - `parcel_links` and the lookup counters are service-role only. An unknown, forgotten,
+    expired or malformed link and a wrong key all get the same answer.
+  - Keeping a parcel runs under the user's own token: the database checks the key, the
+    quotas and the duplicate, and gives a viewer's copy none of what the sharer entered.
+  - Link ids and keys stay out of request logs, metric labels, analytics and error reports.
+    The pages send `Referrer-Policy: no-referrer` and are never cached by the service worker.
+  - Lookups are limited per client and overall, per minute in memory and per day in the
+    database. The daily counter is keyed by a hash of the client address and the date,
+    made with a server secret; an IPv6 client counts as its /64.
 - **Private data**: tracking numbers, labels, carrier history, push endpoints and capability
   URLs (Planzer, Dachser) never go into analytics. They do appear in operator logs and
   Sentry; see [OBSERVABILITY.md](OBSERVABILITY.md).
@@ -66,8 +86,8 @@ Key server modules:
   response reader, and host validation wherever they accept a URL.
 - **Push**: browser endpoints must belong to known push services, and delivery never
   follows redirects. APNs tokens are opaque hex values, sent only to Apple's fixed hosts.
-- **Service worker**: caches only the public app shell and static assets. APIs, health and
-  Auth are network-only.
+- **Service worker**: caches only the public app shell and static assets. APIs, health,
+  Auth, invitation pages and parcel link pages are network-only.
 - **Proxies**: forwarded client IPs are trusted only with `TRUST_PROXY_HEADERS=true`.
   Cloudflare may sit in front for TLS and abuse protection, but it isn't part of identity.
 
@@ -76,6 +96,14 @@ Key server modules:
 - **Adding a parcel** writes it through the user's RLS client and queues a job with the
   service role. Clients poll the small job resource, then reload the parcel list once.
 - **Archiving** keeps the parcel and its history.
+- **A lookup without an account** stores the number once per carrier and inputs, with one
+  link per lookup. A link is forgotten 30 days after the parcel is delivered or returned,
+  after 90 days without news (a scan, or the link being opened), or when its owner asks.
+  The parcel goes with its last link. The scheduled sync's maintenance pass does the
+  forgetting.
+- **Keeping a looked-up parcel** after signing in moves it into the account when nobody
+  else follows it, and copies it otherwise. Its link then belongs to the account and has
+  no forget date.
 - **Deleting an account** removes the Auth user. Foreign-key cascades remove parcels,
   jobs, events, push registrations, Live Activity tokens and audit rows. Other audit rows
   expire after 90 days.

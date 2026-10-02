@@ -66,5 +66,93 @@
       "subscriptions_expired": 0
     },
     "error": null
+  },
+  "publicParcel": {
+    "link": {
+      "id": "k7Qm2xHd9RtW",
+      "role": "viewer",
+      "kind": "lookup",
+      "createdAt": "2026-10-02T08:00:00.000Z",
+      "forgetAt": "2026-12-31T08:05:00.000Z",
+      "numberShown": false,
+      "canKeep": false
+    },
+    "package": {
+      "id": "43000000-0000-0000-0000-000000000004",
+      "tracking_number": null,
+      "number_hint": {
+        "head": "TEST",
+        "tail": "456"
+      },
+      "label": "",
+      "carrier": "dpd",
+      "created_at": "2026-10-02T08:00:00+00:00",
+      "expected_delivery": "2026-10-03",
+      "last_status_text": "In transit",
+      "last_synced_at": "2026-10-02T08:05:00+00:00",
+      "sync_status": "ok",
+      "sync_error": null,
+      "tracking_url": null,
+      "dpd_postcode": null,
+      "carrier_data": {
+        "sender_name": "Example Shop",
+        "weight_kg": 1.2,
+        "destination_country": "CH"
+      },
+      "archived_at": null,
+      "notifications_muted": false,
+      "tracking_events": [
+        {
+          "id": "44000000-0000-0000-0000-000000000004",
+          "package_id": "43000000-0000-0000-0000-000000000004",
+          "stage": "in_transit",
+          "description": "In transit",
+          "location": null,
+          "occurred_at": "2026-10-02T08:05:00+00:00",
+          "place": null
+        }
+      ]
+    }
+  },
+  "publicLookup": {
+    "link": {
+      "id": "k7Qm2xHd9RtW",
+      "role": "owner",
+      "kind": "lookup",
+      "createdAt": "2026-10-02T08:00:00.000Z",
+      "forgetAt": "2026-12-31T08:00:00.000Z",
+      "numberShown": true,
+      "canKeep": true
+    },
+    "key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "package": {
+      "id": "43000000-0000-0000-0000-000000000004",
+      "tracking_number": "TESTPARCEL123456",
+      "number_hint": null,
+      "label": "",
+      "carrier": "dpd",
+      "created_at": "2026-10-02T08:00:00+00:00",
+      "expected_delivery": null,
+      "last_status_text": null,
+      "last_synced_at": null,
+      "sync_status": "pending",
+      "sync_error": null,
+      "tracking_url": null,
+      "dpd_postcode": null,
+      "carrier_data": {},
+      "archived_at": null,
+      "notifications_muted": false,
+      "tracking_events": [
+        {
+          "id": "45000000-0000-0000-0000-000000000004",
+          "package_id": "43000000-0000-0000-0000-000000000004",
+          "stage": "pending",
+          "description": "Tracking added",
+          "location": null,
+          "occurred_at": "2026-10-02T08:00:00+00:00",
+          "place": null
+        }
+      ]
+    }
   }
 }

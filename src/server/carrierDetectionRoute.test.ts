@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { POST } from '../../app/api/carriers/detect/route';
+import { POST as detectWithoutAccount } from '../../app/api/public/detect/route';
 import { detectCarrierMatch, recognitionAskedCarriers } from '../lib/carriers';
 import { SupabaseAuthenticator } from './auth';
 
@@ -131,4 +132,29 @@ it('counts served detections by confidence, including a recognized carrier', asy
   await request('06080000000068');
   expect(await served('high')).toBe(high + 2);
   expect(await served(unverified)).toBe(other + 1);
+});
+
+it('answers the front door without a session, the same way, within a limit per client', async () => {
+  vi.stubEnv('TRUST_PROXY_HEADERS', 'true');
+  const authenticate = vi.mocked(SupabaseAuthenticator.prototype.validate);
+  const withoutAccount = (trackingNumber: unknown, ip = '198.51.100.30') => detectWithoutAccount(new NextRequest('https://delivery.example/api/public/detect', {
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-real-ip': ip }, body: JSON.stringify({ trackingNumber }),
+  }), { params: Promise.resolve({}) });
+  recognize.mockImplementation(knows('dpd'));
+  const response = await withoutAccount('0608 0000 0000 92');
+  expect(response.status).toBe(200);
+  expect(response.headers.get('cache-control')).toBe('no-store');
+  expect(await response.json()).toEqual({ trackingNumber: '06080000000092', carrier: 'dpd', asked: ['dpd', 'seur', 'brt', 'ciblex'] });
+  // One implementation serves both routes: in this process they even share its answers.
+  recognize.mockClear();
+  expect(await (await request('06080000000092')).json()).toMatchObject({ carrier: 'dpd' });
+  expect(recognize).not.toHaveBeenCalled();
+  expect((await withoutAccount('bad input!')).status).toBe(400);
+  expect(authenticate).toHaveBeenCalledOnce();
+
+  for (let index = 2; index < 20; index += 1) expect((await withoutAccount('1Z999AA10123456784')).status).toBe(200);
+  const refused = await withoutAccount('1Z999AA10123456784');
+  expect(refused.status).toBe(429);
+  expect(refused.headers.get('retry-after')).toBeTruthy();
+  expect((await withoutAccount('1Z999AA10123456784', '198.51.100.31')).status).toBe(200);
 });

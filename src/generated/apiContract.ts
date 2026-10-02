@@ -4188,6 +4188,7 @@ export interface ApiOkResponse {
 export interface ApiErrorResponse {
   "error": string;
   "packageId"?: string;
+  "scope"?: "daily";
 }
 
 export interface ApiPushConfigResponse {
@@ -4384,4 +4385,94 @@ export interface ApiFriendsActivity {
 export interface ApiRevokeLiveActivityDeviceRequest {
   "installationId": string;
   "revocationToken": string;
+}
+
+export interface ApiParcelLink {
+  "id": string;
+  "role": "owner" | "viewer";
+  "kind": "lookup" | "shared";
+  "createdAt": string;
+  "forgetAt": string | null;
+  "numberShown": boolean;
+  "canKeep": boolean;
+}
+
+export interface ApiParcelNumberHint {
+  "head": string;
+  "tail": string;
+}
+
+export interface ApiPublicPackage {
+  "id": string;
+  "tracking_number": string | null;
+  "number_hint": ApiParcelNumberHint | null;
+  "label": string;
+  "carrier": ApiCarrierId;
+  "created_at": string;
+  "expected_delivery": string | null;
+  "last_status_text": string | null;
+  "last_synced_at": string | null;
+  "sync_status": ApiSyncStatus;
+  "sync_error": string | null;
+  "tracking_url": string | null;
+  "dpd_postcode": string | null;
+  "carrier_data": {
+  "active_tracking_carrier"?: ApiCarrierId;
+  "active_tracking_number"?: string;
+  "original_carrier"?: ApiCarrierId;
+  "original_tracking_number"?: string;
+  "tracking_provider"?: string;
+  "carrier_answered"?: boolean;
+  "auto_changed_from"?: ApiCarrierId;
+  "auto_changed_to"?: ApiCarrierId;
+  "auto_changed_at"?: string;
+  "sender_name"?: string;
+  "swiss_post_ready"?: boolean;
+  "expected_delivery_from"?: string;
+  "pickup_point"?: string;
+  "dimensions_text"?: string;
+  "weight_kg"?: number;
+  "destination_country"?: string;
+};
+  "archived_at": string | null;
+  "notifications_muted": boolean;
+  "tracking_events": Array<ApiTrackingEventRow>;
+}
+
+export interface ApiPublicParcelResponse {
+  "link": ApiParcelLink;
+  "package": ApiPublicPackage;
+}
+
+export interface ApiPublicLookupRequest {
+  "trackingNumber": string;
+  "carrier"?: ApiCarrierId;
+  "trackingUrl"?: string;
+  "dpdPostcode"?: string;
+}
+
+export interface ApiPublicLookupResponse {
+  "link": ApiParcelLink;
+  "key": string;
+  "package": ApiPublicPackage;
+}
+
+export interface ApiClaimParcelLink {
+  "id": string;
+  "key"?: string;
+  "label"?: string;
+}
+
+export interface ApiClaimParcelsRequest {
+  "links": Array<ApiClaimParcelLink>;
+}
+
+export interface ApiClaimParcelResult {
+  "id": string;
+  "outcome": "kept" | "already" | "quota" | "unavailable";
+  "packageId"?: string;
+}
+
+export interface ApiClaimParcelsResponse {
+  "results": Array<ApiClaimParcelResult>;
 }

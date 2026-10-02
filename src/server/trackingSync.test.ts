@@ -18,6 +18,7 @@ import {
   fairSyncPackages,
   inferStage,
   MAX_STATUS_OBSERVATIONS_PER_SYNC,
+  isOpenedParcelSyncDue,
   isTrackingSyncDue,
   isUnannouncedTrackingError,
   providerEventId,
@@ -446,6 +447,7 @@ describe('status observation collection', () => {
 function fakeClient(packages: JsonObject[] = []) {
   const client = {
     listActivePackages: vi.fn().mockResolvedValue(packages),
+    listFollowedOneOffPackages: vi.fn().mockResolvedValue([]),
     autoLinkPackages: vi.fn().mockResolvedValue(0),
     updatePackage: vi.fn().mockResolvedValue(undefined),
     insertEvents: vi.fn().mockResolvedValue(undefined),
@@ -601,6 +603,76 @@ describe('TrackingSyncService', () => {
       { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null);
     await service.syncPackage({ id: 'parcel', user_id: 'owner', carrier: 'swiss-post', tracking_number: 'TEST1234' });
     expect(client.autoLinkPackages).toHaveBeenCalledExactlyOnceWith('owner');
+  });
+
+  it('checks a parcel without an owner without reconciling any account', async () => {
+    const client = fakeClient();
+    const notifier = { dispatch: vi.fn().mockResolvedValue({ sent: 0, failed: 0, expired: 0 }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, notifier as never);
+    await expect(service.syncPackage({ id: 'one-off', user_id: null, one_off: true, carrier: 'swiss-post', tracking_number: 'TEST1234' }))
+      .resolves.toMatchObject({ checked: 1, updated: 1, errors: 0 });
+    expect(client.autoLinkPackages).not.toHaveBeenCalled();
+    // The push queues join on the owner, so the shared dispatch has nothing to send for it.
+    expect(notifier.dispatch).toHaveBeenCalledOnce();
+  });
+
+  it('follows one-off parcels opened in the last 24 hours, after the accounts and ten at most', async () => {
+    const due = { carrier: 'swiss-post', current_stage: 'in_transit', tracking_number: 'TEST1234',
+      last_synced_at: '2026-09-09T09:00:00Z', sync_status: 'ok' };
+    const owned = [
+      { ...due, id: 'a1', user_id: 'a' },
+      { ...due, id: 'b1', user_id: 'b' },
+      { ...due, id: 'legacy', user_id: null },
+    ];
+    // In the order the database returns them: the least recently checked first.
+    const oneOffs = [
+      ...Array.from({ length: 6 }, (_, index) => ({ ...due, id: `one-off-${index + 1}`, user_id: null, one_off: true })),
+      // Checked within the current ten-minute window: not due, and not counted against the ten.
+      { ...due, id: 'one-off-fresh', user_id: null, one_off: true, last_synced_at: '2026-09-09T10:10:30Z' },
+      ...Array.from({ length: 6 }, (_, index) => ({ ...due, id: `one-off-${index + 7}`, user_id: null, one_off: true })),
+    ];
+    const client = fakeClient(owned);
+    client.listFollowedOneOffPackages.mockResolvedValue(oneOffs);
+    const now = new Date('2026-09-09T10:12:00Z');
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null, () => now);
+    await expect(service.sync()).resolves.toMatchObject({ checked: 13 });
+    expect(client.listFollowedOneOffPackages).toHaveBeenCalledExactlyOnceWith(new Date('2026-09-08T10:12:00Z'));
+    expect(client.startSyncAttempt.mock.calls.map(([, values]) => values.package_id)).toEqual([
+      'a1', 'b1', 'legacy', ...Array.from({ length: 10 }, (_, index) => `one-off-${index + 1}`),
+    ]);
+    // The scheduled reconciliation is the account-wide one; it never names a parcel without an owner.
+    expect(client.autoLinkPackages).toHaveBeenCalledExactlyOnceWith(undefined);
+  });
+
+  it('still checks the accounts when the one-off parcels cannot be listed', async () => {
+    const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const client = fakeClient([{ id: 'a1', user_id: 'a', carrier: 'swiss-post', tracking_number: 'TEST1234' }]);
+    const failure = new Error('function unavailable');
+    client.listFollowedOneOffPackages.mockRejectedValue(failure);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null);
+    await expect(service.sync()).resolves.toMatchObject({ checked: 1, updated: 1 });
+    expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'tracking', operation: 'list_one_off_packages' });
+  });
+
+  it('queues a check when a link is opened only if the schedule would check the parcel now', () => {
+    const parcel = { carrier: 'swiss-post', current_stage: 'in_transit', tracking_number: 'TEST1234',
+      last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok', archived_at: null };
+    const at = (time: string) => new Date(`2026-09-09T${time}Z`);
+    expect(isOpenedParcelSyncDue(parcel, at('10:09:59'))).toBe(false);
+    expect(isOpenedParcelSyncDue(parcel, at('10:10:00'))).toBe(true);
+    expect(isOpenedParcelSyncDue({ ...parcel, last_synced_at: null }, at('10:00:20'))).toBe(true);
+    // A manual refresh would be allowed here; polling a link is not one.
+    expect(isTrackingSyncDue(parcel, at('10:09:59'))).toBe(true);
+    // A delivered, returned or archived parcel is not followed any more.
+    expect(isOpenedParcelSyncDue({ ...parcel, current_stage: 'delivered' }, at('12:00:00'))).toBe(false);
+    expect(isOpenedParcelSyncDue({ ...parcel, current_stage: 'returned' }, at('12:00:00'))).toBe(false);
+    expect(isOpenedParcelSyncDue({ ...parcel, archived_at: '2026-09-09T09:00:00Z' }, at('12:00:00'))).toBe(false);
+    expect(isOpenedParcelSyncDue({ ...parcel, current_stage: 'delivered', last_status_text: 'TO_BE_DELIVERED' }, at('12:00:00'))).toBe(true);
+    // A provider's cooldown holds a link's reader back as it holds the schedule.
+    expect(isOpenedParcelSyncDue({ ...parcel, carrier_data: { routing: { version: 1, configured_carrier: 'swiss-post', next_check_at: '2026-09-09T13:00:00Z' } } }, at('12:00:00'))).toBe(false);
   });
 
   it.each([

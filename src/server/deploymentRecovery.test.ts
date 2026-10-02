@@ -74,6 +74,8 @@ it('finishes the persisted Sentry check-in when a replacement resumes the job', 
   vi.spyOn(service, 'sync').mockResolvedValue(summary);
   vi.spyOn(client, 'archiveDeliveredBefore').mockResolvedValue(0);
   vi.spyOn(client, 'maintainSyncAudit').mockResolvedValue({ abandoned: 0, purged: 0 });
+  vi.spyOn(client, 'forgetExpiredParcelLinks').mockResolvedValue({ links: 0, packages: 0 });
+  vi.spyOn(client, 'publicLookupUsageSummary').mockResolvedValue({ buckets: 0, p50: 0, p90: 0, max: 0 });
   worker.start();
   await vi.advanceTimersByTimeAsync(1);
   expect(begin).not.toHaveBeenCalled();

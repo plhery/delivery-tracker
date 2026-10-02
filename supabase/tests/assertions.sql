@@ -851,13 +851,15 @@ reset role;
 set role service_role;
 
 -- NOT VALID ownership checks preserve the known pre-auth rows, but still
--- reject every new ownerless record, including service-role mistakes.
+-- reject every new ownerless record, including service-role mistakes. Only a
+-- one-off lookup may have no owner.
 do $$
 begin
   if not exists (
     select 1 from public.packages
     where id = '50000000-0000-0000-0000-000000000005'
       and user_id is null
+      and not one_off
   ) then
     raise exception 'legacy ownerless parcel did not survive the cutover constraint';
   end if;
@@ -869,6 +871,13 @@ begin
   exception when check_violation then
     null;
   end;
+
+  insert into public.packages (user_id, one_off, tracking_number, carrier)
+  values (null, true, 'OWNERLESS99', 'unknown');
+  delete from public.packages where tracking_number = 'OWNERLESS99' and one_off;
+  if not found then
+    raise exception 'a one-off parcel without an owner was rejected';
+  end if;
 
   begin
     insert into public.push_subscriptions (endpoint, p256dh, auth)

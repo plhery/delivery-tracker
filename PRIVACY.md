@@ -92,6 +92,35 @@ remain until operational cleanup and cannot be selected by account when you
 export or delete it because we do not send an account identifier. Local demo
 builds, simulators, and unconfigured self-hosted deployments do not collect.
 
+## Following a parcel without an account
+
+You can follow one parcel without signing in. The service then stores its
+tracking number, the carrier, a postcode or tracking link if the carrier needs
+one, the tracking history, and a link to the parcel. No account, email address
+or name is stored. A name you give the parcel stays in your browser and in the
+part of a link after `#`, which browsers do not send to the service.
+
+Your device keeps a key that shows it made the lookup; the service stores only
+a hash of that key. Anyone who has the link can see the parcel's status and
+history, with the tracking number masked to its first and last characters.
+Only the device holding the key sees the full number, can forget the parcel,
+and can keep it after signing in. The postcode or tracking link you entered is
+never shown through a link.
+
+To limit abuse, the service counts lookups per day under a keyed hash of the
+network address and the date. The address itself is not stored, and the
+counters are deleted after seven days.
+
+The same number looked up by several people, with the same carrier and
+details, is stored once; each lookup has its own link.
+
+A lookup is forgotten 30 days after the parcel is delivered or returned, or
+90 days after its last news (a scan, or the link being opened), or at once
+when you ask from the device that made it. The parcel's data goes with its
+last link. If you sign in and keep the parcel, it becomes part of your account.
+Diagnostic logs and Sentry reports can retain its tracking number as described
+above.
+
 ## Retention and control
 
 Parcel data remains until you delete the account. Archiving a parcel only hides

@@ -94,6 +94,13 @@ Cooldowns use the persisted `last_synced_at` and `sync_status`, so restarts and 
 Refresh taps don't bypass them. New or reconfigured parcels are checked at once. A scheduled
 run handles at most five due parcels per account, round-robin.
 
+**Parcels followed without an account** keep this cadence only while one of their links was
+opened in the last 24 hours. After that a parcel waits until a link is opened again; that
+read queues a check at once when the schedule would run one, and never more often than the
+schedule, however often the link is polled. A scheduled run checks at most ten of them, after
+every account's share, the least recently checked first. Their own checks queue behind
+every account's refresh and the scheduled run. A delivered or returned one is not checked.
+
 HTTP 429 without `Retry-After` is not retried immediately. Adapters that allow one
 transient retry honour a `Retry-After` of up to one minute; longer windows fail the attempt.
 

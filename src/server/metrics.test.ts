@@ -89,6 +89,44 @@ describe('prometheus carrier metrics', () => {
     expect(await metrics.metricsText()).toContain(`${series} 3`);
   });
 
+  it('counts lookups, link reads, kept and forgotten parcels by outcome only', async () => {
+    metrics.recordPublicLookup('created');
+    metrics.recordPublicLookup('created');
+    metrics.recordPublicLookup('limited_daily');
+    metrics.recordPublicParcelRead('ok');
+    metrics.recordPublicParcelRead('not_found');
+    metrics.recordParcelClaim('kept');
+    metrics.recordParcelClaim('unavailable');
+    metrics.recordParcelsForgotten('asked', { links: 1, packages: 1 });
+    metrics.recordParcelsForgotten('expired', { links: 4, packages: 0 });
+    const text = await scraped();
+    expect(text).toContain('public_lookup_total{outcome="created"} 2');
+    expect(text).toContain('public_lookup_total{outcome="limited_daily"} 1');
+    expect(text).toContain('public_parcel_read_total{outcome="ok"} 1');
+    expect(text).toContain('public_parcel_read_total{outcome="not_found"} 1');
+    expect(text).toContain('parcel_claim_total{outcome="kept"} 1');
+    expect(text).toContain('parcel_claim_total{outcome="unavailable"} 1');
+    expect(text).toContain('parcel_forgotten_total{kind="link",reason="asked"} 1');
+    expect(text).toContain('parcel_forgotten_total{kind="package",reason="asked"} 1');
+    expect(text).toContain('parcel_forgotten_total{kind="link",reason="expired"} 4');
+    // Nothing was forgotten, so no series appears for it.
+    expect(text).not.toContain('parcel_forgotten_total{kind="package",reason="expired"}');
+  });
+
+  it('serves yesterday\'s lookups per client as gauges', async () => {
+    metrics.recordPublicLookupUsage({ buckets: 40, p50: 2, p90: 9, max: 15 });
+    let text = await metrics.metricsText();
+    expect(text).toContain('public_lookup_clients 40');
+    expect(text).toContain('public_lookups_per_client{stat="p50"} 2');
+    expect(text).toContain('public_lookups_per_client{stat="p90"} 9');
+    expect(text).toContain('public_lookups_per_client{stat="max"} 15');
+    // The next day's summary replaces it.
+    metrics.recordPublicLookupUsage({ buckets: 3, p50: 1, p90: 1, max: 1 });
+    text = await metrics.metricsText();
+    expect(text).toContain('public_lookup_clients 3');
+    expect(text).toContain('public_lookups_per_client{stat="max"} 1');
+  });
+
   it('only exposes the endpoint with a reasonably long token', () => {
     expect(metrics.metricsToken({})).toBeNull();
     expect(metrics.metricsToken({ METRICS_TOKEN: 'short' })).toBeNull();

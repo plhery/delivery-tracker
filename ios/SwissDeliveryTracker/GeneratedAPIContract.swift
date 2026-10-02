@@ -433,10 +433,12 @@ struct OKResponse: Codable, Equatable, Hashable, Sendable {
 struct ErrorResponse: Codable, Equatable, Hashable, Sendable {
     var error: String
     var packageID: UUID? = nil
+    var scope: ErrorResponseScope? = nil
 
     private enum CodingKeys: String, CodingKey {
         case error
         case packageID = "packageId"
+        case scope
     }
 }
 
@@ -774,6 +776,112 @@ struct RevokeLiveActivityDeviceRequest: Codable, Equatable, Hashable, Sendable {
     }
 }
 
+struct ParcelLink: Codable, Equatable, Hashable, Sendable, Identifiable {
+    var id: String
+    var role: ParcelLinkRole
+    var kind: ParcelLinkKind
+    var createdAt: String
+    var forgetAt: String? = nil
+    var numberShown: Bool
+    var canKeep: Bool
+}
+
+struct ParcelNumberHint: Codable, Equatable, Hashable, Sendable {
+    var head: String
+    var tail: String
+}
+
+struct PublicPackage: Codable, Equatable, Hashable, Sendable, Identifiable {
+    var id: UUID
+    var trackingNumber: String? = nil
+    var numberHint: ParcelNumberHint? = nil
+    var label: String
+    var carrier: CarrierID
+    var createdAt: String
+    var expectedDelivery: String? = nil
+    var lastStatusText: String? = nil
+    var lastSyncedAt: String? = nil
+    var syncStatus: SyncStatus
+    var syncError: String? = nil
+    var trackingURL: String? = nil
+    var dpdPostcode: String? = nil
+    var carrierData: PublicPackageCarrierData
+    var archivedAt: String? = nil
+    var notificationsMuted: Bool
+    var trackingEvents: [TrackingEvent]
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case trackingNumber
+        case numberHint
+        case label
+        case carrier
+        case createdAt
+        case expectedDelivery
+        case lastStatusText
+        case lastSyncedAt
+        case syncStatus
+        case syncError
+        case trackingURL = "trackingUrl"
+        case dpdPostcode
+        case carrierData
+        case archivedAt
+        case notificationsMuted
+        case trackingEvents
+    }
+}
+
+struct PublicParcelResponse: Codable, Equatable, Hashable, Sendable {
+    var link: ParcelLink
+    var package: PublicPackage
+}
+
+struct PublicLookupRequest: Codable, Equatable, Hashable, Sendable {
+    var trackingNumber: String
+    var carrier: CarrierID? = nil
+    var trackingURL: String? = nil
+    var dpdPostcode: String? = nil
+
+    private enum CodingKeys: String, CodingKey {
+        case trackingNumber
+        case carrier
+        case trackingURL = "trackingUrl"
+        case dpdPostcode
+    }
+}
+
+struct PublicLookupResponse: Codable, Equatable, Hashable, Sendable {
+    var link: ParcelLink
+    var key: String
+    var package: PublicPackage
+}
+
+struct ClaimParcelLink: Codable, Equatable, Hashable, Sendable, Identifiable {
+    var id: String
+    var key: String? = nil
+    var label: String? = nil
+}
+
+struct ClaimParcelsRequest: Codable, Equatable, Hashable, Sendable {
+    var links: [ClaimParcelLink]
+}
+
+struct ClaimParcelResult: Codable, Equatable, Hashable, Sendable, Identifiable {
+    var id: String
+    var outcome: ClaimParcelResultOutcome
+    var packageID: UUID? = nil
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case outcome
+        case packageID = "packageId"
+    }
+}
+
+struct ClaimParcelsResponse: Codable, Equatable, Hashable, Sendable {
+    var results: [ClaimParcelResult]
+}
+
 enum CarrierDetectionResponseAmazonShippingStatus: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
     case available
     case expired
@@ -843,9 +951,57 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
     }
 }
 
+enum ErrorResponseScope: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case daily
+
+    var id: String { rawValue }
+}
+
 enum FriendsActionResponseInvitationState: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
     case alreadyAccepted = "already_accepted"
     case alreadyFriends = "already_friends"
+
+    var id: String { rawValue }
+}
+
+enum ParcelLinkRole: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case owner
+    case viewer
+
+    var id: String { rawValue }
+}
+
+enum ParcelLinkKind: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case lookup
+    case shared
+
+    var id: String { rawValue }
+}
+
+struct PublicPackageCarrierData: Codable, Equatable, Hashable, Sendable {
+    var activeTrackingCarrier: CarrierID? = nil
+    var activeTrackingNumber: String? = nil
+    var originalCarrier: CarrierID? = nil
+    var originalTrackingNumber: String? = nil
+    var trackingProvider: String? = nil
+    var carrierAnswered: Bool? = nil
+    var autoChangedFrom: CarrierID? = nil
+    var autoChangedTo: CarrierID? = nil
+    var autoChangedAt: String? = nil
+    var senderName: String? = nil
+    var swissPostReady: Bool? = nil
+    var expectedDeliveryFrom: String? = nil
+    var pickupPoint: String? = nil
+    var dimensionsText: String? = nil
+    var weightKg: Double? = nil
+    var destinationCountry: String? = nil
+}
+
+enum ClaimParcelResultOutcome: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case kept
+    case already
+    case quota
+    case unavailable
 
     var id: String { rawValue }
 }

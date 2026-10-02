@@ -15,6 +15,11 @@ request/response details, with no field redaction in the app. They survive parce
 until retention expires. Restrict access and retention, and sanitize anything you share
 publicly.
 
+Parcel link ids and owner keys are the exception, because holding one is enough to read
+or forget a parcel. Request logs name those routes without the id
+(`/api/public/parcels/:link`), and error reports for them and for `/api/packages/claim`
+leave the incoming request out. A reverse proxy in front of the app still sees the address.
+
 ## Postgres audit
 
 All tables and views here are service-role only.
@@ -130,6 +135,8 @@ Key JSON events:
   class in `error_cause`;
 - `carrier_recognition`: how many carriers the Add sheet's recognition asked, how many
   knew the number or failed, and what it settled on (a carrier, `choice` or `none`).
+- `parcel_links_forgotten`: how many expired lookups, and parcels with them, a maintenance
+  pass forgot. `parcel_link_maintenance_failed` when it could not run.
 
 The logger allows `tracking_number` explicitly. It drops other fields whose names look
 like parcel, user, label, location, status text, URL, token, cookie or secret data. Keep
@@ -188,7 +195,8 @@ A step failure is recorded immediately, but the `transport_fallback` warning is 
 the recovery step completes. An interrupted recovery may never send it.
 
 **Prometheus** metrics are served at `GET /api/metrics` when `METRICS_TOKEN` (16+ chars) is
-set, sent as a bearer token. Labels never contain tracking data.
+set, sent as a bearer token. Labels never contain tracking data, link ids or client
+addresses.
 Every deploy restarts the counters, so a new series is served at 0 on its first scrape and
 counts from the next one. `increase()` then still sees an event that happens once per
 container.
@@ -202,6 +210,12 @@ container.
 | `carrier_status_mapping_total` (carrier, stage_source) | Share of events mapped explicitly, by wording, or not at all |
 | `carrier_detection_total` (result) | Detection confidence served to clients |
 | `carrier_refresh_total` (carrier, served_by, outcome) | Who served each refresh: `adapter`, `other_adapter`, `provider` or `none` |
+| `public_lookup_total` (outcome) | Lookups without an account: `created`, `reused` (the number was already stored), `limited_burst`, `limited_daily` (the client's day is used up), `limited_global` |
+| `public_parcel_read_total` (outcome) | Reads of a parcel link: `ok` or `not_found` |
+| `parcel_claim_total` (outcome) | Links kept after sign-in: `kept`, `already`, `quota`, `unavailable` |
+| `parcel_forgotten_total` (kind, reason) | Forgotten links and parcels (`kind`), `asked` by their owner or `expired` |
+| `public_lookup_clients` | Clients that made a lookup yesterday (UTC) |
+| `public_lookups_per_client` (stat) | Yesterday's lookups per client: `p50`, `p90`, `max` |
 
 Useful questions:
 
@@ -215,6 +229,12 @@ Useful questions:
   `carrier_lookup_total{final_step="retry",outcome="ok",attempts=~"[2-9]"}`.
 - **New unmapped wording?** A rising `stage_source="none"` share. See
   [Unmapped wording](#unmapped-wording).
+- **Is the daily lookup allowance right?** `public_lookups_per_client{stat="p90"}` is
+  what nine clients in ten stayed at or under yesterday. Well below
+  `PUBLIC_LOOKUPS_PER_DAY`, the limit only stops outliers. At the limit, ordinary use is
+  being refused: refused lookups are not counted, so the value cannot go higher, and
+  `public_lookup_total{outcome="limited_daily"}` rises with it. The gauges are set by the
+  maintenance pass after each scheduled sync.
 
 [ops/grafana/carrier-scrapers.json](../ops/grafana/carrier-scrapers.json) is an importable
 Grafana dashboard with these panels. Its "silent carriers" stat flags carriers with lookups

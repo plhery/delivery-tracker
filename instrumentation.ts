@@ -46,6 +46,8 @@ export const onRequestError: Instrumentation.onRequestError = async (
       operation: 'request_error',
       route: context.routePath,
       routeType: context.routeType,
+      // A parcel link's address is a capability.
+      withoutRequest: context.routePath.startsWith('/p/'),
     });
     await observability.flushObservability(500);
   }

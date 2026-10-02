@@ -66,6 +66,7 @@ assert.doesNotMatch(
 );
 assert.match(workerSource, /new NetworkOnly\(\)/, 'private requests must use a network-only strategy');
 assert.match(workerSource, /pathname\.startsWith\('\/api\/'\)/, 'authenticated APIs must never be cached');
+assert.match(workerSource, /pathname\.startsWith\('\/p\/'\)/, 'parcel link pages must never be cached');
 assert.match(pushWorker, /caches\.delete\('apis'\)/, 'legacy private API caches must be removed');
 
 assert.equal(ogImage.subarray(1, 4).toString('ascii'), 'PNG', 'the social card must be a PNG');

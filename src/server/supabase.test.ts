@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { STORED_EVENT_IDENTITIES, SupabaseServiceClient, SupabaseUserClient } from './supabase';
+import { STORED_EVENT_IDENTITIES, SupabaseError, SupabaseServiceClient, SupabaseUserClient } from './supabase';
 
 describe('guarded tracking writes', () => {
   it('requests account-scoped automatic linking', async () => {
@@ -92,6 +92,95 @@ describe('guarded tracking writes', () => {
     expect(params.get('user_id')).toBe('eq.owner-1');
     expect(params.get('id')).toBe('in.(job-1,job-2)');
     expect(params.get('limit')).toBe('20');
+  });
+});
+
+describe('one-off parcels and their links', () => {
+  const service = () => new SupabaseServiceClient('https://database.example', 'service-key');
+  const params = (path: unknown) => new URL(`https://database.example${String(path)}`).searchParams;
+
+  it('keeps one-off parcels out of the account candidates and the auto-archive', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request').mockResolvedValue([]);
+    await client.listActivePackages();
+    expect(params(request.mock.calls[0][0]).get('one_off')).toBe('is.false');
+    await client.archiveDeliveredBefore(new Date('2026-08-03T00:00:00Z'));
+    expect(params(request.mock.calls[1][0]).get('one_off')).toBe('is.false');
+    expect(params(request.mock.calls[1][0]).get('current_stage')).toBe('eq.delivered');
+  });
+
+  it('lists the one-off parcels a scheduled run follows in the shape of the other candidates', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request').mockResolvedValue([{ id: 'one-off', one_off: true }]);
+    await expect(client.listFollowedOneOffPackages(new Date('2026-10-01T10:00:00Z'))).resolves.toEqual([{ id: 'one-off', one_off: true }]);
+    const [path, options] = request.mock.calls[0];
+    expect(path).toMatch(/^\/rest\/v1\/rpc\/followed_one_off_packages\?/);
+    expect(options).toEqual({ method: 'POST', body: { p_opened_since: '2026-10-01T10:00:00.000Z' } });
+    await client.listActivePackages();
+    expect(params(path).get('select')).toBe(params(request.mock.calls[1][0]).get('select'));
+    expect(params(path).get('order')).toBe('last_synced_at.asc.nullsfirst,created_at.asc');
+  });
+
+  it('queues a one-off parcel\'s check without an owner, behind accounts and the scheduled run', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request').mockResolvedValue([{ id: 'job' }]);
+    await expect(client.enqueueSyncJob({ packageId: 'package-1' })).resolves.toEqual({ row: { id: 'job' }, queued: true });
+    await client.enqueueSyncJob({ userId: 'owner-1', packageId: 'package-1' });
+    await client.enqueueSyncJob({ scheduled: true });
+    const queued = request.mock.calls.map(([, options]) => options!.body as Record<string, unknown>);
+    expect(queued[0]).toEqual({ user_id: null, package_id: 'package-1', kind: 'package', dedupe_key: 'package:package-1', priority: -20 });
+    expect(queued[1]).toMatchObject({ user_id: 'owner-1', priority: 10 });
+    expect(queued[2]).toMatchObject({ kind: 'scheduled', priority: -10 });
+    expect(queued[0].priority).toBeLessThan(queued[2].priority as number);
+    await expect(client.enqueueSyncJob({ userId: 'owner-1' })).rejects.toThrow('require a package');
+    await expect(client.enqueueSyncJob({ scheduled: true, packageId: 'package-1' })).rejects.toThrow('cannot target');
+  });
+
+  it('sends link ids and key hashes in request bodies, never in an address', async () => {
+    const client = service();
+    const user = new SupabaseUserClient('https://database.example', 'public-key', 'token');
+    const hash = 'a'.repeat(64);
+    const found = { link: { id: 'k7Qm2xHd9RtW' }, package: { id: 'package-1' } };
+    const request = vi.spyOn(client, 'request')
+      .mockResolvedValueOnce(found).mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ ...found, created: true })
+      .mockResolvedValueOnce({ links: 1, packages: 1 }).mockResolvedValueOnce({ links: 3, packages: 2 })
+      .mockResolvedValueOnce({ allowed: false, scope: 'global', remaining: 4 })
+      .mockResolvedValueOnce({ buckets: 4, p50: 2, p90: 10, max: 10 });
+    const userRequest = vi.spyOn(user, 'request').mockResolvedValue({ outcome: 'kept', package_id: 'package-2' });
+
+    await expect(client.publicParcel('k7Qm2xHd9RtW', hash, true)).resolves.toEqual(found);
+    await expect(client.publicParcel('k7Qm2xHd9RtW', null, false)).resolves.toBeNull();
+    await expect(client.createOneOffParcel({ trackingNumber: 'TEST1234', carrier: 'unknown', trackingUrl: null, dpdPostcode: null }, hash))
+      .resolves.toEqual({ ...found, created: true });
+    await expect(client.forgetParcelLink('k7Qm2xHd9RtW', hash)).resolves.toEqual({ links: 1, packages: 1 });
+    await expect(client.forgetExpiredParcelLinks()).resolves.toEqual({ links: 3, packages: 2 });
+    await expect(client.claimPublicLookup(hash, 15, 3_000)).resolves.toEqual({ allowed: false, scope: 'global' });
+    await expect(client.publicLookupUsageSummary()).resolves.toEqual({ buckets: 4, p50: 2, p90: 10, max: 10 });
+    await expect(user.claimParcelLink('k7Qm2xHd9RtW', hash, 'Sneakers')).resolves.toEqual({ outcome: 'kept', packageId: 'package-2' });
+
+    expect(request.mock.calls.map(([path]) => path)).toEqual([
+      '/rest/v1/rpc/public_parcel', '/rest/v1/rpc/public_parcel', '/rest/v1/rpc/create_one_off_parcel',
+      '/rest/v1/rpc/forget_parcel_link', '/rest/v1/rpc/forget_expired_parcel_links',
+      '/rest/v1/rpc/claim_public_lookup', '/rest/v1/rpc/public_lookup_usage_summary',
+    ]);
+    expect(request.mock.calls[0][1]).toEqual({ method: 'POST', body: { p_link_id: 'k7Qm2xHd9RtW', p_owner_key_hash: hash, p_touch: true } });
+    expect(request.mock.calls[2][1]).toEqual({ method: 'POST', body: {
+      p_tracking_number: 'TEST1234', p_carrier: 'unknown', p_tracking_url: null, p_dpd_postcode: null, p_owner_key_hash: hash,
+    } });
+    expect(userRequest).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/claim_parcel_link', {
+      method: 'POST', body: { p_link_id: 'k7Qm2xHd9RtW', p_owner_key_hash: hash, p_label: 'Sneakers' },
+    });
+  });
+
+  it('reads a refused keep as an unknown link and passes other failures on', async () => {
+    const user = new SupabaseUserClient('https://database.example', 'public-key', 'token');
+    const request = vi.spyOn(user, 'request').mockRejectedValueOnce(new SupabaseError('refused', 500, 'P0002'));
+    await expect(user.claimParcelLink('k7Qm2xHd9RtW', null, '')).resolves.toBeNull();
+    request.mockRejectedValueOnce(new SupabaseError('database down', 503));
+    await expect(user.claimParcelLink('k7Qm2xHd9RtW', null, '')).rejects.toThrow('database down');
+    request.mockResolvedValueOnce({ outcome: 'stolen' });
+    await expect(user.claimParcelLink('k7Qm2xHd9RtW', null, '')).rejects.toThrow('kept parcel');
   });
 });
 

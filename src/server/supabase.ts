@@ -64,6 +64,11 @@ function rows(value: unknown): JsonObject[] {
   return Array.isArray(value) ? value.filter(isRecord) : [];
 }
 
+function forgotten(value: unknown): { links: number; packages: number } {
+  const counts = isRecord(value) ? value : {};
+  return { links: Number(counts.links ?? 0), packages: Number(counts.packages ?? 0) };
+}
+
 export class SupabaseClient {
   readonly url: string;
 
@@ -231,6 +236,8 @@ export class SupabaseClient {
       ['archived_at', 'is.null'],
       ['current_stage', 'eq.delivered'],
       ['last_synced_at', `lt.${cutoff.toISOString()}`],
+      // A one-off parcel has no list to leave: it is forgotten with its links.
+      ['one_off', 'is.false'],
     ]);
     const archived = rows(await this.request(`/rest/v1/packages?${params}`, {
       method: 'PATCH',
@@ -244,11 +251,15 @@ export class SupabaseClient {
     return await this.activePackages(ACTIVE_PACKAGE_SELECT);
   }
 
-  protected async activePackages(select: string): Promise<JsonObject[]> {
+  protected async activePackages(
+    select: string,
+    filters: ReadonlyArray<readonly [string, string]> = [],
+  ): Promise<JsonObject[]> {
     const params = query([
       ['select', select],
       ['archived_at', 'is.null'],
       ['or', '(current_stage.not.in.(delivered,returned),last_status_text.eq.TO_BE_DELIVERED)'],
+      ...filters,
       ['order', 'last_synced_at.asc.nullsfirst,created_at.asc'],
     ]);
     return rows(await this.request(`/rest/v1/packages?${params}`));
@@ -682,9 +693,27 @@ export class SupabaseServiceClient extends SupabaseClient {
     })}`))[0] ?? null;
   }
 
-  /** Scheduled sync candidates, with their stored event identities. */
+  /**
+   * Scheduled sync candidates, with their stored event identities: every
+   * account's open parcels. One-off parcels come from
+   * listFollowedOneOffPackages.
+   */
   override async listActivePackages(): Promise<JsonObject[]> {
-    return await this.activePackages(`${ACTIVE_PACKAGE_SELECT},${SYNC_EVENT_IDENTITIES}`);
+    return await this.activePackages(`${ACTIVE_PACKAGE_SELECT},${SYNC_EVENT_IDENTITIES}`, [['one_off', 'is.false']]);
+  }
+
+  /**
+   * The open one-off parcels with a link opened since `openedSince`, the least
+   * recently checked first, in the shape of listActivePackages.
+   */
+  async listFollowedOneOffPackages(openedSince: Date): Promise<JsonObject[]> {
+    const params = query({
+      select: `${ACTIVE_PACKAGE_SELECT},${SYNC_EVENT_IDENTITIES}`,
+      order: 'last_synced_at.asc.nullsfirst,created_at.asc',
+    });
+    return rows(await this.request(`/rest/v1/rpc/followed_one_off_packages?${params}`, {
+      method: 'POST', body: { p_opened_since: openedSince.toISOString() },
+    }));
   }
 
   async autoLinkPackages(userId?: string): Promise<number> {
@@ -799,12 +828,12 @@ export class SupabaseServiceClient extends SupabaseClient {
       dedupeKey = 'scheduled';
       priority = -10;
     } else {
-      if (!options.userId || !options.packageId) {
-        throw new TypeError('Package sync jobs require an owner and package');
-      }
+      if (!options.packageId) throw new TypeError('Package sync jobs require a package');
       kind = 'package';
       dedupeKey = `package:${options.packageId}`;
-      priority = 10;
+      // A one-off parcel has no owner. Its check waits behind every account's
+      // refresh and the scheduled run, so lookups cannot starve accounts.
+      priority = options.userId ? 10 : -20;
     }
 
     const created = rows(await this.request('/rest/v1/sync_jobs?on_conflict=dedupe_key', {
@@ -894,6 +923,83 @@ export class SupabaseServiceClient extends SupabaseClient {
     return rows(await this.request(`/rest/v1/sync_jobs?${params}`));
   }
 
+  /**
+   * Counts one lookup without an account against today's allowances. `bucket`
+   * is a keyed hash of the client address; `scope` says which allowance ran out.
+   */
+  async claimPublicLookup(bucket: string, limit: number, globalLimit: number): Promise<{ allowed: boolean; scope: 'bucket' | 'global' | null }> {
+    const result = await this.request('/rest/v1/rpc/claim_public_lookup', {
+      method: 'POST', body: { p_bucket: bucket, p_limit: limit, p_global_limit: globalLimit },
+    });
+    if (!isRecord(result) || typeof result.allowed !== 'boolean') throw new SupabaseError('Supabase did not return the lookup allowance');
+    return { allowed: result.allowed, scope: result.scope === 'bucket' || result.scope === 'global' ? result.scope : null };
+  }
+
+  /**
+   * Stores a lookup: a new link to a new or already stored one-off parcel.
+   * Answers like publicParcel, plus whether the parcel is new.
+   */
+  async createOneOffParcel(
+    values: { trackingNumber: string; carrier: string; trackingUrl: string | null; dpdPostcode: string | null },
+    ownerKeyHash: string,
+  ): Promise<{ link: JsonObject; package: JsonObject; created: boolean }> {
+    const result = await this.request('/rest/v1/rpc/create_one_off_parcel', {
+      method: 'POST',
+      body: {
+        p_tracking_number: values.trackingNumber,
+        p_carrier: values.carrier,
+        p_tracking_url: values.trackingUrl,
+        p_dpd_postcode: values.dpdPostcode,
+        p_owner_key_hash: ownerKeyHash,
+      },
+    });
+    if (!isRecord(result) || !isRecord(result.link) || !isRecord(result.package)) {
+      throw new SupabaseError('Supabase did not return the new parcel link');
+    }
+    return { link: result.link, package: result.package, created: result.created === true };
+  }
+
+  /**
+   * A parcel link, the role its caller has and the whole package row with its
+   * events, or null when the link is unknown or past its forget date. The
+   * link id and key hash travel in the body, never in a logged URL. `touch`
+   * records that the link was opened.
+   */
+  async publicParcel(linkId: string, ownerKeyHash: string | null, touch: boolean): Promise<{ link: JsonObject; package: JsonObject } | null> {
+    const result = await this.request('/rest/v1/rpc/public_parcel', {
+      method: 'POST', body: { p_link_id: linkId, p_owner_key_hash: ownerKeyHash, p_touch: touch },
+    });
+    if (result === null) return null;
+    if (!isRecord(result) || !isRecord(result.link) || !isRecord(result.package)) {
+      throw new SupabaseError('Supabase did not return the parcel link');
+    }
+    return { link: result.link, package: result.package };
+  }
+
+  /** Forgets a lookup when the key hash matches; a one-off parcel goes with its last link. */
+  async forgetParcelLink(linkId: string, ownerKeyHash: string): Promise<{ links: number; packages: number }> {
+    return forgotten(await this.request('/rest/v1/rpc/forget_parcel_link', {
+      method: 'POST', body: { p_link_id: linkId, p_owner_key_hash: ownerKeyHash },
+    }));
+  }
+
+  /** Forgets the lookups past their forget date and the one-off parcels left without a link. */
+  async forgetExpiredParcelLinks(): Promise<{ links: number; packages: number }> {
+    return forgotten(await this.request('/rest/v1/rpc/forget_expired_parcel_links', { method: 'POST', body: {} }));
+  }
+
+  /** Yesterday's lookups per client: how many clients, and their median, 90th percentile and maximum. */
+  async publicLookupUsageSummary(): Promise<{ buckets: number; p50: number; p90: number; max: number }> {
+    const result = await this.request('/rest/v1/rpc/public_lookup_usage_summary', { method: 'POST', body: {} });
+    const summary = isRecord(result) ? result : {};
+    return {
+      buckets: Number(summary.buckets ?? 0),
+      p50: Number(summary.p50 ?? 0),
+      p90: Number(summary.p90 ?? 0),
+      max: Number(summary.max ?? 0),
+    };
+  }
+
   async pendingSyncJobCount(userId?: string | null): Promise<number> {
     const params: Record<string, string> = {
       select: 'id',
@@ -930,6 +1036,30 @@ export class SupabaseUserClient extends SupabaseClient {
     const parcel = await this.getPackage(result.id);
     if (!parcel) throw new SupabaseError('The new package could not be reloaded');
     return parcel;
+  }
+
+  /**
+   * Keeps the parcel behind a link in this account. Null when the link is
+   * unknown or the caller has no right to it; the database does not say which.
+   */
+  async claimParcelLink(
+    linkId: string,
+    ownerKeyHash: string | null,
+    label: string,
+  ): Promise<{ outcome: 'kept' | 'already' | 'quota'; packageId: string | null } | null> {
+    let result: unknown;
+    try {
+      result = await this.request('/rest/v1/rpc/claim_parcel_link', {
+        method: 'POST', body: { p_link_id: linkId, p_owner_key_hash: ownerKeyHash, p_label: label },
+      });
+    } catch (error) {
+      if (error instanceof SupabaseError && error.code === 'P0002') return null;
+      throw error;
+    }
+    if (!isRecord(result) || !(result.outcome === 'kept' || result.outcome === 'already' || result.outcome === 'quota')) {
+      throw new SupabaseError('Supabase did not return the kept parcel');
+    }
+    return { outcome: result.outcome, packageId: typeof result.package_id === 'string' ? result.package_id : null };
   }
 
   override async updatePackage(packageId: string, values: JsonObject): Promise<void> {

@@ -72,7 +72,11 @@ lists everything.
   worker has polled or renewed a job in the last 120 s. Otherwise it returns 503.
   `GET /health/live` checks the process only.
 - Set `TRUST_PROXY_HEADERS=true` only if a trusted proxy overwrites `CF-Connecting-IP`,
-  `X-Real-IP` and `X-Forwarded-For`.
+  `X-Real-IP` and `X-Forwarded-For`. Without it, every visitor without an account shares
+  one client allowance.
+- Optional: `PUBLIC_LOOKUPS_PER_DAY` (default 15) and `PUBLIC_LOOKUPS_GLOBAL_PER_DAY`
+  (default 3000) set how many parcels can be looked up without an account per UTC day, per
+  client and overall. `0` turns lookups off.
 - Set the platform's stop grace period to **30 s** (Coolify: *Stop Grace Period*).
 - Don't set `NEXT_DEPLOYMENT_ID`: it changes every asset URL on each deploy, so returning
   browsers re-download everything.
@@ -109,9 +113,11 @@ checks the handoff, restarts and finishes the job.
 - **API limits** per account: 12 sync requests per 5 min, 240 reads per minute, 60 other
   writes per minute. Keep an edge rate limiter too, since unauthenticated OTP traffic needs
   it.
+- **Limits without an account**, per client address: 6 lookups and 20 carrier detections
+  per minute, 120 link reads per minute, and the daily lookup allowances above.
 - **Quotas** (enforced in the database): 50 active and 500 total parcels per account.
-  Scheduled sync processes at most five due parcels per account per run. Treat changes to
-  these limits as security-sensitive.
+  Scheduled sync processes at most five due parcels per account per run, and ten followed
+  without an account. Treat changes to these limits as security-sensitive.
 - **Queue**: `public.sync_jobs`, deduplicated. Finished jobs are kept for 30 days.
 - **Backups**: back up Postgres independently and regularly test restoring Auth, parcels,
   events and push tables together.
@@ -121,7 +127,9 @@ checks the handoff, restarts and finishes the job.
 ## Migrating from a pre-account deployment
 
 Early private deployments stored parcels without an owner (`user_id IS NULL`). Those rows
-are invisible to everyone until claimed. New deployments can skip this section.
+are invisible to everyone until claimed. New deployments can skip this section. Parcels
+looked up without an account have no owner either; they are marked `one_off` and stay as
+they are.
 
 Keep any edge authentication (Cloudflare Access) in place until this is done. Sign in once
 as the intended owner, then, with the service role:
@@ -129,17 +137,16 @@ as the intended owner, then, with the service role:
 ```sql
 -- Preflight: owner id, ownerless counts, duplicate numbers
 select id, email, created_at from auth.users order by created_at;
-select count(*) from public.packages where user_id is null;
+select count(*) from public.packages where user_id is null and not one_off;
 select tracking_number, count(*) from public.packages
-where user_id is null or user_id = 'OWNER_UUID'::uuid
+where (user_id is null and not one_off) or user_id = 'OWNER_UUID'::uuid
 group by tracking_number having count(*) > 1;
 
 -- Resolve duplicates, then claim (one way)
 begin;
-update public.packages set user_id = 'OWNER_UUID'::uuid where user_id is null;
+update public.packages set user_id = 'OWNER_UUID'::uuid where user_id is null and not one_off;
 delete from public.push_subscriptions where user_id is null;  -- users opt in again
 alter table public.packages validate constraint packages_owner_required_check;
-alter table public.packages alter column user_id set not null;
 alter table public.push_subscriptions validate constraint push_subscriptions_owner_required_check;
 alter table public.push_subscriptions alter column user_id set not null;
 commit;
@@ -149,3 +156,6 @@ Then check isolation with a second disposable account and try the main flows (ad
 refresh, archive, push opt-in, export, sign-out, delete). Only after that, remove the edge
 authentication. If something goes wrong, turn edge authentication back on. Never set
 `user_id` back to null.
+
+`packages.user_id` stays nullable: a parcel looked up without an account has no owner. The
+validated constraint is what rejects any other ownerless row.

@@ -54,7 +54,17 @@ interface ApiRouteOptions {
   authenticated?: boolean;
   serviceRequired?: boolean;
   loadService?: boolean;
-  publicRateLimit?: { limit: number; window: number };
+  /**
+   * Requests per client address for a route without sign-in. Each address of
+   * the route has its own allowance unless `bucket` names one to share, as the
+   * addresses of one route with an id in them must. `onLimited` counts refusals.
+   */
+  publicRateLimit?: { limit: number; window: number; bucket?: string; onLimited?: () => void };
+  /**
+   * The request's address, headers or body carry a capability (a parcel link
+   * id, an owner key). Error reports for the route leave the request out.
+   */
+  capability?: boolean;
 }
 
 type ApiHandler<Parameters extends RouteParameters> = (
@@ -82,6 +92,24 @@ export function clientIp(request: Pick<Request, 'headers'>): string {
     || request.headers.get('x-forwarded-for')?.split(',', 1)[0]?.trim()
     || '';
   return isIP(candidate) ? candidate : 'unknown';
+}
+
+/**
+ * The address a limit without sign-in counts. An IPv6 client is its /64: a
+ * line is given a whole one, and privacy addresses rotate inside it.
+ */
+export function clientNetwork(ip: string): string {
+  if (isIP(ip) !== 6) return ip;
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(ip);
+  if (mapped) return mapped[1]!;
+  const [head = '', tail = ''] = ip.split('::');
+  const leading = head ? head.split(':') : [];
+  const trailing = tail ? tail.split(':') : [];
+  // "::" stands for the groups left out of the eight.
+  const groups = ip.includes('::')
+    ? [...leading, ...Array<string>(Math.max(0, 8 - leading.length - trailing.length)).fill('0'), ...trailing]
+    : leading;
+  return `${groups.slice(0, 4).map((group) => group.replace(/^0+(?=.)/, '').toLowerCase()).join(':')}::/64`;
 }
 
 function bearerToken(request: Request): string | null {
@@ -131,12 +159,12 @@ function failure(error: unknown): Response {
   return apiResponse(500, { error: 'The request could not be completed' });
 }
 
+/** The route as logs and error tags name it: without ids, and never with a parcel link id, which is a capability. */
 function routeLabel(request: Request): string {
   try {
-    return new URL(request.url).pathname.replace(
-      /\/[0-9a-f]{8}-[0-9a-f-]{27,}/gi,
-      '/:id',
-    );
+    return new URL(request.url).pathname
+      .replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '/:id')
+      .replace(/^(\/api\/public\/parcels\/)[^/]+/, '$1:link');
   } catch {
     return 'unknown';
   }
@@ -181,8 +209,15 @@ export function apiRoute<Parameters extends RouteParameters = RouteParameters>(
       let userClient: SupabaseUserClient | null = null;
 
       if (!authenticated && options.publicRateLimit) {
-        const retryAfter = rateLimiter.retryAfter(`public:${new URL(request.url).pathname}:${clientIp(request)}`, options.publicRateLimit);
-        if (retryAfter) throw new HttpError(429, 'Too many requests. Try again shortly.', { 'Retry-After': String(retryAfter) });
+        const { limit, window, bucket, onLimited } = options.publicRateLimit;
+        const retryAfter = rateLimiter.retryAfter(
+          `public:${bucket ?? new URL(request.url).pathname}:${clientNetwork(clientIp(request))}`,
+          { limit, window },
+        );
+        if (retryAfter) {
+          onLimited?.();
+          throw new HttpError(429, 'Too many requests. Try again shortly.', { 'Retry-After': String(retryAfter) });
+        }
       }
 
       if (authenticated) {
@@ -285,6 +320,7 @@ export function apiRoute<Parameters extends RouteParameters = RouteParameters>(
         operation: 'request',
         requestId,
         route: routeLabel(request),
+        withoutRequest: options.capability,
       });
     }
     return finalized;

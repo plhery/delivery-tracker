@@ -35,6 +35,8 @@ export interface OperationalContext {
   providerStatus?: string | null;
   reportedStage?: string | null;
   selectedStage?: string | null;
+  /** Leave the incoming request out of the report: its address or body carries a capability. */
+  withoutRequest?: boolean;
 }
 
 export interface ScheduledCheckIn {
@@ -231,6 +233,11 @@ export function captureOperationalError(
       context.carrier ?? 'none',
       capturedErrorType,
     ]);
+    // Scope processors run after the SDK has attached the request and named
+    // the transaction after its address.
+    if (context.withoutRequest) {
+      scope.addEventProcessor((event) => ({ ...event, request: undefined, transaction: undefined }));
+    }
     eventId = Sentry.captureException(error);
   });
   return eventId;

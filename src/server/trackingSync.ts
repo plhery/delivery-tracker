@@ -42,6 +42,10 @@ import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, ha
 import { eventTimestamp, latestResultTime, resultTimezone } from './eventTime';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
+/** One-off parcels have no owner: a scheduled run checks this many of them, all together. */
+const MAX_ONE_OFF_PACKAGES_PER_SYNC = 10;
+/** A one-off parcel stays on the schedule this long after one of its links was last opened. */
+const ONE_OFF_FOLLOWED_MS = 24 * 60 * 60 * 1_000;
 const VALID_STAGES = new Set<string>(STAGES);
 /** Scheduled checks fall back to hourly this long after a parcel's newest carrier event, or after it was added. */
 const IDLE_AFTER_MS = 48 * 60 * 60 * 1_000;
@@ -109,6 +113,17 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
     ? local.startOf('minute').minus({ minutes: local.minute % intervalMinutes })
     : local.startOf('hour');
   return lastChecked < windowStart.toMillis();
+}
+
+/**
+ * Whether opening a one-off parcel's link should queue a check: only when a
+ * scheduled run would check the parcel now. Reading a link never checks a
+ * carrier more often than the schedule does, however often it is polled.
+ */
+export function isOpenedParcelSyncDue(parcel: JsonObject, now: Date): boolean {
+  const open = !['delivered', 'returned'].includes(String(parcel.current_stage))
+    || parcel.last_status_text === 'TO_BE_DELIVERED';
+  return open && parcel.archived_at == null && isScheduledTrackingSyncDue(parcel, now);
 }
 
 export interface TrackingAdapter {
@@ -466,9 +481,10 @@ export class TrackingSyncService {
     return await this.exclusive(async () => {
       context.signal?.throwIfAborted();
       const summary = emptySyncSummary();
-      const due = (await this.client.listActivePackages())
-        .filter((parcel) => isScheduledTrackingSyncDue(parcel, this.now()));
-      for (const parcel of fairSyncPackages(due)) {
+      const now = this.now();
+      const due = (parcel: JsonObject) => isScheduledTrackingSyncDue(parcel, now);
+      const accounts = fairSyncPackages((await this.client.listActivePackages()).filter(due));
+      for (const parcel of [...accounts, ...await this.followedOneOffPackages(due, now, context.signal)]) {
         summary.checked += 1;
         summary[await this.syncOne(parcel, context)] += 1;
       }
@@ -494,6 +510,27 @@ export class TrackingSyncService {
       await this.dispatchNotifications(summary, context.signal);
       return summary;
     });
+  }
+
+  /**
+   * One-off parcels follow the same cadence while a link was opened lately.
+   * They come after every account's share and count as one owner, the least
+   * recently checked first, so lookups cannot starve accounts. Nor can they
+   * stop them: when the list cannot be read, the accounts are still checked.
+   */
+  private async followedOneOffPackages(
+    due: (parcel: JsonObject) => boolean,
+    now: Date,
+    signal?: AbortSignal,
+  ): Promise<JsonObject[]> {
+    try {
+      return (await this.client.listFollowedOneOffPackages(new Date(now.getTime() - ONE_OFF_FOLLOWED_MS)))
+        .filter(due).slice(0, MAX_ONE_OFF_PACKAGES_PER_SYNC);
+    } catch (error) {
+      signal?.throwIfAborted();
+      captureOperationalError(error, { component: 'tracking', operation: 'list_one_off_packages' });
+      return [];
+    }
   }
 
   private async linkConfirmedParcels(userId?: string): Promise<void> {

@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { Counter, Histogram, Registry, collectDefaultMetrics, type LabelValues } from '@prometheus-io/client';
+import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics, type LabelValues } from '@prometheus-io/client';
 import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from 'universal-parcel-scraper/node';
 
 /**
@@ -15,10 +15,13 @@ import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from '
  * `carrier_refresh_total{served_by}` answers the question one level up: how
  * often a parcel of a carrier with its own adapter ended up on a universal
  * provider instead.
+ *
+ * The parcel-link series count lookups without an account, link reads, kept
+ * parcels and forgotten ones by outcome only: never by number, link or client.
  */
 
 /** Bump when the series or their labels change, so a hot-reloaded copy does not reuse an older shape. */
-const RUNTIME_VERSION = 3;
+const RUNTIME_VERSION = 4;
 
 interface PrometheusRuntime {
   version: number;
@@ -30,6 +33,12 @@ interface PrometheusRuntime {
   statusMappingTotal: Counter<'carrier' | 'stage_source'>;
   detectionTotal: Counter<'result'>;
   refreshTotal: Counter<'carrier' | 'served_by' | 'outcome'>;
+  publicLookupTotal: Counter<'outcome'>;
+  publicParcelReadTotal: Counter<'outcome'>;
+  parcelClaimTotal: Counter<'outcome'>;
+  parcelForgottenTotal: Counter<'kind' | 'reason'>;
+  publicLookupClients: Gauge;
+  publicLookupsPerClient: Gauge<'stat'>;
   /** Series a scrape has shown; they count at once. */
   scraped: Set<string>;
   /** Series created at 0 since the last scrape, with the updates they wait to apply. */
@@ -91,6 +100,41 @@ function createRuntime(): PrometheusRuntime {
       name: METRICS.refreshTotal,
       help: 'Parcel refreshes by configured carrier, who served them (adapter, other_adapter, provider, none) and outcome.',
       labelNames: ['carrier', 'served_by', 'outcome'] as const,
+      registers: [registry],
+    }),
+    publicLookupTotal: new Counter({
+      name: 'public_lookup_total',
+      help: 'Lookups without an account by outcome (created, reused, limited_burst, limited_daily, limited_global).',
+      labelNames: ['outcome'] as const,
+      registers: [registry],
+    }),
+    publicParcelReadTotal: new Counter({
+      name: 'public_parcel_read_total',
+      help: 'Reads of a parcel link by outcome (ok, not_found).',
+      labelNames: ['outcome'] as const,
+      registers: [registry],
+    }),
+    parcelClaimTotal: new Counter({
+      name: 'parcel_claim_total',
+      help: 'Parcel links kept in an account by outcome (kept, already, quota, unavailable).',
+      labelNames: ['outcome'] as const,
+      registers: [registry],
+    }),
+    parcelForgottenTotal: new Counter({
+      name: 'parcel_forgotten_total',
+      help: 'Forgotten parcel links and one-off parcels (kind) by reason (asked, expired).',
+      labelNames: ['kind', 'reason'] as const,
+      registers: [registry],
+    }),
+    publicLookupClients: new Gauge({
+      name: 'public_lookup_clients',
+      help: 'Clients (hashed addresses) that made a lookup without an account yesterday (UTC).',
+      registers: [registry],
+    }),
+    publicLookupsPerClient: new Gauge({
+      name: 'public_lookups_per_client',
+      help: 'Lookups without an account per client yesterday (UTC): median, 90th percentile and maximum.',
+      labelNames: ['stat'] as const,
       registers: [registry],
     }),
     scraped: new Set(),
@@ -167,6 +211,37 @@ export function recordStatusMapping(carrier: string, stageSource: string): void 
 
 export function recordDetection(result: 'high' | 'low' | 'none'): void {
   count(runtime.detectionTotal, METRICS.detectionTotal, { result });
+}
+
+export type PublicLookupOutcome = 'created' | 'reused' | 'limited_burst' | 'limited_daily' | 'limited_global';
+
+export function recordPublicLookup(outcome: PublicLookupOutcome): void {
+  count(runtime.publicLookupTotal, 'public_lookup_total', { outcome });
+}
+
+export function recordPublicParcelRead(outcome: 'ok' | 'not_found'): void {
+  count(runtime.publicParcelReadTotal, 'public_parcel_read_total', { outcome });
+}
+
+export function recordParcelClaim(outcome: 'kept' | 'already' | 'quota' | 'unavailable'): void {
+  count(runtime.parcelClaimTotal, 'parcel_claim_total', { outcome });
+}
+
+/** Links and one-off parcels forgotten on request (`asked`) or past their forget date (`expired`). */
+export function recordParcelsForgotten(reason: 'asked' | 'expired', forgotten: { links: number; packages: number }): void {
+  for (const [kind, total] of [['link', forgotten.links], ['package', forgotten.packages]] as const) {
+    if (total > 0) afterFirstScrape(`parcel_forgotten_total${JSON.stringify({ kind, reason })}`,
+      () => runtime.parcelForgottenTotal.inc({ kind, reason }, 0),
+      () => runtime.parcelForgottenTotal.inc({ kind, reason }, total));
+  }
+}
+
+/** Yesterday's lookups per client, set by the maintenance pass; the p90 tells whether the daily allowance pinches. */
+export function recordPublicLookupUsage(summary: { buckets: number; p50: number; p90: number; max: number }): void {
+  runtime.publicLookupClients.set(summary.buckets);
+  runtime.publicLookupsPerClient.set({ stat: 'p50' }, summary.p50);
+  runtime.publicLookupsPerClient.set({ stat: 'p90' }, summary.p90);
+  runtime.publicLookupsPerClient.set({ stat: 'max' }, summary.max);
 }
 
 /** Renders the registry for Prometheus, then releases what the series it showed at 0 held back. */

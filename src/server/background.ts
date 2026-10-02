@@ -12,6 +12,7 @@ import {
   shouldReportRepeatedFailure,
   type ScheduledCheckIn,
 } from './observability';
+import { recordParcelsForgotten, recordPublicLookupUsage } from './metrics';
 import { pushServices } from './push';
 import { FriendshipPushService, FriendshipPushWorker } from './friendshipPush';
 import { serviceClient } from './runtime';
@@ -251,6 +252,25 @@ export class SyncJobWorker {
           }, 'error');
           captureOperationalError(maintenanceError, {
             component: 'tracking-sync-audit',
+            operation: 'maintenance',
+            jobId,
+            trigger: kind,
+          });
+        }
+        try {
+          // Lookups without an account end here: 30 days after delivery, or 90 days without news.
+          const forgotten = await this.service.client.forgetExpiredParcelLinks();
+          recordParcelsForgotten('expired', forgotten);
+          if (forgotten.links > 0 || forgotten.packages > 0) {
+            logOperationalEvent('parcel_links_forgotten', forgotten);
+          }
+          recordPublicLookupUsage(await this.service.client.publicLookupUsageSummary());
+        } catch (maintenanceError) {
+          logOperationalEvent('parcel_link_maintenance_failed', {
+            error_type: errorType(maintenanceError),
+          }, 'error');
+          captureOperationalError(maintenanceError, {
+            component: 'parcel-links',
             operation: 'maintenance',
             jobId,
             trigger: kind,

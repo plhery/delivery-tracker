@@ -3,6 +3,7 @@ import { generateKeyPairSync } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   apiRoute,
+  clientNetwork,
   HttpError,
   json,
   parseUuid,
@@ -117,6 +118,45 @@ describe('API request boundaries', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(response.headers.get('x-request-id')).toMatch(/^[0-9a-f]{32}$/);
     await expect(response.json()).resolves.toEqual({ ok: true });
+  });
+
+  it('counts an IPv6 client as its /64 and every other address as itself', () => {
+    expect(clientNetwork('198.51.100.7')).toBe('198.51.100.7');
+    expect(clientNetwork('::ffff:198.51.100.7')).toBe('198.51.100.7');
+    expect(clientNetwork('2001:db8:1:2:aaaa:bbbb:cccc:dddd')).toBe('2001:db8:1:2::/64');
+    expect(clientNetwork('2001:0DB8:0001:0002::1')).toBe('2001:db8:1:2::/64');
+    expect(clientNetwork('2001:db8::1')).toBe('2001:db8:0:0::/64');
+    expect(clientNetwork('2001:db8:1:2:3:4:5::')).toBe('2001:db8:1:2::/64');
+    expect(clientNetwork('::1')).toBe('0:0:0:0::/64');
+    // Without a trusted proxy every caller shares the placeholder, and one counter.
+    expect(clientNetwork('untrusted')).toBe('untrusted');
+    expect(clientNetwork('unknown')).toBe('unknown');
+  });
+
+  it('shares a named allowance across a route\'s addresses and reports refusals', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const onLimited = vi.fn();
+    const call = (route: ReturnType<typeof apiRoute>, path: string) => route(
+      new NextRequest(`https://delivery.example${path}`), { params: Promise.resolve({}) },
+    );
+    const shared = apiRoute(async () => json({ ok: true }), {
+      authenticated: false, loadService: false,
+      publicRateLimit: { limit: 2, window: 60, bucket: 'core-test-shared', onLimited },
+    });
+    expect((await call(shared, '/api/public/parcels/firstLink234')).status).toBe(200);
+    expect((await call(shared, '/api/public/parcels/secondLink23')).status).toBe(200);
+    const refused = await call(shared, '/api/public/parcels/thirdLink234');
+    expect(refused.status).toBe(429);
+    expect(refused.headers.get('retry-after')).toBeTruthy();
+    expect(onLimited).toHaveBeenCalledOnce();
+
+    // Without a name, each address keeps its own allowance.
+    const separate = apiRoute(async () => json({ ok: true }), {
+      authenticated: false, loadService: false, publicRateLimit: { limit: 1, window: 60 },
+    });
+    expect((await call(separate, '/core-test/one')).status).toBe(200);
+    expect((await call(separate, '/core-test/two')).status).toBe(200);
+    expect((await call(separate, '/core-test/one')).status).toBe(429);
   });
 
   it('returns a service error for malformed authentication configuration', async () => {
