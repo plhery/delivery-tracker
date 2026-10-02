@@ -1,6 +1,11 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
+import type { SignInScreen } from '../components/SignInScreen';
 import type { ParcelWithEvents } from '../types';
 import type { KeepOutcome } from './pending';
+
+/** The ways to sign in that a build with accounts offers. */
+export type SignInMethods = Pick<ComponentProps<typeof SignInScreen>,
+  'configured' | 'googleEnabled' | 'appleEnabled' | 'emailOtpEnabled' | 'signInWithGoogle' | 'signInWithApple' | 'sendCode' | 'verifyCode'>;
 
 /**
  * Who is looking at the front door or a parcel page, and what they can do
@@ -12,6 +17,8 @@ export interface PeekSession {
   account: 'checking' | 'visitor' | 'signed-in';
   /** Opens the sign-in step. With a link id, that parcel is kept as soon as the visitor is signed in. */
   signIn(keepLinkId?: string): void;
+  /** Lets a visitor sign in without leaving the page they are on. Absent where signing in is its own step, as in the demo. */
+  signInWith?: SignInMethods;
   /** Keeps a parcel link in the account. Only someone signed in can. */
   keep?(linkId: string): Promise<KeepOutcome>;
   /** The deliveries of the account, once loaded: tells a parcel already followed from a new one. */

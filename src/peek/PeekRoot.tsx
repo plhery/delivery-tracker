@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import { FrontDoor, type TrackedParcel } from './FrontDoor';
 import type { ParcelLinkView } from './links';
 import { ParcelPage } from './ParcelPage';
+import { NoticeToast } from './parcel/Toast';
 import { rememberParcel } from './recents';
 import { openParcelLink, useParcelLinkRoute } from './route';
 import { PeekSessionProvider, type PeekSession } from './session';
@@ -49,5 +50,7 @@ export function PeekRoot({ session, serverLinkId = null }: {
     {linkId
       ? <ParcelPage key={linkId} linkId={linkId} entrance={answer ? 'reveal' : 'direct'} initial={answer} />
       : <FrontDoor onTracked={onTracked} onSignIn={onSignIn} />}
+    {/* A word that outlives the page it was said on, such as a parcel forgotten. */}
+    <NoticeToast />
   </PeekSessionProvider>;
 }

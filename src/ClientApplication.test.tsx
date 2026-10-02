@@ -126,6 +126,23 @@ describe('DemoApplication', () => {
     stop();
   });
 
+  it('offers the device’s other parcels on the way into the demo, and moves them there', async () => {
+    const { id, key } = await lookupParcel({ trackingNumber: 'DEMOGLS20260009' });
+    const view = await readParcelLink(id, { key, advance: true });
+    if (view === 'unavailable') throw new Error('The demo link should exist');
+    rememberParcel({ id, key, view });
+    experience('sign-in');
+    const user = userEvent.setup();
+    app();
+    await user.click(screen.getByRole('button', { name: 'Explore the demo' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Bring these parcels too?' });
+    expect(sheet).toHaveTextContent('DEMOGLS…0009');
+    await user.click(screen.getByRole('button', { name: 'Add 1 parcel' }));
+    expect(await screen.findByText(/^DEMOGLS20260009 \(\d+ scans\)$/)).toBeVisible();
+    expect(recentFor(id)).toBeNull();
+    expect(await readParcelLink(id, { key })).toBe('unavailable');
+  });
+
   it('shows a parcel’s page at its address whatever this browser was doing, and leaves it for sign-in', async () => {
     const { id, key, view } = await lookupParcel({ trackingNumber: '1ZDEMO202600000009' });
     rememberParcel({ id, key, view });

@@ -20,6 +20,7 @@ import { useParcels } from './store/ParcelsContext';
 import { FriendsActivityProvider } from './components/FriendsActivity';
 import type { ApiAuth } from './lib/apiClient';
 import { KeepPendingParcel } from './peek/KeepPending';
+import { BringAlongParcels } from './peek/parcel/BringAlong';
 import { PeekRoot } from './peek/PeekRoot';
 import { keepParcelLink } from './peek/pending';
 import { leaveParcelLink, useParcelLinkRoute } from './peek/route';
@@ -40,6 +41,14 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
   const invitation = usePendingInvitation(invitationRoute);
   const linkId = useParcelLinkRoute(parcelLinkId);
   const visitor = useVisitorSession(auth.status === 'loading' ? 'checking' : 'visitor');
+  // On a parcel page a visitor signs in without leaving it; the ways to do so come from here.
+  const visitorSession = useMemo<PeekSession>(() => ({
+    ...visitor,
+    signInWith: {
+      configured: auth.status !== 'unconfigured', googleEnabled: auth.googleEnabled, appleEnabled: auth.appleEnabled, emailOtpEnabled: auth.emailOtpEnabled,
+      signInWithGoogle: auth.signInWithGoogle, signInWithApple: auth.signInWithApple, sendCode: auth.sendCode, verifyCode: auth.verifyCode,
+    },
+  }), [visitor, auth.status, auth.googleEnabled, auth.appleEnabled, auth.emailOtpEnabled, auth.signInWithGoogle, auth.signInWithApple, auth.sendCode, auth.verifyCode]);
   const demoRepo = useMemo(() => createDemoRepo(), []);
   const signOut = auth.signOut;
   const navigate = experience.navigate;
@@ -108,7 +117,7 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
   // Without one, a visitor arrives at the front door.
   if (auth.status !== 'authenticated' && (linkId
     || (auth.status !== 'loading' && !invitation.pending && experience.screen === 'welcome'))) {
-    return <PeekRoot session={visitor} serverLinkId={parcelLinkId} />;
+    return <PeekRoot session={visitorSession} serverLinkId={parcelLinkId} />;
   }
   if (auth.status === 'loading') {
     return <div className="auth-loading" role="status"><ParcelIllustration /><span>{t('auth.loading')}</span></div>;
@@ -137,13 +146,13 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
     <ParcelsProvider key={auth.user?.id} repo={repo}>
       <KeepPendingParcel auth={apiAuth!} />
       {linkId ? <SignedInPeek auth={apiAuth!} serverLinkId={parcelLinkId} />
-        : invitation.pending ? <AuthenticatedInvitation key={invitation.pending.code ?? 'invalid'} {...invitationProps} client={friendsClient} /> : <App
+        : invitation.pending ? <AuthenticatedInvitation key={invitation.pending.code ?? 'invalid'} {...invitationProps} client={friendsClient} /> : <><App
         accountEmail={auth.user?.email ?? t('native.account')}
         onSignOut={handleSignOut}
         onExportAccount={handleExport}
         onDeleteAccount={handleDelete}
         apiAuth={apiAuth}
-      />}
+      /><BringAlongParcels auth={apiAuth!} /></>}
     </ParcelsProvider>
     </FriendsActivityProvider>
   );

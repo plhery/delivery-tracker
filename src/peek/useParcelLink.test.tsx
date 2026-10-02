@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LINK_ID, OWNER_KEY, pendingView, testView } from '../test/parcelLinks';
 import { ParcelLinkError, type ParcelLinkRead } from './links';
 import { forgetAllRecents, recentFor, rememberParcel, renameParcel } from './recents';
-import { firstCheckLanded, useParcelLink } from './useParcelLink';
+import { firstCheckLanded, newScan, useParcelLink } from './useParcelLink';
 
 const mocks = vi.hoisted(() => ({ read: vi.fn() }));
 vi.mock('./links', async (original) => ({
@@ -84,28 +84,85 @@ describe('useParcelLink', () => {
     expect(mocks.read).toHaveBeenCalledTimes(8);
   });
 
-  it('stops while the tab is hidden and catches up when it is shown again', async () => {
+  it('slows down while the tab is hidden, stops after half an hour, and catches up when it is shown again', async () => {
     const hook = renderHook(() => useParcelLink(LINK_ID));
     await pass(0);
     act(() => setHidden(true));
     expect(hook.result.current.live).toBe(false);
-    await pass(120_000);
+    // In the background the page asks every two minutes.
+    await pass(119_999);
     expect(mocks.read).toHaveBeenCalledTimes(1);
+    await pass(1);
+    expect(mocks.read).toHaveBeenCalledTimes(2);
+    await pass(28 * 60_000);
+    expect(mocks.read).toHaveBeenCalledTimes(16);
+    // Half an hour after it was hidden, it stops.
+    await pass(60 * 60_000);
+    expect(mocks.read).toHaveBeenCalledTimes(16);
     act(() => setHidden(false));
     expect(hook.result.current.live).toBe(true);
     await pass(0);
-    expect(mocks.read).toHaveBeenCalledTimes(2);
+    expect(mocks.read).toHaveBeenCalledTimes(17);
     await pass(30_000);
-    expect(mocks.read).toHaveBeenCalledTimes(3);
+    expect(mocks.read).toHaveBeenCalledTimes(18);
   });
 
-  it('gets its first answer even when it opens in a hidden tab, without polling there', async () => {
+  it('gets its first answer even when it opens in a hidden tab, and asks slowly there', async () => {
     hidden = true;
     const hook = renderHook(() => useParcelLink(LINK_ID));
     await pass(0);
     expect(hook.result.current).toMatchObject({ status: 'ready', live: false });
-    await pass(120_000);
+    await pass(30_000);
     expect(mocks.read).toHaveBeenCalledTimes(1);
+    await pass(90_000);
+    expect(mocks.read).toHaveBeenCalledTimes(2);
+  });
+
+  it('tells a scan that arrives while the page is open, and counts the ones that land in a background tab', async () => {
+    const moved = testView({ stages: ['registered', 'in_transit', 'out_for_delivery'] });
+    const delivered = testView({ stages: ['registered', 'in_transit', 'out_for_delivery', 'delivered'] });
+    answers(testView(), moved, moved, delivered);
+    const hook = renderHook(() => useParcelLink(LINK_ID));
+    await pass(0);
+    // The first answer of a visit is not news.
+    expect(hook.result.current).toMatchObject({ news: null, unseen: 0 });
+    await pass(30_000);
+    expect(hook.result.current.news).toMatchObject({ stage: 'out_for_delivery' });
+    expect(hook.result.current.unseen).toBe(0);
+    act(() => hook.result.current.dismissNews());
+    expect(hook.result.current.news).toBeNull();
+    // The same answer again tells nothing.
+    await pass(30_000);
+    expect(hook.result.current.news).toBeNull();
+    act(() => setHidden(true));
+    await pass(120_000);
+    expect(hook.result.current).toMatchObject({ news: { stage: 'delivered' }, unseen: 1 });
+    act(() => setHidden(false));
+    expect(hook.result.current.unseen).toBe(0);
+    expect(hook.result.current.news).toMatchObject({ stage: 'delivered' });
+    await pass(0);
+  });
+
+  it('tells what changed since this device last looked, and keeps the estimate the carrier gave before', async () => {
+    rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView({ parcel: { expectedDelivery: '2099-01-05' } }) });
+    answers(
+      testView({ stages: ['registered', 'in_transit', 'out_for_delivery'], parcel: { expectedDelivery: '2099-01-06' } }),
+      testView({ stages: ['registered', 'in_transit', 'out_for_delivery'], parcel: { expectedDelivery: '2099-01-06' } }),
+    );
+    const hook = renderHook(() => useParcelLink(LINK_ID));
+    expect(hook.result.current.seenAt).toBe(recentFor(LINK_ID)!.lastSeenAt);
+    await pass(0);
+    expect(hook.result.current).toMatchObject({ news: { stage: 'out_for_delivery' }, previousEstimate: '2099-01-05' });
+    await pass(30_000);
+    expect(hook.result.current.previousEstimate).toBe('2099-01-05');
+  });
+
+  it('does not call a first check landing, or a scan older than the one shown, news', () => {
+    expect(newScan(null, testView())).toBeNull();
+    expect(newScan(pendingView(), testView())).toBeNull();
+    expect(newScan(testView(), testView())).toBeNull();
+    expect(newScan(testView({ stages: ['registered', 'in_transit', 'delivered'] }), testView())).toBeNull();
+    expect(newScan(testView(), testView({ stages: ['registered', 'in_transit', 'delivered'] }))).toMatchObject({ stage: 'delivered' });
   });
 
   it('shows the device’s last answer while offline, keeps trying, and recovers', async () => {
@@ -163,11 +220,13 @@ describe('useParcelLink', () => {
     const delivered = testView({ stages: ['registered', 'in_transit', 'delivered'] });
     let answer: (view: ParcelLinkRead) => void = () => undefined;
     mocks.read.mockReturnValueOnce(new Promise((resolve) => { answer = resolve; }));
-    let refreshed: Promise<void> = Promise.resolve();
+    let refreshed: Promise<boolean> = Promise.resolve(false);
     act(() => { refreshed = hook.result.current.refresh(); });
     expect(hook.result.current.refreshing).toBe(true);
     expect(mocks.read).toHaveBeenLastCalledWith(LINK_ID, expect.objectContaining({ advance: true }));
     await act(async () => { answer(delivered); await refreshed; });
+    // The check says it brought a new scan.
+    expect(await refreshed).toBe(true);
     expect(hook.result.current).toMatchObject({ refreshing: false, view: delivered });
     await pass(29_999);
     expect(mocks.read).toHaveBeenCalledTimes(2);

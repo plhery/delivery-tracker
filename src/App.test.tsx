@@ -148,13 +148,41 @@ describe('App', () => {
     renderApp();
     await screen.findByText('Coffee beans ☕');
     const toast = () => screen.getByRole('status');
-    expect(toast()).toHaveTextContent('Added to your deliveries');
+    expect(toast()).toHaveTextContent('Kept · alerts are on');
     expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--success');
-    act(() => announceKeepOutcome({ ...outcome, outcome: 'already' }));
-    expect(toast()).toHaveTextContent('You already follow this parcel');
     act(() => announceKeepOutcome({ ...outcome, outcome: 'quota' }));
-    expect(toast()).toHaveTextContent('Couldn’t add this parcel.');
+    expect(toast()).toHaveTextContent('Your deliveries are full. Archive or delete a few parcels, then add this one.');
     expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--pending');
+    act(() => announceKeepOutcome({ ...outcome, outcome: 'unavailable' }));
+    expect(toast()).toHaveTextContent('This parcel has been forgotten');
+    act(() => announceKeepOutcome({ ...outcome, outcome: 'failed' }));
+    expect(toast()).toHaveTextContent('Couldn’t add this parcel.');
+  });
+
+  it('celebrates the kept parcel’s card once the list has it', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const [first] = await repo.list();
+    renderApp(repo);
+    await screen.findByText('Coffee beans ☕');
+    expect(document.querySelector('.parcel-added-burst')).toBeNull();
+    act(() => announceKeepOutcome({ id: 'k7Qm2xHd9RtW', outcome: 'kept', packageId: first.id, name: null }));
+    expect(document.querySelector('.parcel-added-burst')).toHaveAttribute('data-parcel-id', first.id);
+  });
+
+  it('opens the parcel the account already had when a kept link turns out to be one of its own', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const sneakers = (await repo.list()).find((parcel) => parcel.label.startsWith('New sneakers'))!;
+    renderApp(repo);
+    await screen.findByText('Coffee beans ☕');
+    const entries = window.history.length;
+    act(() => announceKeepOutcome({ id: 'k7Qm2xHd9RtW', outcome: 'already', packageId: sneakers.id, name: null }));
+    expect(await screen.findByRole('dialog', { name: /New sneakers/ })).toBeVisible();
+    expect(new URLSearchParams(window.location.search).get('parcel')).toBe(sneakers.id);
+    expect(window.history.length).toBe(entries + 1);
+    expect(screen.getByText('You already follow this parcel')).toBeInTheDocument();
+    // An address that already names the parcel is left alone.
+    act(() => announceKeepOutcome({ id: 'k7Qm2xHd9RtW', outcome: 'already', packageId: sneakers.id, name: null }));
+    expect(window.history.length).toBe(entries + 1);
   });
 
   it('reports checks that outlive the wait as still running, not as an error', async () => {

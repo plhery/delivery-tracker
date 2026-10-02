@@ -1,16 +1,54 @@
-import type { CSSProperties } from 'react';
-import { CarrierMark } from '../components/CarrierMark';
-import { ParcelIllustration } from '../components/Icon';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Icon, ParcelIllustration } from '../components/Icon';
+import { ParcelMapSheet, useParcelRoute } from '../components/ParcelMap';
+// The journal and the pickup card keep their styles with the deliveries' detail.
+import '../components/ParcelDetail.css';
 import { PeekLockup } from '../components/PeekMark';
+import { PickupPointCard } from '../components/PickupPointCard';
+import { stampOrigin } from '../components/ParcelStamp';
 import { TrackingJournal } from '../components/TrackingJournal';
-import { localizedExpectedDelivery, useI18n } from '../i18n';
+import { localizedEventDescription, stageLabel, useI18n, type MessageKey } from '../i18n';
+import { trackAction, trackScreen } from '../lib/analytics';
 import { carrierBrand } from '../lib/carrierBrand';
-import { carrierInfo, displayedCarrierId, formatTrackingNumber } from '../lib/carriers';
-import { parcelDeliveryEstimate, parcelDisplayStatusKey } from '../lib/parcelStatus';
+import { activeTrackingCarrierId, carrierInfo, displayedCarrierId, formatTrackingNumber, tracksAutomatically } from '../lib/carriers';
+import { parcelHasCarrierUpdate, parcelIsUnannounced } from '../lib/parcelStatus';
+import { pickupPoint } from '../lib/pickupPoint';
+import { currentEvent, isFinal, sortEventsDesc } from '../lib/stages';
 import { maskedNumber, parcelLinkErrorKey, type ParcelLinkView } from './links';
-import { leaveParcelLink, PIP_TRANSITION_NAME } from './route';
-import { useParcelLink } from './useParcelLink';
+import { Actions } from './parcel/Actions';
+import { LinkCard, LiveMarker } from './parcel/Card';
+import { carrierLinks, Notes, NumberSection, ShipmentFacts } from './parcel/Details';
+import { Afterwards, ForgetDialog, ForgetFooter, forgetParcel } from './parcel/Forget';
+import { Glyph } from './parcel/glyphs';
+import { useNow, useOffline, useTabTitle, useWideLayout } from './parcel/hooks';
+import { AddToDeliveries, AlreadyFollowed, KeepCard, KeepSheet, PassportTeaser, SharedWithYou } from './parcel/Keep';
+import { RouteMap } from './parcel/RouteMap';
+import { copyText, shareParcelLink } from './parcel/share';
+import {
+  forgetDate,
+  journeyEndedBefore,
+  momentLabel,
+  parcelDetail,
+  parcelFlag,
+  parcelFreshness,
+  parcelHeadline,
+  parcelStage,
+  parcelTabTitle,
+  previousEstimateLine,
+} from './parcel/summary';
+import { announceNotice, Toast } from './parcel/Toast';
+import { announceKeepOutcome, onKeepOutcome, usePendingKeep, type KeepOutcome } from './pending';
+import { recentFor, renameParcel } from './recents';
+import { leaveParcelLink, parcelLinkURL, PIP_TRANSITION_NAME } from './route';
+import { usePeekSession } from './session';
+import { useParcelLink, type ParcelLinkState } from './useParcelLink';
 import './ParcelPage.css';
+
+/** How long a word at the edge of the screen stays. */
+const TOAST_MS = 4_000;
+const OWN_LINK_AFTER_MS = 1_400;
+const OWN_LINK_MS = 10_000;
+const NEWS_MS = 7_000;
 
 /**
  * One parcel at its own address, for anyone with the link. `entrance="reveal"`
@@ -22,55 +60,290 @@ export function ParcelPage({ linkId, entrance = 'direct', initial }: {
   entrance?: 'reveal' | 'direct';
   initial?: ParcelLinkView;
 }) {
+  const { t } = useI18n();
+  const session = usePeekSession();
+  const state = useParcelLink(linkId, initial);
+  const signedIn = session.account === 'signed-in';
+  useEffect(() => { trackScreen('parcel-link', signedIn ? 'account' : 'anonymous'); }, [signedIn]);
+
+  // Someone signed in goes back to their deliveries; a visitor to the front door.
+  const openDeliveries = session.openDeliveries;
+  const home = useCallback(() => { if (openDeliveries) openDeliveries(); else leaveParcelLink(); }, [openDeliveries]);
+
+  if (state.status === 'unavailable') return <Gone onHome={home} />;
+  if (!state.view) {
+    return <Shell onHome={home} title={`${t('status.syncing')} · ${t('app.title')}`} entrance={entrance}>
+      <div className="peekp-waiting">
+        <div className="peekp-pip peekp-pip--hero" style={{ viewTransitionName: PIP_TRANSITION_NAME }}><ParcelIllustration /></div>
+        {state.trouble ? <>
+          <p role="alert">{t(parcelLinkErrorKey(state.trouble))}</p>
+          <button type="button" className="button button--secondary" disabled={state.refreshing} onClick={() => void state.refresh()}>{t('app.tryAgain')}</button>
+        </> : <p role="status">{t('status.syncing')}</p>}
+      </div>
+    </Shell>;
+  }
+  return <Parcel linkId={linkId} entrance={entrance} state={state} view={state.view} onHome={home} />;
+}
+
+/** The page's frame: the name that leads home, the page's own controls, and the tab's title. */
+function Shell({ title, onHome, controls, banner, brand, entrance, live, news, children }: {
+  title: string;
+  onHome: () => void;
+  controls?: ReactNode;
+  banner?: ReactNode;
+  brand?: CSSProperties;
+  entrance: 'reveal' | 'direct';
+  live?: boolean;
+  news?: boolean;
+  children: ReactNode;
+}) {
+  const { t } = useI18n();
+  useTabTitle(title, `${t('app.title')} — ${t('app.tagline')}`);
+  return <div className="peekp" style={brand}>
+    {banner}
+    <header className="peekp-header">
+      <button type="button" className="peekp-home" aria-label={t('app.title')} onClick={onHome}><PeekLockup /></button>
+      {controls && <div className="peekp-header__controls">{controls}</div>}
+    </header>
+    <main className="peekp-main" data-entrance={entrance} data-live={live || undefined} data-news={news || undefined}>{children}</main>
+  </div>;
+}
+
+/** A link that leads nowhere: forgotten, stopped and never made all look the same. */
+function Gone({ onHome }: { onHome: () => void }) {
+  const { t } = useI18n();
+  return <Shell onHome={onHome} title={`${t('link.gone.title')} · ${t('app.title')}`} entrance="direct">
+    <div className="peekp-gone">
+      <div className="peekp-gone__pip" aria-hidden="true"><ParcelIllustration /></div>
+      <h1>{t('link.gone.title')}</h1>
+      <p>{t('link.gone.body')}</p>
+      <button type="button" className="button button--primary" onClick={onHome}>{t('peek.title')}</button>
+      <p className="peekp-gone__same">{t('link.gone.same')}</p>
+    </div>
+  </Shell>;
+}
+
+type Word = { kind: 'own-link' | 'copied' | 'copy-failed' };
+
+function Parcel({ linkId, entrance, state, view, onHome }: {
+  linkId: string;
+  entrance: 'reveal' | 'direct';
+  state: ParcelLinkState;
+  view: ParcelLinkView;
+  onHome: () => void;
+}) {
   const { t, locale, languageTag } = useI18n();
-  const { status, view, name, trouble, checking, live, refreshing, refresh } = useParcelLink(linkId, initial);
+  const session = usePeekSession();
+  const { name, trouble, checking, live, refreshing, seenAt, news, unseen, previousEstimate, refresh, dismissNews } = state;
+  const { parcel, numberHint, link } = view;
+  const now = useNow();
+  const wide = useWideLayout();
+  const wording = { t, languageTag, now };
 
-  const header = <header className="peekp-header">
-    <button type="button" className="peekp-home" aria-label={t('app.title')} onClick={() => leaveParcelLink()}><PeekLockup /></button>
-  </header>;
-
-  if (status === 'unavailable') {
-    return <main className="peekp peekp--gone">
-      {header}
-      <div className="peekp-body">
-        <h1>{t('link.gone.title')}</h1>
-        <p>{t('link.gone.body')}</p>
-        <button type="button" className="button button--secondary" onClick={() => leaveParcelLink()}>{t('peek.title')}</button>
-      </div>
-    </main>;
-  }
-
-  if (!view) {
-    return <main className="peekp peekp--loading">
-      {header}
-      <div className="peekp-body">
-        <div className="peekp-pip" style={{ viewTransitionName: PIP_TRANSITION_NAME }}><ParcelIllustration /></div>
-        {trouble ? <p role="alert">{t(parcelLinkErrorKey(trouble))}</p> : <p role="status">{t('status.syncing')}</p>}
-      </div>
-    </main>;
-  }
-
-  const { parcel, numberHint } = view;
-  const carrier = carrierInfo(displayedCarrierId(parcel), locale);
+  const stage = parcelStage(parcel);
+  const delivered = stage === 'delivered';
+  const displayed = carrierInfo(displayedCarrierId(parcel), locale);
+  const moving = parcelHasCarrierUpdate(parcel);
+  // No carrier has been found for the number yet: the card stays neutral.
+  const carrierKnown = parcel.carrier !== 'unknown' || moving;
   const number = parcel.trackingNumber ? formatTrackingNumber(parcel.trackingNumber, parcel.carrier)
     : numberHint ? maskedNumber(numberHint) : null;
-  const estimate = parcelDeliveryEstimate(parcel);
-  const brand = { ...carrierBrand(carrier).style, '--carrier-brand': 'light-dark(var(--carrier-brand-light), var(--carrier-brand-dark))' } as CSSProperties;
+  const headline = parcelHeadline(parcel, t);
+  const detail = parcelDetail(parcel, wording);
+  const offline = useOffline() || trouble?.kind === 'offline';
+  const failing = trouble && !offline ? trouble : null;
+  // A number no carrier knows yet says so in its headline already.
+  const flag = (carrierKnown ? parcelFlag(parcel, now) : null) ?? (failing ? 'sync_error' : null);
+  const freshness = parcelFreshness({ parcel, checking, live, offline, trouble: !!failing, seenAt }, wording);
+  const links = carrierLinks(view, locale);
+  const scan = currentEvent(parcel.events);
 
-  return <main className="peekp" style={brand} data-entrance={entrance} data-live={live || undefined}>
-    {header}
-    <div className="peekp-body">
-      <div className="peekp-pip" style={{ viewTransitionName: PIP_TRANSITION_NAME }}>
-        <ParcelIllustration label={{ carrier, number }} />
+  const afterwards = journeyEndedBefore(parcel, now);
+  // Later, a phone's card has no map: the page winds down around the forget date.
+  const { placed, route } = useParcelRoute(parcel, languageTag, wide || !afterwards);
+  const beside = wide && placed;
+  const figure = !wide && placed ? 'map' : delivered && !afterwards ? 'hero' : beside && !afterwards ? 'none' : 'kraft';
+  const [mapOpen, setMapOpen] = useState(false);
+  const openMap = () => { if (route) { trackAction('parcel-map-open'); setMapOpen(true); } };
+
+  const activeCarrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
+  const notes = !carrierKnown ? [t('link.unknown.body', { number: number ?? t('common.parcel') })] : [
+    previousEstimateLine(previousEstimate, parcel, wording),
+    activeCarrier.id !== displayed.id ? t('parcel.deliveryCarrier', { carrier: activeCarrier.name }) : null,
+    !checking && (parcelIsUnannounced(parcel) || stage === 'registered') ? t('link.notScanned', { carrier: displayed.name }) : null,
+  ].filter((note): note is string => !!note);
+
+  // The reveal's last beat: the parcel's own link, offered once the card has settled.
+  const [word, setWord] = useState<Word | null>(null);
+  useEffect(() => {
+    if (entrance !== 'reveal') return;
+    const timer = setTimeout(() => setWord({ kind: 'own-link' }), OWN_LINK_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [entrance]);
+  useEffect(() => {
+    if (!word) return;
+    const timer = setTimeout(() => setWord((current) => current === word ? null : current), word.kind === 'own-link' ? OWN_LINK_MS : TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [word]);
+  useEffect(() => {
+    if (!news) return;
+    const timer = setTimeout(dismissNews, NEWS_MS);
+    return () => clearTimeout(timer);
+  }, [news, dismissNews]);
+
+  const address = parcelLinkURL(linkId);
+  async function share() {
+    const outcome = await shareParcelLink(address);
+    if (outcome === 'copied') setWord({ kind: 'copied' });
+    if (outcome === 'failed') setWord({ kind: 'copy-failed' });
+  }
+  async function copyLink() {
+    const copied = await copyText(address);
+    trackAction('parcel-link-share', copied ? 'success' : 'error');
+    setWord({ kind: copied ? 'copied' : 'copy-failed' });
+  }
+
+  // What a manual check found, for a reader who cannot see the card change.
+  const [checked, setChecked] = useState('');
+  async function check() {
+    setChecked(t('app.refreshing'));
+    setChecked(t(await refresh() ? 'app.refreshComplete' : 'app.refreshUnchanged'));
+  }
+
+  // Keeping: a visitor signs in first; someone signed in adds the parcel with one tap.
+  const signedIn = session.account === 'signed-in';
+  const owner = link.role === 'owner';
+  const pendingId = usePendingKeep();
+  const [keepSheet, setKeepSheet] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<MessageKey | null>(null);
+  const followed = signedIn && parcel.trackingNumber
+    ? session.deliveries?.find((own) => own.trackingNumber === parcel.trackingNumber) : undefined;
+
+  function signInToKeep() {
+    trackAction('parcel-link-sign-in');
+    if (link.canKeep && session.signInWith?.configured) setKeepSheet(true);
+    else session.signIn(link.canKeep ? linkId : undefined);
+  }
+
+  const stopListening = useRef<() => void>(() => undefined);
+  const openDeliveries = session.openDeliveries;
+  const settle = useCallback((outcome: KeepOutcome) => {
+    setAdding(false);
+    if (outcome.outcome !== 'kept' && outcome.outcome !== 'already') {
+      setAddError(outcome.outcome === 'quota' ? 'linkapp.full' : outcome.outcome === 'unavailable' ? 'link.gone.title' : 'add.failed');
+      return;
+    }
+    // The deliveries say how it ended: this page stops listening, so the word reaches them.
+    stopListening.current();
+    openDeliveries?.(outcome.outcome === 'already' ? outcome.packageId : undefined);
+    announceKeepOutcome(outcome);
+  }, [openDeliveries]);
+  useEffect(() => {
+    if (!signedIn) return;
+    // A parcel noted before signing in is kept by the app's entry point; its outcome arrives here.
+    const stop = onKeepOutcome((outcome) => queueMicrotask(() => settle(outcome)));
+    stopListening.current = stop;
+    return stop;
+  }, [signedIn, settle]);
+
+  async function add() {
+    if (!session.keep || adding) return;
+    setAdding(true);
+    setAddError(null);
+    try {
+      settle(await session.keep(linkId));
+    } catch {
+      settle({ id: linkId, outcome: 'failed', name });
+    }
+  }
+
+  // Forgetting: the owner's alone, asked once.
+  const key = owner ? recentFor(linkId)?.key ?? null : null;
+  const [forgetting, setForgetting] = useState(false);
+  async function forget() {
+    if (!key) return;
+    await forgetParcel(linkId, key);
+    announceNotice('link.forget.done');
+    leaveParcelLink();
+  }
+  const askToForget = key ? () => setForgetting(true) : undefined;
+
+  const final = !!stage && isFinal(stage);
+  const forgetOn = forgetDate(link.forgetAt, languageTag);
+  const forgetLine = forgetOn ? t('link.forget.on', { date: forgetOn }) : null;
+  const promise = afterwards ? null : final ? forgetLine : link.kind === 'lookup' ? t('link.forget.promise') : null;
+
+  const visitorCanKeep = !signedIn && session.account === 'visitor' && link.canKeep;
+  const keepAction: MessageKey = owner ? 'link.keep.action' : 'link.signInToAdd';
+  const placedScans = sortEventsDesc(parcel.events).filter((event) => event.place);
+  const origin = stampOrigin(parcel);
+  // The journey ended in another country than the one it was first scanned in.
+  const abroad = delivered && origin && placedScans[0]?.place?.country !== origin ? origin : null;
+
+  const waitingAt = stage === 'ready_for_pickup' ? pickupPoint(parcel.pickupPoint) : null;
+  const automatic = tracksAutomatically(activeCarrier.id);
+  const brand = carrierBrand(displayed).style;
+  const summary = [headline, detail].filter(Boolean).join(' · ');
+
+  const teaser = abroad && !afterwards && session.account === 'visitor' && <PassportTeaser parcel={parcel} origin={abroad} onStart={signInToKeep} />;
+  const keepCard = visitorCanKeep && !afterwards && <KeepCard carrier={displayed} action={keepAction} onKeep={signInToKeep} />;
+  const map = (shape: 'card' | 'tile') => <RouteMap route={route} parcel={parcel} stage={stage} shape={shape} pip={figure === 'map' || figure === 'none'} onOpen={openMap} />;
+
+  return <Shell
+    onHome={onHome}
+    title={parcelTabTitle({ parcel, name, checking, unseen }, wording)}
+    brand={brand}
+    entrance={entrance}
+    live={live}
+    news={!!news}
+    banner={offline && <p className="peekp-offline" role="status"><Glyph name="offline" />{t('link.offline', { time: momentLabel(scan?.occurredAt ?? seenAt ?? '', wording) })}</p>}
+    controls={<>
+      <button type="button" className="icon-button" aria-label={t('app.trackAnother')} onClick={onHome}><Icon name="search" /></button>
+      <button type="button" className="icon-button peekp-header__share" aria-label={t('link.shareAria')} onClick={() => void share()}><Icon name="share" /><span>{t('link.share')}</span></button>
+    </>}
+  >
+    <div className="peekp-columns" data-beside={beside || undefined}>
+      <div className="peekp-column">
+        {followed && <AlreadyFollowed name={followed.label || t('common.parcel')} onOpen={() => { trackAction('parcel-link-open-existing'); openDeliveries?.(followed.id); }} />}
+        {signedIn && !owner && <SharedWithYou />}
+        <LinkCard parcel={parcel} stage={stage} carrier={carrierKnown ? displayed : null} headline={headline} name={name} detail={detail}
+          notes={notes} flag={flag} figure={figure} number={number} links={links} settled={entrance === 'reveal' && !checking}
+          map={figure === 'map' ? map('card') : undefined}
+          marker={<LiveMarker freshness={freshness} busy={refreshing} onCheck={final ? undefined : () => void check()} />} />
+        <p className="sr-only" role="status">{checked}</p>
+        {!carrierKnown && <p className="peekp-keeppage">{t('link.unknown.keep')}</p>}
+        {signedIn && !followed && link.canKeep && <AddToDeliveries busy={adding || pendingId === linkId} error={addError && t(addError)} onAdd={() => void add()} />}
+        {!afterwards && <Actions name={name} onShare={() => void share()} onRename={(next) => renameParcel(linkId, next)} />}
+        {carrierKnown && <Notes view={view} stage={stage} flag={flag} trouble={failing} carrier={displayed} />}
+        {waitingAt && <PickupPointCard point={waitingAt} />}
+        {!beside && teaser}
+        {afterwards && <Afterwards date={forgetLine?.replace(/\.$/, '') ?? null} onForget={askToForget}
+          onKeep={visitorCanKeep ? signInToKeep : undefined} keepLabel={t(keepAction)} onTrackAnother={onHome} />}
+        <NumberSection view={view} links={links} />
+        <ShipmentFacts parcel={parcel} stage={stage} />
+        {carrierKnown && (automatic || moving) && <section className="peekp-journal"><TrackingJournal events={parcel.events} syncing={checking} fold /></section>}
+        {!beside && keepCard}
       </div>
-      <CarrierMark carrier={carrier} />
-      <h1>{t(parcelDisplayStatusKey(parcel))}</h1>
-      {name && <p className="peekp-name">{name}</p>}
-      {estimate && <p className="peekp-estimate">{t('detail.expected', { date: localizedExpectedDelivery(estimate, t, languageTag) })}</p>}
-      {number && <p className="peekp-number"><span>{t('detail.trackingNumber')}</span> <strong>{number}</strong></p>}
-      {trouble && <p className="peekp-trouble" role="status">{t(parcelLinkErrorKey(trouble))}</p>}
-      <button type="button" className="button button--secondary" disabled={refreshing} onClick={() => void refresh()}>{t('detail.checkNow')}</button>
-      <TrackingJournal events={parcel.events} syncing={checking} />
+      {beside && <div className="peekp-column">
+        {map('tile')}
+        {teaser}
+        {keepCard}
+      </div>}
     </div>
-  </main>;
+    <ForgetFooter promise={promise} onForget={afterwards ? undefined : askToForget} />
+
+    {news && <Toast place="top" tone mark={<Icon name="truck" />}>
+      <strong>{t('link.updateToast')}</strong> · {localizedEventDescription(news.description, t) || stageLabel(t, news.stage)}
+    </Toast>}
+    {word?.kind === 'own-link' && <Toast tone mark={<Glyph name="link" />} action={<button type="button" onClick={() => void copyLink()}>{t('detail.copy')}</button>}>
+      {t('link.own')}<small>{address.replace(/^https?:\/\//, '')}</small>
+    </Toast>}
+    {word?.kind === 'copied' && <Toast>{t('link.copied')}</Toast>}
+    {word?.kind === 'copy-failed' && <Toast mark={<Glyph name="info" />}>{t('link.shareFailed')}</Toast>}
+    {keepSheet && session.signInWith && <KeepSheet linkId={linkId} carrier={displayed} title={name ?? number ?? t('common.parcel')} summary={summary}
+      methods={session.signInWith} onClose={() => setKeepSheet(false)} />}
+    {forgetting && <ForgetDialog onForget={forget} onCancel={() => setForgetting(false)} />}
+    {mapOpen && route && <ParcelMapSheet route={route} stage={stage ?? undefined} brand={brand} onClose={() => setMapOpen(false)} />}
+  </Shell>;
 }

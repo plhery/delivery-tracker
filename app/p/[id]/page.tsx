@@ -1,11 +1,19 @@
+import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { ClientApplication } from '../../../src/ClientApplication';
+import { parcelLinkMetadata } from '../../../src/server/parcelLinkMetadata';
 import { isParcelLinkId } from '../../../src/server/publicParcels';
 import { requestLanguage } from '../../../src/server/requestLocale';
 
+/** The link's preview: its status and carrier, read as a viewer and without opening the link. */
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  return parcelLinkMetadata((await params).id);
+}
+
 /**
- * A parcel's own page. The server renders the same shell for every address:
- * whether a link exists is only ever answered by the API, to the browser.
+ * A parcel's own page. The server renders the same page for every address;
+ * only the preview above says what a link shows. The parcel itself is read
+ * by the browser, from the API.
  */
 export default async function ParcelLinkPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();

@@ -81,6 +81,12 @@ Key server modules:
   - The browser keeps the links it looked up or opened in `localStorage`, with their owner
     key, the name given on the device and the last answer. The name is never sent to the
     public routes; it becomes the parcel's label only when the parcel is kept in an account.
+    "Forget it now" deletes the link on the server and the device's copy; keeping a parcel
+    in an account drops the device's copy too.
+  - A link's preview (the page's title, description and image) is written on the server
+    from what a viewer sees: the status, the carrier and the estimate, never the number, a
+    name or a place. Reading it does not count as opening the link, and a link that leads
+    nowhere gets Peek's own preview.
   - A build without an API (`NEXT_PUBLIC_USE_API=false`) answers lookups in the browser with
     fictional parcels from the demo stories, so nothing leaves the device.
   - Lookups are limited per client and overall, per minute in memory and per day in the

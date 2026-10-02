@@ -1,6 +1,5 @@
-import { localizedDeliveryDate, type Translate } from '../i18n';
+import { localizedDeliveryDate, type MessageKey, type Translate } from './messages';
 import type { ParcelWithEvents } from '../types';
-import type { MessageKey } from '../i18n';
 import { currentEvent, stageMeta } from './stages';
 import { activeTrackingCarrierId, tracksAutomatically } from './carriers';
 

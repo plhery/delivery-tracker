@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { parcelHasCarrierUpdate } from '../lib/parcelStatus';
+import { currentEvent } from '../lib/stages';
+import type { TrackingEvent } from '../types';
 import { ParcelLinkError, readParcelLink, type ParcelLinkView } from './links';
 import { forgetRecent, recentFor, rememberParcel, useRecents } from './recents';
 import { linkNameFromHash } from './route';
@@ -8,10 +11,21 @@ const FIRST_CHECK_MS = 2_000;
 const FIRST_CHECK_MAX_MS = 10_000;
 /** Afterwards, while the tab is visible. */
 const LIVE_MS = 30_000;
+/** A tab left in the background keeps asking for a while, slowly, so its title can say a scan arrived. */
+const BACKGROUND_MS = 120_000;
+const BACKGROUND_FOR_MS = 30 * 60_000;
 
 /** A lookup answers before the carrier was asked: its first check has landed once the parcel is no longer waiting for one. */
 export function firstCheckLanded(view: ParcelLinkView): boolean {
   return view.parcel.syncStatus !== 'pending' && view.parcel.syncStatus !== 'syncing';
+}
+
+/** The scan an answer brings that the answer before it did not have. A first check landing is not news. */
+export function newScan(before: ParcelLinkView | null, after: ParcelLinkView): TrackingEvent | null {
+  if (!before || !parcelHasCarrierUpdate(before.parcel) || !parcelHasCarrierUpdate(after.parcel)) return null;
+  const was = currentEvent(before.parcel.events)!;
+  const now = currentEvent(after.parcel.events)!;
+  return now.id !== was.id && Date.parse(now.occurredAt) >= Date.parse(was.occurredAt) ? now : null;
 }
 
 export interface ParcelLinkState {
@@ -25,12 +39,22 @@ export interface ParcelLinkState {
   trouble: ParcelLinkError | null;
   /** The carrier has not been asked yet: the first check is still to land. */
   checking: boolean;
-  /** The page is reading on its own. A hidden tab stops, and catches up when it is shown again. */
+  /** The page is reading on its own, in a tab someone is looking at. */
   live: boolean;
   /** A manual check is running. */
   refreshing: boolean;
-  /** Checks now. In the device demo this also moves the parcel's story one step on. */
-  refresh(): Promise<void>;
+  /** When this device last got an answer for the parcel. */
+  seenAt: string | null;
+  /** The newest scan, when it arrived while the page was open or since this device last looked. */
+  news: TrackingEvent | null;
+  /** How many scans arrived while the tab was in the background; none once it is shown again. */
+  unseen: number;
+  /** The delivery estimate before the carrier changed it, as far as this device saw. */
+  previousEstimate: string | null;
+  /** Checks now, and says whether that brought a new scan. In the device demo this also moves the parcel's story one step on. */
+  refresh(): Promise<boolean>;
+  /** The news has been told. */
+  dismissNews(): void;
 }
 
 const never = () => () => undefined;
@@ -40,9 +64,9 @@ function onVisibilityChange(notify: () => void) {
 }
 
 /**
- * Follows one parcel link: reads it, keeps reading while the tab is visible,
- * and saves every answer to this device's parcels. One link per mount: give
- * the component a `key` when the link can change.
+ * Follows one parcel link: reads it, keeps reading while the tab is visible
+ * and for a while after it is hidden, and saves every answer to this device's
+ * parcels. One link per mount: give the component a `key` when the link can change.
  */
 export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelLinkState {
   const recent = useRecents().find((candidate) => candidate.id === linkId);
@@ -52,9 +76,12 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
   const [answer, setAnswer] = useState<{ view: ParcelLinkView | null; gone: boolean; trouble: ParcelLinkError | null }>(
     { view: initial ?? null, gone: false, trouble: null },
   );
+  const [told, setTold] = useState<{ news: TrackingEvent | null; unseen: number; previousEstimate: string | null }>(
+    { news: null, unseen: 0, previousEstimate: null },
+  );
   const visible = useSyncExternalStore(onVisibilityChange, () => !document.hidden, () => true);
   const [refreshing, setRefreshing] = useState(false);
-  const reader = useRef<(advance: boolean) => Promise<void>>(async () => undefined);
+  const reader = useRef<(advance: boolean) => Promise<boolean>>(async () => false);
   const first = useRef(initial);
 
   useEffect(() => {
@@ -64,43 +91,68 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
     let waits = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | null = null;
+    let hiddenAt = document.hidden ? Date.now() : null;
+    // What the reader saw last: the lookup's answer, or what this device kept from an earlier visit.
+    let shown = first.current ?? recentFor(linkId)?.snapshot ?? null;
 
-    const cadence = () => landed ? LIVE_MS : Math.min(FIRST_CHECK_MAX_MS, FIRST_CHECK_MS * 1.5 ** waits++);
+    const cadence = () => !landed ? Math.min(FIRST_CHECK_MAX_MS, FIRST_CHECK_MS * 1.5 ** waits++)
+      : document.hidden ? BACKGROUND_MS : LIVE_MS;
     const schedule = (delay: number) => {
       clearTimeout(timer);
-      if (!disposed && !gone && !document.hidden) timer = setTimeout(() => void read(false), delay);
+      const watching = !document.hidden || (hiddenAt !== null && Date.now() + delay - hiddenAt <= BACKGROUND_FOR_MS);
+      if (!disposed && !gone && watching) timer = setTimeout(() => void read(false), delay);
     };
 
-    async function read(advance: boolean) {
+    async function read(advance: boolean): Promise<boolean> {
       clearTimeout(timer);
       controller?.abort();
       const current = controller = new AbortController();
       try {
         const result = await readParcelLink(linkId, { key: recentFor(linkId)?.key, signal: current.signal, advance });
-        if (disposed || current.signal.aborted) return;
+        if (disposed || current.signal.aborted) return false;
         if (result === 'unavailable') {
           // Nothing is left to follow, on the server or here.
           gone = true;
           forgetRecent(linkId);
           setAnswer({ view: null, gone: true, trouble: null });
-          return;
+          return false;
         }
         landed = firstCheckLanded(result);
+        const scan = newScan(shown, result);
+        const earlier = shown?.parcel.expectedDelivery;
+        const moved = !!earlier && !!result.parcel.expectedDelivery && earlier !== result.parcel.expectedDelivery;
+        shown = result;
         rememberParcel({ id: linkId, view: result, suggestedName: linkNameFromHash(window.location.hash) });
         setAnswer({ view: result, gone: false, trouble: null });
+        if (scan || moved) {
+          const inBackground = document.hidden;
+          setTold((previous) => ({
+            news: scan ?? previous.news,
+            unseen: previous.unseen + (scan && inBackground ? 1 : 0),
+            previousEstimate: moved ? earlier : previous.previousEstimate,
+          }));
+        }
         schedule(cadence());
+        return !!scan;
       } catch (error) {
-        if (disposed || current.signal.aborted) return;
+        if (disposed || current.signal.aborted) return false;
         const trouble = error instanceof ParcelLinkError ? error : new ParcelLinkError('server', { cause: error });
         setAnswer((previous) => ({ ...previous, trouble }));
         schedule(Math.max(cadence(), (trouble.retryAfterSeconds ?? 0) * 1_000));
+        return false;
       }
     }
     reader.current = read;
 
     const onVisibility = () => {
-      if (document.hidden) clearTimeout(timer);
-      else if (!gone) void read(false);
+      if (document.hidden) {
+        hiddenAt = Date.now();
+        schedule(cadence());
+        return;
+      }
+      hiddenAt = null;
+      setTold((previous) => previous.unseen ? { ...previous, unseen: 0 } : previous);
+      if (!gone) void read(false);
     };
     const onOnline = () => { if (!gone && !document.hidden) void read(false); };
     document.addEventListener('visibilitychange', onVisibility);
@@ -120,8 +172,9 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
-    try { await reader.current(true); } finally { setRefreshing(false); }
+    try { return await reader.current(true); } finally { setRefreshing(false); }
   }, []);
+  const dismissNews = useCallback(() => setTold((previous) => previous.news ? { ...previous, news: null } : previous), []);
 
   const view = answer.view ?? (answer.gone ? null : recent?.snapshot ?? null);
   return {
@@ -132,6 +185,11 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
     checking: !!view && !firstCheckLanded(view),
     live: visible && !answer.gone,
     refreshing,
+    seenAt: recent?.lastSeenAt ?? null,
+    news: told.news,
+    unseen: told.unseen,
+    previousEstimate: told.previousEstimate,
     refresh,
+    dismissNews,
   };
 }

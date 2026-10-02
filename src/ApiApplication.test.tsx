@@ -39,6 +39,9 @@ vi.mock('./peek/ParcelPage', async () => {
       const session = usePeekSession();
       return <div>
         <p>Parcel page {linkId} for {session.account}{session.deliveries ? ` with ${session.deliveries.length} deliveries` : ''}</p>
+        {session.signInWith && <button type="button" onClick={() => void session.signInWith!.signInWithGoogle?.()}>
+          {session.signInWith.configured ? 'Continue with Google here' : 'Sign-in is not set up'}
+        </button>}
         <button type="button" onClick={() => session.signIn(linkId)}>Sign in to keep it</button>
         {session.keep && <button type="button" onClick={() => void session.keep!(linkId).then(mocks.kept)}>Add to my deliveries</button>}
         {session.openDeliveries && <button type="button" onClick={() => session.openDeliveries!('p1')}>Open it</button>}
@@ -219,6 +222,37 @@ describe('ApiApplication', () => {
     result.rerender(<ApiApplication parcelLinkId={LINK_ID} />);
     expect(screen.getByText(`Parcel page ${LINK_ID} for visitor`)).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Add to my deliveries' })).not.toBeInTheDocument();
+  });
+
+  it('hands the parcel page the ways to sign in, so a visitor does not have to leave it', async () => {
+    history.replaceState(null, '', `/p/${LINK_ID}`);
+    mocks.auth.googleEnabled = true;
+    const result = render(<ApiApplication parcelLinkId={LINK_ID} />);
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Continue with Google here' }));
+    expect(mocks.auth.signInWithGoogle).toHaveBeenCalledOnce();
+    expect(location.pathname).toBe(`/p/${LINK_ID}`);
+    mocks.auth.status = 'unconfigured';
+    result.rerender(<ApiApplication parcelLinkId={LINK_ID} />);
+    expect(screen.getByRole('button', { name: 'Sign-in is not set up' })).toBeVisible();
+  });
+
+  it('offers the device’s other parcels to someone who signs in, and takes them with one request', async () => {
+    mocks.auth.status = 'authenticated';
+    mocks.auth.user = USER;
+    rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView() });
+    renameParcel(LINK_ID, 'New sneakers');
+    const fetch = claimAnswering({ id: LINK_ID, outcome: 'kept', packageId: 'p1' });
+    const user = userEvent.setup();
+    render(<ApiApplication />);
+    expect(screen.getByText('owner@example.test')).toBeVisible();
+    const sheet = screen.getByRole('dialog', { name: 'Bring these parcels too?' });
+    expect(sheet).toHaveTextContent('New sneakers');
+    await user.click(screen.getByRole('button', { name: 'Add 1 parcel' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(JSON.parse(String(claims(fetch)[0][1]!.body))).toEqual({ links: [{ id: LINK_ID, key: OWNER_KEY, label: 'New sneakers' }] });
+    expect(recentFor(LINK_ID)).toBeNull();
+    expect(screen.getByText('1 parcel added to your deliveries')).toBeVisible();
+    expect(mocks.retryLoad).toHaveBeenCalled();
   });
 
   it('keeps a parcel page for someone signed in, who can add it and go to their deliveries', async () => {

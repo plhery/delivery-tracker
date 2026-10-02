@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { TrackingJournal } from './TrackingJournal';
 import type { TrackingEvent } from '../types';
@@ -51,5 +52,33 @@ describe('TrackingJournal', () => {
     expect(screen.getByText('0 updates')).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
     expect(screen.getByText(/checking|first update|first tracking/i)).toBeInTheDocument();
+  });
+
+  it('folds a long journey: the two newest days open, three more as one line each, the oldest behind a button', async () => {
+    const day = (number: number, count: number) => Array.from({ length: count }, (_, index) =>
+      event(`d${number}-${index}`, `2024-09-${String(number).padStart(2, '0')}T${String(8 + index).padStart(2, '0')}:00:00`, `Scan ${number}.${index}`));
+    const events = [...day(9, 1), ...day(8, 2), ...day(7, 3), ...day(6, 4), ...day(5, 2), ...day(4, 2), ...day(3, 1)];
+    const { container, rerender } = render(<TrackingJournal events={events} fold />);
+    expect(screen.getByText('15 updates')).toBeInTheDocument();
+    const folded = [...container.querySelectorAll<HTMLDetailsElement>('.tracking-journal__day')];
+    expect(folded.map((entry) => entry.querySelector('summary')!.textContent)).toEqual(['Sat 7 sep 20243 updates', 'Fri 6 sep 20244 updates', 'Thu 5 sep 20242 updates']);
+    expect(folded.every((entry) => !entry.open)).toBe(true);
+    // The open days show their scans; the oldest are not in the page yet.
+    expect(screen.getByText('Scan 9.0')).toBeVisible();
+    expect(screen.getByText('Scan 8.1')).toBeVisible();
+    expect(screen.queryByText('Scan 4.0')).not.toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(folded[0].querySelector('summary')!);
+    expect(folded[0].open).toBe(true);
+    await user.click(screen.getByRole('button', { name: 'Show the 3 oldest updates' }));
+    expect(screen.getByText('Scan 4.0')).toBeVisible();
+    expect(screen.getByText('Scan 3.0')).toBeVisible();
+    expect(screen.queryByRole('button', { name: /oldest/ })).not.toBeInTheDocument();
+    // A short journey, and a journal that is not asked to fold, show everything.
+    rerender(<TrackingJournal events={events.slice(0, 12)} fold />);
+    expect(container.querySelector('.tracking-journal__day')).toBeNull();
+    rerender(<TrackingJournal events={events} />);
+    expect(container.querySelector('.tracking-journal__day')).toBeNull();
+    expect(screen.getByText('Scan 3.0')).toBeVisible();
   });
 });

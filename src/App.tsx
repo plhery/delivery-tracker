@@ -20,6 +20,7 @@ import { Icon, ParcelIllustration } from './components/Icon';
 import { PeekLockup, PeekMark } from './components/PeekMark';
 import { ParcelViewControls } from './components/ParcelViewControls';
 import { PullToRefresh } from './components/PullToRefresh';
+import { ToastMark } from './components/ToastMark';
 import { useRefreshAnimation } from './lib/useRefreshAnimation';
 import {
   type MessageKey,
@@ -48,30 +49,11 @@ import {
 } from './lib/shareTarget';
 import { currentStage, isDelivered } from './lib/stages';
 import { useParcels } from './store/ParcelsContext';
-import { onKeepOutcome } from './peek/pending';
+import { onKeepOutcome, type KeepOutcome } from './peek/pending';
 import type { CarrierId, ParcelWithEvents } from './types';
 
 const DETAIL_HISTORY_KEY = 'parcelPostDetail';
 const PARCEL_VIEW_CONTROLS_ID = 'parcel-view-controls';
-
-function ToastMark({ kind }: { kind: 'archive' | 'pending' | 'success' }) {
-  return (
-    <span className={`toast-mark toast-mark--${kind}`} aria-hidden="true">
-      <svg viewBox="0 0 24 24">
-        {kind === 'success' ? (
-          <path d="m7.5 12.5 3 3 6-7" />
-        ) : kind === 'pending' ? (
-          <path d="M19 8a7.5 7.5 0 1 0 .2 7.6M19 4v4h-4" />
-        ) : (
-          <>
-            <path d="M5 8h14v11H5z" />
-            <path d="M4 5h16v3H4zM9 12h6" />
-          </>
-        )}
-      </svg>
-    </span>
-  );
-}
 
 const ATTENTION_LABELS: Record<ParcelAttention, MessageKey> = {
   sync_error: 'attention.sync_error',
@@ -82,6 +64,15 @@ const ATTENTION_LABELS: Record<ParcelAttention, MessageKey> = {
   stalled: 'attention.stalled',
   not_announced: 'attention.not_announced',
 };
+
+/** How keeping a parcel from its link ended, as the deliveries say it. */
+const KEEP_MESSAGES = {
+  kept: 'link.kept',
+  already: 'link.already.title',
+  quota: 'linkapp.full',
+  unavailable: 'link.gone.title',
+  failed: 'add.failed',
+} as const satisfies Record<KeepOutcome['outcome'], MessageKey>;
 
 export default function App({
   accountEmail,
@@ -182,11 +173,24 @@ export default function App({
   }, [refreshNotice]);
 
   // A parcel kept from its link joins the list: say how that ended, once.
-  useEffect(() => onKeepOutcome(({ outcome }) => setRefreshNotice(
-    outcome === 'kept' ? { mark: 'success', text: t('link.added') }
-      : outcome === 'already' ? { mark: 'success', text: t('link.already.title') }
-        : { mark: 'pending', text: t('add.failed') },
-  )), [t]);
+  const [keptParcelId, setKeptParcelId] = useState<string | null>(null);
+  useEffect(() => onKeepOutcome(({ outcome, packageId }) => {
+    if (outcome === 'kept' && packageId) setKeptParcelId(packageId);
+    // The parcel was in the account already: open it, unless the address already does.
+    if (outcome === 'already' && packageId && new URLSearchParams(window.location.search).get('parcel') !== packageId) {
+      window.history.pushState(window.history.state, '', `?parcel=${encodeURIComponent(packageId)}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+    setRefreshNotice({
+      mark: outcome === 'kept' || outcome === 'already' ? 'success' : 'pending',
+      text: t(KEEP_MESSAGES[outcome]),
+    });
+  }), [t]);
+  // The kept parcel's card celebrates once the list has it.
+  if (keptParcelId && parcels.some((parcel) => parcel.id === keptParcelId)) {
+    setKeptParcelId(null);
+    setParcelBurst(keptParcelId);
+  }
 
   useEffect(() => {
     const interval = window.setInterval(() => setViewNow(Date.now()), 60_000);

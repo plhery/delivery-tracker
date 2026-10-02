@@ -1,0 +1,15 @@
+/* "Bring these parcels too?", over the deliveries of someone who just signed in. */
+.peekp-bring .sheet__heading { margin-bottom: 12px; }
+.peekp-bring .sheet__intro { margin-bottom: 14px; }
+.peekp-bring__list { display: grid; gap: 7px; }
+.peekp-bring__row {
+  --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark));
+  display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 14px; border-radius: 14px; background: var(--paper); cursor: pointer;
+}
+.peekp-bring__row input { width: 20px; height: 20px; flex: 0 0 auto; margin: 0; accent-color: var(--ochre); }
+.peekp-bring__row .carrier-mark__truck { display: block; width: 27px; height: 18px; overflow: visible; }
+.peekp-bring__row > span:last-child { display: grid; gap: 1px; min-width: 0; }
+.peekp-bring__row strong { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.peekp-bring__row small { color: var(--tone); font-size: 12px; }
+.peekp-bring__actions { display: grid; gap: 6px; margin-top: 16px; }
+.peekp-bring__actions .text-button { color: var(--ink-soft); font-size: 13px; }

@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import { ApiAuthenticationError, type ApiAuth } from '../lib/apiClient';
 import { ParcelAlreadyExistsError, type ParcelRepo } from '../types';
 import { claimParcelLinks, forgetParcelLink, readParcelLink } from './links';
@@ -15,6 +16,8 @@ const MAX_AGE_MS = 24 * 60 * 60_000;
 // Without usable storage the note lasts as long as the page, which covers signing in with an emailed code.
 let memory: string | null = null;
 let inMemory = false;
+const eventName = 'peek-pending-keep-change';
+const changed = () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event(eventName)); };
 
 function stored(): string | null {
   if (inMemory) return memory;
@@ -31,6 +34,7 @@ export function rememberPendingKeep(id: string, now = Date.now()): void {
   } catch {
     inMemory = true;
   }
+  changed();
 }
 
 /** The link id waiting to be kept, if the note is still fresh. */
@@ -49,6 +53,17 @@ export function clearPendingKeep(id?: string): void {
   if (id !== undefined && pendingKeep() !== id) return;
   memory = null;
   try { window.sessionStorage.removeItem(PENDING_KEEP_STORAGE_KEY); } catch { /* Nothing was stored. */ }
+  changed();
+}
+
+function subscribe(notify: () => void) {
+  window.addEventListener(eventName, notify);
+  return () => window.removeEventListener(eventName, notify);
+}
+
+/** The link id waiting to be kept, followed as the note is written and dropped. */
+export function usePendingKeep(): string | null {
+  return useSyncExternalStore(subscribe, () => pendingKeep(), () => null);
 }
 
 /** How keeping a parcel ended. `failed` means no answer came; the others are the server's. */

@@ -19,6 +19,7 @@ import { ArrivalScreen } from './components/ArrivalScreen';
 import { FriendInvitation } from './components/FriendInvitation';
 import { usePendingInvitation } from './lib/friendInvites';
 import { KeepPendingInDemo } from './peek/KeepPending';
+import { BringAlongInDemo } from './peek/parcel/BringAlong';
 import { PeekRoot } from './peek/PeekRoot';
 import { useParcelLinkRoute } from './peek/route';
 import { useVisitorSession } from './peek/visitor';
@@ -117,6 +118,7 @@ export function DemoApplication({ repo, invitationRoute = false, parcelLinkId = 
     return <ParcelsProvider repo={repo}>
       <KeepPendingInDemo repo={repo} />
       <App onExitDemo={() => experience.navigate('welcome')} />
+      <BringAlongInDemo repo={repo} />
     </ParcelsProvider>;
   }
   return <ArrivalScreen screen="sign-in" onNavigate={session.leaveSignIn} {...signIn} />;

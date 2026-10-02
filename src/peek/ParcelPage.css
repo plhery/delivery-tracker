@@ -1,19 +1,274 @@
-.peekp { min-height: 100dvh; padding: 0 32px 40px; }
-.peekp-header { display: flex; align-items: center; width: min(100%, 1044px); min-height: 104px; margin: 0 auto; }
-.peekp-home { min-height: 44px; padding: 0; background: transparent; }
-.peekp-body { display: grid; justify-items: center; gap: 12px; width: min(100%, 520px); margin: 0 auto; text-align: center; }
-.peekp-pip { width: min(200px, 55%); }
-.peekp-body h1 { margin: 0; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; letter-spacing: -1px; font-weight: 650; text-wrap: balance; }
-.peekp-body p { margin: 0; color: var(--ink-soft); overflow-wrap: anywhere; }
-.peekp-body .peekp-name { color: var(--ink); font-weight: 600; }
-.peekp-number strong { color: var(--ink); font: 500 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
-.peekp-body .peekp-trouble { color: var(--orange-text); font-size: 13px; }
-.peekp-body .carrier-mark { white-space: nowrap; }
-.peekp-body .tracking-journal { width: 100%; text-align: start; }
-@media (max-width: 760px) {
-  .peekp { padding: env(safe-area-inset-top) 24px 32px; }
-  .peekp-header { min-height: 76px; }
+/* The parcel page. The card and everything that speaks for the parcel take the carrier's colours. */
+.peekp {
+  --tone: light-dark(var(--carrier-ink-light, #657060), var(--carrier-ink-dark, #afb9a9));
+  --tone-surface: light-dark(var(--carrier-surface-light, #eceee7), var(--carrier-surface-dark, #2e342d));
+  --carrier-brand: light-dark(var(--carrier-brand-light, #20251e), var(--carrier-brand-dark, #f5f6f2));
+  min-height: 100dvh; padding-bottom: max(28px, env(safe-area-inset-bottom));
 }
+.peekp-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 64px; padding: max(10px, env(safe-area-inset-top)) 16px 6px 20px; }
+.peekp-home { min-height: 44px; padding: 0; border-radius: 12px; background: transparent; }
+.peekp-header .peek-lockup__tagline { display: none; }
+.peekp-header__controls { display: flex; align-items: center; gap: 2px; }
+.peekp-header__controls svg { width: 20px; height: 20px; }
+.peekp-header__share > span { display: none; }
+.peekp-offline { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; margin: 0; padding: max(6px, env(safe-area-inset-top)) 16px 6px; background: var(--control); color: var(--ink-soft); font-size: 12px; text-align: center; }
+.peekp-offline svg { width: 15px; height: 15px; flex: 0 0 auto; }
+.peekp-offline + .peekp-header { padding-top: 10px; }
+.peekp-main { padding: 2px 16px 0; }
+.peekp-columns { display: grid; gap: 12px; width: min(100%, 520px); margin: 0 auto; }
+.peekp-column { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.peekp-textlink { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0; background: none; color: inherit; font-size: 13px; font-weight: 600; text-align: start; }
+.peekp-textlink svg { width: 14px; height: 14px; }
+
+/* The card. */
+.peekp-card { position: relative; isolation: isolate; overflow: hidden; padding: 20px; border-radius: 24px; background: var(--tone-surface); color: var(--ink); }
+.peekp-card--neutral { --tone: var(--ink-soft); --tone-surface: var(--control); }
+.peekp-card__top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; }
+.peekp-card__top .carrier-mark { min-width: 0; }
+.peekp-card__top .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; overflow: visible; }
+.peekp-card__nocarrier { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: var(--ink-soft); font-size: 12px; font-weight: 650; }
+.peekp-card__nocarrier svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.peekp-card__body { position: relative; display: flex; align-items: center; gap: 16px; margin-top: 14px; }
+.peekp-card__text { flex: 1; min-width: 0; }
+.peekp-card h1 { margin: 0; font-size: 28px; line-height: 1.12; letter-spacing: -.8px; font-weight: 650; text-wrap: balance; overflow-wrap: anywhere; }
+.peekp-card__name { margin: 0 0 4px; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.peekp-card__detail { margin: 8px 0 0; color: var(--tone); font-size: 15px; font-weight: 500; line-height: 1.35; }
+.peekp-card__note { display: block; margin: 6px 0 0; color: var(--tone); font-size: 12px; line-height: 1.45; opacity: .9; overflow-wrap: anywhere; }
+.peekp-card__flag { position: relative; display: flex; align-items: center; gap: 6px; width: fit-content; max-width: 100%; margin: 12px 0 0; padding: 5px 10px 5px 8px; border-radius: 12px; background: color-mix(in srgb, var(--paper) 72%, transparent); color: var(--orange-text); font-size: 12px; font-weight: 500; line-height: 1.4; }
+.peekp-card__flag svg { width: 13px; height: 13px; flex: 0 0 auto; }
+.peekp-card__progress { position: relative; margin-top: 18px; }
+.peekp-card .progress-track { gap: 4px; }
+.peekp-card .progress-track__dot { background: color-mix(in srgb, var(--tone) 13%, transparent); }
+.peekp-card .progress-track__dot--filled { background: color-mix(in srgb, var(--tone) 55%, var(--tone-surface)); }
+.peekp-card__journey { position: relative; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.peekp-card__journey a { display: grid; grid-template-columns: minmax(0, 1fr) 14px; flex: 1 1 140px; gap: 4px 8px; min-height: 56px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--tone) 18%, transparent); border-radius: 12px; color: var(--tone); font-size: 13px; text-decoration: none; }
+.peekp-card__journey a[data-role=active] { background: color-mix(in srgb, var(--tone) 7%, transparent); }
+.peekp-card__journey svg { width: 13px; height: 13px; }
+.peekp-card__journey small { grid-column: 1 / -1; color: var(--ink-soft); font-size: 11px; }
+
+/* Pip, the kraft parcel: in the card's corner, or in its middle when the parcel has arrived. */
+.peekp-pip { position: relative; flex-shrink: 0; width: 116px; margin: -14px -8px -18px 0; }
+.peekp-pip__sparks { position: absolute; inset: 0; pointer-events: none; }
+.peekp-pip__sparks svg { position: absolute; overflow: visible; opacity: 0; animation: peekp-spark 1.5s ease-in-out both; }
+.peekp-pip--hero { width: min(230px, 70%); margin: -6px auto -24px; }
+.peekp-pip .parcel-illustration__shadow { opacity: 0; animation: none; }
+.peekp-pip--open .parcel-illustration__body { animation: parcel-unseal .96s var(--ease-out) both; }
+.peekp-pip--open .parcel-illustration__flap { transform: scaleY(var(--fold-scale)) skewX(var(--fold-skew)); opacity: 1; }
+.peekp-pip--open .parcel-illustration__tape { opacity: 0; transform: translate(-6px, -19px) rotate(-8deg); }
+.peekp-pip--open .parcel-illustration__delivery-card { opacity: 1; transform: translateY(-69px) rotate(-5deg); }
+.peekp-pip--open .parcel-illustration__check { stroke-dashoffset: 0; }
+.peekp-pip--open .parcel-illustration__eye { opacity: 0; animation: none; }
+.peekp-pip--open .parcel-illustration__happy-eye { opacity: 1; }
+.peekp-pip--open .parcel-illustration__light { animation: parcel-light 1.2s ease-out .14s both; }
+.peekp-pip--open .parcel-illustration__glints { opacity: 1; }
+.peekp-pip--open .parcel-illustration__sparkle { animation: parcel-sparkle 1.65s ease-out calc(.28s + var(--sparkle-delay)) both; }
+.peekp-card--hero { padding: 18px 20px 20px; }
+.peekp-card--hero .peekp-card__body { display: block; margin-top: 0; text-align: center; }
+.peekp-card--hero h1 { font-size: 34px; line-height: 1.1; letter-spacing: -1.1px; }
+.peekp-card--hero .peekp-card__detail { margin-top: 6px; }
+.peekp-card--hero .peekp-card__flag { margin-inline: auto; }
+
+/* The marker beside the carrier. */
+.peekp-live { position: relative; display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; min-height: 36px; padding: 0; border-radius: 10px; background: none; color: var(--tone); font-size: 11px; line-height: 1.2; white-space: nowrap; }
+button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
+.peekp-live[data-kind=offline] { color: var(--ink-soft); }
+.peekp-live[aria-busy=true] { opacity: .6; }
+.peekp-live__dot { position: relative; display: inline-block; width: 7px; height: 7px; }
+.peekp-live__dot::after, .peekp-live__dot i { content: ''; position: absolute; inset: 0; border-radius: 50%; background: currentColor; }
+.peekp-live__dot i { opacity: 0; }
+.peekp-live[data-pulse] .peekp-live__dot i { animation: peekp-pulse 2.4s var(--ease-out) infinite; }
+.peekp-live__short { display: none; }
+
+/* The route, in the card's ink. On a phone it runs across the top of the card. */
+.peekp-map { position: relative; }
+.peekp-map__drawing { position: absolute; inset: 0; }
+.peekp-map .peekp-map__canvas {
+  --map-space: transparent; --map-ocean: transparent; --map-land: color-mix(in srgb, var(--tone) 10%, transparent);
+  --map-visited: color-mix(in srgb, var(--tone) 17%, transparent); --map-border: color-mix(in srgb, var(--tone-surface) 80%, transparent);
+  --map-night: transparent; --map-grid: transparent; --map-shade: transparent; --map-limb: color-mix(in srgb, var(--tone) 16%, transparent);
+  --map-route: var(--tone); --map-route-muted: color-mix(in srgb, var(--tone) 45%, transparent); --map-accent: var(--tone);
+  --map-label: var(--tone); --map-label-strong: var(--tone); --map-label-bg: color-mix(in srgb, var(--tone-surface) 92%, transparent);
+  --map-dot-ring: var(--tone-surface);
+  --map-mask: linear-gradient(black 78%, transparent);
+  position: absolute; inset: 0; animation: peekp-fade .5s var(--ease-out) both;
+}
+.peekp-map .peekp-map__canvas * { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.peekp-map__open { position: absolute; inset: 0; width: 100%; padding: 0; border-radius: inherit; background: none; cursor: pointer; }
+.peekp-map__open:disabled { cursor: default; }
+.peekp-map__open:focus-visible { outline-offset: -5px; }
+.peekp-map--card { position: absolute; top: 0; right: 0; left: 0; z-index: 0; height: 236px; border-radius: 24px 24px 0 0; }
+.peekp-card--map { padding-top: 236px; }
+.peekp-card--map .peekp-card__top { position: absolute; top: 16px; right: 16px; left: 20px; z-index: 1; pointer-events: none; }
+.peekp-card--map .peekp-card__top button { pointer-events: auto; }
+.peekp-card--map .peekp-card__body { margin-top: 0; }
+.peekp-map--tile { height: 360px; overflow: hidden; border-radius: 28px; background: var(--tone-surface); }
+.peekp-map__facts { position: absolute; bottom: 18px; left: 24px; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; color: var(--tone); font-size: 12px; font-variant-numeric: tabular-nums; pointer-events: none; }
+
+/* What can be done with the parcel. */
+.peekp-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.peekp-action { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); font-size: 13px; font-weight: 550; text-align: start; transition: scale .18s var(--spring); }
+.peekp-action:active { scale: .975; }
+.peekp-action svg { width: 17px; height: 17px; }
+.peekp-name { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.peekp-name input { grid-column: 1 / -1; min-width: 0; min-height: 50px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); font-size: 16px; }
+.peekp-name input:focus { outline: none; border-color: var(--ochre); box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 20%, transparent); }
+.peekp-name .button { min-height: 44px; padding: 10px 14px; border-radius: 14px; font-size: 13px; }
+.peekp-add { display: grid; gap: 6px; }
+.peekp-add p { margin: 0; color: var(--ink-soft); font-size: 11.5px; text-align: center; }
+.peekp-add .peekp-add__error { color: var(--orange-text); font-size: 12.5px; }
+.peekp-shared { display: flex; align-items: center; gap: 8px; margin: 0 4px -2px; color: var(--ink-soft); font-size: 12px; }
+.peekp-shared svg { width: 15px; height: 15px; }
+.peekp-keeppage { margin: 0 4px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.5; }
+
+/* Notes beside the card. */
+.peekp-notes { display: grid; gap: 12px; }
+.peekp-note, .peekp-already { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 16px; background: var(--control); }
+.peekp-note--paper { border: 1px solid var(--line); background: var(--paper); }
+.peekp-note__icon, .peekp-already > span { padding-top: 1px; color: var(--ink-soft); }
+.peekp-note__icon svg, .peekp-already > span svg { width: 18px; height: 18px; }
+.peekp-note > div, .peekp-already > div { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.peekp-note strong, .peekp-already strong { font-size: 13px; font-weight: 600; }
+.peekp-note p, .peekp-note blockquote, .peekp-already p { margin: 0; color: var(--ink-soft); font-size: 12.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.peekp-note blockquote { quotes: '“' '”'; }
+.peekp-note blockquote::before { content: open-quote; }
+.peekp-note blockquote::after { content: close-quote; }
+.peekp-note a { display: inline-flex; align-items: center; gap: 6px; width: fit-content; min-height: 36px; color: var(--ink); font-size: 13px; font-weight: 600; text-decoration: none; }
+.peekp-note a svg { width: 13px; height: 13px; }
+.peekp-already { background: var(--yellow-soft); color: var(--ochre); }
+.peekp-already > span, .peekp-already p { color: var(--ochre); }
+.peekp .pickup-card { margin: 0; }
+
+/* The number, the carrier's page and the journal. */
+.peekp-number { margin: 0 6px; padding: 4px 0 14px; border-bottom: 1px solid var(--line); }
+.peekp-number__row { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.peekp-number__row > div { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.peekp-number__row span { color: var(--ink-soft); font-size: 10px; }
+.peekp-number__row strong { font: 400 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+.peekp-number__row button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: none; color: var(--ink-soft); }
+.peekp-number__row button svg { width: 15px; height: 15px; stroke-width: 1.2; }
+.peekp-number__error { margin: 4px 0 0; color: var(--orange-text); font-size: 12px; }
+.peekp-number__link { display: flex; align-items: center; gap: 7px; width: fit-content; min-height: 36px; padding: 4px 0; color: var(--tone); font-size: 12px; text-decoration: none; }
+.peekp-number__link svg { width: 13px; height: 13px; }
+.peekp-facts { display: grid; gap: 10px; margin: 2px 6px 0; font-size: 13px; }
+.peekp-facts p { margin: 0; color: var(--ink-soft); font-size: 12px; overflow-wrap: anywhere; }
+.peekp-facts dl { display: grid; gap: 10px; margin: 0; }
+.peekp-facts dl > div { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(0, 2fr); gap: 16px; }
+.peekp-facts dt { color: var(--ink-soft); font-size: 12px; }
+.peekp-facts dd { margin: 0; overflow-wrap: anywhere; white-space: pre-line; }
+.peekp-journal { margin: 4px 6px 0; }
+.peekp-main[data-news] .tracking-journal__current { margin-inline: -10px; padding: 10px; border-radius: 14px; background: var(--control); }
+
+/* Keeping, the passport and what comes afterwards. */
+.peekp-keep, .peekp-passport { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); }
+.peekp-keep > div, .peekp-passport > div { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.peekp-keep h2, .peekp-passport h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: -.1px; }
+.peekp-keep p, .peekp-passport p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+.peekp-stack { position: relative; flex-shrink: 0; width: 58px; height: 50px; }
+.peekp-stack > span { position: absolute; display: flex; align-items: center; width: 46px; height: 30px; padding: 0 6px; border-radius: 8px; box-shadow: 0 1px 3px rgb(0 0 0 / 10%); }
+.peekp-stack > span:nth-child(1) { top: 0; left: 0; background: light-dark(#dfebfa, #263748); transform: rotate(-9deg); }
+.peekp-stack > span:nth-child(2) { top: 8px; left: 4px; background: light-dark(#fff8db, #453c1c); transform: rotate(4deg); }
+.peekp-stack > span:nth-child(3) { top: 16px; left: 8px; background: var(--tone-surface); transform: rotate(-2deg); }
+.peekp-stack .carrier-mark__truck { display: block; width: 22px; height: 15px; overflow: visible; }
+.peekp-passport__stamp { flex-shrink: 0; padding: 0 4px; animation: peekp-land .6s var(--spring) .8s both; }
+.peekp-passport__stamp .parcel-stamp { display: block; width: 48px; height: 61px; rotate: -6deg; }
+.peekp-after { padding: 20px; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); text-align: center; }
+.peekp-after__icon { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--control); color: var(--ink-soft); }
+.peekp-after__icon svg { width: 20px; height: 20px; }
+.peekp-after h2 { margin: 10px 0 6px; font-size: 18px; letter-spacing: -.4px; }
+.peekp-after p { max-width: 290px; margin: 0 auto; color: var(--ink-soft); font-size: 12.5px; line-height: 1.5; }
+.peekp-after > div { display: grid; gap: 8px; margin-top: 16px; }
+.peekp-after > div:empty { display: none; }
+.peekp-after .button svg { width: 19px; height: 19px; }
+.peekp-after__keep { border-color: var(--line); background: var(--paper); color: var(--ink); }
+.peekp-another { display: grid; gap: 10px; margin-top: 10px; }
+.peekp-another h2 { margin: 0 4px; font-size: 13px; font-weight: 600; letter-spacing: 0; }
+.peekp-another .button svg { width: 18px; height: 18px; }
+.peekp-footer { display: grid; gap: 4px; justify-items: center; padding: 18px 0 8px; color: var(--ink-soft); font-size: 11.5px; line-height: 1.5; text-align: center; }
+.peekp-footer p { margin: 0; text-wrap: balance; }
+.peekp-footer p svg { display: inline-block; width: 13px; height: 13px; margin-right: 6px; vertical-align: -2px; stroke-width: 1.5; }
+.peekp-footer__forget { min-height: 36px; padding: 0; background: none; color: var(--ink); font-weight: 550; text-decoration: underline; text-underline-offset: 3px; }
+.peekp-footer a { display: inline-block; padding: 9px 0; }
+
+/* The sheet to sign in and keep the parcel. */
+/* The sheet stands outside the page, so its parcel line carries the carrier's colours itself. */
+.peekp-keepsheet__parcel {
+  --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark)); --tone-surface: light-dark(var(--carrier-surface-light), var(--carrier-surface-dark));
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 18px; background: var(--tone-surface);
+}
+.peekp-keepsheet__parcel .carrier-mark__truck { display: block; width: 27px; height: 18px; overflow: visible; }
+.peekp-keepsheet__parcel > span:last-child { display: grid; gap: 1px; flex: 1; min-width: 0; }
+.peekp-keepsheet__parcel strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.peekp-keepsheet__parcel small { color: var(--tone); font-size: 12px; }
+.peekp-keepsheet__what { margin: 14px 2px 18px; color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
+.peekp-keepsheet .sheet__heading { margin-bottom: 18px; }
+.peekp-keepsheet .auth-flow__heading { display: none; }
+.peekp-keepsheet .auth-flow__privacy { margin-top: 14px; }
+
+/* Waiting for a first answer, and a link that leads nowhere. */
+.peekp-waiting, .peekp-gone { display: grid; justify-items: center; gap: 12px; width: min(100%, 420px); margin: 0 auto; padding: 44px 8px 0; text-align: center; }
+.peekp-waiting p { margin: 0; color: var(--ink-soft); font-size: 13.5px; }
+.peekp-waiting .peekp-pip--hero { width: 190px; margin: 0; }
+.peekp-gone__pip { width: 190px; opacity: .55; filter: grayscale(.4); }
+.peekp-gone__pip .parcel-illustration__body, .peekp-gone__pip .parcel-illustration__shadow, .peekp-gone__pip .parcel-illustration__eye { animation: none; }
+.peekp-gone h1 { margin: 0; font-size: 28px; line-height: 1.12; letter-spacing: -.8px; font-weight: 650; }
+.peekp-gone p { max-width: 300px; margin: 0; color: var(--ink-soft); font-size: 13.5px; line-height: 1.5; }
+.peekp-gone .button { width: 100%; margin-top: 14px; }
+.peekp-gone .peekp-gone__same { margin-top: 6px; font-size: 12px; }
+
+/* The reveal: the card rises, its newest step fills, the scans arrive one after another. */
+.peekp-main[data-entrance=reveal] .peekp-card { animation: peekp-rise .55s var(--spring) both; }
+.peekp-main[data-entrance=reveal] .peekp-actions { animation: peekp-in .4s var(--ease-out) .6s both; }
+.peekp-card[data-settled] .progress-track__dot--current { transform-origin: left; animation: peekp-fill .7s var(--ease-out) .4s both; }
+.peekp-main[data-entrance=reveal] .tracking-journal__events > li { animation: peekp-in .4s var(--ease-out) both; }
+.peekp-main[data-entrance=reveal] .tracking-journal__days > li:nth-child(2) .tracking-journal__events > li { animation-delay: .24s; }
+.peekp-main[data-entrance=reveal] .tracking-journal__days > li:nth-child(n+3) .tracking-journal__events > li { animation-delay: .42s; }
+.peekp-main[data-entrance=reveal] .tracking-journal__events > li:nth-child(2) { animation-delay: .06s; }
+.peekp-main[data-entrance=reveal] .tracking-journal__events > li:nth-child(3) { animation-delay: .12s; }
+.peekp-main[data-entrance=reveal] .tracking-journal__events > li:nth-child(n+4) { animation-delay: .18s; }
+.peekp-main[data-entrance=reveal] .tracking-journal__days > li:nth-child(2) .tracking-journal__events > li:nth-child(n+2) { animation-delay: .3s; }
+@keyframes peekp-in { from { opacity: 0; transform: translateY(7px); } }
+@keyframes peekp-fade { from { opacity: 0; } }
+@keyframes peekp-fill { from { transform: scaleX(0); } }
+@keyframes peekp-land { from { opacity: 0; transform: scale(1.3) rotate(-16deg); } }
+@keyframes peekp-pulse { from { transform: scale(1); opacity: .45; } to { transform: scale(3.2); opacity: 0; } }
+@keyframes peekp-spark { 0%, 100% { opacity: 0; transform: scale(.6) rotate(-10deg); } 45% { opacity: 1; transform: scale(1.1) rotate(8deg); } }
+
+/* Room for the map beside the card. */
+@media (min-width: 761px) {
+  .peekp-header { min-height: 80px; padding: 0 44px; }
+  .peekp-header .peek-lockup__tagline { display: block; }
+  .peekp-header__controls { gap: 8px; }
+  .peekp-header__share { width: auto; min-height: 44px; gap: 9px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); font-size: 13px; font-weight: 550; }
+  .peekp-header__share svg { width: 17px; height: 17px; }
+  .peekp-header__share > span { display: inline; }
+  .peekp-main { padding: 10px 32px 0; }
+  .peekp-footer { padding-top: 40px; }
+}
+.peekp-columns[data-beside] { grid-template-columns: 420px minmax(0, 600px); gap: 40px; width: fit-content; max-width: 100%; }
+.peekp-columns[data-beside] .peekp-column { gap: 14px; }
+.peekp-columns[data-beside] .peekp-card { padding: 24px; }
+.peekp-columns[data-beside] .peekp-card h1 { font-size: 36px; }
+.peekp-columns[data-beside] .peekp-card--hero h1 { font-size: 44px; letter-spacing: -1.4px; }
+.peekp-columns[data-beside] .peekp-pip--hero { width: 300px; }
+.peekp-columns[data-beside] .peekp-column:last-child { gap: 20px; }
 @media (max-width: 360px) {
-  .peekp { padding-left: 17px; padding-right: 17px; }
+  .peekp-header { padding-left: 16px; padding-right: 10px; }
+  .peekp-main { padding-inline: 12px; }
+  .peekp-card { padding: 16px; }
+  .peekp-card h1 { font-size: 23px; letter-spacing: -.6px; }
+  .peekp-card__detail { font-size: 14px; }
+  .peekp-pip { width: 88px; margin: -10px -6px -14px 0; }
+  .peekp-card__body { gap: 10px; }
+  .peekp-live__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .peekp-live__short { display: inline; }
+  .peekp-live[data-kind=live] .peekp-live__label, .peekp-live[data-kind=offline] .peekp-live__label, .peekp-live[data-kind=stale] .peekp-live__label, .peekp-live[data-kind=ended] .peekp-live__label { position: static; width: auto; height: auto; clip-path: none; }
+  .peekp-live[data-kind=live] .peekp-live__short, .peekp-live[data-kind=offline] .peekp-live__short, .peekp-live[data-kind=stale] .peekp-live__short, .peekp-live[data-kind=ended] .peekp-live__short { display: none; }
+  .peekp-card--map { padding-top: 200px; }
+  .peekp-map--card { height: 200px; }
+  .peekp-card--map .peekp-card__top { top: 12px; right: 12px; left: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .peekp-card, .peekp-actions, .peekp-pip__sparks svg, .peekp-map .peekp-map__canvas, .peekp-passport__stamp, .peekp-live__dot i,
+  .peekp-main[data-entrance=reveal] .tracking-journal__events > li, .peekp-card[data-settled] .progress-track__dot--current,
+  .peekp-pip .parcel-illustration__body, .peekp-pip .parcel-illustration__eye, .peekp-pip--open .parcel-illustration__light, .peekp-pip--open .parcel-illustration__sparkle { animation: none !important; }
 }
