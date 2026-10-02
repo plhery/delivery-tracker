@@ -255,9 +255,9 @@ test('fits a 320 px phone in every language, from the field to the foot of the p
     ['en', 'Where’s my parcel?'], ['de', 'Wo ist mein Paket?'], ['fr', 'Où est mon colis ?'], ['it', 'Dov’è il mio pacco?'],
     ['es', '¿Dónde está mi paquete?'], ['pt', 'Onde está a minha encomenda?'], ['pl', 'Gdzie jest moja paczka?'],
   ]) {
+    // Chosen before the page loads: reloading a page that is still fetching makes WebKit log the cancelled requests.
+    await page.addInitScript((value) => localStorage.setItem('deliveryTrackerLocale', value), locale);
     await page.goto('/');
-    await page.evaluate((value) => localStorage.setItem('deliveryTrackerLocale', value), locale);
-    await page.reload();
     await expect(page.getByRole('heading', { level: 1, name: question })).toBeVisible();
     // Walk the page so the map and the cards are in place before measuring.
     await page.locator('.landing-journey').scrollIntoViewIfNeeded();
@@ -298,6 +298,7 @@ test('nothing on the page moves another part of it: the layout holds while every
 test('a browser that has the demo open is never shown the landing on its way there', async ({ page }) => {
   // What the page looked like in every frame from its first paint on.
   await page.addInitScript(() => {
+    localStorage.setItem('sdt.web.experience.v1', 'demo');
     const seen = { landing: false };
     (window as unknown as { __seen: typeof seen }).__seen = seen;
     const look = () => {
@@ -308,8 +309,6 @@ test('a browser that has the demo open is never shown the landing on its way the
     requestAnimationFrame(look);
   });
   await page.goto('/');
-  await page.evaluate(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
-  await page.reload();
   await expect(page.locator('.demo-banner')).toBeVisible();
   expect(await page.evaluate(() => (window as unknown as { __seen: { landing: boolean } }).__seen.landing)).toBe(false);
   // The mark that kept it out of sight is gone once the page knows what to show.
