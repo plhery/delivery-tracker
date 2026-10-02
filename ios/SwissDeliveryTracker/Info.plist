@@ -57,6 +57,8 @@
 	<string>$(SDT_APP_GROUP_IDENTIFIER)</string>
 	<key>SDTEmailOTPEnabled</key>
 	<string>$(SDT_EMAIL_OTP_ENABLED)</string>
+	<key>SDTLinkHosts</key>
+	<string>$(SDT_LINK_HOSTS)</string>
 	<key>SDTGoogleAuthEnabled</key>
 	<string>$(SDT_GOOGLE_AUTH_ENABLED)</string>
 	<key>SDTAppleAuthEnabled</key>

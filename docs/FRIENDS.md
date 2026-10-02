@@ -35,8 +35,8 @@ locations, emails, photos, active shipments or ids.
   that accepted it, and creates nothing new. Unavailable links stay closed.
 - Older link formats (`/i/key#token`, `/invite?preview=hash#token`) still work, and so do
   links on a host the site has left: they redirect to the same address.
-- Personal Team iOS builds open links through the web page's "Open in iOS app" button;
-  universal links need the Associated Domains entitlement.
+- With the iPhone app installed, a link opens in the app. Personal Team iOS builds can't
+  have Associated Domains; there the web page's "Open in the iOS app" button opens it.
 
 Either friend can remove the connection. Turning Friends off deletes the profile,
 invitations and both sides of every friendship, and account deletion cascades the same way.

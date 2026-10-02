@@ -22,10 +22,22 @@ function origin(info, key) {
   }
 }
 
+/** Hosts the site answered on before. The list may be empty. */
+function earlierHosts(info, key) {
+  const list = typeof info[key] === 'string' ? info[key].trim().toLowerCase() : '';
+  if (list.includes('$(')) throw new Error(`${key} is missing from the built app`);
+  for (const host of list.split(/[\s,]+/).filter(Boolean)) {
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(host)) {
+      throw new Error(`${key} must list host names separated by spaces`);
+    }
+  }
+}
+
 /** Check the resolved bundle, since an isolated build can lose Local.xcconfig. */
 export function validateIosInstall(info) {
   if (!flag(info, 'SDTUseAPI')) throw new Error('SDTUseAPI must be YES for an account-enabled iPhone install');
   origin(info, 'SDTAPIBaseURL');
+  earlierHosts(info, 'SDTLinkHosts');
   origin(info, 'SDTSupabaseURL');
   value(info, 'SDTSupabasePublishableKey');
   const google = flag(info, 'SDTGoogleAuthEnabled');

@@ -59,6 +59,7 @@ struct RootView: View {
     @EnvironmentObject private var links: ParcelLinkStore
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab = 0
+    @State private var deliveries = LinkDeliveries()
     private let carrierCatalog = CarrierCatalog.shared
 
     private var sessionContent: some View {
@@ -172,6 +173,7 @@ struct RootView: View {
     }
 
     private func open(_ url: URL) {
+        guard !deliveries.isRepeat(url) else { return }
         if let link = ParcelLinkRoute(url: url) { links.open(link) }
         else if case .friend(let friendID) = NativeRoute(url: url), session.user != nil { friendsActivity.reveal(friendID) }
         else { invitation.open(url) }

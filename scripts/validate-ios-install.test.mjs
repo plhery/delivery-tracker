@@ -4,7 +4,7 @@ import { validateIosInstall } from './validate-ios-install.mjs';
 
 const configured = Object.freeze({
   SDTUseAPI: 'YES',
-  SDTAPIBaseURL: 'https://delivery.example.com',
+  SDTAPIBaseURL: 'https://peek.example.com',
   SDTSupabaseURL: 'https://supabase.example.com',
   SDTSupabasePublishableKey: 'sb_publishable_test',
   SDTGoogleAuthEnabled: 'YES',
@@ -35,11 +35,28 @@ describe('built iPhone sign-in configuration', () => {
       for (const invalid of ['', undefined, `$(${key})`]) {
         assert.throws(() => validateIosInstall({ ...configured, [key]: invalid }), (error) => {
           assert.match(error.message, new RegExp(key));
-          assert.doesNotMatch(error.message, /sb_publishable_test|delivery\.example\.com/);
+          assert.doesNotMatch(error.message, /sb_publishable_test|peek\.example\.com/);
           return true;
         });
       }
     }
+  });
+
+  it('accepts hosts the site answered on before, and none', () => {
+    validateIosInstall({ ...configured, SDTLinkHosts: '' });
+    validateIosInstall({ ...configured, SDTLinkHosts: 'delivery.example.com' });
+    validateIosInstall({ ...configured, SDTLinkHosts: ' Delivery.example.com, old.example.com  third.example.com ' });
+  });
+
+  it('rejects malformed earlier hosts', () => {
+    for (const invalid of ['https://delivery.example.com', 'delivery.example.com:443', 'delivery.example.com/path', 'localhost', '*.example.com']) {
+      assert.throws(() => validateIosInstall({ ...configured, SDTLinkHosts: invalid }), (error) => {
+        assert.match(error.message, /SDTLinkHosts must list host names/);
+        assert.doesNotMatch(error.message, /example\.com/);
+        return true;
+      });
+    }
+    assert.throws(() => validateIosInstall({ ...configured, SDTLinkHosts: '$(SDT_LINK_HOSTS)' }), /SDTLinkHosts is missing/);
   });
 
   it('rejects malformed origins and disabled sign-in providers', () => {

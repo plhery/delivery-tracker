@@ -1,7 +1,14 @@
 // Safe checked-in defaults. Copy Local.xcconfig.example to Local.xcconfig to
 // connect the app to a Supabase-backed production deployment.
 SDT_USE_API = NO
-SDT_API_BASE_URL = https:/$()/delivery.plhery.com
+SDT_API_BASE_URL = https:/$()/peek.plhery.com
+// Hosts the site answered on before, separated by spaces. The app opens their
+// parcel links and invitations too; it calls and shares the API host only.
+SDT_LINK_HOSTS = delivery.plhery.com
+// Associated Domains, which let iOS open a tapped link in the app: the host of
+// SDT_API_BASE_URL, and one earlier host. Without an earlier host, repeat the first.
+SDT_ASSOCIATED_DOMAIN = applinks:peek.plhery.com
+SDT_ASSOCIATED_DOMAIN_LEGACY = applinks:delivery.plhery.com
 SDT_SUPABASE_URL =
 SDT_SUPABASE_PUBLISHABLE_KEY =
 SDT_GOOGLE_AUTH_ENABLED = NO

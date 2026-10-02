@@ -1,7 +1,12 @@
 // This file contains only public client configuration. Never put a Supabase
 // service-role key, APNs private key, or other server secret in the iOS app.
 SDT_USE_API = YES
-SDT_API_BASE_URL = https:/$()/delivery.example.com
+SDT_API_BASE_URL = https:/$()/peek.example.com
+// Your own hosts: see Shared.xcconfig. Leave SDT_LINK_HOSTS empty and give both
+// domains the same value when the site never answered on another host.
+SDT_LINK_HOSTS =
+SDT_ASSOCIATED_DOMAIN = applinks:peek.example.com
+SDT_ASSOCIATED_DOMAIN_LEGACY = applinks:peek.example.com
 SDT_SUPABASE_URL = https:/$()/your-project-ref.supabase.co
 SDT_SUPABASE_PUBLISHABLE_KEY = your-publishable-key
 SDT_GOOGLE_AUTH_ENABLED = YES

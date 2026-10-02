@@ -26,6 +26,17 @@ describe('Personal Team Xcode project preparation', () => {
     );
     assert.doesNotMatch(transformed, /APS_ENVIRONMENT =/);
     assert.doesNotMatch(transformed, /com.apple.SignInWithApple/);
+    // Associated Domains: the capability is recorded as SafariKeychain, and its
+    // entitlement lives only in the file the Personal Team build no longer signs with.
+    assert.doesNotMatch(transformed, /com.apple.SafariKeychain|associated-domains/);
+    const entitlements = await readFile(new URL('../ios/SwissDeliveryTracker/SwissDeliveryTracker.entitlements', import.meta.url), 'utf8');
+    assert.match(
+      entitlements,
+      /<key>com\.apple\.developer\.associated-domains<\/key>\s*<array>\s*<string>\$\(SDT_ASSOCIATED_DOMAIN\)<\/string>\s*<string>\$\(SDT_ASSOCIATED_DOMAIN_LEGACY\)<\/string>\s*<\/array>/,
+    );
+    const defaults = await readFile(new URL('../ios/Configuration/Shared.xcconfig', import.meta.url), 'utf8');
+    assert.match(defaults, /^SDT_ASSOCIATED_DOMAIN = applinks:[a-z0-9.-]+$/m);
+    assert.match(defaults, /^SDT_ASSOCIATED_DOMAIN_LEGACY = applinks:[a-z0-9.-]+$/m);
     assert.equal(transformed.split("SDT_APPLE_AUTH_ENABLED = NO;").length - 1, 2);
     assert.match(
       transformed,

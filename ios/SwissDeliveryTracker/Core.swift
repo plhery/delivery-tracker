@@ -15,11 +15,13 @@ struct AppConfiguration: Sendable {
     let appleAuthEnabled: Bool
     let emailOTPEnabled: Bool
     let appGroupIdentifier: String
+    /// Hosts the site answered on before. Their links still open here; nothing is sent to them.
+    var linkHosts: [String] = []
 
     static let current: AppConfiguration = {
         let useAPI = value("SDTUseAPI").uppercased() == "YES"
         let baseURL = URL(string: value("SDTAPIBaseURL"))
-            ?? URL(string: "https://delivery.plhery.com")!
+            ?? URL(string: "https://peek.plhery.com")!
         let supabase = URL(string: value("SDTSupabaseURL"))
         return AppConfiguration(
             mode: useAPI ? .api : .demo,
@@ -30,9 +32,18 @@ struct AppConfiguration: Sendable {
             appleAuthEnabled: value("SDTAppleAuthEnabled").uppercased() == "YES",
             emailOTPEnabled: value("SDTEmailOTPEnabled").uppercased() != "NO",
             appGroupIdentifier: value("SDTAppGroupIdentifier").nonEmpty
-                ?? "group.com.plhery.SwissDeliveryTracker"
+                ?? "group.com.plhery.SwissDeliveryTracker",
+            linkHosts: linkHosts(in: value("SDTLinkHosts"))
         )
     }()
+
+    /// Host names separated by spaces or commas. Anything that is not a plain host name is left out.
+    static func linkHosts(in list: String) -> [String] {
+        list.lowercased()
+            .split(whereSeparator: { $0 == " " || $0 == "," })
+            .map(String.init)
+            .filter { $0.range(of: #"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$"#, options: .regularExpression) != nil }
+    }
 
     var authenticationConfigured: Bool {
         supabaseURL != nil && !supabasePublishableKey.isEmpty

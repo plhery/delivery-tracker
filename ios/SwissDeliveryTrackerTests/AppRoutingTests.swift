@@ -32,7 +32,7 @@ final class AppRoutingTests: XCTestCase {
 
     func testInvitationLinksKeepTheTokenOutOfHTTPPathsAndQueries() {
         let code = String(repeating: "a", count: 32)
-        let base = URL(string: "https://delivery.plhery.com")!
+        let base = URL(string: "https://peek.plhery.com")!
         let url = FriendInvitationLink.url(code: code, baseURL: base)
         XCTAssertEqual(url.path, "/invite")
         XCTAssertEqual(url.query, "preview=3ba3f5f43b92602683c19aee62a20342b084dd5971ddd33808d81a328879a547")
@@ -41,9 +41,9 @@ final class AppRoutingTests: XCTestCase {
         XCTAssertEqual(url.fragment, code)
         XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString, baseURL: base), code)
         XCTAssertEqual(FriendInvitationLink.code(from: "swissdeliverytracker://invite#" + code), code)
-        for text in ["https://evil.example/invite#" + code, "https://delivery.plhery.com/invite?name=Paul#" + code,
-                     "https://user@delivery.plhery.com/invite#" + code, "https://delivery.plhery.com/invite#short",
-                     "http://delivery.plhery.com/invite#" + code, "swissdeliverytracker://auth-callback#" + code] {
+        for text in ["https://evil.example/invite#" + code, "https://peek.plhery.com/invite?name=Paul#" + code,
+                     "https://user@peek.plhery.com/invite#" + code, "https://peek.plhery.com/invite#short",
+                     "http://peek.plhery.com/invite#" + code, "swissdeliverytracker://auth-callback#" + code] {
             XCTAssertNil(FriendInvitationLink.code(from: text, baseURL: base))
         }
     }
@@ -51,7 +51,7 @@ final class AppRoutingTests: XCTestCase {
     func testShortInvitationLinksAndLegacyCompatibility() {
         let code = String(repeating: "a", count: 32)
         let preview = "Ab7kP2mQ9xR4tY6n"
-        let base = URL(string: "https://delivery.plhery.com")!
+        let base = URL(string: "https://peek.plhery.com")!
         let url = FriendInvitationLink.url(code: code, previewId: preview, baseURL: base)
         XCTAssertEqual(url.absoluteString, base.absoluteString + "/i/" + preview)
         XCTAssertNil(url.query)
@@ -122,12 +122,12 @@ final class AppRoutingTests: XCTestCase {
     }
 
     func testParcelLinksOpenFromTheAppsOwnHostAndScheme() {
-        let base = URL(string: "https://delivery.plhery.com")!
+        let base = URL(string: "https://peek.plhery.com")!
         let id = "k7Qm2xHd9RtW"
-        for text in ["https://delivery.plhery.com/p/" + id,
-                     "https://DELIVERY.plhery.com/p/" + id,
-                     "https://delivery.plhery.com/p/" + id + "?utm_source=chat",
-                     "https://delivery.plhery.com/p/" + id + "/",
+        for text in ["https://peek.plhery.com/p/" + id,
+                     "https://PEEK.plhery.com/p/" + id,
+                     "https://peek.plhery.com/p/" + id + "?utm_source=chat",
+                     "https://peek.plhery.com/p/" + id + "/",
                      "swissdeliverytracker://p/" + id,
                      "SwissDeliveryTracker://P/" + id] {
             XCTAssertEqual(ParcelLinkRoute(url: URL(string: text)!, baseURL: base), ParcelLinkRoute(id: id), text)
@@ -136,21 +136,21 @@ final class AppRoutingTests: XCTestCase {
         let local = URL(string: "http://localhost:3000")!
         XCTAssertEqual(ParcelLinkRoute(url: URL(string: "http://localhost:3000/p/" + id)!, baseURL: local)?.id, id)
         XCTAssertNil(ParcelLinkRoute(url: URL(string: "http://localhost:4000/p/" + id)!, baseURL: local))
-        XCTAssertNil(ParcelLinkRoute(url: URL(string: "https://delivery.plhery.com/p/" + id)!, baseURL: local))
+        XCTAssertNil(ParcelLinkRoute(url: URL(string: "https://peek.plhery.com/p/" + id)!, baseURL: local, linkHosts: []))
 
         for text in ["https://evil.example/p/" + id,
-                     "https://delivery.plhery.com.evil.example/p/" + id,
-                     "https://user@delivery.plhery.com/p/" + id,
-                     "http://delivery.plhery.com/p/" + id,
-                     "https://delivery.plhery.com:8443/p/" + id,
-                     "https://delivery.plhery.com/p/" + id + "/extra",
-                     "https://delivery.plhery.com/P/" + id,
-                     "https://delivery.plhery.com/x/p/" + id,
-                     "https://delivery.plhery.com/p/" + id + "%0A",
-                     "https://delivery.plhery.com/p/" + String(id.dropLast()),
-                     "https://delivery.plhery.com/p/" + id + "2",
-                     "https://delivery.plhery.com/p/",
-                     "https://delivery.plhery.com/i/" + id,
+                     "https://peek.plhery.com.evil.example/p/" + id,
+                     "https://user@peek.plhery.com/p/" + id,
+                     "http://peek.plhery.com/p/" + id,
+                     "https://peek.plhery.com:8443/p/" + id,
+                     "https://peek.plhery.com/p/" + id + "/extra",
+                     "https://peek.plhery.com/P/" + id,
+                     "https://peek.plhery.com/x/p/" + id,
+                     "https://peek.plhery.com/p/" + id + "%0A",
+                     "https://peek.plhery.com/p/" + String(id.dropLast()),
+                     "https://peek.plhery.com/p/" + id + "2",
+                     "https://peek.plhery.com/p/",
+                     "https://peek.plhery.com/i/" + id,
                      "swissdeliverytracker://parcel/" + id,
                      "swissdeliverytracker://p/" + id + "/extra",
                      "swissdeliverytracker://p",
@@ -172,14 +172,68 @@ final class AppRoutingTests: XCTestCase {
         let link = URL(string: "swissdeliverytracker://p/" + id)!
         XCTAssertNil(NativeRoute(url: link))
         XCTAssertFalse(FriendInvitationLink.isInvitation(link, baseURL: base))
-        XCTAssertFalse(FriendInvitationLink.isInvitation(URL(string: "https://delivery.plhery.com/p/" + id)!, baseURL: base))
+        XCTAssertFalse(FriendInvitationLink.isInvitation(URL(string: "https://peek.plhery.com/p/" + id)!, baseURL: base))
+    }
+
+    func testLinksFromAHostTheSiteLeftStillOpenAndNothingIsBuiltOnIt() {
+        let base = URL(string: "https://peek.plhery.com")!
+        let earlier = ["delivery.plhery.com"]
+        let id = "k7Qm2xHd9RtW"
+        let preview = "Ab7kP2mQ9xR4tY6n"
+        let code = String(repeating: "a", count: 32)
+
+        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "https://delivery.plhery.com/p/" + id + "#n=Moon%20lamp")!, baseURL: base, linkHosts: earlier),
+                       ParcelLinkRoute(id: id, name: "Moon lamp"))
+        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "https://DELIVERY.plhery.com/p/" + id + "?utm_source=chat")!, baseURL: base, linkHosts: earlier)?.id, id)
+        XCTAssertEqual(FriendInvitationLink.code(from: "https://delivery.plhery.com/i/" + preview, baseURL: base, linkHosts: earlier), preview)
+        XCTAssertEqual(FriendInvitationLink.code(from: "https://delivery.plhery.com/invite#" + code, baseURL: base, linkHosts: earlier), code)
+        XCTAssertTrue(FriendInvitationLink.isInvitation(URL(string: "https://delivery.plhery.com/invite")!, baseURL: base, linkHosts: earlier))
+        // The site's own host opens as before.
+        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "https://peek.plhery.com/p/" + id)!, baseURL: base, linkHosts: earlier)?.id, id)
+        XCTAssertEqual(FriendInvitationLink.code(from: "https://peek.plhery.com/i/" + preview, baseURL: base, linkHosts: earlier), preview)
+
+        // Only the hosts named in the configuration, over HTTPS on its own port.
+        for text in ["http://delivery.plhery.com", "https://delivery.plhery.com:8443", "https://user@delivery.plhery.com",
+                     "https://delivery.plhery.com.evil.example", "https://old.delivery.plhery.com", "https://evil.example"] {
+            XCTAssertNil(ParcelLinkRoute(url: URL(string: text + "/p/" + id)!, baseURL: base, linkHosts: earlier), text)
+            XCTAssertNil(FriendInvitationLink.code(from: text + "/i/" + preview, baseURL: base, linkHosts: earlier), text)
+            XCTAssertFalse(SiteLink.belongs(URL(string: text + "/")!, baseURL: base, linkHosts: earlier), text)
+        }
+        XCTAssertNil(ParcelLinkRoute(url: URL(string: "https://delivery.plhery.com/p/" + id)!, baseURL: base, linkHosts: []))
+        XCTAssertNil(FriendInvitationLink.code(from: "https://delivery.plhery.com/i/" + preview, baseURL: base, linkHosts: []))
+        // The same paths and ids as on the site's own host, nothing more.
+        XCTAssertNil(ParcelLinkRoute(url: URL(string: "https://delivery.plhery.com/p/" + id + "/extra")!, baseURL: base, linkHosts: earlier))
+        XCTAssertNil(FriendInvitationLink.code(from: "https://delivery.plhery.com/i/short", baseURL: base, linkHosts: earlier))
+        XCTAssertFalse(FriendInvitationLink.isInvitation(URL(string: "https://delivery.plhery.com/")!, baseURL: base, linkHosts: earlier))
+
+        // A link the app shares is always on the site's own host.
+        XCTAssertEqual(FriendInvitationLink.url(code: code, previewId: preview, baseURL: base).absoluteString, "https://peek.plhery.com/i/" + preview)
+        XCTAssertEqual(FriendInvitationLink.url(code: code, baseURL: base).host, "peek.plhery.com")
+
+        XCTAssertEqual(AppConfiguration.linkHosts(in: " Delivery.plhery.com,old.example.com  third.example.com "),
+                       ["delivery.plhery.com", "old.example.com", "third.example.com"])
+        XCTAssertEqual(AppConfiguration.linkHosts(in: ""), [])
+        XCTAssertEqual(AppConfiguration.linkHosts(in: "https://delivery.plhery.com delivery.plhery.com:443 localhost user@old.example.com *.example.com -a.example.com"), [])
+    }
+
+    func testATappedWebLinkDeliveredTwiceOpensOnce() {
+        let link = URL(string: "https://peek.plhery.com/p/k7Qm2xHd9RtW")!
+        let other = URL(string: "https://peek.plhery.com/i/Ab7kP2mQ9xR4tY6n")!
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        var deliveries = LinkDeliveries()
+        XCTAssertFalse(deliveries.isRepeat(link, now: start))
+        XCTAssertTrue(deliveries.isRepeat(link, now: start.addingTimeInterval(0.05)))
+        // Another link, or the same one tapped again later, opens.
+        XCTAssertFalse(deliveries.isRepeat(other, now: start.addingTimeInterval(0.1)))
+        XCTAssertFalse(deliveries.isRepeat(link, now: start.addingTimeInterval(0.2)))
+        XCTAssertFalse(deliveries.isRepeat(link, now: start.addingTimeInterval(2)))
     }
 
     func testAParcelLinkCarriesItsNameOnlyAfterTheHash() {
-        let base = URL(string: "https://delivery.plhery.com")!
+        let base = URL(string: "https://peek.plhery.com")!
         let id = "k7Qm2xHd9RtW"
         func name(_ fragment: String) -> String? {
-            ParcelLinkRoute(url: URL(string: "https://delivery.plhery.com/p/" + id + fragment)!, baseURL: base)?.name
+            ParcelLinkRoute(url: URL(string: "https://peek.plhery.com/p/" + id + fragment)!, baseURL: base)?.name
         }
         XCTAssertEqual(name("#n=New%20sneakers"), "New sneakers")
         XCTAssertEqual(name("#n=Caf%C3%A9%20%E2%98%95"), "Café ☕")
@@ -192,7 +246,7 @@ final class AppRoutingTests: XCTestCase {
             XCTAssertNil(name(fragment), fragment)
         }
         // The link opens whatever follows the hash.
-        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "https://delivery.plhery.com/p/" + id + "#anything")!, baseURL: base), ParcelLinkRoute(id: id))
+        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "https://peek.plhery.com/p/" + id + "#anything")!, baseURL: base), ParcelLinkRoute(id: id))
 
         // The name is cleaned to what a parcel's name may hold: one line, 80 characters.
         XCTAssertEqual(ParcelLinkRoute.name(inFragment: "n=%20Line%0Aone%09two%20"), "Line one two")

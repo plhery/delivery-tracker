@@ -29,6 +29,22 @@ APNs key, OAuth secret or SMTP credential in the app.
   foreground, with the generated catalog bundled as offline fallback. New carriers don't
   need an app release.
 
+## Links that open in the app
+
+Parcel links (`/p/…`) and invitations (`/i/…`, `/invite`) open in the app when it is
+installed. Two things make that work, both set in `Configuration/Shared.xcconfig`:
+
+- **Associated Domains** (`SDT_ASSOCIATED_DOMAIN`, `SDT_ASSOCIATED_DOMAIN_LEGACY`) tell iOS
+  which hosts hand their links to the app. Each host must serve
+  `/.well-known/apple-app-site-association` naming this app
+  ([DEPLOYMENT.md](../docs/DEPLOYMENT.md)).
+- **Accepted hosts**: the app opens a link only from the host of `SDT_API_BASE_URL` or from
+  `SDT_LINK_HOSTS`, the hosts the site answered on before. It never calls those hosts and
+  never shares a link on them.
+
+Elsewhere, `swissdeliverytracker://p/<id>` and `swissdeliverytracker://invite#<key>` open
+the same screens.
+
 ## Signing for a device
 
 1. Select your team for the app, `ShareExtension` and `DeliveryWidget` targets.
@@ -36,14 +52,15 @@ APNs key, OAuth secret or SMTP credential in the app.
    or change them to your own.
 3. Create the App Group, set `SDT_APP_GROUP_IDENTIFIER` in `Shared.xcconfig`, and enable
    it on all three targets.
-4. Enable Push Notifications on the app id.
+4. Enable Push Notifications and Associated Domains on the app id.
 5. Create an APNs key and set `APNS_TEAM_ID`, `APNS_KEY_ID`, `APNS_PRIVATE_KEY` and
    `APNS_BUNDLE_ID` on the server. The bundle id must match the installed app.
 
 `scripts/refresh-ios-app.sh` can also install with a free Personal Team. Apple doesn't
-allow App Groups or push there, so the widget can't read parcels and Live Activities don't
-update while the app is closed. Sign in with Apple also needs a paid team
-([AUTHENTICATION.md](../docs/AUTHENTICATION.md)).
+allow App Groups, push or Associated Domains there, so the widget can't read parcels, Live
+Activities don't update while the app is closed, and links open in the browser first: the
+invitation page then offers "Open in the iOS app". Sign in with Apple also needs a paid
+team ([AUTHENTICATION.md](../docs/AUTHENTICATION.md)).
 
 ## Notifications, widgets, Live Activities
 

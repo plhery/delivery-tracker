@@ -8,7 +8,7 @@ const replacements = [
     1,
   ],
   [
-    'A10000000000000000000001 = {CreatedOnToolsVersion = 26.6; SystemCapabilities = {com.apple.ApplicationGroups.iOS = {enabled = 1; }; com.apple.Push = {enabled = 1; }; com.apple.SignInWithApple = {enabled = 1; }; }; };',
+    'A10000000000000000000001 = {CreatedOnToolsVersion = 26.6; SystemCapabilities = {com.apple.ApplicationGroups.iOS = {enabled = 1; }; com.apple.Push = {enabled = 1; }; com.apple.SafariKeychain = {enabled = 1; }; com.apple.SignInWithApple = {enabled = 1; }; }; };',
     'A10000000000000000000001 = {CreatedOnToolsVersion = 26.6; };',
     1,
   ],

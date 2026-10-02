@@ -1,17 +1,51 @@
 import Foundation
 import CryptoKit
 
+/// The web addresses whose links open in the app: the site itself, and the hosts it answered on
+/// before, so links shared from there keep working. Those hosts are only ever read from an
+/// incoming link. The app calls the API and builds the links it shares on the site's own host.
+enum SiteLink {
+    static func belongs(
+        _ url: URL,
+        baseURL: URL = AppConfiguration.current.apiBaseURL,
+        linkHosts: [String] = AppConfiguration.current.linkHosts
+    ) -> Bool {
+        guard url.user == nil, url.password == nil, let host = url.host?.lowercased() else { return false }
+        if url.scheme == baseURL.scheme, host == baseURL.host?.lowercased(), url.port == baseURL.port { return true }
+        return url.scheme == "https" && url.port == nil && linkHosts.contains(host)
+    }
+}
+
+/// A tapped web link can reach the app twice, as a URL to open and as a browsing activity to
+/// continue. It opens once.
+struct LinkDeliveries {
+    private var last: (url: URL, at: Date)?
+
+    mutating func isRepeat(_ url: URL, now: Date = .now) -> Bool {
+        defer { last = (url, now) }
+        guard let last else { return false }
+        return last.url == url && now.timeIntervalSince(last.at) >= 0 && now.timeIntervalSince(last.at) < 1
+    }
+}
+
 enum FriendInvitationLink {
-    static func isInvitation(_ url: URL, baseURL: URL = AppConfiguration.current.apiBaseURL) -> Bool {
+    static func isInvitation(
+        _ url: URL,
+        baseURL: URL = AppConfiguration.current.apiBaseURL,
+        linkHosts: [String] = AppConfiguration.current.linkHosts
+    ) -> Bool {
         guard url.user == nil, url.password == nil else { return false }
         if url.scheme?.lowercased() == OAuthFlow.callbackScheme { return url.host?.lowercased() == "invite" && url.path.isEmpty }
-        return url.scheme == baseURL.scheme && url.host?.lowercased() == baseURL.host?.lowercased()
-            && url.port == baseURL.port && (url.path == "/invite" || url.path.hasPrefix("/i/"))
+        return SiteLink.belongs(url, baseURL: baseURL, linkHosts: linkHosts) && (url.path == "/invite" || url.path.hasPrefix("/i/"))
     }
 
-    static func code(from text: String, baseURL: URL = AppConfiguration.current.apiBaseURL) -> String? {
+    static func code(
+        from text: String,
+        baseURL: URL = AppConfiguration.current.apiBaseURL,
+        linkHosts: [String] = AppConfiguration.current.linkHosts
+    ) -> String? {
         guard let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
-              isInvitation(url, baseURL: baseURL) else { return nil }
+              isInvitation(url, baseURL: baseURL, linkHosts: linkHosts) else { return nil }
         if url.path.hasPrefix("/i/") {
             let key = String(url.path.dropFirst(3))
             return validPreviewID(key) ? key : nil
@@ -69,15 +103,18 @@ struct ParcelLinkRoute: Equatable, Sendable {
         self.name = name
     }
 
-    init?(url: URL, baseURL: URL = AppConfiguration.current.apiBaseURL) {
+    init?(
+        url: URL,
+        baseURL: URL = AppConfiguration.current.apiBaseURL,
+        linkHosts: [String] = AppConfiguration.current.linkHosts
+    ) {
         guard url.user == nil, url.password == nil else { return nil }
         let id: String
         if url.scheme?.lowercased() == OAuthFlow.callbackScheme {
             guard url.host?.lowercased() == "p", url.path.hasPrefix("/") else { return nil }
             id = String(url.path.dropFirst())
         } else {
-            guard url.scheme == baseURL.scheme, url.host?.lowercased() == baseURL.host?.lowercased(),
-                  url.port == baseURL.port, url.path.hasPrefix("/p/") else { return nil }
+            guard SiteLink.belongs(url, baseURL: baseURL, linkHosts: linkHosts), url.path.hasPrefix("/p/") else { return nil }
             id = String(url.path.dropFirst(3))
         }
         guard Self.validID(id) else { return nil }
