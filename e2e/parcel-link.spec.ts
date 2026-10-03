@@ -204,7 +204,7 @@ test('shows still frames under reduced motion', async ({ page }) => {
   expect(await running()).toBe(0);
 });
 
-test('keeps the parcel after “Sign in to keep it”: the demo takes it with its name and history, then offers the device’s other parcels', async ({ page }) => {
+test('keeps the parcel after “Create an account”: the demo takes it with its name and history, then offers the device’s other parcels', async ({ page }) => {
   // Two parcels looked up on this device; the first gets a name.
   await track(page, '1ZDEMO202600000009');
   await page.getByRole('button', { name: 'Name it' }).click();
@@ -217,7 +217,7 @@ test('keeps the parcel after “Sign in to keep it”: the demo takes it with it
   // Back on the first one's own link, after a reload: keep it.
   await page.goto(first);
   await expect(page.locator('.peekp-card__name')).toHaveText('Kind of Blue');
-  await page.getByRole('button', { name: 'Sign in to keep it' }).click();
+  await page.getByRole('button', { name: /^All your parcels in one place/ }).click();
   await expect(page).toHaveURL(/\/$/);
   await page.getByRole('button', { name: 'Explore the demo' }).click();
   await expect(page.getByText('Kept · alerts are on')).toBeVisible();
@@ -240,10 +240,45 @@ test('keeps the parcel after “Sign in to keep it”: the demo takes it with it
   await expect(page.getByRole('heading', { level: 1, name: 'This parcel has been forgotten' })).toBeVisible();
 });
 
+test('lists the device’s other parcels at the foot of a page, and opens one on its card', async ({ page }) => {
+  await track(page, 'DEMOGLS20260009');
+  const first = page.url();
+  // Nothing else on this device, and the parcel is on its way: the page ends with its journey.
+  await expect(page.getByRole('region', { name: 'Also on this device' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Waiting for something else?' })).toHaveCount(0);
+  await track(page, '1ZDEMO202600000009');
+  await expect(status(page)).toHaveText('In transit');
+  const check = page.getByRole('button', { name: /Check now$/ });
+  await check.click();
+  await expect(status(page)).toHaveText('Out for delivery');
+  await check.click();
+  await expect(status(page)).toHaveText('Delivered');
+  // The day Peek forgets the parcel is a line of the footer, not a card.
+  await expect(page.locator('footer').getByText(/^Peek forgets this parcel on \d+ \p{L}+\.$/u)).toBeVisible();
+  await expect(page.locator('footer').getByRole('button', { name: 'Forget it now' })).toBeVisible();
+
+  const others = page.getByRole('region', { name: 'Also on this device' });
+  await expect(others.getByRole('link')).toHaveCount(1);
+  await expect(others.getByRole('link')).toContainText('DEMOGLS…0009');
+  await expect(others.getByRole('link')).toContainText('In transit');
+  await expect(others.getByText('Kept in this browser only.')).toBeVisible();
+  await expect(others.getByRole('button', { name: 'Create an account to keep them, with alerts' })).toBeVisible();
+  await others.getByRole('link').click();
+  await expect(page).toHaveURL(first);
+  await expect(status(page)).toHaveText('In transit');
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+  // Back returns to the parcel the list was on.
+  await page.goBack();
+  await expect(status(page)).toHaveText('Delivered');
+  await others.getByRole('button', { name: 'Track another parcel' }).click();
+  await expect(frontDoor(page)).toBeVisible();
+});
+
 test('opens the parcel the deliveries already had when the kept number is one of theirs', async ({ page }) => {
   await track(page, '1234567899');
   await expect(status(page)).toHaveText('Ready for pickup');
-  await page.getByRole('button', { name: 'Sign in to keep it' }).click();
+  // The header's button keeps the parcel too.
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByRole('button', { name: 'Explore the demo' }).click();
   await expect(page.getByRole('dialog', { name: /New sneakers/ })).toBeVisible();
   await expect(page.getByText('You already follow this parcel')).toBeVisible();

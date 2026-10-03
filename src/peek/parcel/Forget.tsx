@@ -90,33 +90,3 @@ export function ForgetFooter({ promise, onForget }: {
     </p>
   </footer>;
 }
-
-/**
- * Later, once the journey is over: the day Peek forgets the parcel, and what
- * can still be done with it.
- */
-export function Afterwards({ date, onForget, keepLabel, onKeep, onTrackAnother }: {
-  /** "Peek forgets this parcel on 30 Oct", when the link has such a day. */
-  date: string | null;
-  onForget?: () => void;
-  keepLabel?: string;
-  onKeep?: () => void;
-  onTrackAnother: () => void;
-}) {
-  const { t } = useI18n();
-  return <>
-    {(date || onForget || onKeep) && <section className="peekp-after" aria-labelledby={date ? 'peekp-after-title' : undefined}>
-      <span className="peekp-after__icon" aria-hidden="true"><Icon name="hourglass" /></span>
-      {date && <h2 id="peekp-after-title">{date}</h2>}
-      <p>{t('link.forget.body')}</p>
-      <div>
-        {onForget && <button type="button" className="button button--secondary" onClick={onForget}><Icon name="trash" />{t('link.forget.now')}</button>}
-        {onKeep && <button type="button" className="button peekp-after__keep" onClick={onKeep}>{keepLabel}</button>}
-      </div>
-    </section>}
-    <section className="peekp-another" aria-labelledby="peekp-another-title">
-      <h2 id="peekp-another-title">{t('link.another')}</h2>
-      <button type="button" className="button button--secondary" onClick={onTrackAnother}><Icon name="search" />{t('app.trackAnother')}</button>
-    </section>
-  </>;
-}

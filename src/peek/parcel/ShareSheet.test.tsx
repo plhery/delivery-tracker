@@ -24,9 +24,10 @@ const clipboard = () => {
 };
 
 /** The sheet over a page that takes its answers, as the parcel page does. */
-function OwnerSheet({ initial = owned(), name = 'New sneakers' as string | null, onNameIt = () => undefined, onClose = () => undefined, onChanged = (() => undefined) as (view: ParcelLinkView) => void }) {
+function OwnerSheet({ initial = owned(), name = 'New sneakers' as string | null, worksUntil = null as string | null, onAccount = undefined as (() => void) | undefined,
+  onNameIt = () => undefined, onClose = () => undefined, onChanged = (() => undefined) as (view: ParcelLinkView) => void }) {
   const [view, setView] = useState(initial);
-  return <LinkShareSheet linkId={LINK_ID} ownerKey={OWNER_KEY} view={view} name={name}
+  return <LinkShareSheet linkId={LINK_ID} ownerKey={OWNER_KEY} view={view} name={name} worksUntil={worksUntil} onAccount={onAccount}
     onChanged={(next) => { onChanged(next); setView(next); }} onNameIt={onNameIt} onClose={onClose} />;
 }
 
@@ -221,6 +222,21 @@ describe('the share sheet of a looked-up parcel', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('This parcel has been forgotten');
   });
 
+  it('says how long the link works, and leads a visitor to the account that keeps it working', async () => {
+    const onAccount = vi.fn();
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(<OwnerSheet />);
+    // On its way, the day is not known yet; nobody signed in is offered an account.
+    expect(screen.getByText('The link works until 30 days after delivery.')).toBeVisible();
+    expect(screen.queryByRole('button', { name: /Create an account/ })).toBeNull();
+    rerender(<OwnerSheet worksUntil="30 dec" onAccount={onAccount} onClose={onClose} />);
+    expect(screen.getByText('The link works until 30 dec.')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Create an account and it works for as long as you share it' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onAccount).toHaveBeenCalledTimes(1);
+  });
+
   it('closes on Escape and with its close button', async () => {
     const onClose = vi.fn();
     const user = userEvent.setup();
@@ -325,6 +341,12 @@ describe('the share sheet of an account’s parcel', () => {
     await user.click(toggle('It’s a gift'));
     expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t save that.');
     expect(toggle('It’s a gift')).not.toBeChecked();
+  });
+
+  it('says nothing about how long the link works: a link from an account works for as long as it is shared', async () => {
+    render(<AccountShareSheet parcel={parcel} client={account()} onClose={() => undefined} />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Share…' })).toBeEnabled());
+    expect(screen.queryByText(/The link works until/)).toBeNull();
   });
 
   it('cannot show the name of a parcel without one', async () => {

@@ -65,6 +65,9 @@ test('the owner chooses what the link shows: a recipient reads the number’s en
   await expect(number).not.toBeChecked();
   await expect(sheet.getByText('Off, it reads 123 ••• 99')).toBeVisible();
   await expect(sheet.getByText(/Anyone with the link sees the journey, never a pickup code/)).toBeVisible();
+  // On its way, the day the link stops working is not known yet.
+  await expect(sheet.getByText('The link works until 30 days after delivery.')).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Create an account and it works for as long as you share it' })).toBeVisible();
 
   const { context, page: recipient } = await anotherBrowser(browser);
   await show(page, recipient, address);
@@ -90,6 +93,29 @@ test('the owner chooses what the link shows: a recipient reads the number’s en
   await expect(sheet).toHaveCount(0);
   await expect(actions(page).getByRole('button', { name: 'Share', exact: true })).toBeFocused();
   await expect((await openShare(page)).getByRole('switch', { name: 'Show the tracking number' })).toBeChecked();
+  expect(errors.get(recipient)).toEqual([]);
+  await context.close();
+});
+
+test('once the parcel is delivered, the share sheet and the recipient read the day the link stops working', async ({ page, browser }) => {
+  await track(page, '1ZDEMO202600000009');
+  const address = page.url();
+  await expect(status(page)).toHaveText('In transit');
+  const check = page.getByRole('button', { name: /Check now$/ });
+  await check.click();
+  await expect(status(page)).toHaveText('Out for delivery');
+  await check.click();
+  await expect(status(page)).toHaveText('Delivered');
+  const sheet = await openShare(page);
+  await expect(sheet.getByText(/^The link works until \d+ \p{L}+\./u)).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  const { context, page: recipient } = await anotherBrowser(browser);
+  await show(page, recipient, address);
+  await expect(status(recipient)).toHaveText('Delivered');
+  await expect(recipient.getByText(/^Shared with you · the link works until \d+ \p{L}+$/u)).toBeVisible();
+  // The line above the card says it: the footer has nothing to add.
+  await expect(recipient.getByText(/Peek forgets this parcel/)).toHaveCount(0);
   expect(errors.get(recipient)).toEqual([]);
   await context.close();
 });

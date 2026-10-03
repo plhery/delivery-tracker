@@ -4,7 +4,7 @@ import { CarrierTruck } from '../../components/CarrierMark';
 import { Icon } from '../../components/Icon';
 import { ParcelStamp } from '../../components/ParcelStamp';
 import { SignInScreen } from '../../components/SignInScreen';
-import { useI18n, type MessageKey } from '../../i18n';
+import { useI18n } from '../../i18n';
 import { carrierBrand } from '../../lib/carrierBrand';
 import { carrierInfo, type CarrierInfo } from '../../lib/carriers';
 import { useSheetDialog } from '../../lib/modal';
@@ -23,17 +23,16 @@ export function CardStack({ carrier }: { carrier: CarrierInfo }) {
   </span>;
 }
 
-/** The invitation to keep a looked-up parcel in an account. */
-export function KeepCard({ carrier, action, onKeep }: { carrier: CarrierInfo; action: MessageKey; onKeep: () => void }) {
+/** The invitation to an account, under the card: the whole row leads to signing in. */
+export function AccountRow({ carrier, onSignIn }: { carrier: CarrierInfo; onSignIn: () => void }) {
   const { t } = useI18n();
-  return <section className="peekp-keep" aria-labelledby="peekp-keep-title">
+  return <button type="button" className="peekp-account" onClick={onSignIn}>
     <CardStack carrier={carrier} />
-    <div>
-      <h2 id="peekp-keep-title">{t('link.keep.title')}</h2>
-      <p>{t('link.keep.body')}</p>
-      <button type="button" className="peekp-textlink" onClick={onKeep}>{t(action)}<Icon name="chevron" /></button>
-    </div>
-  </section>;
+    <span>
+      <strong>{t('link.account.title')}</strong>
+      <span className="peekp-textlink">{t('link.account.action')}<Icon name="chevron" /></span>
+    </span>
+  </button>;
 }
 
 /**
@@ -103,10 +102,14 @@ export function AlreadyFollowed({ name, onOpen }: { name: string; onOpen: () => 
   </div>;
 }
 
-/** Above the card of a parcel someone else shared. A visitor is told that following it needs no account. */
-export function SharedWithYou({ visitor = false }: { visitor?: boolean }) {
+/**
+ * Above the card of a parcel someone else shared. A visitor is told that
+ * following it needs no account; once the journey is over, `until` is the day
+ * the link stops working.
+ */
+export function SharedWithYou({ visitor = false, until = null }: { visitor?: boolean; until?: string | null }) {
   const { t } = useI18n();
-  return <p className="peekp-shared"><Glyph name="link" />{t(visitor ? 'share.withYou' : 'link.shared')}</p>;
+  return <p className="peekp-shared"><Glyph name="link" />{until ? t('share.withYouUntil', { date: until }) : t(visitor ? 'share.withYou' : 'link.shared')}</p>;
 }
 
 /** A parcel that crossed a border earns a stamp: the way into the passport. */

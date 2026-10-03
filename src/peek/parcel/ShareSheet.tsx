@@ -32,8 +32,8 @@ interface Settings { showNumber: boolean; gift: boolean }
  * sharing. The name, a gift's note and who it is from are added to the link
  * after its `#`: they reach the recipient's browser and no server.
  */
-function ShareSheetView({ title, linkId, settings, loading, stopped, stoppedLine, pendingLine, numberHint, name, nameTitle, nameHint, unnamedHint, promise, words,
-  onWords, onChange, onLink, onStop, onAgain, onNameIt, onClose }: {
+function ShareSheetView({ title, linkId, settings, loading, stopped, stoppedLine, pendingLine, numberHint, name, nameTitle, nameHint, unnamedHint, promise, works, words,
+  onWords, onChange, onLink, onStop, onAgain, onNameIt, onAccount, onClose }: {
   title: string;
   /** The link, once there is one. */
   linkId: string | null;
@@ -52,6 +52,8 @@ function ShareSheetView({ title, linkId, settings, loading, stopped, stoppedLine
   nameHint: string;
   unnamedHint: string;
   promise: string;
+  /** How long the link works, for a link Peek forgets by itself. */
+  works?: string;
   words: ShareWords;
   onWords: (words: ShareWords) => void;
   /** Saves a switch. A rejection puts the switch back and says so. */
@@ -63,6 +65,8 @@ function ShareSheetView({ title, linkId, settings, loading, stopped, stoppedLine
   onAgain?: () => Promise<void>;
   /** Leaves the sheet to name the parcel. */
   onNameIt?: () => void;
+  /** Leaves the sheet to sign in: a link from an account works for as long as it is shared. */
+  onAccount?: () => void;
   onClose: () => void;
 }) {
   const { t } = useI18n();
@@ -148,6 +152,10 @@ function ShareSheetView({ title, linkId, settings, loading, stopped, stoppedLine
           : <span className="peeks-link__pending">{loading ? '…' : pendingLine}</span>}
         <button type="button" className="peeks-link__copy" disabled={loading || working} onClick={() => void handOut('copy')}><Icon name="copy" /><span>{t('detail.copy')}</span></button>
       </div>
+      {works && <p className="peeks-link__works">
+        <Icon name="hourglass" />
+        <span>{works}{onAccount && <> <button type="button" onClick={() => { dismiss(); onAccount(); }}>{t('share.works.account')}</button></>}</span>
+      </p>}
       <div className="peeks-switches">
         <SwitchRow icon={<Glyph name="receipt" />} title={t('share.number.title')} hint={t('share.number.hint', { number: numberHint })}
           checked={shown.showNumber} disabled={loading} busy={'showNumber' in saving} onChange={(value) => void change('showNumber', value)} />
@@ -182,14 +190,18 @@ function ShareSheetView({ title, linkId, settings, loading, stopped, stoppedLine
  * Sharing a looked-up parcel, for the device that holds its owner key. The
  * switches are saved at once, and the page takes the answer.
  */
-export function LinkShareSheet({ linkId, ownerKey, view, name, onChanged, onNameIt, onClose }: {
+export function LinkShareSheet({ linkId, ownerKey, view, name, worksUntil, onChanged, onNameIt, onAccount, onClose }: {
   linkId: string;
   ownerKey: string;
   view: ParcelLinkView;
   /** The name this device has for the parcel. */
   name: string | null;
+  /** The day Peek forgets the parcel, once its journey is over: "30 oct". */
+  worksUntil: string | null;
   onChanged: (view: ParcelLinkView) => void;
   onNameIt: () => void;
+  /** Offered to a visitor. */
+  onAccount?: () => void;
   onClose: () => void;
 }) {
   const { t } = useI18n();
@@ -220,6 +232,7 @@ export function LinkShareSheet({ linkId, ownerKey, view, name, onChanged, onName
     nameHint={t('share.inside.hint', { name: name ?? '' })}
     unnamedHint={t('share.inside.unnamed')}
     promise={t('share.promise.link')}
+    works={worksUntil ? t('share.works.until', { date: worksUntil }) : t('share.works.afterDelivery')}
     words={words}
     onWords={(next) => noteLink(linkId, { share: next })}
     onChange={(next) => save({
@@ -230,6 +243,7 @@ export function LinkShareSheet({ linkId, ownerKey, view, name, onChanged, onName
     onStop={() => save({ shared: false }, 'parcel-link-share-stop')}
     onAgain={() => save({ shared: true }, 'parcel-link-share-change')}
     onNameIt={onNameIt}
+    onAccount={onAccount}
     onClose={onClose}
   />;
 }

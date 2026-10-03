@@ -23,11 +23,12 @@ import { AlertsSheet } from './parcel/AlertsSheet';
 import { deliveryCalendar, deliverySlot, downloadCalendar } from './parcel/calendar';
 import { LinkCard, LiveMarker } from './parcel/Card';
 import { carrierLinks, Notes, NumberSection, ShipmentFacts } from './parcel/Details';
-import { Afterwards, ForgetDialog, ForgetFooter, forgetParcel } from './parcel/Forget';
+import { ForgetDialog, ForgetFooter, forgetParcel } from './parcel/Forget';
 import { GiftNote, GiftSurprise } from './parcel/Gift';
 import { Glyph } from './parcel/glyphs';
 import { useNow, useOffline, useTabTitle, useWideLayout } from './parcel/hooks';
-import { AddToDeliveries, AlreadyFollowed, KeepCard, KeepSheet, PassportTeaser, SharedWithYou } from './parcel/Keep';
+import { AccountRow, AddToDeliveries, AlreadyFollowed, KeepSheet, PassportTeaser, SharedWithYou } from './parcel/Keep';
+import { OtherParcels } from './parcel/OtherParcels';
 import { RouteMap } from './parcel/RouteMap';
 import { SampleInvitation, SampleNote } from './parcel/Sample';
 import { copyText, shareParcelLink } from './parcel/share';
@@ -192,7 +193,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const scan = currentEvent(parcel.events);
 
   const afterwards = journeyEndedBefore(parcel, now);
-  // Later, a phone's card has no map: the page winds down around the forget date.
+  // Later, a phone's card has no map: the page winds down.
   const { placed, route } = useParcelRoute(parcel, languageTag, !present && (wide || !afterwards));
   const beside = wide && placed && !present;
   const figure = present ? 'hero' : !wide && placed ? 'map' : delivered && !afterwards ? 'hero' : beside && !afterwards ? 'none' : 'kraft';
@@ -342,11 +343,13 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   };
   const forgetOn = forgetDate(link.forgetAt, languageTag);
   const forgetLine = forgetOn ? t('link.forget.on', { date: forgetOn }) : null;
+  // Someone the link was shared with reads above the card how long it works; the owner reads the date at the foot.
+  const worksUntil = !owner && !present && final ? forgetOn : null;
   // Nothing of the sample is stored, so there is nothing to promise to forget.
-  const promise = afterwards || sample ? null : final ? forgetLine : link.kind === 'lookup' ? t('link.forget.promise') : null;
+  const promise = sample || worksUntil ? null : final ? forgetLine : link.kind === 'lookup' ? t('link.forget.promise') : null;
 
-  const visitorCanKeep = !signedIn && session.account === 'visitor' && link.canKeep;
-  const keepAction: MessageKey = owner ? 'link.keep.action' : 'link.signInToAdd';
+  const visitor = session.account === 'visitor';
+  const visitorCanKeep = visitor && link.canKeep;
   const placedScans = sortEventsDesc(parcel.events).filter((event) => event.place);
   const origin = stampOrigin(parcel);
   // The journey ended in another country than the one it was first scanned in.
@@ -357,9 +360,8 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const brand = carrierBrand(displayed).style;
   const summary = [headline, detail].filter(Boolean).join(' · ');
 
-  const teaser = abroad && !afterwards && !present && session.account === 'visitor' && <PassportTeaser parcel={parcel} origin={abroad} onStart={signInToKeep} />;
-  const keepCard = sample ? <SampleInvitation carrier={displayed} onTrack={onHome} onSignIn={session.account === 'visitor' ? signInToKeep : undefined} />
-    : visitorCanKeep && !afterwards && <KeepCard carrier={displayed} action={keepAction} onKeep={signInToKeep} />;
+  const teaser = abroad && !afterwards && !present && visitor && <PassportTeaser parcel={parcel} origin={abroad} onStart={signInToKeep} />;
+  const invitation = sample && <SampleInvitation carrier={displayed} onTrack={onHome} onSignIn={visitor ? signInToKeep : undefined} />;
   const map = (shape: 'card' | 'tile') => <RouteMap route={route} parcel={parcel} stage={stage} shape={shape} pip={figure === 'map' || figure === 'none'} onOpen={openMap} />;
 
   return <Shell
@@ -373,12 +375,14 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
     controls={present ? undefined : <>
       <button type="button" className="icon-button" aria-label={t('app.trackAnother')} onClick={onHome}><Icon name="search" /></button>
       <button type="button" className="icon-button peekp-header__share" aria-label={t('link.shareAria')} onClick={() => void share()}><Icon name="share" /><span>{t('link.share')}</span></button>
+      {/* The sample has its own invitation, at its foot. */}
+      {visitor && !sample && <button type="button" className="peekp-header__signin" onClick={signInToKeep}>{t('arrival.signInTitle')}</button>}
     </>}
   >
     <div className="peekp-columns" data-beside={beside || undefined}>
       <div className="peekp-column">
         {followed && <AlreadyFollowed name={followed.label || t('common.parcel')} onOpen={() => { trackAction('parcel-link-open-existing'); openDeliveries?.(followed.id); }} />}
-        {sample ? <SampleNote /> : !owner && !present && <SharedWithYou visitor={!signedIn} />}
+        {sample ? <SampleNote /> : !owner && !present && <SharedWithYou visitor={!signedIn} until={worksUntil} />}
         <LinkCard parcel={parcel} stage={stage} carrier={carrierKnown ? displayed : null} headline={headline} name={name} detail={detail}
           notes={notes} flag={flag} figure={figure} number={number} links={links} settled={entrance === 'reveal' && !checking}
           gift={wrapped ? 'wrapped' : opened ? 'opened' : link.gift ? 'own' : undefined}
@@ -398,22 +402,24 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
         {carrierKnown && <Notes view={view} stage={stage} flag={flag} trouble={failing} carrier={displayed} />}
         {waitingAt && <PickupPointCard point={waitingAt} />}
         {!beside && teaser}
-        {afterwards && <Afterwards date={forgetLine?.replace(/\.$/, '') ?? null} onForget={askToForget}
-          onKeep={visitorCanKeep ? signInToKeep : undefined} keepLabel={t(keepAction)} onTrackAnother={onHome} />}
+        {/* One invitation at a time: the passport's, on the day a parcel from abroad arrives, else the account's. */}
+        {visitorCanKeep && !teaser && <AccountRow carrier={displayed} onSignIn={signInToKeep} />}
         {!wrapped && <NumberSection view={view} links={links} />}
         <ShipmentFacts parcel={parcel} stage={stage} />
         {carrierKnown && (automatic || moving) && <section className="peekp-journal">
           <TrackingJournal events={wrapped ? collapseGiftRows(parcel.events) : parcel.events} syncing={checking} fold />
         </section>}
-        {!beside && keepCard}
+        {/* The sample ends on the way to a parcel of one's own; any other page on the device's other parcels. */}
+        {sample ? !beside && invitation
+          : <OtherParcels linkId={linkId} visitor={visitor} over={afterwards} onTrackAnother={onHome} onSignIn={signInToKeep} />}
       </div>
       {beside && <div className="peekp-column">
         {map('tile')}
         {teaser}
-        {keepCard}
+        {invitation}
       </div>}
     </div>
-    <ForgetFooter promise={promise} onForget={afterwards ? undefined : askToForget} />
+    <ForgetFooter promise={promise} onForget={askToForget} />
 
     {news && <Toast place="top" tone mark={<Icon name="truck" />}>
       <strong>{t('link.updateToast')}</strong> · {localizedEventDescription(news.description, t) || stageLabel(t, news.stage)}
@@ -428,6 +434,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
     {keepSheet && session.signInWith && <KeepSheet linkId={linkId} carrier={displayed} title={name ?? number ?? t('common.parcel')} summary={summary}
       methods={session.signInWith} onClose={() => setKeepSheet(false)} />}
     {sharing && key && <LinkShareSheet linkId={linkId} ownerKey={key} view={view} name={name} onChanged={adopt}
+      worksUntil={final ? forgetOn : null} onAccount={visitor ? signInToKeep : undefined}
       onNameIt={() => setRenaming((count) => count + 1)} onClose={() => setSharing(false)} />}
     {alerting && <AlertsSheet linkId={linkId} ownerKey={key} alerts={link.alerts} initialPreset={early ? 'all' : 'important'}
       calendar={calendarWindow} onCalendar={calendarFile}

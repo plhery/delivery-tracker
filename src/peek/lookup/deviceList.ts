@@ -7,6 +7,9 @@ const FRESH_MS = 5 * 60_000;
 const SETTLED_FRESH_MS = 12 * 60 * 60_000;
 /** A lookup the carrier has not answered yet is asked about again soon. */
 const WAITING_FRESH_MS = 1_500;
+/** How soon, and how often, a list asks again about a parcel whose carrier has not answered yet. */
+const FIRST_CHECK_MS = 2_000;
+const FIRST_CHECK_ROUNDS = 6;
 /** When the list last asked about each parcel, so coming back to the door does not ask again. */
 const checkedAt = new Map<string, number>();
 
@@ -46,6 +49,28 @@ export async function refreshDeviceParcels(recents: readonly RecentParcel[], sig
     }
   }
   return unanswered;
+}
+
+/**
+ * Keeps a list of the device's parcels up to date while it is shown: one round
+ * now, and a few more, further and further apart, while a parcel looked up a
+ * moment ago still waits for its carrier. `parcels` is read at each round.
+ * Returns the way to stop.
+ */
+export function watchDeviceParcels(parcels: () => readonly RecentParcel[]): () => void {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const round = async (rounds: number) => {
+    const unanswered = await refreshDeviceParcels(parcels(), controller.signal);
+    if (unanswered && rounds < FIRST_CHECK_ROUNDS && !controller.signal.aborted) {
+      timer = setTimeout(() => void round(rounds + 1), FIRST_CHECK_MS * 1.5 ** rounds);
+    }
+  };
+  void round(0);
+  return () => {
+    clearTimeout(timer);
+    controller.abort();
+  };
 }
 
 /**

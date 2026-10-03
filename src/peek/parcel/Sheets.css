@@ -22,6 +22,9 @@
 .peeks-link__pending { flex: 1; min-width: 0; color: var(--ink-soft); font-size: 12.5px; line-height: 1.4; }
 .peeks-link__copy { display: inline-flex; align-items: center; justify-content: center; gap: 9px; flex: 0 0 auto; min-height: 44px; padding: 10px 14px; border-radius: 14px; background: var(--control); font-size: 13px; font-weight: 550; }
 .peeks-link__copy svg { width: 17px; height: 17px; }
+.peeks-link__works { display: flex; align-items: flex-start; gap: 7px; margin: 10px 4px 0; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+.peeks-link__works svg { width: 14px; height: 14px; flex: 0 0 auto; margin-top: 2px; stroke-width: 1.5; }
+.peeks-link__works button { display: inline; padding: 0; background: none; color: var(--ink); font-size: inherit; font-weight: 600; line-height: inherit; text-align: start; text-decoration: underline; text-underline-offset: 3px; }
 
 /* What the link shows: real switches. */
 .peeks-switches { display: grid; gap: 7px; margin-top: 14px; }

@@ -80,7 +80,7 @@ describe('the parcel page of a recipient', () => {
     expect(screen.queryByRole('button', { name: 'Forget it now' })).toBeNull();
     expect(actions().queryByRole('button', { name: 'Share' })).toBeNull();
     // A masked number cannot be kept.
-    expect(screen.queryByRole('heading', { name: 'Keep it with your other parcels' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Create an account/ })).toBeNull();
 
     await user.click(actions().getByRole('button', { name: 'Add to calendar' }));
     expect(mocks.download).toHaveBeenCalledTimes(1);
@@ -96,10 +96,27 @@ describe('the parcel page of a recipient', () => {
 
   it('offers keeping only when the link shows its number, and no calendar without an estimate', async () => {
     open(view({ owner: false, link: { numberShown: true, canKeep: true }, parcel: { trackingNumber: '1234567899', expectedDelivery: undefined } }));
-    expect(await screen.findByRole('heading', { name: 'Keep it with your other parcels' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Sign in to add it to your deliveries' })).toBeVisible();
+    expect(await screen.findByRole('button', { name: /Create an account/ })).toBeVisible();
     expect(actions().queryByRole('button', { name: 'Add to calendar' })).toBeNull();
     expect(actions().getByRole('button', { name: 'Ping me too' })).toBeVisible();
+  });
+
+  it('tells a recipient how long the link works once the parcel is delivered, in place of the footer’s line', async () => {
+    const moving = open(view({ owner: false }));
+    expect(await screen.findByText('Shared with you · no account needed')).toBeVisible();
+    expect(screen.getByText('Peek forgets this parcel 30 days after delivery.')).toBeVisible();
+    moving.unmount();
+    const delivered = open(view({ owner: false, events: arrived }));
+    expect(await screen.findByText('Shared with you · the link works until 30 dec')).toBeVisible();
+    expect(screen.queryByText(/Peek forgets this parcel/)).toBeNull();
+    delivered.unmount();
+    // Someone signed in reads the same day; a link from an account has none.
+    const account = open(view({ owner: false, events: arrived }), { session: signedIn });
+    expect(await screen.findByText('Shared with you · the link works until 30 dec')).toBeVisible();
+    account.unmount();
+    open(view({ owner: false, events: arrived, link: { kind: 'shared', forgetAt: null } }));
+    expect(await screen.findByText('Shared with you · no account needed')).toBeVisible();
+    expect(screen.queryByText(/Peek forgets this parcel/)).toBeNull();
   });
 
   it('shares the plain link from the header: the owner’s sheet is not a recipient’s', async () => {
@@ -146,6 +163,28 @@ describe('the parcel page of a link’s owner', () => {
     expect(screen.getByText('Sharing is stopped. The link shows nothing to anyone else.')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Share this parcel' }));
     expect(screen.getByRole('dialog', { name: 'Share this parcel' })).toBeVisible();
+  });
+
+  it('says in the share sheet how long the link works, and takes a visitor from there to the sign-in', async () => {
+    const signIn = vi.fn();
+    const user = userEvent.setup();
+    const moving = open(view(), { session: { account: 'visitor', signIn } });
+    await user.click(await actions().findByRole('button', { name: 'Share' }));
+    expect(within(screen.getByRole('dialog')).getByText('The link works until 30 days after delivery.')).toBeVisible();
+    moving.unmount();
+    const delivered = open(view({ events: arrived }), { session: { account: 'visitor', signIn } });
+    await user.click(await actions().findByRole('button', { name: 'Share' }));
+    const sheet = within(screen.getByRole('dialog', { name: 'Share this parcel' }));
+    expect(sheet.getByText('The link works until 30 dec.')).toBeVisible();
+    await user.click(sheet.getByRole('button', { name: 'Create an account and it works for as long as you share it' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID);
+    delivered.unmount();
+    // Someone signed in adds the parcel from the page: the sheet only says the day.
+    open(view({ events: arrived }), { session: signedIn });
+    await user.click(await actions().findByRole('button', { name: 'Share' }));
+    expect(within(screen.getByRole('dialog')).getByText('The link works until 30 dec.')).toBeVisible();
+    expect(within(screen.getByRole('dialog')).queryByRole('button', { name: /Create an account/ })).toBeNull();
   });
 
   it('hands the keyboard back to the button that opened a sheet, in a browser that leaves a clicked button unfocused', async () => {
@@ -239,7 +278,7 @@ describe('the parcel page of a link’s owner', () => {
     const user = userEvent.setup();
     const visitor = open(view(), { session: { account: 'visitor', signIn } });
     await user.click(await screen.findByRole('button', { name: /^Ping me/ }));
-    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign in' }));
     expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID);
     expect(screen.queryByRole('dialog')).toBeNull();
     visitor.unmount();

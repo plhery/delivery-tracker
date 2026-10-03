@@ -7,11 +7,7 @@ import { localizedParcelCompletionDate, parcelDeliveryEstimate, parcelDisplaySta
 import { maskedNumber } from '../links';
 import { useRecents, type RecentParcel } from '../recents';
 import { openParcelLink, parcelLinkPath } from '../route';
-import { forgetDeviceParcels, refreshDeviceParcels } from './deviceList';
-
-/** How soon, and how often, the list asks again about a parcel whose carrier has not answered yet. */
-const FIRST_CHECK_MS = 2_000;
-const FIRST_CHECK_ROUNDS = 6;
+import { forgetDeviceParcels, watchDeviceParcels } from './deviceList';
 
 /** A long number as a card writes it: its two ends. A short one stays whole. */
 export function shortNumber(number: string, carrier: RecentParcel['carrier']): string {
@@ -59,23 +55,7 @@ export function DeviceParcels({ onSignIn, onForgotten }: {
   const list = useRef(recents);
   useEffect(() => { list.current = recents; });
   const listed = recents.length > 0;
-  useEffect(() => {
-    if (!listed) return;
-    const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    // A parcel looked up a moment ago may still be waiting for its carrier: a few more rounds, further and further apart.
-    const round = async (rounds: number) => {
-      const unanswered = await refreshDeviceParcels(list.current, controller.signal);
-      if (unanswered && rounds < FIRST_CHECK_ROUNDS && !controller.signal.aborted) {
-        timer = setTimeout(() => void round(rounds + 1), FIRST_CHECK_MS * 1.5 ** rounds);
-      }
-    };
-    void round(0);
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [listed]);
+  useEffect(() => listed ? watchDeviceParcels(() => list.current) : undefined, [listed]);
   useEffect(() => { if (asking) question.current?.focus(); }, [asking]);
 
   async function forget() {
