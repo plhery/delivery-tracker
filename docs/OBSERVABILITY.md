@@ -168,6 +168,8 @@ Key JSON events:
   `delivery_emails_capped` when emails were skipped for a daily allowance, and
   `delivery_email_finish_failed` when an ending could not be recorded: that email stays
   claimed and is not sent again.
+  `delivery_email_card_failed` (warning, with `error_type`) when the map card could not be
+  drawn: the email goes out without its picture.
 
 The logger allows `tracking_number` explicitly. It drops other fields whose names look
 like parcel, user, label, location, status text, URL, token, cookie or secret data. Keep
