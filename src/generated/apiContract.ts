@@ -4137,6 +4137,7 @@ export interface ApiPackageRow {
   "archived_at": string | null;
   "notifications_muted": boolean;
   "tracking_events": Array<ApiTrackingEventRow> | null;
+  "email_muted"?: boolean;
 }
 
 export interface ApiPackageListResponse {
@@ -4172,7 +4173,8 @@ export interface ApiChangePackageCarrierResponse {
 }
 
 export interface ApiPackageNotificationRequest {
-  "muted": boolean;
+  "muted"?: boolean;
+  "emailMuted"?: boolean;
 }
 
 export interface ApiQueueResponse {
@@ -4203,6 +4205,17 @@ export interface ApiNotificationPreferences {
   "quietHoursStart": string | null;
   "quietHoursEnd": string | null;
   "timezone": string;
+  "emailOnDelivery"?: boolean | null;
+  "emailAvailable"?: boolean;
+}
+
+export interface ApiDeliveryEmailSwitchRequest {
+  "token": string;
+  "enabled"?: boolean;
+}
+
+export interface ApiDeliveryEmailSwitchResponse {
+  "emailOnDelivery": boolean;
 }
 
 export interface ApiPushSubscriptionKeys {
@@ -4484,6 +4497,7 @@ export interface ApiClaimParcelsResponse {
 export interface ApiParcelAlerts {
   "available": boolean;
   "vapidPublicKey": string | null;
+  "email"?: boolean;
 }
 
 export interface ApiUpdateParcelLinkRequest {

@@ -4560,6 +4560,57 @@
         }
       }
     },
+    "/api/email/unsubscribe": {
+      "post": {
+        "operationId": "switchDeliveryEmail",
+        "summary": "Turn the delivery email off (or back on) from an email, without signing in",
+        "description": "Mail providers post here from an email's List-Unsubscribe header, with the token in the query and a form body they choose. The page an email links to posts JSON.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "t",
+            "in": "query",
+            "required": false,
+            "description": "The token, when the request cannot carry a JSON body.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{20,200}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliveryEmailSwitchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The account's delivery email, as it now is",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryEmailSwitchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing or invalid token"
+          },
+          "429": {
+            "description": "Too many requests"
+          },
+          "503": {
+            "description": "This server sends no email"
+          }
+        }
+      }
+    },
     "/api/push/subscriptions": {
       "post": {
         "operationId": "upsertPushSubscription",
@@ -6274,6 +6325,10 @@
                 "type": "null"
               }
             ]
+          },
+          "email_muted": {
+            "type": "boolean",
+            "description": "The account's delivery email is off for this parcel."
           }
         }
       },
@@ -6402,11 +6457,13 @@
       "PackageNotificationRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "muted"
-        ],
+        "minProperties": 1,
+        "description": "Mutes or unmutes one parcel's notifications, its delivery email, or both. A field left out is not changed.",
         "properties": {
           "muted": {
+            "type": "boolean"
+          },
+          "emailMuted": {
             "type": "boolean"
           }
         }
@@ -6542,6 +6599,47 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64
+          },
+          "emailOnDelivery": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the account gets one email when a parcel is delivered. null: never chosen, so the one-time offer may show. A request that leaves it out, or sends null, keeps the stored choice."
+          },
+          "emailAvailable": {
+            "type": "boolean",
+            "description": "Read-only: whether this server can email this account. Mail is configured and the account has a confirmed address it can write to. Ignored in a request."
+          }
+        }
+      },
+      "DeliveryEmailSwitchRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token"
+        ],
+        "description": "Turns an account's delivery email off, or back on, with the token its emails carry. No sign-in.",
+        "properties": {
+          "token": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]{20,200}$"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "false when left out."
+          }
+        }
+      },
+      "DeliveryEmailSwitchResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "emailOnDelivery"
+        ],
+        "properties": {
+          "emailOnDelivery": {
+            "type": "boolean"
           }
         }
       },
@@ -7743,6 +7841,10 @@
               "string",
               "null"
             ]
+          },
+          "email": {
+            "type": "boolean",
+            "description": "Whether this server emails accounts when a parcel is delivered."
           }
         }
       },

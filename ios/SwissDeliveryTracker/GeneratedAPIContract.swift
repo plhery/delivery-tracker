@@ -333,6 +333,7 @@ struct Parcel: Codable, Equatable, Hashable, Sendable, Identifiable {
     var archivedAt: String? = nil
     var notificationsMuted: Bool
     var trackingEvents: [TrackingEvent] = []
+    var emailMuted: Bool? = nil
 
     private enum CodingKeys: String, CodingKey {
         case id
@@ -351,6 +352,7 @@ struct Parcel: Codable, Equatable, Hashable, Sendable, Identifiable {
         case archivedAt
         case notificationsMuted
         case trackingEvents
+        case emailMuted
     }
 }
 
@@ -411,7 +413,8 @@ struct ChangePackageCarrierResponse: Codable, Equatable, Hashable, Sendable {
 }
 
 struct PackageNotificationRequest: Codable, Equatable, Hashable, Sendable {
-    var muted: Bool
+    var muted: Bool? = nil
+    var emailMuted: Bool? = nil
 }
 
 struct QueueResponse: Codable, Equatable, Hashable, Sendable {
@@ -467,6 +470,17 @@ struct NotificationPreferences: Codable, Equatable, Hashable, Sendable {
     var quietHoursStart: String? = nil
     var quietHoursEnd: String? = nil
     var timezone: String
+    var emailOnDelivery: Bool? = nil
+    var emailAvailable: Bool? = nil
+}
+
+struct DeliveryEmailSwitchRequest: Codable, Equatable, Hashable, Sendable {
+    var token: String
+    var enabled: Bool? = nil
+}
+
+struct DeliveryEmailSwitchResponse: Codable, Equatable, Hashable, Sendable {
+    var emailOnDelivery: Bool
 }
 
 struct PushSubscriptionKeys: Codable, Equatable, Hashable, Sendable {
@@ -889,6 +903,7 @@ struct ClaimParcelsResponse: Codable, Equatable, Hashable, Sendable {
 struct ParcelAlerts: Codable, Equatable, Hashable, Sendable {
     var available: Bool
     var vapidPublicKey: String? = nil
+    var email: Bool? = nil
 }
 
 struct UpdateParcelLinkRequest: Codable, Equatable, Hashable, Sendable {
@@ -1095,5 +1110,6 @@ extension Parcel {
         archivedAt = try values.decodeIfPresent(String.self, forKey: .archivedAt)
         notificationsMuted = try values.decode(Bool.self, forKey: .notificationsMuted)
         trackingEvents = try values.decodeIfPresent([TrackingEvent].self, forKey: .trackingEvents) ?? []
+        emailMuted = try values.decodeIfPresent(Bool.self, forKey: .emailMuted)
     }
 }
