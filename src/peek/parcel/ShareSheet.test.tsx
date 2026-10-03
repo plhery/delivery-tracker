@@ -263,6 +263,8 @@ describe('the share sheet of a looked-up parcel', () => {
     expect(preview().getByText('Delivered')).toBeVisible();
     expect(previewNumber()).toHaveTextContent('1234567899');
     expect(document.querySelector('.peeks-preview__pip')).toHaveClass('peeks-preview__pip--open');
+    // The open box keeps its carrier's label, as the page it previews does.
+    expect(document.querySelector('.peeks-preview__pip .parcel-illustration__label-number')).toHaveTextContent('1234567899');
     unmount();
     // A gift that arrived is no longer wrapped: it says that it is here, and what is inside when the link carries the name.
     noteLink(LINK_ID, { share: { name: true, note: '', from: '' } });
@@ -270,6 +272,8 @@ describe('the share sheet of a looked-up parcel', () => {
     expect(preview().getByText('It’s here')).toBeVisible();
     expect(preview().getByText('Inside: New sneakers')).toBeVisible();
     expect(previewNumber()).toHaveTextContent('••• 99');
+    // A gift's box has no label, wrapped or opened.
+    expect(document.querySelector('.peeks-preview__pip .parcel-illustration__label')).toBeNull();
   });
 
   it('keeps the card neutral for a number no carrier knows yet', () => {

@@ -75,8 +75,8 @@ export const PARCEL = {
   seam: 'm103 119 94 47',
   /** The left side's plane, where the face is drawn. */
   facePlane: 'matrix(1 0.505263 0 1 55 142)',
-  /** The right side's plane, where the carrier's label sits. */
-  labelPlane: 'matrix(1 -0.505263 0 1 160 205)',
+  /** The right side's plane, where the carrier's label sits: just below where the open front flap reaches. */
+  labelPlane: 'matrix(1 -0.505263 0 1 160 209)',
   barcode: 'M6 20v14m2.2-14v14m3-14v14m1.6-14v14m3.4-14v14m2-14v14m3-14v14m1.4-14v14m3.6-14v14m2-14v14m2.6-14v14m1.8-14v14m3.2-14v14m2-14v14m2.4-14v14m3-14v14m1.6-14v14',
   glint: 'M0 -1 .24 -.24 1 0 .24 .24 0 1 -.24 .24 -1 0 -.24 -.24Z',
   glints: [

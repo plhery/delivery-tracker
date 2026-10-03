@@ -20,7 +20,7 @@ describe('Pip with its carrier’s label', () => {
     expect(container.querySelector(arrow)).toBeNull();
     expect(container.querySelector(seal)).toBeNull();
     const label = container.querySelector<SVGGElement>('.parcel-illustration__label')!;
-    expect(label).toHaveAttribute('transform', 'matrix(1 -0.505263 0 1 160 205) scale(.97)');
+    expect(label).toHaveAttribute('transform', 'matrix(1 -0.505263 0 1 160 209) scale(.97)');
     expect(label).toHaveAttribute('stroke', 'none');
     const paper = label.querySelector(':scope > rect')!;
     expect([paper.getAttribute('width'), paper.getAttribute('height'), paper.getAttribute('fill')]).toEqual(['74', '48', '#FFFEFA']);

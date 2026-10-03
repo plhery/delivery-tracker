@@ -42,8 +42,8 @@ const SPARKS = [
 
 /**
  * The kraft Pip. A parcel that arrived opens its box: closed for a frame,
- * so the opening is seen, then open for good. When a parcel is revealed,
- * golden sparks twinkle once around the box.
+ * so the opening is seen, then open for good, its carrier's label still on
+ * its side. When a parcel is revealed, golden sparks twinkle once around the box.
  */
 function KraftPip({ carrier, number, open, hero, sparks, ribbon = false }: {
   carrier: CarrierInfo | null;
@@ -61,7 +61,7 @@ function KraftPip({ carrier, number, open, hero, sparks, ribbon = false }: {
     return () => cancelAnimationFrame(frame);
   }, [open]);
   return <div className={`peekp-pip${hero ? ' peekp-pip--hero' : ''}${open && opened ? ' peekp-pip--open' : ''}`} style={{ viewTransitionName: PIP_TRANSITION_NAME }}>
-    <ParcelIllustration label={carrier && !open && !ribbon ? { carrier, number } : undefined} ribbon={ribbon} />
+    <ParcelIllustration label={carrier && !ribbon ? { carrier, number } : undefined} ribbon={ribbon} />
     {sparks && <div className="peekp-pip__sparks" aria-hidden="true">
       {SPARKS.map(({ left, top, size, color, delay }) => <svg key={left} width={size} height={size} viewBox="-1 -1 2 2"
         style={{ left, top, animationDelay: `${delay}s` }}><path d={PARCEL.glint} fill={color} /></svg>)}

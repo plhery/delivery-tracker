@@ -44,7 +44,7 @@ export function SharePreview({ parcel, name, showNumber, gift }: {
         {!wrapped && <span className="peeks-preview__number">{number}</span>}
       </div>
       <span className={`peeks-preview__pip${delivered ? ' peeks-preview__pip--open' : ''}`}>
-        <ParcelIllustration label={known && !delivered && !gift ? { carrier, number } : undefined} ribbon={gift} />
+        <ParcelIllustration label={known && !gift ? { carrier, number } : undefined} ribbon={gift} />
       </span>
     </div>
   </div>;

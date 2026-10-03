@@ -206,7 +206,8 @@ describe('ParcelPage', () => {
     expect(screen.queryByRole('button', { name: /Check now/ })).toBeNull();
     expect(within(card()).getByText(/^Today, \d\d:\d\d$/)).toBeVisible();
     await waitFor(() => expect(document.querySelector('.peekp-pip')).toHaveClass('peekp-pip--hero', 'peekp-pip--open'));
-    expect(document.querySelector('.parcel-illustration__label')).toBeNull();
+    // The open box keeps its carrier's label: the front flap rests above it.
+    expect(document.querySelector('.peekp-pip .parcel-illustration__label-name')).toHaveTextContent('DHL');
     expect(screen.getByText('Peek forgets this parcel on 30 dec.')).toBeVisible();
   });
 
