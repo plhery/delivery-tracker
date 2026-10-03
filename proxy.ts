@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
 import { APPEARANCE_BOOTSTRAP } from './src/lib/appearanceConfig';
 import { ENTRY_HINT_BOOTSTRAP } from './src/lib/entryHintConfig';
+import { MAIL_LINK_BOOTSTRAP } from './src/lib/mailLinkConfig';
 import { publicSupabaseOrigin } from './src/server/runtime';
 import { legacyHostRedirect } from './src/server/siteHosts';
 
@@ -10,6 +11,8 @@ import { legacyHostRedirect } from './src/server/siteHosts';
 const appearanceScriptHash = createHash('sha256').update(APPEARANCE_BOOTSTRAP).digest('base64');
 // The app's second prepaint script: who is about to see the landing.
 const entryHintScriptHash = createHash('sha256').update(ENTRY_HINT_BOOTSTRAP).digest('base64');
+// The static privacy document's own script: it writes its scrambled addresses back.
+const mailLinkScriptHash = createHash('sha256').update(MAIL_LINK_BOOTSTRAP).digest('base64');
 
 export function proxy(request: NextRequest) {
   // A page opened on a host the site has left continues at the same address on its new one.
@@ -37,7 +40,7 @@ export function proxy(request: NextRequest) {
     img-src 'self' blob: data:;
     manifest-src 'self';
     object-src 'none';
-    script-src 'self' 'nonce-${nonce}' 'sha256-${appearanceScriptHash}' 'sha256-${entryHintScriptHash}' 'strict-dynamic'${isDevelopment ? " 'unsafe-eval'" : ''};
+    script-src 'self' 'nonce-${nonce}' 'sha256-${appearanceScriptHash}' 'sha256-${entryHintScriptHash}' 'sha256-${mailLinkScriptHash}' 'strict-dynamic'${isDevelopment ? " 'unsafe-eval'" : ''};
     style-src 'self' 'unsafe-inline';
     style-src-attr 'unsafe-inline';
     style-src-elem 'self' ${isDevelopment ? "'unsafe-inline'" : `'nonce-${nonce}'`};

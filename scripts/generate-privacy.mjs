@@ -10,14 +10,23 @@ function escaped(text) {
   return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 }
 
-/** One block's text: code, bold and links. Anything else Markdown would style is refused. */
-function inline(text) {
+/**
+ * One block's text: code, bold and links. Anything else Markdown would style is refused.
+ * An address is a `mailto:` link in the notice and never appears in the page: it is served
+ * scrambled, a script writes it back as a link, and without scripts it reads "name at domain".
+ */
+function inlineHtml(text, scrambled) {
   const html = escaped(text)
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\[([^\]]+)\]\(((?:https:\/\/|mailto:)[^\s)]+)\)/g, '<a href="$2">$1</a>');
-  const plain = html.replace(/<a href="[^"]*">/g, '');
+    .replace(/\[([^\]]+)\]\(mailto:([^\s)]+)\)/g, (link, label, address) => {
+      if (label !== address) throw new Error(`PRIVACY.md must show an address as its own link: ${label}`);
+      return `<a data-mail="${scrambled(address)}">${address.replace('@', ' at ')}</a>`;
+    })
+    .replace(/\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>');
+  const plain = html.replace(/<a (?:href|data-mail)="[^"]*">/g, '');
   if (/[`*_[\]]/.test(plain)) throw new Error(`PRIVACY.md uses Markdown the page cannot show: ${text}`);
+  if (/\S@\S+\.\S/.test(plain)) throw new Error(`PRIVACY.md must write an address as a mailto link, so the page can scramble it: ${text}`);
   return html;
 }
 
@@ -25,7 +34,8 @@ function inline(text) {
  * The notice's Markdown as the page's blocks. It knows what PRIVACY.md uses: the title,
  * the effective date, `##` headings, paragraphs, `- ` lists and a closing `> ` note.
  */
-export function noticeBlocks(markdown) {
+export function noticeBlocks(markdown, scrambled) {
+  const inline = (text) => inlineHtml(text, scrambled);
   const blocks = [];
   let titled = false;
   for (const chunk of markdown.trim().split(/\n{2,}/)) {
@@ -54,13 +64,11 @@ export function noticeBlocks(markdown) {
 }
 
 /**
- * The page the apps open: the notice inside the site's own frame. Cloudflare swaps an
- * address in a page for a script that writes it back, which the site's content policy
- * refuses, so a reader would see no address. The `email_off` comments tell it to leave
- * the notice as written.
+ * The page the apps open: the notice inside the site's own frame, with the two scripts
+ * the site's content policy allows by their hash.
  */
-export function privacyPage(markdown, appearanceScript) {
-  const indented = noticeBlocks(markdown).map((block) => block.split('\n').map((line) => `      ${line}`).join('\n'));
+export function privacyPage(markdown, { appearanceScript, mailScript, scrambled }) {
+  const indented = noticeBlocks(markdown, scrambled).map((block) => block.split('\n').map((line) => `      ${line}`).join('\n'));
   return `<!doctype html>
 <!-- Generated from PRIVACY.md by scripts/generate-privacy.mjs. Do not edit. -->
 <html lang="en">
@@ -78,19 +86,21 @@ export function privacyPage(markdown, appearanceScript) {
       <a class="back" href="/">← Back to Peek</a>
       <p class="eyebrow">Peek · Universal Parcel Tracker</p>
       <h1>Privacy notice</h1>
-      <!--email_off-->
 ${indented.join('\n')}
-      <!--/email_off-->
     </main>
+    <script>${mailScript}</script>
   </body>
 </html>
 `;
 }
 
-/** The page as PRIVACY.md describes it now, with the script the site's content policy allows by its hash. */
+/** The page as PRIVACY.md describes it now, with the site's own scripts. */
 export async function currentPrivacyPage() {
   const { APPEARANCE_BOOTSTRAP } = await import('../src/lib/appearanceConfig.ts');
-  return privacyPage(readFileSync(sourcePath, 'utf8'), APPEARANCE_BOOTSTRAP);
+  const { MAIL_LINK_BOOTSTRAP, scrambledAddress } = await import('../src/lib/mailLinkConfig.ts');
+  return privacyPage(readFileSync(sourcePath, 'utf8'), {
+    appearanceScript: APPEARANCE_BOOTSTRAP, mailScript: MAIL_LINK_BOOTSTRAP, scrambled: scrambledAddress,
+  });
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
