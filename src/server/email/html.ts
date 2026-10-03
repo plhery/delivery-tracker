@@ -32,7 +32,7 @@ export interface EmailWords {
 }
 
 /** The light theme's colours: an email has no style sheet to take them from. */
-const COLOR = { ground: '#eceee7', canvas: '#f4f5f1', ink: '#20251e', soft: '#657060', yellow: '#f3cf48' };
+const COLOR = { ground: '#eceee7', canvas: '#f4f5f1', ink: '#20251e', soft: '#657060', faint: '#8b9386', yellow: '#f3cf48' };
 const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
 /** The column's width, and the card's inside it. */
 const COLUMN = 520;
@@ -49,10 +49,10 @@ export function escapeHtml(text: string): string {
 const type = (color: string = COLOR.ink) => `font-family: ${FONT}; color: ${color}`;
 const link = (url: string, label: string, color: string) => `<a href="${escapeHtml(url)}" style="color: ${color}; text-decoration: underline">${escapeHtml(label)}</a>`;
 
-/** The footer sentence with its two links in place of their markers. */
+/** The footer sentence with its two links in place of their markers, as quiet as the words around them. */
 function footerHtml(words: EmailWords): string {
-  return words.footer.split(/(\{\{(?:off|alerts)\}\})/).map((part) => part === '{{off}}' ? link(words.offUrl, words.footerOff, COLOR.ink)
-    : part === '{{alerts}}' ? link(words.journeyUrl, words.footerAlerts, COLOR.ink) : escapeHtml(part)).join('');
+  return words.footer.split(/(\{\{(?:off|alerts)\}\})/).map((part) => part === '{{off}}' ? link(words.offUrl, words.footerOff, COLOR.faint)
+    : part === '{{alerts}}' ? link(words.journeyUrl, words.footerAlerts, COLOR.faint) : escapeHtml(part)).join('');
 }
 
 /**
@@ -64,7 +64,10 @@ function footerHtml(words: EmailWords): string {
  *
  * The column is 520 px at most and as wide as a phone lets it be. Its side
  * margins are cells of their own, so they shrink with it and the card keeps
- * as much of a small screen as it can.
+ * as much of a small screen as it can. The button is as wide as the card.
+ *
+ * Why the email came and how to stop it is a notice for whoever looks for it,
+ * not part of the message: it sits under the panel, small, pale and centred.
  */
 export function emailHtml(words: EmailWords): string {
   const table = 'role="presentation" cellspacing="0" cellpadding="0" border="0"';
@@ -99,18 +102,19 @@ ${gutter}
 <p style="margin: 2px 0 0; ${type(COLOR.soft)}; font-size: 10px; line-height: 1.1">${escapeHtml(words.tagline)}</p>
 <h1 style="margin: 26px 0 6px; ${type()}; font-size: 30px; line-height: 1.1; font-weight: 600; letter-spacing: -1px">${escapeHtml(words.title)}</h1>
 <p style="margin: 0; ${type(COLOR.soft)}; font-size: 14px; line-height: 1.5">${escapeHtml(words.sentence)}</p>${card}
-<table ${table} style="margin: 20px 0 0">
+<table ${table} width="100%" style="margin: 20px 0 0">
 <tr>
-<td bgcolor="${COLOR.yellow}" style="border-radius: 16px; background-color: ${COLOR.yellow}"><a href="${escapeHtml(words.journeyUrl)}" style="display: inline-block; padding: 15px 20px; border-radius: 16px; ${type()}; font-size: 15px; line-height: 20px; font-weight: 600; text-decoration: none">${escapeHtml(words.button)}</a></td>
+<td align="center" bgcolor="${COLOR.yellow}" style="border-radius: 16px; background-color: ${COLOR.yellow}"><a href="${escapeHtml(words.journeyUrl)}" style="display: block; padding: 15px 20px; border-radius: 16px; ${type()}; font-size: 15px; line-height: 20px; font-weight: 600; text-align: center; text-decoration: none">${escapeHtml(words.button)}</a></td>
 </tr>
 </table>
-<p style="margin: 26px 0 0; ${type(COLOR.soft)}; font-size: 12px; line-height: 1.6">${footerHtml(words)}</p>
-<p style="margin: 10px 0 0; ${type(COLOR.soft)}; font-size: 11.5px; line-height: 1.6">${escapeHtml(words.brand)} · ${escapeHtml(words.tagline)} · ${link(words.privacyUrl, words.privacy, COLOR.soft)} · ${link(words.sourceUrl, words.source, COLOR.soft)}</p>
 </td>
 ${gutter}
 </tr>
 </table>
 </td>
+</tr>
+<tr>
+<td align="center" style="padding: 18px 22px 0; ${type(COLOR.faint)}; font-size: 11px; line-height: 1.55; text-align: center">${footerHtml(words)}<br>${escapeHtml(words.brand)} · ${escapeHtml(words.tagline)} · ${link(words.privacyUrl, words.privacy, COLOR.faint)} · ${link(words.sourceUrl, words.source, COLOR.faint)}</td>
 </tr>
 </table>
 <!--[if mso]></td></tr></table><![endif]-->
@@ -137,8 +141,8 @@ export function emailText(words: EmailWords): string {
     words.textOff,
     '',
     `${words.brand} · ${words.tagline}`,
-    `${words.privacy}: ${words.privacyUrl}`,
-    `${words.source}: ${words.sourceUrl}`,
+    `${words.privacy} · ${words.privacyUrl}`,
+    `${words.source} · ${words.sourceUrl}`,
     '',
   ].join('\n');
 }

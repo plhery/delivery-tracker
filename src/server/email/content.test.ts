@@ -186,10 +186,10 @@ describe('deliveryEmailContent', () => {
     const body = html.slice(html.indexOf('<body'));
     expect(body.indexOf(english('email.delivered.by.today', { carrier: 'DHL', time: '14:12' }))).toBeLessThan(body.indexOf('<table'));
     expect(body).toMatch(/<div style="display: none;[^"]*">[^<]+<\/div>\s*<table/);
-    // The header is text, and the button is a real link on a filled cell.
+    // The header is text, and the button is a real link on a filled cell, as wide as the card above it.
     expect(html).toContain(`>${en['app.title']}</p>`);
     expect(html).toContain(`>${en['app.tagline']}</p>`);
-    expect(html).toMatch(new RegExp(`<td bgcolor="#f3cf48"[^>]*><a href="${JOURNEY.replace('?', '\\?')}" style="display: inline-block; padding: 15px 20px;[^"]*">${en['email.delivered.button']}</a></td>`));
+    expect(html).toMatch(new RegExp(`<table [^>]*width="100%" style="margin: 20px 0 0">\\s*<tr>\\s*<td align="center" bgcolor="#f3cf48"[^>]*><a href="${JOURNEY.replace('?', '\\?')}" style="display: block; padding: 15px 20px;[^"]*text-align: center[^"]*">${en['email.delivered.button']}</a></td>`));
   });
 
   it('ends with why it came, how to stop it, and the two addresses of its last line', async () => {
@@ -204,13 +204,20 @@ describe('deliveryEmailContent', () => {
       english('email.delivered.textOff', { url: OFF }),
       '',
       `${en['app.title']} · ${en['app.tagline']}`,
-      `${en['auth.privacyLink']}: ${PRIVACY}`,
-      `GitHub: ${SOURCE}`,
+      `${en['auth.privacyLink']} · ${PRIVACY}`,
+      `GitHub · ${SOURCE}`,
       '',
     ].join('\n'));
-    expect(email.html).toContain(`<a href="${OFF}" style="color: #20251e; text-decoration: underline">${en['email.delivered.footerOff']}</a>`);
-    expect(email.html).toContain(`<a href="${JOURNEY}" style="color: #20251e; text-decoration: underline">${en['email.delivered.footerAlerts']}</a>`);
-    expect(email.html).toContain(`${en['app.title']} · ${en['app.tagline']} · <a href="${PRIVACY}" style="color: #657060; text-decoration: underline">${en['auth.privacyLink']}</a> · <a href="${SOURCE}" style="color: #657060; text-decoration: underline">GitHub</a>`);
+    expect(email.html).toContain(`<a href="${OFF}" style="color: #8b9386; text-decoration: underline">${en['email.delivered.footerOff']}</a>`);
+    expect(email.html).toContain(`<a href="${JOURNEY}" style="color: #8b9386; text-decoration: underline">${en['email.delivered.footerAlerts']}</a>`);
+    expect(email.html).toContain(`${en['app.title']} · ${en['app.tagline']} · <a href="${PRIVACY}" style="color: #8b9386; text-decoration: underline">${en['auth.privacyLink']}</a> · <a href="${SOURCE}" style="color: #8b9386; text-decoration: underline">GitHub</a>`);
+    // It is a notice, not part of the message: under the panel, small, pale and centred.
+    const notice = /<\/table>\n<\/td>\n<\/tr>\n<tr>\n<td align="center" style="([^"]*)">([^\n]*)<\/td>\n<\/tr>\n<\/table>/.exec(email.html)!;
+    expect(notice[1]).toContain('color: #8b9386; font-size: 11px');
+    expect(notice[1]).toContain('text-align: center');
+    expect(notice[2]).toContain(en['email.delivered.footerOff']);
+    expect(notice[2]).toContain(`>GitHub</a>`);
+    expect(email.html.indexOf(en['email.delivered.button'])).toBeLessThan(email.html.indexOf(notice[0]));
   });
 
   it('describes the picture for a reader who does not see it', async () => {
