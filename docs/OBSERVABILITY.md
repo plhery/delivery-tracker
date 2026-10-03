@@ -25,7 +25,9 @@ anyone holding a link can add an endpoint.
 
 The delivery email is another: its lines name a parcel by its id and say how the email
 ended, never the address, the subject or the parcel's name. A mail server's refusal quotes
-the recipient, so only its kind and SMTP status are logged and reported.
+the recipient, so only its kind and SMTP status are logged and reported. The token of an
+unsubscribe link is the right to switch an account's email: `/api/email/unsubscribe` is
+logged without its query, and its error reports leave the request out.
 
 ## Postgres audit
 

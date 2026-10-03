@@ -153,6 +153,7 @@ beforeEach(() => {
   vi.stubEnv('SUPABASE_URL', 'https://database.example');
   vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
   vi.stubEnv('TRUST_PROXY_HEADERS', 'true');
+  vi.stubEnv('SMTP_HOST', '');
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
   wake = vi.spyOn(background, 'wakeSyncWorker').mockImplementation(() => undefined);
@@ -181,7 +182,7 @@ describe('looking up a parcel without an account', () => {
     expect(answer.link).toEqual({
       id: linkId, role: 'owner', kind: 'lookup', createdAt: '2026-09-28T08:00:00.000Z',
       forgetAt: '2026-12-30T10:00:00.000Z', numberShown: true, showNumber: false, canKeep: true,
-      gift: false, shared: true, alerts: { available: false, vapidPublicKey: null },
+      gift: false, shared: true, alerts: { available: false, vapidPublicKey: null, email: false },
     });
     expect(answer.package).toMatchObject({ id: packageId, tracking_number: trackingNumber, number_hint: null, label: '' });
 
@@ -449,7 +450,7 @@ describe('reading a parcel link', () => {
     expect(answer.link).toEqual({
       id: linkId, role: 'viewer', kind: 'shared', createdAt: '2026-09-28T08:00:00.000Z',
       forgetAt: null, numberShown: true, canKeep: true,
-      gift: false, shared: true, alerts: { available: false, vapidPublicKey: null },
+      gift: false, shared: true, alerts: { available: false, vapidPublicKey: null, email: false },
     });
     expect(answer.package).toMatchObject({ tracking_number: trackingNumber, number_hint: null, dpd_postcode: null });
     expect(enqueue).not.toHaveBeenCalled();
@@ -539,8 +540,21 @@ describe('reading a parcel link', () => {
     vi.stubEnv('VAPID_PRIVATE_KEY', keys.privateKey);
     find();
     const text = await (await open()).text();
-    expect(JSON.parse(text).link.alerts).toEqual({ available: true, vapidPublicKey: keys.publicKey });
+    expect(JSON.parse(text).link.alerts).toEqual({ available: true, vapidPublicKey: keys.publicKey, email: false });
     expect(text).not.toContain(keys.privateKey);
+  });
+
+  it('says that accounts are emailed on delivery when the server has mail settings', async () => {
+    vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+    vi.stubEnv('SMTP_USER', 'mailer');
+    vi.stubEnv('SMTP_PASSWORD', 'test-smtp-pass');
+    vi.stubEnv('EMAIL_FROM', 'Peek <hello@example.com>');
+    vi.stubEnv('CANONICAL_ORIGIN', 'https://delivery.example');
+    find();
+    const text = await (await open()).text();
+    expect(JSON.parse(text).link.alerts).toEqual({ available: false, vapidPublicKey: null, email: true });
+    // The answer says that mail is on, never how it is sent.
+    expect(text).not.toMatch(/smtp|mailer|hello@example\.com/);
   });
 
   it('queues a check of a one-off parcel that is due one, and only then', async () => {

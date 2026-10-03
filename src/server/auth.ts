@@ -18,6 +18,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export interface SupabaseUser {
   id: string;
   email: string | null;
+  /** Whether the Auth server has confirmed that the address is the account's. Left out, it has not. */
+  emailConfirmed?: boolean;
   authenticatedAt: Date | null;
   sessionId: string | null;
 }
@@ -99,6 +101,7 @@ export class SupabaseAuthenticator {
     const user: SupabaseUser = {
       id: payload.id.toLowerCase(),
       email: typeof payload.email === 'string' ? payload.email : null,
+      emailConfirmed: typeof payload.email_confirmed_at === 'string' && payload.email_confirmed_at !== '',
       authenticatedAt: claims.authenticatedAt,
       sessionId: claims.sessionId,
     };

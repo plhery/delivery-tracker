@@ -46,8 +46,8 @@ export const onRequestError: Instrumentation.onRequestError = async (
       operation: 'request_error',
       route: context.routePath,
       routeType: context.routeType,
-      // A parcel link's address is a capability.
-      withoutRequest: context.routePath.startsWith('/p/'),
+      // A parcel link's address is a capability, and so is the address an email's unsubscribe header posts to.
+      withoutRequest: context.routePath.startsWith('/p/') || context.routePath.startsWith('/api/email/'),
     });
     await observability.flushObservability(500);
   }

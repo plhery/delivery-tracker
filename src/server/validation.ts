@@ -375,6 +375,8 @@ export interface NotificationPreferencesValues {
   quietHoursStart: string | null;
   quietHoursEnd: string | null;
   timezone: string;
+  /** The delivery email, switched on or off. Null keeps the stored choice: the request left it out. */
+  emailOnDelivery: boolean | null;
 }
 
 export function notificationPreferences(payload: JsonObject): NotificationPreferencesValues {
@@ -411,22 +413,52 @@ export function notificationPreferences(payload: JsonObject): NotificationPrefer
   } catch (error) {
     throw new HttpError(400, 'Use a valid timezone', undefined, { cause: error });
   }
+  // Apps from before the delivery email send neither field; `emailAvailable` is the server's to say.
+  const emailOnDelivery = payload.emailOnDelivery ?? null;
+  if (emailOnDelivery !== null && typeof emailOnDelivery !== 'boolean') {
+    throw new HttpError(400, 'Email on delivery must be true or false');
+  }
   return {
     enabledStages,
     quietHoursStart: quietHoursStart as string | null,
     quietHoursEnd: quietHoursEnd as string | null,
     timezone: payload.timezone,
+    emailOnDelivery,
   };
 }
 
-export function notificationPreferencesResponse(row: JsonObject): JsonObject {
+/** The preferences as stored, and whether this server can email the account at all. */
+export function notificationPreferencesResponse(row: JsonObject, emailAvailable: boolean): JsonObject {
   const shortTime = (value: unknown) => typeof value === 'string' ? value.slice(0, 5) : null;
   return {
     enabledStages: Array.isArray(row.enabled_stages) ? row.enabled_stages : [],
     quietHoursStart: shortTime(row.quiet_hours_start),
     quietHoursEnd: shortTime(row.quiet_hours_end),
     timezone: typeof row.timezone === 'string' ? row.timezone : 'Europe/Zurich',
+    emailOnDelivery: typeof row.email_on_delivery === 'boolean' ? row.email_on_delivery : null,
+    emailAvailable,
   };
+}
+
+/** What to change about one parcel's notifications and delivery email: one of them, or both. */
+export function packageNotificationValues(payload: JsonObject): { muted?: boolean; emailMuted?: boolean } {
+  const { muted, emailMuted } = payload;
+  if (muted !== undefined && typeof muted !== 'boolean') throw new HttpError(400, 'Muted must be true or false');
+  if (emailMuted !== undefined && typeof emailMuted !== 'boolean') {
+    throw new HttpError(400, 'Email muted must be true or false');
+  }
+  if (muted === undefined && emailMuted === undefined) {
+    throw new HttpError(400, 'Muted or emailMuted must be true or false');
+  }
+  return { ...(muted === undefined ? {} : { muted }), ...(emailMuted === undefined ? {} : { emailMuted }) };
+}
+
+/** The token and the wanted state from the page an email links to. A switch left out turns the email off. */
+export function deliveryEmailSwitch(payload: JsonObject): { token: unknown; enabled: boolean } {
+  if (payload.enabled !== undefined && typeof payload.enabled !== 'boolean') {
+    throw new HttpError(400, 'Enabled must be true or false');
+  }
+  return { token: payload.token, enabled: payload.enabled === true };
 }
 
 export function syncJobResponse(row: JsonObject): JsonObject {

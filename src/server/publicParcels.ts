@@ -14,6 +14,7 @@ import type {
 } from '../generated/apiContract';
 import { EVENT_STAGE_ORDER } from '../lib/stages';
 import { clientNetwork, clientSite } from './api';
+import { emailConfigured } from './email/config';
 import { withEventPlaces } from './eventPlaces';
 import { capturePublicAllowance, logOperationalEvent } from './observability';
 import { pushServices } from './push';
@@ -297,14 +298,16 @@ export function giftEvents(
 /**
  * Whether this server sends browser notifications, and the key a browser
  * subscribes with. A push configuration that does not load reads as none: a
- * parcel is still shown.
+ * parcel is still shown. `email` says whether the server emails accounts when
+ * a parcel is delivered, which a link's page offers with signing in.
  */
 export function parcelAlerts(service: SupabaseServiceClient): ApiParcelAlerts {
+  const email = emailConfigured();
   try {
     const web = pushServices(service).web;
-    return { available: web !== null, vapidPublicKey: web?.publicKey ?? null };
+    return { available: web !== null, vapidPublicKey: web?.publicKey ?? null, email };
   } catch {
-    return { available: false, vapidPublicKey: null };
+    return { available: false, vapidPublicKey: null, email };
   }
 }
 

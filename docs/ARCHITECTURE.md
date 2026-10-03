@@ -141,6 +141,14 @@ Key server modules:
   - Addresses stay out of logs, metric labels and error reports.
   - The email has no tracking pixel, no rewritten link and no remote content: its picture
     travels inside it.
+  - Every email carries a token that names its account, signed with a key derived from the
+    service-role key. With it, and without a sign-in, `POST /api/email/unsubscribe` switches
+    that account's delivery email off or back on, and nothing else. A token this server did
+    not make and an account that is gone get the same answer.
+  - Opening an address from an email changes nothing, because mail scanners open them too:
+    `/email/off` asks first, and reads the token after `#`. Only a mail app's own
+    "Unsubscribe" posts straight to the route.
+  - Tokens stay out of request logs and error reports.
 - **Private data**: tracking numbers, labels, carrier history, push endpoints and capability
   URLs (Planzer, Dachser) never go into analytics. They do appear in operator logs and
   Sentry; see [OBSERVABILITY.md](OBSERVABILITY.md).

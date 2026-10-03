@@ -151,7 +151,9 @@ describe('what a link shows', () => {
     const shown = (link: Record<string, unknown>) => publicParcelResponse({
       link: { id: 'k7Qm2xHd9RtW', created_at: '2026-10-02T08:00:00Z', forget_at: null, ...link },
       package: { id: 'parcel', tracking_number: 'TESTPARCEL123456', carrier: 'unknown', sync_status: 'ok',
-        created_at: '2026-10-02T08:00:00Z', carrier_data: stored, tracking_events: [] },
+        created_at: '2026-10-02T08:00:00Z', carrier_data: stored, tracking_events: [],
+        // What its owner chose about alerts, and when the parcel joined an account, is the owner's alone.
+        notifications_muted: true, email_muted: true, owned_since: '2026-10-01T08:00:00Z' },
     }, alerts).package;
 
     expect(Object.keys(shown({ owner: true }).carrier_data).sort()).toEqual(listed);
@@ -164,6 +166,10 @@ describe('what a link shows', () => {
     // Every other field of the answer is one the contract requires, and nothing else.
     expect(Object.keys(shown({ owner: false })).sort()).toEqual([...schema.required].sort());
     expect(schema.additionalProperties).toBe(false);
+    for (const link of [{ owner: false }, { owner: true }]) {
+      expect(shown(link).notifications_muted).toBe(false);
+      expect(JSON.stringify(shown(link))).not.toMatch(/email_muted|owned_since/);
+    }
     // A gift on its way keeps back the sender, what describes the contents and where the parcel waits.
     expect(Object.keys(shown({ owner: false, gift: true, show_number: true }).carrier_data).sort()).toEqual(listed.filter((key) => (
       !key.endsWith('_tracking_number') && !['sender_name', 'pickup_point', 'dimensions_text', 'weight_kg'].includes(key)
@@ -457,9 +463,24 @@ describe('whether a link can take alerts', () => {
   it('says no without Web Push keys, and when they do not load', () => {
     vi.stubEnv('VAPID_PUBLIC_KEY', '');
     vi.stubEnv('VAPID_PRIVATE_KEY', '');
-    expect(parcelAlerts(client)).toEqual({ available: false, vapidPublicKey: null });
+    vi.stubEnv('SMTP_HOST', '');
+    expect(parcelAlerts(client)).toEqual({ available: false, vapidPublicKey: null, email: false });
     // A key without its other half is a configuration error: a parcel is still shown.
     vi.stubEnv('VAPID_PUBLIC_KEY', 'only-one-half');
-    expect(parcelAlerts(client)).toEqual({ available: false, vapidPublicKey: null });
+    expect(parcelAlerts(client)).toEqual({ available: false, vapidPublicKey: null, email: false });
+  });
+
+  it('says whether this server emails accounts, whatever Web Push does', () => {
+    vi.stubEnv('VAPID_PUBLIC_KEY', '');
+    vi.stubEnv('VAPID_PRIVATE_KEY', '');
+    vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+    vi.stubEnv('EMAIL_FROM', 'Peek <hello@example.com>');
+    vi.stubEnv('CANONICAL_ORIGIN', 'https://peek.example.com');
+    expect(parcelAlerts(client)).toEqual({ available: false, vapidPublicKey: null, email: true });
+    vi.stubEnv('VAPID_PUBLIC_KEY', 'only-one-half');
+    expect(parcelAlerts(client)).toEqual({ available: false, vapidPublicKey: null, email: true });
+    // Mail settings that do not load read as none: startup reports them.
+    vi.stubEnv('EMAIL_FROM', '');
+    expect(parcelAlerts(client)).toEqual({ available: false, vapidPublicKey: null, email: false });
   });
 });

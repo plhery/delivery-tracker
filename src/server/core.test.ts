@@ -36,6 +36,7 @@ import {
   nativePushDevice,
   newPackageValues,
   notificationPreferences,
+  notificationPreferencesResponse,
   packageLabel,
   packageCarrierValues,
   pushEndpoint,
@@ -370,6 +371,20 @@ describe('authentication validation', () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
+  it('says whether the Auth server has confirmed the account\'s address', async () => {
+    const answer = (confirmed: unknown) => new Response(JSON.stringify({
+      id: userId, email: 'owner@example.com', is_anonymous: false, email_confirmed_at: confirmed,
+    }), { status: 200 });
+    const fetcher = vi.spyOn(globalThis, 'fetch');
+    const auth = new SupabaseAuthenticator('https://supabase.example', 'public-key');
+    for (const [confirmed, expected] of [['2026-09-01T08:00:00Z', true], [null, false], ['', false], [true, false]] as const) {
+      fetcher.mockResolvedValueOnce(answer(confirmed));
+      await expect(auth.validate(token({ sub: userId }), false)).resolves.toMatchObject({ emailConfirmed: expected });
+    }
+    fetcher.mockResolvedValueOnce(new Response(JSON.stringify({ id: userId, email: 'owner@example.com' }), { status: 200 }));
+    await expect(auth.validate(token({ sub: userId }), false)).resolves.toMatchObject({ emailConfirmed: false });
+  });
+
   it('rejects anonymous, malformed, and oversized tokens', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
       id: userId,
@@ -648,6 +663,26 @@ describe('input validation', () => {
       quietHoursEnd: null,
       timezone: 'Moon/Base',
     })).toThrow('timezone');
+  });
+
+  it('reads the delivery email as a switch, and keeps the stored choice when it is left out', () => {
+    const saved = { enabledStages: ['delivered'], quietHoursStart: null, quietHoursEnd: null, timezone: 'Europe/Zurich' };
+    // What released apps send: the four fields they know.
+    expect(notificationPreferences(saved)).toEqual({ ...saved, emailOnDelivery: null });
+    expect(notificationPreferences({ ...saved, emailOnDelivery: null, emailAvailable: true })).toEqual({ ...saved, emailOnDelivery: null });
+    expect(notificationPreferences({ ...saved, emailOnDelivery: true })).toEqual({ ...saved, emailOnDelivery: true });
+    expect(notificationPreferences({ ...saved, emailOnDelivery: false })).toEqual({ ...saved, emailOnDelivery: false });
+    for (const emailOnDelivery of ['on', 1, 0, {}]) {
+      expect(() => notificationPreferences({ ...saved, emailOnDelivery })).toThrow('Email on delivery must be true or false');
+    }
+    const row = { enabled_stages: ['delivered'], quiet_hours_start: '22:00:00', quiet_hours_end: '07:30:00', timezone: 'Europe/Paris' };
+    expect(notificationPreferencesResponse({ ...row, email_on_delivery: true, email_enabled_at: '2026-10-03T08:00:00Z' }, true)).toEqual({
+      enabledStages: ['delivered'], quietHoursStart: '22:00', quietHoursEnd: '07:30', timezone: 'Europe/Paris',
+      emailOnDelivery: true, emailAvailable: true,
+    });
+    // A row from before the email, and a value that is not a switch, read as never chosen.
+    expect(notificationPreferencesResponse(row, false)).toMatchObject({ emailOnDelivery: null, emailAvailable: false });
+    expect(notificationPreferencesResponse({ ...row, email_on_delivery: 'true' }, true)).toMatchObject({ emailOnDelivery: null });
   });
 });
 

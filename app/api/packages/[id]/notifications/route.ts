@@ -9,6 +9,7 @@ import {
 } from '../../../../../src/server/api';
 import { withEventPlaces } from '../../../../../src/server/eventPlaces';
 import { SupabaseError } from '../../../../../src/server/supabase';
+import { packageNotificationValues } from '../../../../../src/server/validation';
 
 interface PackageParameters extends RouteParameters {
   id: string;
@@ -20,11 +21,11 @@ export const runtime = 'nodejs';
 export const PATCH = apiRoute<PackageParameters>(async (context) => {
   const { id } = await context.route.params;
   const packageId = parseUuid(id, 'package id');
-  const payload = await readJsonObject(context.request);
-  if (typeof payload.muted !== 'boolean') throw new HttpError(400, 'Muted must be true or false');
+  const { muted, emailMuted } = packageNotificationValues(await readJsonObject(context.request));
   const client = requireUserClient(context);
   try {
-    await client.updatePackage(packageId, { notifications_muted: payload.muted });
+    if (muted !== undefined) await client.updatePackage(packageId, { notifications_muted: muted });
+    if (emailMuted !== undefined) await client.updatePackage(packageId, { email_muted: emailMuted });
   } catch (error) {
     if (error instanceof SupabaseError && error.status === 404) {
       throw new HttpError(404, 'Package not found', undefined, { cause: error });
