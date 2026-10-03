@@ -3,6 +3,9 @@ import { DEMO_PATH } from '../../lib/experience';
 /** Where the code lives. */
 export const SOURCE_URL = 'https://github.com/plhery/delivery-tracker';
 
+/** Who makes Peek, on X. */
+export const AUTHOR_URL = 'https://x.com/plhery';
+
 /** A public build-time address, taken only when it is a secure link. */
 export function publicLink(value: string | undefined): string | null {
   try {

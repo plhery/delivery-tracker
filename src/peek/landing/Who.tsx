@@ -3,8 +3,8 @@ import { Icon } from '../../components/Icon';
 import { PeekMark } from '../../components/PeekMark';
 import { LanguageControl, useI18n, type MessageKey } from '../../i18n';
 import { trackAction } from '../../lib/analytics';
-import { LandingIcon } from './glyphs';
-import { SOURCE_URL } from './links';
+import { LandingIcon, XLogo } from './glyphs';
+import { AUTHOR_URL, SOURCE_URL } from './links';
 import './Who.css';
 
 const FACTS: readonly { icon: ReactNode; title: MessageKey; body: MessageKey }[] = [
@@ -13,7 +13,7 @@ const FACTS: readonly { icon: ReactNode; title: MessageKey; body: MessageKey }[]
   { icon: <LandingIcon name="forgets" />, title: 'landing.who.forgets.title', body: 'landing.who.forgets.body' },
 ];
 
-/** "Who's behind Peek?": an open-source project, no account needed, and a parcel forgotten on its own. */
+/** "Who's behind Peek?": an open-source project, no account needed, a parcel forgotten on its own, and the ways to its code and its author. */
 export function Who() {
   const { t } = useI18n();
   return <section className="landing-who" aria-labelledby="landing-who-title">
@@ -28,7 +28,10 @@ export function Who() {
         <span>{t(body)}</span>
       </li>)}
     </ul>
-    <a className="button landing-who__source" href={SOURCE_URL} target="_blank" rel="noopener noreferrer"><LandingIcon name="github" />{t('landing.who.github')}</a>
+    <div className="landing-who__links">
+      <a className="button landing-who__source" href={SOURCE_URL} target="_blank" rel="noopener noreferrer"><LandingIcon name="github" />{t('landing.who.github')}</a>
+      <a className="button landing-who__author" href={AUTHOR_URL} target="_blank" rel="noopener noreferrer" aria-label={t('landing.who.x')}><XLogo />@plhery</a>
+    </div>
   </section>;
 }
 

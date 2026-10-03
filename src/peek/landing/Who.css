@@ -1,4 +1,4 @@
-/* "Who's behind Peek?": a card of three facts, and the way to the code. */
+/* "Who's behind Peek?": a card of three facts, and the ways to the code and to its author. */
 .landing-who { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 30px; width: min(100%, 1100px); margin: 100px auto 0; padding: 40px 44px; border: 1px solid var(--line); border-radius: 28px; background: var(--paper); }
 .landing-who h2 { margin: 0; font-size: 34px; line-height: 1.08; letter-spacing: -.035em; font-weight: 650; text-wrap: balance; overflow-wrap: anywhere; }
 .landing-who__intro p { margin: 10px 0 0; color: var(--ink-soft); font-size: 15px; }
@@ -8,8 +8,12 @@
 .landing-who__icon svg { width: 19px; height: 19px; stroke-width: 1.6; }
 .landing-who__facts strong { font-size: 15px; font-weight: 600; letter-spacing: -.2px; }
 .landing-who__facts li > span:last-child { color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
-.landing-who__source { grid-column: 2; grid-row: 1; align-self: end; background: var(--ink); color: var(--paper); font-size: 15px; }
+.landing-who__links { grid-column: 2; grid-row: 1; align-self: end; display: flex; flex-wrap: wrap; gap: 10px; }
+.landing-who__links .button { font-size: 15px; }
+.landing-who__source { background: var(--ink); color: var(--paper); }
 .landing-who__source svg { width: 19px; height: 19px; }
+.landing-who__author { background: var(--control); color: var(--ink); }
+.landing-who__author svg { width: 15px; height: 15px; fill: currentColor; stroke: none; }
 
 /* The foot of the page. */
 .landing-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 22px; margin: 34px 0 0; padding-bottom: max(26px, env(safe-area-inset-bottom)); color: var(--ink-soft); font-size: 12px; }
@@ -25,7 +29,9 @@
   .landing-who h2 { font-size: 24px; }
   .landing-who__intro p { margin-top: 8px; font-size: 13.5px; line-height: 1.5; }
   .landing-who__facts { grid-template-columns: minmax(0, 1fr); gap: 20px; margin-top: 20px; }
-  .landing-who__source { grid-column: 1; grid-row: 3; min-height: 44px; margin-top: 22px; padding: 10px 14px; border-radius: 14px; font-size: 13px; font-weight: 550; }
+  .landing-who__links { grid-column: 1; grid-row: 3; margin-top: 22px; }
+  .landing-who__links .button { min-height: 44px; padding: 10px 14px; border-radius: 14px; font-size: 13px; font-weight: 550; }
   .landing-who__source svg { width: 17px; height: 17px; }
+  .landing-who__author svg { width: 13px; height: 13px; }
   .landing-footer { gap: 0 14px; margin-top: 18px; }
 }

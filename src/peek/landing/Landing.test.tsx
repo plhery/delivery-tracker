@@ -44,6 +44,11 @@ describe('Landing', () => {
       .toEqual(['Open source', 'No account needed', 'Forgets on its own']);
     expect(within(who).getByText('Without an account, a parcel is forgotten 30 days after it arrives.')).toBeVisible();
     expect(within(who).getByRole('link', { name: 'View on GitHub' })).toHaveAttribute('href', 'https://github.com/plhery/delivery-tracker');
+    // Who makes it: the author's account, named in words for a screen reader.
+    const author = within(who).getByRole('link', { name: '@plhery on X' });
+    expect(author).toHaveAttribute('href', 'https://x.com/plhery');
+    expect(author).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(author).toHaveTextContent('@plhery');
   });
 
   it('keeps the moving pictures out of a screen reader’s way', () => {

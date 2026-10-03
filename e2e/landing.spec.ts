@@ -86,6 +86,7 @@ test('asks four questions in order, with the field first and the name, the code 
   const who = page.getByRole('region', { name: 'Who’s behind Peek?' });
   await expect(who.getByRole('listitem')).toHaveCount(3);
   await expect(who.getByRole('link', { name: 'View on GitHub' })).toHaveAttribute('href', 'https://github.com/plhery/delivery-tracker');
+  await expect(who.getByRole('link', { name: '@plhery on X' })).toHaveAttribute('href', 'https://x.com/plhery');
   const footer = page.getByRole('contentinfo');
   await expect(footer.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy.html');
   await footer.getByRole('combobox', { name: 'Language' }).selectOption('de');
@@ -180,7 +181,7 @@ test('everything that can be used is reached by keyboard, and Pip opens with Ent
     if (name) reached.push(name);
   }
   expect(reached).not.toContain('INSIDE A PICTURE');
-  for (const name of ['Sign in', 'Paste', 'Open a sample parcel', 'Sign in to keep them all', 'View on GitHub', 'Privacy', 'Language']) expect(reached).toContain(name);
+  for (const name of ['Sign in', 'Paste', 'Open a sample parcel', 'Sign in to keep them all', 'View on GitHub', '@plhery on X', 'Privacy', 'Language']) expect(reached).toContain(name);
   // The field comes before Pip, and Pip before what the page says below.
   expect(reached.indexOf('Paste')).toBeLessThan(reached.indexOf('Open a sample parcel'));
   expect(reached.indexOf('Open a sample parcel')).toBeLessThan(reached.indexOf('Sign in to keep them all'));
