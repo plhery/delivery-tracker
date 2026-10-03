@@ -1,8 +1,20 @@
 export type Clock = () => number;
 
-/** In-memory sliding-window limiter for a single self-hosted Next.js process. */
+interface Allowance {
+  requests: number[];
+  /** The window the key was last counted with: what decides when its requests expire. */
+  window: number;
+}
+
+/**
+ * In-memory sliding-window limiter for a single self-hosted Next.js process.
+ * Its counts are lost when the process restarts. Past `maxKeys` it forgets
+ * the keys used least recently, so give each kind of key its own limiter: a
+ * flood of one kind then cannot push out another's counts.
+ */
 export class RateLimiter {
-  readonly #requests = new Map<string, number[]>();
+  /** In order of use: the first key is the one used least recently. */
+  readonly #allowances = new Map<string, Allowance>();
 
   constructor(
     readonly maxKeys = 4_096,
@@ -20,39 +32,45 @@ export class RateLimiter {
     }
 
     const now = this.clock();
-    const cutoff = now - window;
-    const requests = this.#requests.get(key) ?? [];
-    let firstActive = 0;
-    while (firstActive < requests.length && requests[firstActive]! <= cutoff) {
-      firstActive += 1;
-    }
-    if (firstActive > 0) requests.splice(0, firstActive);
-    this.#requests.set(key, requests);
+    const allowance = this.#allowances.get(key) ?? { requests: [], window };
+    allowance.window = window;
+    expire(allowance, now);
+    this.#allowances.delete(key);
+    this.#allowances.set(key, allowance);
 
+    const { requests } = allowance;
     if (requests.length >= limit) {
       return Math.max(1, Math.ceil(requests[0]! + window - now));
     }
 
     requests.push(now);
-    if (this.#requests.size > this.maxKeys) this.#prune(cutoff, key);
+    if (this.#allowances.size > this.maxKeys) this.#prune(now, key);
     return 0;
   }
 
-  #prune(cutoff: number, keep: string): void {
-    for (const [key, requests] of this.#requests) {
+  #prune(now: number, keep: string): void {
+    // Keys with nothing left to count go first.
+    for (const [key, allowance] of this.#allowances) {
+      if (this.#allowances.size <= this.maxKeys) return;
       if (key === keep) continue;
-      let firstActive = 0;
-      while (firstActive < requests.length && requests[firstActive]! <= cutoff) {
-        firstActive += 1;
-      }
-      if (firstActive > 0) requests.splice(0, firstActive);
-      if (requests.length === 0) this.#requests.delete(key);
-      if (this.#requests.size <= this.maxKeys) return;
+      expire(allowance, now);
+      if (allowance.requests.length === 0) this.#allowances.delete(key);
     }
 
-    for (const key of this.#requests.keys()) {
-      if (key !== keep) this.#requests.delete(key);
-      if (this.#requests.size <= this.maxKeys) return;
+    for (const key of this.#allowances.keys()) {
+      if (this.#allowances.size <= this.maxKeys) return;
+      if (key !== keep) this.#allowances.delete(key);
     }
   }
+}
+
+/** Drops the requests that have left the key's own window. */
+function expire(allowance: Allowance, now: number): void {
+  const cutoff = now - allowance.window;
+  const { requests } = allowance;
+  let firstActive = 0;
+  while (firstActive < requests.length && requests[firstActive]! <= cutoff) {
+    firstActive += 1;
+  }
+  if (firstActive > 0) requests.splice(0, firstActive);
 }

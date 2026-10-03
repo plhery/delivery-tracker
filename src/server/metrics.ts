@@ -16,13 +16,13 @@ import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from '
  * often a parcel of a carrier with its own adapter ended up on a universal
  * provider instead.
  *
- * The parcel-link series count lookups without an account, link reads, kept
- * parcels, forgotten ones, shares and alerts by outcome only: never by number,
- * link, client or push endpoint.
+ * The parcel-link series count lookups and detections without an account,
+ * link reads, kept parcels, forgotten ones, shares and alerts by outcome only:
+ * never by number, link, client or push endpoint.
  */
 
 /** Bump when the series or their labels change, so a hot-reloaded copy does not reuse an older shape. */
-const RUNTIME_VERSION = 5;
+const RUNTIME_VERSION = 6;
 
 interface PrometheusRuntime {
   version: number;
@@ -35,6 +35,7 @@ interface PrometheusRuntime {
   detectionTotal: Counter<'result'>;
   refreshTotal: Counter<'carrier' | 'served_by' | 'outcome'>;
   publicLookupTotal: Counter<'outcome'>;
+  publicDetectionTotal: Counter<'outcome'>;
   publicParcelReadTotal: Counter<'outcome'>;
   parcelClaimTotal: Counter<'outcome'>;
   parcelForgottenTotal: Counter<'kind' | 'reason'>;
@@ -44,6 +45,8 @@ interface PrometheusRuntime {
   parcelAlertSentTotal: Counter<'outcome'>;
   publicLookupClients: Gauge;
   publicLookupsPerClient: Gauge<'stat'>;
+  publicDetectionClients: Gauge;
+  publicDetectionsPerClient: Gauge<'stat'>;
   /** Series a scrape has shown; they count at once. */
   scraped: Set<string>;
   /** Series created at 0 since the last scrape, with the updates they wait to apply. */
@@ -109,7 +112,13 @@ function createRuntime(): PrometheusRuntime {
     }),
     publicLookupTotal: new Counter({
       name: 'public_lookup_total',
-      help: 'Lookups without an account by outcome (created, reused, limited_burst, limited_daily, limited_global).',
+      help: 'Lookups without an account by outcome (created, reused, limited_burst, limited_daily, limited_network, limited_global).',
+      labelNames: ['outcome'] as const,
+      registers: [registry],
+    }),
+    publicDetectionTotal: new Counter({
+      name: 'public_detection_total',
+      help: 'Detections without an account that asked carriers about a number (asked) or were refused first (limited_burst, limited_daily, limited_global).',
       labelNames: ['outcome'] as const,
       registers: [registry],
     }),
@@ -163,6 +172,17 @@ function createRuntime(): PrometheusRuntime {
     publicLookupsPerClient: new Gauge({
       name: 'public_lookups_per_client',
       help: 'Lookups without an account per client yesterday (UTC): median, 90th percentile and maximum.',
+      labelNames: ['stat'] as const,
+      registers: [registry],
+    }),
+    publicDetectionClients: new Gauge({
+      name: 'public_detection_clients',
+      help: 'Clients (hashed addresses) without an account that had carriers asked about a number yesterday (UTC).',
+      registers: [registry],
+    }),
+    publicDetectionsPerClient: new Gauge({
+      name: 'public_detections_per_client',
+      help: 'Numbers carriers were asked about per client without an account yesterday (UTC): median, 90th percentile and maximum.',
       labelNames: ['stat'] as const,
       registers: [registry],
     }),
@@ -242,10 +262,15 @@ export function recordDetection(result: 'high' | 'low' | 'none'): void {
   count(runtime.detectionTotal, METRICS.detectionTotal, { result });
 }
 
-export type PublicLookupOutcome = 'created' | 'reused' | 'limited_burst' | 'limited_daily' | 'limited_global';
+export type PublicLookupOutcome = 'created' | 'reused' | 'limited_burst' | 'limited_daily' | 'limited_network' | 'limited_global';
 
 export function recordPublicLookup(outcome: PublicLookupOutcome): void {
   count(runtime.publicLookupTotal, 'public_lookup_total', { outcome });
+}
+
+/** A detection without an account that had carriers asked about its number, or was refused before they were. */
+export function recordPublicDetection(outcome: 'asked' | 'limited_burst' | 'limited_daily' | 'limited_global'): void {
+  count(runtime.publicDetectionTotal, 'public_detection_total', { outcome });
 }
 
 export function recordPublicParcelRead(outcome: 'ok' | 'not_found' | 'stopped'): void {
@@ -296,12 +321,23 @@ export function recordParcelAlertSent(outcome: 'sent' | 'skipped' | 'failed' | '
   count(runtime.parcelAlertSentTotal, 'parcel_alert_sent_total', { outcome });
 }
 
-/** Yesterday's lookups per client, set by the maintenance pass; the p90 tells whether the daily allowance pinches. */
-export function recordPublicLookupUsage(summary: { buckets: number; p50: number; p90: number; max: number }): void {
-  runtime.publicLookupClients.set(summary.buckets);
-  runtime.publicLookupsPerClient.set({ stat: 'p50' }, summary.p50);
-  runtime.publicLookupsPerClient.set({ stat: 'p90' }, summary.p90);
-  runtime.publicLookupsPerClient.set({ stat: 'max' }, summary.max);
+interface UsageStats { buckets: number; p50: number; p90: number; max: number }
+
+/**
+ * Yesterday's lookups per client, and the numbers per client that carriers
+ * were asked about, set by the maintenance pass; a p90 at its daily allowance
+ * tells that the allowance pinches.
+ */
+export function recordPublicLookupUsage(summary: UsageStats & { detection: UsageStats }): void {
+  for (const [clients, perClient, stats] of [
+    [runtime.publicLookupClients, runtime.publicLookupsPerClient, summary],
+    [runtime.publicDetectionClients, runtime.publicDetectionsPerClient, summary.detection],
+  ] as const) {
+    clients.set(stats.buckets);
+    perClient.set({ stat: 'p50' }, stats.p50);
+    perClient.set({ stat: 'p90' }, stats.p90);
+    perClient.set({ stat: 'max' }, stats.max);
+  }
 }
 
 /** Renders the registry for Prometheus, then releases what the series it showed at 0 held back. */

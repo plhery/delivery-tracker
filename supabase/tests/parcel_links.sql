@@ -24,7 +24,7 @@ begin
     end loop;
     foreach service_function in array array[
       'public.parcel_link_forget_at(public.parcel_links)',
-      'public.claim_public_lookup(text,integer,integer)',
+      'public.claim_public_lookup(text,integer,integer,text,text,integer)',
       'public.public_lookup_usage_summary()',
       'public.public_parcel(text,text,boolean)',
       'public.create_one_off_parcel(text,text,text,text,text)',
@@ -34,7 +34,8 @@ begin
       'public.link_package_tracking(uuid,uuid)',
       'private.new_parcel_link_id()',
       'private.lock_one_off_number(text)',
-      'private.forget_orphaned_one_off(uuid)'
+      'private.forget_orphaned_one_off(uuid)',
+      'private.public_usage_stats(text)'
     ] loop
       if has_function_privilege(role_name, service_function, 'EXECUTE') then
         raise exception '% may execute %', role_name, service_function;
@@ -311,34 +312,41 @@ begin
 end;
 $$;
 
--- Daily allowances: per client, then overall; a week of counters is kept.
+-- Daily allowances: per client, per network, then overall; a week of counters is kept.
 do $$
 declare
   first constant text := repeat('1', 64);
+  network constant text := 'network:' || repeat('a', 64);
+  detecting constant text := 'detection:' || repeat('1', 64);
   answer jsonb;
   today constant date := (now() at time zone 'UTC')::date;
 begin
   insert into public.public_lookup_usage (bucket, day, count) values
     ('global', today - 8, 5), (first, today - 8, 5),
     ('global', today - 1, 16), (repeat('5', 64), today - 1, 1), (repeat('6', 64), today - 1, 2),
-    (repeat('7', 64), today - 1, 3), (repeat('8', 64), today - 1, 10), (repeat('9', 64), today - 1, 0);
-  if public.public_lookup_usage_summary() <> '{"buckets":4,"p50":2,"p90":10,"max":10}' then
+    (repeat('7', 64), today - 1, 3), (repeat('8', 64), today - 1, 10), (repeat('9', 64), today - 1, 0),
+    -- Networks and detections are not clients' lookups.
+    ('network:' || repeat('5', 64), today - 1, 90),
+    ('detection', today - 1, 12), ('detection:' || repeat('5', 64), today - 1, 4),
+    ('detection:' || repeat('6', 64), today - 1, 8);
+  if public.public_lookup_usage_summary()
+      <> '{"buckets":4,"p50":2,"p90":10,"max":10,"detection":{"buckets":2,"p50":4,"p90":8,"max":8}}' then
     raise exception 'Unexpected usage summary: %', public.public_lookup_usage_summary();
   end if;
 
-  if public.claim_public_lookup(first, 2, 3) <> '{"allowed":true,"scope":null,"remaining":1}'
-      or public.claim_public_lookup(first, 2, 3) <> '{"allowed":true,"scope":null,"remaining":0}' then
+  if public.claim_public_lookup(first, 2, 3) <> '{"allowed":true,"scope":null,"remaining":1,"overall":1}'
+      or public.claim_public_lookup(first, 2, 3) <> '{"allowed":true,"scope":null,"remaining":0,"overall":2}' then
     raise exception 'A lookup within the allowance was refused';
   end if;
   answer := public.claim_public_lookup(first, 2, 3);
-  if answer <> '{"allowed":false,"scope":"bucket","remaining":0}' then
+  if answer <> '{"allowed":false,"scope":"bucket","remaining":0,"overall":2}' then
     raise exception 'The per-client allowance was not enforced: %', answer;
   end if;
   if public.claim_public_lookup(repeat('2', 64), 2, 3) -> 'allowed' <> 'true' then
     raise exception 'Another client was refused';
   end if;
   answer := public.claim_public_lookup(repeat('3', 64), 2, 3);
-  if answer <> '{"allowed":false,"scope":"global","remaining":2}' then
+  if answer <> '{"allowed":false,"scope":"global","remaining":2,"overall":3}' then
     raise exception 'The overall allowance was not enforced: %', answer;
   end if;
   if public.claim_public_lookup(repeat('3', 64), 2, 0) -> 'allowed' <> 'false' then
@@ -350,9 +358,48 @@ begin
       or exists (select 1 from public.public_lookup_usage where day < today - 7) then
     raise exception 'Lookup counters are wrong or older than a week';
   end if;
+
+  -- Clients of one network share its allowance, and a refusal counts nowhere.
+  if public.claim_public_lookup(repeat('b', 64), 5, 100, 'global', network, 2) -> 'allowed' <> 'true'
+      or public.claim_public_lookup(repeat('c', 64), 5, 100, 'global', network, 2) -> 'allowed' <> 'true' then
+    raise exception 'A lookup within the network allowance was refused';
+  end if;
+  answer := public.claim_public_lookup(repeat('d', 64), 5, 100, 'global', network, 2);
+  if answer <> '{"allowed":false,"scope":"network","remaining":5,"overall":5}' then
+    raise exception 'The network allowance was not enforced: %', answer;
+  end if;
+  if (select count from public.public_lookup_usage where bucket = network and day = today) <> 2
+      or (select count from public.public_lookup_usage where bucket = repeat('d', 64) and day = today) <> 0
+      or (select count from public.public_lookup_usage where bucket = 'global' and day = today) <> 5 then
+    raise exception 'Network counters are wrong';
+  end if;
+
+  -- Detections have their own counters, per client and overall.
+  if public.claim_public_lookup(detecting, 1, 2, 'detection')
+      <> '{"allowed":true,"scope":null,"remaining":0,"overall":1}' then
+    raise exception 'A detection within the allowance was refused';
+  end if;
+  if public.claim_public_lookup(detecting, 1, 2, 'detection') -> 'scope' <> '"bucket"'
+      or public.claim_public_lookup('detection:' || repeat('2', 64), 1, 2, 'detection') -> 'allowed' <> 'true'
+      or public.claim_public_lookup('detection:' || repeat('3', 64), 1, 2, 'detection') -> 'scope' <> '"global"' then
+    raise exception 'The detection allowances were not enforced';
+  end if;
+  if (select count from public.public_lookup_usage where bucket = 'detection' and day = today) <> 2
+      or (select count from public.public_lookup_usage where bucket = 'global' and day = today) <> 5 then
+    raise exception 'Detections were counted as lookups';
+  end if;
+
   begin
     perform public.claim_public_lookup('192.0.2.1', 2, 3);
     raise exception 'A raw address was accepted as a bucket' using errcode = 'P0001';
+  exception when invalid_parameter_value then null; end;
+  begin
+    perform public.claim_public_lookup(first, 2, 3, 'global', repeat('a', 64), 2);
+    raise exception 'A client bucket was accepted as a network' using errcode = 'P0001';
+  exception when invalid_parameter_value then null; end;
+  begin
+    perform public.claim_public_lookup(first, 2, 3, 'everything');
+    raise exception 'An unknown overall bucket was accepted' using errcode = 'P0001';
   exception when invalid_parameter_value then null; end;
 end;
 $$;

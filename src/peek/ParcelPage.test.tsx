@@ -127,8 +127,8 @@ describe('ParcelPage', () => {
     open();
     expect(await screen.findByText('For Mum')).toBeVisible();
     expect(screen.getByRole('heading', { level: 1, name: 'In transit' })).toBeVisible();
-    expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('123 ••• 99');
-    expect(document.querySelector('.parcel-illustration__label-number')).toHaveTextContent('123 ••• 99');
+    expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('••• 99');
+    expect(document.querySelector('.parcel-illustration__label-number')).toHaveTextContent('••• 99');
     expect(document.body).not.toHaveTextContent('1234567899');
     expect(screen.queryByRole('button', { name: 'Copy tracking number' })).toBeNull();
     const site = screen.getByRole('link', { name: 'Open the DHL website' });
@@ -416,7 +416,7 @@ describe('ParcelPage stages and troubles', () => {
     const links = others.getAllByRole('link');
     expect(links.map((link) => link.getAttribute('href'))).toEqual([`/p/${OTHER_LINK_ID}`, `/p/${moving}`]);
     expect(links[0]).toHaveTextContent(/^Coffee beansDelivered · /);
-    await waitFor(() => expect(links[1]).toHaveTextContent('123 ••• 99Out for delivery'));
+    await waitFor(() => expect(links[1]).toHaveTextContent('••• 99Out for delivery'));
     // The list takes the place of the question a lone parcel ends on, and leads to one more parcel too.
     expect(screen.queryByRole('heading', { level: 2, name: 'Waiting for something else?' })).toBeNull();
     expect(others.getByRole('button', { name: 'Track another parcel' })).toBeVisible();

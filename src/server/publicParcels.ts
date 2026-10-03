@@ -13,10 +13,11 @@ import type {
   ApiTrackingEventRow,
 } from '../generated/apiContract';
 import { EVENT_STAGE_ORDER } from '../lib/stages';
-import { clientNetwork } from './api';
+import { clientNetwork, clientSite } from './api';
 import { withEventPlaces } from './eventPlaces';
+import { capturePublicAllowance, logOperationalEvent } from './observability';
 import { pushServices } from './push';
-import type { StoredParcelLink, SupabaseServiceClient } from './supabase';
+import type { PublicAllowance, StoredParcelLink, SupabaseServiceClient } from './supabase';
 import { isRecord } from './types';
 
 /**
@@ -41,6 +42,12 @@ const OWNER_KEY = /^[A-Za-z0-9_-]{43}$/;
 const SYNC_ERROR_CODE = /^[a-z][a-z_]*(?::[a-z_]+)?$/;
 const DEFAULT_LOOKUPS_PER_DAY = 15;
 const DEFAULT_LOOKUPS_GLOBAL_PER_DAY = 3_000;
+/** An IPv6 /48 may make this many clients' lookups: it can be one customer's, or a mobile network's phones. */
+const CLIENTS_PER_NETWORK = 10;
+const DEFAULT_DETECTIONS_PER_DAY = 60;
+const DEFAULT_DETECTIONS_GLOBAL_PER_DAY = 10_000;
+/** The share of an overall allowance past which the server says it is running out. */
+const RUNNING_OUT = 0.8;
 
 export function isParcelLinkId(value: unknown): value is string {
   return typeof value === 'string' && LINK_ID.test(value);
@@ -59,17 +66,33 @@ export function ownerKeyHash(key: unknown): string | null {
 }
 
 /**
- * The daily lookup counter of a client: a keyed hash of its address and the
- * day, so the database never holds an address and a client's days cannot be
- * linked. The key comes from the service-role key, which only the server has.
- * Without trusted proxy headers every client is `untrusted` and shares one
- * counter, which fails closed.
+ * A day counter's name: a keyed hash of what is counted and the day, so the
+ * database never holds an address and a client's days cannot be linked. The
+ * key comes from the service-role key, which only the server has.
  */
-export function lookupBucket(ip: string, now: Date): string {
+function dayHash(counted: string, now: Date): string {
   const secret = createHmac('sha256', process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? '')
     .update('public-lookup-bucket').digest();
-  return createHmac('sha256', secret)
-    .update(`${now.toISOString().slice(0, 10)}:${clientNetwork(ip)}`).digest('hex');
+  return createHmac('sha256', secret).update(`${now.toISOString().slice(0, 10)}:${counted}`).digest('hex');
+}
+
+/**
+ * The daily lookup counter of a client. Without trusted proxy headers every
+ * client is `untrusted` and shares one counter, which fails closed.
+ */
+export function lookupBucket(ip: string, now: Date): string {
+  return dayHash(clientNetwork(ip), now);
+}
+
+/** The daily lookup counter of an IPv6 client's /48, or null for any other address. */
+export function lookupNetworkBucket(ip: string, now: Date): string | null {
+  const site = clientSite(ip);
+  return site === null ? null : `network:${dayHash(site, now)}`;
+}
+
+/** The daily counter of the numbers a client had carriers asked about. Its hash is not the lookup counter's. */
+export function detectionBucket(ip: string, now: Date): string {
+  return `detection:${dayHash(`detection:${clientNetwork(ip)}`, now)}`;
 }
 
 function allowance(value: string | undefined, fallback: number): number {
@@ -77,12 +100,75 @@ function allowance(value: string | undefined, fallback: number): number {
   return /^\d{1,9}$/.test(text) ? Number(text) : fallback;
 }
 
-/** Lookups a client, and every client together, may make per UTC day; 0 turns lookups off. */
-export function lookupLimits(env: Record<string, string | undefined> = process.env): { perClient: number; overall: number } {
+type Environment = Record<string, string | undefined>;
+
+/**
+ * Lookups a client, an IPv6 /48 and every client together may make per UTC
+ * day; 0 turns lookups off.
+ */
+export function lookupLimits(env: Environment = process.env): { perClient: number; perNetwork: number; overall: number } {
+  const perClient = allowance(env.PUBLIC_LOOKUPS_PER_DAY, DEFAULT_LOOKUPS_PER_DAY);
   return {
-    perClient: allowance(env.PUBLIC_LOOKUPS_PER_DAY, DEFAULT_LOOKUPS_PER_DAY),
+    perClient,
+    perNetwork: perClient * CLIENTS_PER_NETWORK,
     overall: allowance(env.PUBLIC_LOOKUPS_GLOBAL_PER_DAY, DEFAULT_LOOKUPS_GLOBAL_PER_DAY),
   };
+}
+
+/**
+ * Numbers a client, and every client together, may have carriers asked about
+ * per UTC day before a lookup; 0 leaves detection to a number's shape.
+ */
+export function detectionLimits(env: Environment = process.env): { perClient: number; overall: number } {
+  return {
+    perClient: allowance(env.PUBLIC_DETECTIONS_PER_DAY, DEFAULT_DETECTIONS_PER_DAY),
+    overall: allowance(env.PUBLIC_DETECTIONS_GLOBAL_PER_DAY, DEFAULT_DETECTIONS_GLOBAL_PER_DAY),
+  };
+}
+
+/** What was last reported about each overall allowance, and for which day: once per day and process. */
+const reported = new Map<string, string>();
+
+/**
+ * Says when an overall allowance is running out or used up: used up, every
+ * visitor without an account is refused until midnight UTC. An allowance of
+ * 0 was turned off on purpose and reports nothing.
+ */
+function reportOverallAllowance(kind: 'lookup' | 'detection', claimed: PublicAllowance, limit: number, now: Date): void {
+  const state = !claimed.allowed && claimed.scope === 'global' ? 'used_up'
+    : claimed.overallUsed >= limit * RUNNING_OUT ? 'running_out' : null;
+  if (state === null || limit === 0) return;
+  const day = now.toISOString().slice(0, 10);
+  if (reported.get(`${kind}:${state}`) === day) return;
+  reported.set(`${kind}:${state}`, day);
+  logOperationalEvent('public_allowance', { kind, state, used: claimed.overallUsed, limit }, state === 'used_up' ? 'error' : 'warning');
+  capturePublicAllowance(kind, state, { used: claimed.overallUsed, limit });
+}
+
+/** Counts one lookup against today's allowances: the client's, its IPv6 /48's and everyone's. */
+export async function claimLookup(service: SupabaseServiceClient, ip: string, now: Date): Promise<PublicAllowance> {
+  const limits = lookupLimits();
+  const network = lookupNetworkBucket(ip, now);
+  const claimed = await service.claimPublicAllowance({
+    bucket: lookupBucket(ip, now),
+    limit: limits.perClient,
+    overall: { bucket: 'global', limit: limits.overall },
+    network: network === null ? null : { bucket: network, limit: limits.perNetwork },
+  });
+  reportOverallAllowance('lookup', claimed, limits.overall, now);
+  return claimed;
+}
+
+/** Counts one number that carriers are about to be asked about, for its client and for everyone. */
+export async function claimDetection(service: SupabaseServiceClient, ip: string, now: Date): Promise<PublicAllowance> {
+  const limits = detectionLimits();
+  const claimed = await service.claimPublicAllowance({
+    bucket: detectionBucket(ip, now),
+    limit: limits.perClient,
+    overall: { bucket: 'detection', limit: limits.overall },
+  });
+  reportOverallAllowance('detection', claimed, limits.overall, now);
+  return claimed;
 }
 
 export function secondsUntilUtcMidnight(now: Date): number {
@@ -90,11 +176,14 @@ export function secondsUntilUtcMidnight(now: Date): number {
   return Math.max(1, Math.ceil((midnight - now.getTime()) / 1_000));
 }
 
-/** Up to four leading and three trailing characters; a short number shows less, so most of it stays hidden. */
+/**
+ * The end of a masked number: its last quarter, four characters at most. The
+ * start stays hidden: `head` is empty, and stays in the answer for the
+ * clients that read it.
+ */
 export function numberHint(trackingNumber: string): ApiParcelNumberHint {
-  const head = Math.min(4, Math.floor(trackingNumber.length / 3));
-  const tail = Math.min(3, Math.floor(trackingNumber.length / 4));
-  return { head: trackingNumber.slice(0, head), tail: trackingNumber.slice(trackingNumber.length - tail) };
+  const tail = Math.min(4, Math.floor(trackingNumber.length / 4));
+  return { head: '', tail: trackingNumber.slice(trackingNumber.length - tail) };
 }
 
 const text = (value: unknown): value is string => typeof value === 'string' && value !== '';

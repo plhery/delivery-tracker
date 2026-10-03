@@ -56,8 +56,8 @@ describe('parcel link model', () => {
       senderName: 'Example Shop', weightKg: 1.2, destinationCountry: 'CH',
     });
     expect(view.parcel.events).toEqual([expect.objectContaining({ stage: 'in_transit', description: 'In transit' })]);
-    expect(view.numberHint).toEqual({ head: 'TEST', tail: '456' });
-    expect(maskedNumber(view.numberHint!)).toBe('TEST ••• 456');
+    expect(view.numberHint).toEqual({ head: '', tail: '3456' });
+    expect(maskedNumber(view.numberHint!)).toBe('••• 3456');
 
     const shown = parcelLinkView(owner as ApiPublicParcelResponse);
     expect(shown.parcel.trackingNumber).toBe('TESTPARCEL123456');
@@ -96,10 +96,13 @@ describe('parcel link model', () => {
     expect(collapseGiftRows([])).toEqual([]);
   });
 
-  it('shows the same ends of a masked number as the server, and cleans the words a link carries', () => {
-    expect(maskedNumber(numberEnds('1234567890899'))).toBe('1234 ••• 899');
-    expect(numberEnds('1234567899')).toEqual({ head: '123', tail: '99' });
-    expect(numberEnds('12345')).toEqual({ head: '1', tail: '5' });
+  it('shows the same end of a masked number as the server, and cleans the words a link carries', () => {
+    expect(maskedNumber(numberEnds('1234567890899'))).toBe('••• 899');
+    expect(maskedNumber(numberEnds('TESTPARCEL123456'))).toBe('••• 3456');
+    expect(numberEnds('1234567899')).toEqual({ head: '', tail: '99' });
+    expect(numberEnds('12345')).toEqual({ head: '', tail: '5' });
+    // An answer kept on the device from before the start was hidden still reads as it did.
+    expect(maskedNumber({ head: '123', tail: '99' })).toBe('123 ••• 99');
     expect(cleanLinkText('  Happy\n birthday \u200b ', 280)).toBe('Happy birthday');
     expect(cleanLinkText('abcdef', 3)).toBe('abc');
     expect(cleanLinkText(' \n ', 10)).toBeNull();
@@ -168,7 +171,7 @@ describe('the API backend', () => {
     expect(request.mock.calls[0][1]).toMatchObject({ credentials: 'omit', referrerPolicy: 'no-referrer' });
     expect(new Headers(request.mock.calls[0][1]!.headers).get('X-Parcel-Key')).toBe(KEY);
 
-    expect(await links.readParcelLink(ID)).toMatchObject({ link: { role: 'viewer' }, numberHint: { head: 'TEST', tail: '456' } });
+    expect(await links.readParcelLink(ID)).toMatchObject({ link: { role: 'viewer' }, numberHint: { head: '', tail: '3456' } });
     expect(new Headers(request.mock.calls[1][1]!.headers).has('X-Parcel-Key')).toBe(false);
     await links.readParcelLink(ID, { key: 'not a key' });
     expect(new Headers(request.mock.calls[2][1]!.headers).has('X-Parcel-Key')).toBe(false);

@@ -36,7 +36,8 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
 Key server modules:
 
 - `auth.ts` validates the bearer token and builds a PostgREST client carrying the
-  user's JWT. `api.ts` adds logging and per-account rate limits.
+  user's JWT. `api.ts` adds logging, per-account rate limits and the checks on requests
+  without sign-in.
 - `publicParcels.ts` decides what a parcel link shows, to a gift's viewer too, hashes owner
   keys and keys the daily lookup counters. The routes under `/api/public` are the only ones
   without sign-in that write.
@@ -69,8 +70,8 @@ Key server modules:
   - The device that made the lookup also gets an owner key, once; the database keeps its
     SHA-256. With the key (`X-Parcel-Key`) the caller sees the full tracking number, may
     forget the parcel, and may keep it after signing in.
-  - Anyone else with the link is a viewer: the number is masked to its ends, and the answer
-    is built from an allow-list. The name, postcode, private tracking link, routing state,
+  - Anyone else with the link is a viewer: the number is masked to its last characters, and
+    the answer is built from an allow-list. The name, postcode, private tracking link, routing state,
     recipient's name and internal ids never leave the server, for either role.
   - `parcel_links` and the lookup counters are service-role only. An unknown, forgotten,
     expired or malformed link and a wrong key all get the same answer.
@@ -94,7 +95,11 @@ Key server modules:
     fictional parcels from the demo stories, so nothing leaves the device.
   - Lookups are limited per client and overall, per minute in memory and per day in the
     database. The daily counter is keyed by a hash of the client address and the date,
-    made with a server secret; an IPv6 client counts as its /64.
+    made with a server secret; an IPv6 client counts as its /64, and its /48 has a counter
+    too.
+  - Detecting the carrier before a lookup asks carriers only when the number's shape fits
+    several. That is counted per day as well, per client and overall; past the allowance
+    the lookup goes on without the answer.
 - **Shared links**: a signed-in person shares one of their parcels through a link of their
   own, at most one live link per parcel. The database functions behind
   `/api/packages/{id}/share` run under the user's token and refuse another account's parcel
@@ -135,6 +140,10 @@ Key server modules:
   follows redirects. APNs tokens are opaque hex values, sent only to Apple's fixed hosts.
 - **Service worker**: caches only the public app shell and static assets. APIs, health,
   Auth, invitation pages and parcel link pages are network-only.
+- **Other sites**: without sign-in a request counts against its sender's address, so a
+  write is refused when a browser says a page of another site sent it (`Sec-Fetch-Site`,
+  or `Origin` in a browser without it), and its body must be declared as JSON. Apps and
+  scripts send neither header and count against their own address.
 - **Proxies**: forwarded client IPs are trusted only with `TRUST_PROXY_HEADERS=true`.
   Cloudflare may sit in front for TLS and abuse protection, but it isn't part of identity.
 - **Hosts**: a redirect between hosts goes only to the configured canonical origin, never

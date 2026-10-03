@@ -168,18 +168,17 @@ export function isParcelLinkId(value: unknown): value is string {
 }
 
 /**
- * The two ends a link shows of a number it masks, by the server's rule: up to
- * four leading and three trailing characters, fewer for a short number.
+ * What a link shows of a number it masks, by the server's rule: its last
+ * quarter, four characters at most, and nothing of its start.
  */
 export function numberEnds(trackingNumber: string): ParcelNumberHint {
-  const head = Math.min(4, Math.floor(trackingNumber.length / 3));
-  const tail = Math.min(3, Math.floor(trackingNumber.length / 4));
-  return { head: trackingNumber.slice(0, head), tail: trackingNumber.slice(trackingNumber.length - tail) };
+  const tail = Math.min(4, Math.floor(trackingNumber.length / 4));
+  return { head: '', tail: trackingNumber.slice(trackingNumber.length - tail) };
 }
 
-/** A masked number as the app writes it: "1234 ••• 899". */
+/** A masked number as the app writes it: "••• 0899". */
 export function maskedNumber(hint: ParcelNumberHint): string {
-  return `${hint.head} ••• ${hint.tail}`;
+  return `${hint.head} ••• ${hint.tail}`.trim();
 }
 
 /**

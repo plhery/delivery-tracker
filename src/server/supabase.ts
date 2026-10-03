@@ -73,6 +73,32 @@ function forgotten(value: unknown): { links: number; packages: number } {
 /** A link and its whole package row, as the database returns them to the server. */
 export interface StoredParcelLink { link: JsonObject; package: JsonObject }
 
+/** One use to count: against the client, its network when it has one, and everyone together. */
+export interface PublicAllowanceClaim {
+  bucket: string;
+  limit: number;
+  overall: { bucket: 'global' | 'detection'; limit: number };
+  network?: { bucket: string; limit: number } | null;
+}
+
+export interface PublicAllowance {
+  allowed: boolean;
+  scope: 'bucket' | 'network' | 'global' | null;
+  overallUsed: number;
+}
+
+export interface PublicUsageStats { buckets: number; p50: number; p90: number; max: number }
+
+function usageStats(value: unknown): PublicUsageStats {
+  const stats = isRecord(value) ? value : {};
+  return {
+    buckets: Number(stats.buckets ?? 0),
+    p50: Number(stats.p50 ?? 0),
+    p90: Number(stats.p90 ?? 0),
+    max: Number(stats.max ?? 0),
+  };
+}
+
 /** The live link an account shares a parcel through. */
 export interface ParcelShare { id: string; showNumber: boolean; gift: boolean; createdAt: string }
 
@@ -945,15 +971,28 @@ export class SupabaseServiceClient extends SupabaseClient {
   }
 
   /**
-   * Counts one lookup without an account against today's allowances. `bucket`
-   * is a keyed hash of the client address; `scope` says which allowance ran out.
+   * Counts one use without an account against today's allowances: the
+   * client's, its network's when it has one, and everyone's together. Every
+   * bucket but the overall one is a keyed hash. `scope` says which allowance
+   * ran out, and `overallUsed` how much of the overall one is used.
    */
-  async claimPublicLookup(bucket: string, limit: number, globalLimit: number): Promise<{ allowed: boolean; scope: 'bucket' | 'global' | null }> {
+  async claimPublicAllowance(claim: PublicAllowanceClaim): Promise<PublicAllowance> {
     const result = await this.request('/rest/v1/rpc/claim_public_lookup', {
-      method: 'POST', body: { p_bucket: bucket, p_limit: limit, p_global_limit: globalLimit },
+      method: 'POST',
+      body: {
+        p_bucket: claim.bucket,
+        p_limit: claim.limit,
+        p_global_bucket: claim.overall.bucket,
+        p_global_limit: claim.overall.limit,
+        ...(claim.network ? { p_network_bucket: claim.network.bucket, p_network_limit: claim.network.limit } : {}),
+      },
     });
     if (!isRecord(result) || typeof result.allowed !== 'boolean') throw new SupabaseError('Supabase did not return the lookup allowance');
-    return { allowed: result.allowed, scope: result.scope === 'bucket' || result.scope === 'global' ? result.scope : null };
+    return {
+      allowed: result.allowed,
+      scope: result.scope === 'bucket' || result.scope === 'network' || result.scope === 'global' ? result.scope : null,
+      overallUsed: Number(result.overall ?? 0),
+    };
   }
 
   /**
@@ -1109,16 +1148,15 @@ export class SupabaseServiceClient extends SupabaseClient {
     return { ...forgotten(result), stopped: Number(counts.stopped ?? 0), alerts: Number(counts.alerts ?? 0) };
   }
 
-  /** Yesterday's lookups per client: how many clients, and their median, 90th percentile and maximum. */
-  async publicLookupUsageSummary(): Promise<{ buckets: number; p50: number; p90: number; max: number }> {
+  /**
+   * Yesterday's lookups per client: how many clients, and their median, 90th
+   * percentile and maximum. `detection` says the same of the numbers each
+   * client had carriers asked about.
+   */
+  async publicLookupUsageSummary(): Promise<PublicUsageStats & { detection: PublicUsageStats }> {
     const result = await this.request('/rest/v1/rpc/public_lookup_usage_summary', { method: 'POST', body: {} });
     const summary = isRecord(result) ? result : {};
-    return {
-      buckets: Number(summary.buckets ?? 0),
-      p50: Number(summary.p50 ?? 0),
-      p90: Number(summary.p90 ?? 0),
-      max: Number(summary.max ?? 0),
-    };
+    return { ...usageStats(summary), detection: usageStats(summary.detection) };
   }
 
   async pendingSyncJobCount(userId?: string | null): Promise<number> {

@@ -26,7 +26,7 @@ function scheduledRun() {
 it('forgets expired lookups, stopped links and finished alerts, and refreshes the usage gauges, after each scheduled sync', async () => {
   const { client, finish, worker } = scheduledRun();
   const forget = vi.spyOn(client, 'forgetExpiredParcelLinks').mockResolvedValue({ links: 3, packages: 2, stopped: 4, alerts: 5 });
-  vi.spyOn(client, 'publicLookupUsageSummary').mockResolvedValue({ buckets: 40, p50: 2, p90: 9, max: 15 });
+  vi.spyOn(client, 'publicLookupUsageSummary').mockResolvedValue({ buckets: 40, p50: 2, p90: 9, max: 15, detection: { buckets: 31, p50: 3, p90: 12, max: 60 } });
   const forgotten = vi.spyOn(metrics, 'recordParcelsForgotten');
   const ended = vi.spyOn(metrics, 'recordParcelAlertRemoved');
   const usage = vi.spyOn(metrics, 'recordPublicLookupUsage');
@@ -40,7 +40,7 @@ it('forgets expired lookups, stopped links and finished alerts, and refreshes th
     ['stopped', { links: 4, packages: 0 }],
   ]);
   expect(ended).toHaveBeenCalledExactlyOnceWith('delivered', 5);
-  expect(usage).toHaveBeenCalledExactlyOnceWith({ buckets: 40, p50: 2, p90: 9, max: 15 });
+  expect(usage).toHaveBeenCalledExactlyOnceWith({ buckets: 40, p50: 2, p90: 9, max: 15, detection: { buckets: 31, p50: 3, p90: 12, max: 60 } });
   expect(logged).toHaveBeenCalledWith('parcel_links_forgotten', { links: 3, packages: 2, stopped: 4, alerts: 5 });
   expect(finish).toHaveBeenCalledExactlyOnceWith('job', worker.workerId, { result: expect.objectContaining({ checked: 0 }) });
 });

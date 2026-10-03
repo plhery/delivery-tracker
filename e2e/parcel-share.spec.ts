@@ -56,14 +56,14 @@ async function openShare(page: Page) {
   return sheet;
 }
 
-test('the owner chooses what the link shows: a recipient reads the number’s ends until the number is shown', async ({ page, browser }) => {
+test('the owner chooses what the link shows: a recipient reads the number’s end until the number is shown', async ({ page, browser }) => {
   await track(page, '1234567899');
   await expect(status(page)).toHaveText('Ready for pickup');
   const address = page.url();
   const sheet = await openShare(page);
   const number = sheet.getByRole('switch', { name: 'Show the tracking number' });
   await expect(number).not.toBeChecked();
-  await expect(sheet.getByText('Off, it reads 123 ••• 99')).toBeVisible();
+  await expect(sheet.getByText('Off, it reads ••• 99')).toBeVisible();
   await expect(sheet.getByText(/Anyone with the link sees the journey, never a pickup code/)).toBeVisible();
   // On its way, the day the link stops working is not known yet.
   await expect(sheet.getByText('The link works until 30 days after delivery.')).toBeVisible();
@@ -73,7 +73,7 @@ test('the owner chooses what the link shows: a recipient reads the number’s en
   await show(page, recipient, address);
   await expect(recipient.getByText('Shared with you · no account needed')).toBeVisible();
   await expect(status(recipient)).toHaveText('Ready for pickup');
-  await expect(recipient.getByText('123 ••• 99')).toBeVisible();
+  await expect(recipient.getByText('••• 99', { exact: true })).toBeVisible();
   await expect(recipient.getByText('1234567899')).toHaveCount(0);
   await expect(recipient.getByRole('button', { name: 'Copy tracking number' })).toHaveCount(0);
   // Forgetting and the share sheet are the owner's.
@@ -352,7 +352,7 @@ test('a parcel of the deliveries is shared through the same sheet: its link is m
   await expect(visitor.getByText('Shared with you · no account needed')).toBeVisible();
   await expect(status(visitor)).toHaveText('Ready for pickup');
   await expect(visitor.locator('.peekp-card__name')).toHaveText(/^New sneakers/);
-  await expect(visitor.getByText('123 ••• 99')).toBeVisible();
+  await expect(visitor.getByText('••• 99', { exact: true })).toBeVisible();
   // A link from an account is never forgotten by itself, and nobody can forget it from outside.
   await expect(visitor.getByText(/Peek forgets this parcel/)).toHaveCount(0);
   await expect(visitor.getByRole('button', { name: 'Forget it now' })).toHaveCount(0);

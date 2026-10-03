@@ -55,7 +55,7 @@ describe('the share sheet of a looked-up parcel', () => {
     expect(within(sheet).getByLabelText('Parcel link')).toHaveTextContent(`localhost/p/${LINK_ID}`);
     const number = toggle('Show the tracking number');
     expect(number).not.toBeChecked();
-    expect(number).toHaveAccessibleDescription('Off, it reads 123 ••• 99');
+    expect(number).toHaveAccessibleDescription('Off, it reads ••• 99');
     expect(toggle('Show what’s inside')).toHaveAccessibleDescription('“New sneakers” stays on this device unless you share it');
     expect(toggle('It’s a gift')).toHaveAccessibleDescription('Hide the sender and what’s inside until it’s delivered');
     expect(screen.getByText('Anyone with the link sees the journey, never a pickup code or the recipient’s name. Stop sharing and the link goes blank.')).toBeVisible();

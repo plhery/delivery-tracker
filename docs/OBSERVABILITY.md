@@ -142,6 +142,8 @@ Key JSON events:
   pass forgot, how many stopped links from accounts it purged and how many alerts of
   finished journeys it ended. `parcel_link_maintenance_failed` when it could not run.
 - `parcel_link_alerts_failed`: how many alerts of parcel links a dispatch could not send.
+- `public_allowance`: an overall daily allowance without an account (`kind`: `lookup` or
+  `detection`) is `running_out` at 80% or `used_up`, with `used` and `limit`.
 
 The logger allows `tracking_number` explicitly. It drops other fields whose names look
 like parcel, user, label, location, status text, URL, token, cookie or secret data. Keep
@@ -165,6 +167,10 @@ so every cause is visible.
   alerts. Avoid "more than 0 times in 5 minutes" rules: they fire on every failed check.
 - **Incidents**: carrier and provider outages open once, with a recovery event, from
   thresholds computed in Postgres. See [ops/sentry](../ops/sentry/README.md).
+- **Allowances without an account**: `component:public-allowance` warns once a day when
+  an overall allowance is 80% used, and reports an error when it is used up: every visitor
+  without an account is then refused until midnight UTC. One issue per allowance and
+  state.
 - **Routing searches**: see [ROUTING.md](ROUTING.md).
 
 ### Upstream HTTP diagnostics
@@ -215,7 +221,8 @@ container.
 | `carrier_status_mapping_total` (carrier, stage_source) | Share of events mapped explicitly, by wording, or not at all |
 | `carrier_detection_total` (result) | Detection confidence served to clients |
 | `carrier_refresh_total` (carrier, served_by, outcome) | Who served each refresh: `adapter`, `other_adapter`, `provider` or `none` |
-| `public_lookup_total` (outcome) | Lookups without an account: `created`, `reused` (the number was already stored), `limited_burst`, `limited_daily` (the client's day is used up), `limited_global` |
+| `public_lookup_total` (outcome) | Lookups without an account: `created`, `reused` (the number was already stored), `limited_burst`, `limited_daily` (the client's day is used up), `limited_network` (its IPv6 /48's day), `limited_global` |
+| `public_detection_total` (outcome) | Detections without an account that needed a carrier's answer: `asked`, or refused first as `limited_burst`, `limited_daily` or `limited_global` |
 | `public_parcel_read_total` (outcome) | Reads of a parcel link: `ok`, `not_found` or `stopped` (its sharing was stopped) |
 | `parcel_claim_total` (outcome) | Links kept after sign-in: `kept`, `already`, `quota`, `unavailable` |
 | `parcel_forgotten_total` (kind, reason) | Forgotten links and parcels (`kind`): `asked` by their owner, `expired`, or `stopped` 30 days ago |
@@ -225,6 +232,8 @@ container.
 | `parcel_alert_removed_total` (reason) | Alerts ended: `asked`, `delivered` (journey over), `expired`, `failed` (three failed sends in a row) |
 | `public_lookup_clients` | Clients that made a lookup yesterday (UTC) |
 | `public_lookups_per_client` (stat) | Yesterday's lookups per client: `p50`, `p90`, `max` |
+| `public_detection_clients` | Clients that had carriers asked about a number yesterday (UTC) |
+| `public_detections_per_client` (stat) | Yesterday's such numbers per client: `p50`, `p90`, `max` |
 
 Useful questions:
 
@@ -243,7 +252,8 @@ Useful questions:
   `PUBLIC_LOOKUPS_PER_DAY`, the limit only stops outliers. At the limit, ordinary use is
   being refused: refused lookups are not counted, so the value cannot go higher, and
   `public_lookup_total{outcome="limited_daily"}` rises with it. The gauges are set by the
-  maintenance pass after each scheduled sync.
+  maintenance pass after each scheduled sync. `public_detections_per_client` and
+  `PUBLIC_DETECTIONS_PER_DAY` read the same way.
 
 [ops/grafana/carrier-scrapers.json](../ops/grafana/carrier-scrapers.json) is an importable
 Grafana dashboard with these panels. Its "silent carriers" stat flags carriers with lookups

@@ -32,7 +32,7 @@ final class ParcelLinkTests: XCTestCase {
         XCTAssertFalse(viewed.link.canKeep)
         XCTAssertNotNil(viewed.link.forgetAt)
         XCTAssertNil(viewed.package.trackingNumber)
-        XCTAssertEqual(viewed.package.numberHint, ParcelNumberHint(head: "TEST", tail: "456"))
+        XCTAssertEqual(viewed.package.numberHint, ParcelNumberHint(head: "", tail: "3456"))
         XCTAssertEqual(viewed.package.carrier, .dpd)
         XCTAssertEqual(viewed.package.carrierData.senderName, "Example Shop")
         XCTAssertEqual(viewed.package.carrierData.weightKg, 1.2)
@@ -63,7 +63,7 @@ final class ParcelLinkTests: XCTestCase {
 
         XCTAssertEqual(parcel.id, package.id)
         XCTAssertEqual(parcel.trackingNumber, "")
-        XCTAssertEqual(package.numberHint?.masked, "TEST ••• 456")
+        XCTAssertEqual(package.numberHint?.masked, "••• 3456")
         XCTAssertEqual(parcel.label, "")
         XCTAssertEqual(parcel.carrier, .dpd)
         XCTAssertEqual(parcel.expectedDelivery, "2026-10-03")
@@ -315,7 +315,7 @@ final class ParcelLinkTests: XCTestCase {
 
         let shown = try await DeliveryAPIClient.publicParcel(linkID: linkID, configuration: configuration, transport: transport)
         XCTAssertEqual(shown?.link.id, linkID)
-        XCTAssertEqual(shown?.package.numberHint?.masked, "TEST ••• 456")
+        XCTAssertEqual(shown?.package.numberHint?.masked, "••• 3456")
         let request = try XCTUnwrap(requests.first)
         XCTAssertEqual(request.httpMethod, "GET")
         XCTAssertEqual(request.url?.absoluteString, "https://links.test/api/public/parcels/\(linkID)")

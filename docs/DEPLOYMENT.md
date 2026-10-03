@@ -86,7 +86,11 @@ credentials and don't follow redirects, so keep it reachable through any edge pr
   one client allowance.
 - Optional: `PUBLIC_LOOKUPS_PER_DAY` (default 15) and `PUBLIC_LOOKUPS_GLOBAL_PER_DAY`
   (default 3000) set how many parcels can be looked up without an account per UTC day, per
-  client and overall. `0` turns lookups off.
+  client and overall. `0` turns lookups off. An IPv6 /48 may make ten clients' lookups.
+- Optional: `PUBLIC_DETECTIONS_PER_DAY` (default 60) and
+  `PUBLIC_DETECTIONS_GLOBAL_PER_DAY` (default 10000) set how many numbers carriers are
+  asked about before a lookup, without an account, per UTC day, per client and overall.
+  Past them, and with `0`, a carrier is detected from the number's shape only.
 - Set the platform's stop grace period to **30 s** (Coolify: *Stop Grace Period*).
 - Don't set `NEXT_DEPLOYMENT_ID`: it changes every asset URL on each deploy, so returning
   browsers re-download everything.
@@ -154,7 +158,9 @@ checks the handoff, restarts and finishes the job.
   writes per minute. Keep an edge rate limiter too, since unauthenticated OTP traffic needs
   it.
 - **Limits without an account**, per client address: 6 lookups and 20 carrier detections
-  per minute, 120 link reads per minute, and the daily lookup allowances above.
+  per minute, 120 link reads per minute, and the daily allowances above. The limits per
+  minute are kept in memory and start again with each deploy; the daily ones are in the
+  database. A write is refused when a browser says a page of another site sent it.
 - **Quotas** (enforced in the database): 50 active and 500 total parcels per account.
   Scheduled sync processes at most five due parcels per account per run, and ten followed
   without an account. Treat changes to these limits as security-sensitive.

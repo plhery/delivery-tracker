@@ -347,6 +347,36 @@ export function captureTrackingHealth(incident: JsonObject): string | null {
   return id;
 }
 
+/**
+ * An overall daily allowance without an account is running out or used up.
+ * Used up, every visitor without an account is refused until midnight UTC.
+ * One issue per allowance and state; the event title states the impact.
+ */
+export function capturePublicAllowance(
+  kind: 'lookup' | 'detection',
+  state: 'running_out' | 'used_up',
+  usage: { used: number; limit: number },
+): string | null {
+  if (!initObservability()) return null;
+  const subject = kind === 'lookup' ? 'Lookups without an account' : 'Carrier detection without an account';
+  const setting = kind === 'lookup' ? 'PUBLIC_LOOKUPS_GLOBAL_PER_DAY' : 'PUBLIC_DETECTIONS_GLOBAL_PER_DAY';
+  let id: string | null = null;
+  Sentry.withScope(scope => {
+    scope.setTag('component', 'public-allowance');
+    scope.setTag('allowance', kind);
+    scope.setTag('allowance_state', state);
+    scope.setContext('public_allowance', { ...usage,
+      impact: state === 'used_up'
+        ? 'Every visitor without an account is refused until midnight UTC. Signed-in accounts are not affected.'
+        : 'At this rate visitors without an account will be refused before midnight UTC.',
+      next_steps: `Compare yesterday's per-client gauges with the allowance (docs/OBSERVABILITY.md): a few clients at their limit point to abuse; if the use is ordinary, raise ${setting}.` });
+    scope.setFingerprint(['delivery-tracker', 'public-allowance', kind, state]);
+    scope.setLevel(state === 'used_up' ? 'error' : 'warning');
+    id = Sentry.captureMessage(`${subject}: today's allowance is ${state === 'used_up' ? 'used up' : 'running out'}`);
+  });
+  return id;
+}
+
 function boundedLogValue(value: unknown): string | number | boolean | null | undefined {
   if (value === null || typeof value === 'boolean') return value;
   if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;

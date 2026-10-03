@@ -42,7 +42,7 @@ final class ParcelShareTests: XCTestCase {
         XCTAssertFalse(gift.link.numberShown)
         XCTAssertFalse(gift.link.canKeep)
         XCTAssertNil(gift.package.trackingNumber)
-        XCTAssertEqual(gift.package.numberHint?.masked, "TEST ••• 789")
+        XCTAssertEqual(gift.package.numberHint?.masked, "••• 6789")
         XCTAssertNil(gift.package.lastStatusText)
         XCTAssertNil(gift.package.carrierData.senderName)
         XCTAssertEqual(gift.package.trackingEvents.map(\.description),
@@ -144,12 +144,15 @@ final class ParcelShareTests: XCTestCase {
         XCTAssertEqual(Set(ids).count, ids.count)
     }
 
-    func testAHiddenNumberShowsItsTwoEndsByTheServicesRule() {
-        XCTAssertEqual(ParcelNumberHint(hiding: "1234567890899").masked, "1234 ••• 899")
-        XCTAssertEqual(ParcelNumberHint(hiding: "TESTPARCEL123456").masked, "TEST ••• 456")
-        XCTAssertEqual(ParcelNumberHint(hiding: "1234567899").masked, "123 ••• 99")
-        XCTAssertEqual(ParcelNumberHint(hiding: "ABCDE"), ParcelNumberHint(head: "A", tail: "E"))
+    func testAHiddenNumberShowsOnlyItsEndByTheServicesRule() {
+        XCTAssertEqual(ParcelNumberHint(hiding: "1234567890899").masked, "••• 899")
+        XCTAssertEqual(ParcelNumberHint(hiding: "TESTPARCEL123456").masked, "••• 3456")
+        XCTAssertEqual(ParcelNumberHint(hiding: "TESTPARCEL1234567890").masked, "••• 7890")
+        XCTAssertEqual(ParcelNumberHint(hiding: "1234567899").masked, "••• 99")
+        XCTAssertEqual(ParcelNumberHint(hiding: "ABCDE"), ParcelNumberHint(head: "", tail: "E"))
         XCTAssertEqual(ParcelNumberHint(hiding: "AB"), ParcelNumberHint(head: "", tail: ""))
+        // An answer from a service that still shows the start reads as it did.
+        XCTAssertEqual(ParcelNumberHint(head: "123", tail: "99").masked, "123 ••• 99")
     }
 
     // MARK: - A gift

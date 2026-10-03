@@ -18,7 +18,14 @@ const MAX_JSON_BODY = 16_384;
 const PREAUTH_REQUEST_LIMIT = 300;
 const PREAUTH_REQUEST_WINDOW_SECONDS = 60;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const rateLimiter = new RateLimiter();
+// One limiter per kind of key: a flood of made-up tokens or addresses fills
+// its own limiter and leaves the other counts alone.
+const limiters = {
+  address: new RateLimiter(),
+  credential: new RateLimiter(),
+  account: new RateLimiter(),
+  public: new RateLimiter(),
+};
 
 export interface RouteParameters {
   [key: string]: string | string[];
@@ -94,14 +101,8 @@ export function clientIp(request: Pick<Request, 'headers'>): string {
   return isIP(candidate) ? candidate : 'unknown';
 }
 
-/**
- * The address a limit without sign-in counts. An IPv6 client is its /64: a
- * line is given a whole one, and privacy addresses rotate inside it.
- */
-export function clientNetwork(ip: string): string {
-  if (isIP(ip) !== 6) return ip;
-  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(ip);
-  if (mapped) return mapped[1]!;
+/** The eight groups of an IPv6 address, lower case and without leading zeros. */
+function ipv6Groups(ip: string): string[] {
   const [head = '', tail = ''] = ip.split('::');
   const leading = head ? head.split(':') : [];
   const trailing = tail ? tail.split(':') : [];
@@ -109,7 +110,63 @@ export function clientNetwork(ip: string): string {
   const groups = ip.includes('::')
     ? [...leading, ...Array<string>(Math.max(0, 8 - leading.length - trailing.length)).fill('0'), ...trailing]
     : leading;
-  return `${groups.slice(0, 4).map((group) => group.replace(/^0+(?=.)/, '').toLowerCase()).join(':')}::/64`;
+  return groups.map((group) => group.replace(/^0+(?=.)/, '').toLowerCase());
+}
+
+const MAPPED_IPV4 = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i;
+
+/**
+ * The address a limit without sign-in counts. An IPv6 client is its /64: a
+ * line is given a whole one, and privacy addresses rotate inside it.
+ */
+export function clientNetwork(ip: string): string {
+  if (isIP(ip) !== 6) return ip;
+  const mapped = MAPPED_IPV4.exec(ip);
+  if (mapped) return mapped[1]!;
+  return `${ipv6Groups(ip).slice(0, 4).join(':')}::/64`;
+}
+
+/**
+ * The /48 an IPv6 client belongs to, or null for any other address. One
+ * customer is often given a whole /48, which holds 65,536 of the /64s that
+ * clientNetwork counts apart: a daily allowance counts the /48 as well.
+ */
+export function clientSite(ip: string): string | null {
+  if (isIP(ip) !== 6 || MAPPED_IPV4.test(ip)) return null;
+  return `${ipv6Groups(ip).slice(0, 3).join(':')}::/48`;
+}
+
+/**
+ * Whether a browser says the request comes from a page of another site.
+ * Without sign-in a request is counted against its sender's address, so
+ * another site's page must not send it from its visitors' browsers. Apps and
+ * scripts send neither header and speak for their own address only.
+ */
+function fromAnotherSite(request: Request): boolean {
+  const site = request.headers.get('sec-fetch-site');
+  if (site !== null) return site !== 'same-origin' && site !== 'none';
+  // Browsers that do not send Sec-Fetch-Site still name the page's origin on a write.
+  const origin = request.headers.get('origin');
+  if (origin === null) return false;
+  try {
+    // A proxy that rewrites Host passes the one the browser asked for as X-Forwarded-Host; a page cannot set either.
+    const hosts = [request.headers.get('host'), request.headers.get('x-forwarded-host')?.split(',')[0], new URL(request.url).host];
+    const from = new URL(origin).host.toLowerCase();
+    return !hosts.some((host) => host?.trim().toLowerCase() === from);
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Whether the request carries a body it does not declare as JSON. A page can
+ * send another site a form or plain text unasked, never JSON.
+ */
+function bodyIsNotJson(request: Request): boolean {
+  const type = request.headers.get('content-type');
+  if (type !== null) return !/^application\/json\s*(?:;|$)/i.test(type);
+  const length = request.headers.get('content-length');
+  return (length !== null && length !== '0') || request.headers.has('transfer-encoding');
 }
 
 function bearerToken(request: Request): string | null {
@@ -208,10 +265,15 @@ export function apiRoute<Parameters extends RouteParameters = RouteParameters>(
       let user: SupabaseUser | null = null;
       let userClient: SupabaseUserClient | null = null;
 
+      if (!authenticated && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+        if (fromAnotherSite(request)) throw new HttpError(403, 'Requests from other sites are not accepted');
+        if (bodyIsNotJson(request)) throw new HttpError(415, 'Send the request as application/json');
+      }
+
       if (!authenticated && options.publicRateLimit) {
         const { limit, window, bucket, onLimited } = options.publicRateLimit;
-        const retryAfter = rateLimiter.retryAfter(
-          `public:${bucket ?? new URL(request.url).pathname}:${clientNetwork(clientIp(request))}`,
+        const retryAfter = limiters.public.retryAfter(
+          `${bucket ?? new URL(request.url).pathname}:${clientNetwork(clientIp(request))}`,
           { limit, window },
         );
         if (retryAfter) {
@@ -226,12 +288,12 @@ export function apiRoute<Parameters extends RouteParameters = RouteParameters>(
           : null;
         const ip = clientIp(request);
         // Unknown callers must not share an admission bucket with every signed-in user.
-        let retryAfter = isIP(ip) ? rateLimiter.retryAfter(`preauth-client:${ip}`, {
+        let retryAfter = isIP(ip) ? limiters.address.retryAfter(ip, {
           limit: PREAUTH_REQUEST_LIMIT * 3,
           window: PREAUTH_REQUEST_WINDOW_SECONDS,
         }) : 0;
         if (!retryAfter && credential) {
-          retryAfter = rateLimiter.retryAfter(`preauth-credential:${credential}`, {
+          retryAfter = limiters.credential.retryAfter(credential, {
             limit: PREAUTH_REQUEST_LIMIT,
             window: PREAUTH_REQUEST_WINDOW_SECONDS,
           });
@@ -266,7 +328,7 @@ export function apiRoute<Parameters extends RouteParameters = RouteParameters>(
           throw error;
         }
         const policy = ratePolicy(request.method, new URL(request.url).pathname);
-        retryAfter = rateLimiter.retryAfter(`${user.id}:${policy.bucket}`, {
+        retryAfter = limiters.account.retryAfter(`${user.id}:${policy.bucket}`, {
           limit: policy.limit,
           window: policy.window,
         });

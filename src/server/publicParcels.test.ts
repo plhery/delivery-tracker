@@ -8,8 +8,11 @@ import {
   giftEvents,
   isParcelLinkId,
   isWrappedGift,
+  detectionBucket,
+  detectionLimits,
   lookupBucket,
   lookupLimits,
+  lookupNetworkBucket,
   newOwnerKey,
   numberHint,
   ownerKeyHash,
@@ -70,12 +73,43 @@ describe('daily lookup allowances', () => {
     expect(lookupBucket('2001:db8:1:3::1', day)).not.toBe(lookupBucket('2001:db8:1:2::1', day));
   });
 
+  it('counts the lines of an IPv6 /48 together under a hash of their own', () => {
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
+    const day = new Date('2026-10-02T08:00:00Z');
+    const network = lookupNetworkBucket('2001:db8:1:2::1', day);
+    expect(network).toMatch(/^network:[0-9a-f]{64}$/);
+    expect(lookupNetworkBucket('2001:0db8:0001:ffff:aaaa::9', day)).toBe(network);
+    expect(lookupNetworkBucket('2001:db8:2:2::1', day)).not.toBe(network);
+    expect(lookupNetworkBucket('2001:db8:1:2::1', new Date('2026-10-03T00:00:00Z'))).not.toBe(network);
+    expect(network).not.toBe(`network:${lookupBucket('2001:db8:1:2::1', day)}`);
+    // An IPv4 address is its own network, and so is a client whose address is not known.
+    for (const address of ['198.51.100.7', '::ffff:198.51.100.7', 'untrusted', 'unknown']) {
+      expect(lookupNetworkBucket(address, day)).toBeNull();
+    }
+  });
+
+  it('counts the numbers a client had carriers asked about under another hash than its lookups', () => {
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
+    const day = new Date('2026-10-02T08:00:00Z');
+    const bucket = detectionBucket('198.51.100.7', day);
+    expect(bucket).toMatch(/^detection:[0-9a-f]{64}$/);
+    expect(bucket).not.toBe(`detection:${lookupBucket('198.51.100.7', day)}`);
+    expect(detectionBucket('198.51.100.8', day)).not.toBe(bucket);
+    expect(detectionBucket('198.51.100.7', new Date('2026-10-03T00:00:00Z'))).not.toBe(bucket);
+    expect(detectionBucket('2001:db8:1:2:aaaa::1', day)).toBe(detectionBucket('2001:db8:1:2::ffff', day));
+  });
+
   it('reads the allowances from the environment, falling back to the defaults', () => {
-    expect(lookupLimits({})).toEqual({ perClient: 15, overall: 3_000 });
+    expect(lookupLimits({})).toEqual({ perClient: 15, perNetwork: 150, overall: 3_000 });
     expect(lookupLimits({ PUBLIC_LOOKUPS_PER_DAY: ' 40 ', PUBLIC_LOOKUPS_GLOBAL_PER_DAY: '0' }))
-      .toEqual({ perClient: 40, overall: 0 });
+      .toEqual({ perClient: 40, perNetwork: 400, overall: 0 });
     expect(lookupLimits({ PUBLIC_LOOKUPS_PER_DAY: '-1', PUBLIC_LOOKUPS_GLOBAL_PER_DAY: 'many' }))
-      .toEqual({ perClient: 15, overall: 3_000 });
+      .toEqual({ perClient: 15, perNetwork: 150, overall: 3_000 });
+    expect(detectionLimits({})).toEqual({ perClient: 60, overall: 10_000 });
+    expect(detectionLimits({ PUBLIC_DETECTIONS_PER_DAY: '0', PUBLIC_DETECTIONS_GLOBAL_PER_DAY: ' 500 ' }))
+      .toEqual({ perClient: 0, overall: 500 });
+    expect(detectionLimits({ PUBLIC_DETECTIONS_PER_DAY: '1.5', PUBLIC_DETECTIONS_GLOBAL_PER_DAY: '' }))
+      .toEqual({ perClient: 60, overall: 10_000 });
   });
 
   it('retries a daily refusal at the next UTC midnight', () => {
@@ -86,17 +120,20 @@ describe('daily lookup allowances', () => {
 });
 
 describe('what a link shows', () => {
-  it('hints at a masked number with its ends, and shows less of a short one', () => {
-    expect(numberHint('TESTPARCEL123456')).toEqual({ head: 'TEST', tail: '456' });
-    expect(numberHint('TEST12345678')).toEqual({ head: 'TEST', tail: '678' });
-    expect(numberHint('TEST1234')).toEqual({ head: 'TE', tail: '34' });
-    expect(numberHint('T123')).toEqual({ head: 'T', tail: '3' });
+  it('hints at a masked number with its end only, and shows less of a short one', () => {
+    expect(numberHint('TESTPARCEL123456')).toEqual({ head: '', tail: '3456' });
+    expect(numberHint('TESTPARCEL1234567890')).toEqual({ head: '', tail: '7890' });
+    expect(numberHint('TEST12345678')).toEqual({ head: '', tail: '678' });
+    expect(numberHint('TEST1234')).toEqual({ head: '', tail: '34' });
+    expect(numberHint('T123')).toEqual({ head: '', tail: '3' });
     for (let length = 4; length <= 40; length += 1) {
       const number = `${'T'.repeat(length - 1)}1`;
       const hint = numberHint(number);
-      // At least four characters, or half of a short number, stay hidden.
-      expect(length - hint.head.length - hint.tail.length).toBeGreaterThanOrEqual(Math.min(4, length / 2));
-      expect(number.startsWith(hint.head) && number.endsWith(hint.tail)).toBe(true);
+      // At least three quarters of the number stay hidden, its start among them.
+      expect(hint.head).toBe('');
+      expect(hint.tail.length).toBeLessThanOrEqual(Math.min(4, length / 4));
+      expect(hint.tail.length).toBeGreaterThan(0);
+      expect(number.endsWith(hint.tail)).toBe(true);
     }
   });
 
@@ -341,7 +378,7 @@ describe('a gift on its way', () => {
     }
     expect(answer.link).toMatchObject({ role: 'viewer', gift: true, numberShown: false, canKeep: false });
     expect(answer.package).toMatchObject({
-      tracking_number: null, number_hint: { head: 'TEST', tail: '789' }, label: '', last_status_text: null,
+      tracking_number: null, number_hint: { head: '', tail: '6789' }, label: '', last_status_text: null,
       expected_delivery: '2026-10-03',
     });
     expect(answer.package.carrier_data).not.toHaveProperty('sender_name');

@@ -3,7 +3,7 @@
   "info": {
     "title": "Peek API",
     "version": "1.0.0",
-    "description": "Same-origin API used by the Peek PWA for French and Swiss parcels with Supabase Auth. Every private operation is scoped to the bearer-token owner."
+    "description": "Same-origin API used by the Peek PWA for French and Swiss parcels with Supabase Auth. Every private operation is scoped to the bearer-token owner. An operation without sign-in takes a write only as application/json (415 otherwise) and refuses one that a page of another site sends (403)."
   },
   "x-carriers": {
     "swiss-post": {
@@ -5125,7 +5125,7 @@
             "description": "Invalid tracking number"
           },
           "429": {
-            "description": "Too many detections"
+            "description": "Too many detections this minute, or no carrier may be asked for this client or for anyone until the next UTC midnight. Retry-After says when to try again; a lookup works without the answer."
           }
         }
       }
@@ -7385,7 +7385,7 @@
       "ParcelNumberHint": {
         "type": "object",
         "additionalProperties": false,
-        "description": "The ends of a masked tracking number: up to four leading and three trailing characters, fewer for a short number.",
+        "description": "The end of a masked tracking number: its last quarter, four characters at most, in `tail`. `head` is empty.",
         "required": [
           "head",
           "tail"
@@ -7432,7 +7432,7 @@
               "string",
               "null"
             ],
-            "description": "Null when masked for the caller; number_hint then carries its ends."
+            "description": "Null when masked for the caller; number_hint then carries its end."
           },
           "number_hint": {
             "anyOf": [

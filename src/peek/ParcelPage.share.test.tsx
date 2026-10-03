@@ -73,7 +73,7 @@ describe('the parcel page of a recipient', () => {
     open(view({ owner: false }), { hash: `#n=${encodeURIComponent('For Mum')}` });
     expect(await screen.findByText('Shared with you · no account needed')).toBeVisible();
     expect(screen.getByText('For Mum')).toBeVisible();
-    expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('123 ••• 99');
+    expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('••• 99');
     expect(screen.queryByRole('button', { name: 'Copy tracking number' })).toBeNull();
     expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Ping me too', 'Add to calendar', 'Edit parcel name']);
     // Forgetting is the owner's, and so is choosing what the link shows.

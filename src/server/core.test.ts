@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   apiRoute,
   clientNetwork,
+  clientSite,
   HttpError,
   json,
   parseUuid,
@@ -131,6 +132,82 @@ describe('API request boundaries', () => {
     // Without a trusted proxy every caller shares the placeholder, and one counter.
     expect(clientNetwork('untrusted')).toBe('untrusted');
     expect(clientNetwork('unknown')).toBe('unknown');
+  });
+
+  it('names the /48 of an IPv6 client, and of no other address', () => {
+    expect(clientSite('2001:db8:1:2:aaaa:bbbb:cccc:dddd')).toBe('2001:db8:1::/48');
+    expect(clientSite('2001:0DB8:0001:ffff::1')).toBe('2001:db8:1::/48');
+    expect(clientSite('2001:db8::1')).toBe('2001:db8:0::/48');
+    expect(clientSite('::1')).toBe('0:0:0::/48');
+    for (const address of ['198.51.100.7', '::ffff:198.51.100.7', 'untrusted', 'unknown']) {
+      expect(clientSite(address)).toBeNull();
+    }
+  });
+
+  it('refuses a write without sign-in that a page of another site sends', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const handler = vi.fn(async () => json({ ok: true }));
+    const open = apiRoute(handler, { authenticated: false, loadService: false });
+    const send = (headers: Record<string, string>, init: { method?: string; body?: BodyInit } = { body: '{}' }) => open(
+      new NextRequest('https://delivery.example/core-test/write', { method: 'POST', ...init, headers }),
+      { params: Promise.resolve({}) },
+    );
+    const asJson = { 'content-type': 'application/json' };
+
+    // The site's own pages, and apps and scripts, which send neither header.
+    for (const headers of [
+      { ...asJson, 'sec-fetch-site': 'same-origin', origin: 'https://delivery.example' },
+      { ...asJson, 'sec-fetch-site': 'none' },
+      { ...asJson, origin: 'https://delivery.example' },
+      { ...asJson, origin: 'https://Delivery.Example', host: 'delivery.example' },
+      { ...asJson, origin: 'https://delivery.example', host: 'internal:3000', 'x-forwarded-host': 'delivery.example' },
+      { 'content-type': 'application/json; charset=utf-8' },
+      asJson,
+    ]) expect((await send(headers)).status, JSON.stringify(headers)).toBe(200);
+    expect(handler).toHaveBeenCalledTimes(7);
+
+    // What a browser sends for a page elsewhere, with or without Sec-Fetch-Site.
+    for (const headers of [
+      { ...asJson, 'sec-fetch-site': 'cross-site', origin: 'https://elsewhere.example' },
+      { ...asJson, 'sec-fetch-site': 'same-site', origin: 'https://other.delivery.example' },
+      { ...asJson, 'sec-fetch-site': 'cross-site' },
+      { ...asJson, origin: 'https://elsewhere.example' },
+      { ...asJson, origin: 'https://elsewhere.example', host: 'internal:3000', 'x-forwarded-host': 'delivery.example' },
+      { ...asJson, origin: 'null' },
+    ]) {
+      const refused = await send(headers);
+      expect(refused.status, JSON.stringify(headers)).toBe(403);
+      await expect(refused.json()).resolves.toEqual({ error: 'Requests from other sites are not accepted' });
+    }
+
+    // The bodies a page can send elsewhere unasked are never JSON.
+    for (const headers of [
+      { 'content-type': 'text/plain;charset=UTF-8' },
+      { 'content-type': 'application/x-www-form-urlencoded' },
+      { 'content-type': 'application/jsonp' },
+    ]) expect((await send(headers)).status, JSON.stringify(headers)).toBe(415);
+    expect((await send({ 'content-length': '2' }, { body: new Uint8Array([123, 125]) })).status).toBe(415);
+    expect(handler).toHaveBeenCalledTimes(7);
+
+    // A write without a body declares nothing, and a read is anyone's to make.
+    expect((await send({ 'sec-fetch-site': 'same-origin' }, { method: 'DELETE' })).status).toBe(200);
+    expect((await send({ 'sec-fetch-site': 'cross-site' }, { method: 'DELETE' })).status).toBe(403);
+    expect((await send({ 'sec-fetch-site': 'cross-site', origin: 'https://elsewhere.example' }, { method: 'GET' })).status).toBe(200);
+  });
+
+  it('leaves a signed-in request to its token, wherever it comes from', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    process.env.SUPABASE_URL = 'https://database.example';
+    process.env.SUPABASE_PUBLISHABLE_KEY = 'public-key';
+    vi.spyOn(SupabaseAuthenticator.prototype, 'validate').mockResolvedValue({
+      id: '10000000-0000-0000-0000-000000000009', email: null, authenticatedAt: null, sessionId: null,
+    });
+    const route = apiRoute(async () => json({ ok: true }), { loadService: false });
+    const response = await route(new NextRequest('https://delivery.example/core-test/signed-in', {
+      method: 'POST', body: '{}',
+      headers: { authorization: 'Bearer core-test', 'sec-fetch-site': 'cross-site', origin: 'https://elsewhere.example' },
+    }), { params: Promise.resolve({}) });
+    expect(response.status).toBe(200);
   });
 
   it('shares a named allowance across a route\'s addresses and reports refusals', async () => {
@@ -928,6 +1005,34 @@ describe('rate limiting', () => {
     now = 10;
     expect(limiter.retryAfter('account', { limit: 2, window: 10 })).toBe(0);
     expect(() => limiter.retryAfter('account', { limit: 0, window: 10 })).toThrow('positive');
+  });
+
+  it('keeps each key\'s own window when another key makes room', () => {
+    let now = 0;
+    const limiter = new RateLimiter(2, () => now);
+    expect(limiter.retryAfter('slow', { limit: 1, window: 300 })).toBe(0);
+    now = 100;
+    expect(limiter.retryAfter('gone', { limit: 1, window: 60 })).toBe(0);
+    now = 200;
+    // A third key with a short window: only the key whose own window has passed is forgotten.
+    expect(limiter.retryAfter('fast', { limit: 1, window: 60 })).toBe(0);
+    expect(limiter.retryAfter('slow', { limit: 1, window: 300 })).toBe(100);
+    expect(limiter.retryAfter('gone', { limit: 1, window: 60 })).toBe(0);
+  });
+
+  it('forgets the key used least recently when every key still counts', () => {
+    let now = 0;
+    const limiter = new RateLimiter(2, () => now);
+    expect(limiter.retryAfter('first', { limit: 1, window: 60 })).toBe(0);
+    now = 1;
+    expect(limiter.retryAfter('second', { limit: 1, window: 60 })).toBe(0);
+    now = 2;
+    // A refused request is a use too: `first` is now the fresher of the two.
+    expect(limiter.retryAfter('first', { limit: 1, window: 60 })).toBe(58);
+    now = 3;
+    expect(limiter.retryAfter('third', { limit: 1, window: 60 })).toBe(0);
+    expect(limiter.retryAfter('first', { limit: 1, window: 60 })).toBe(57);
+    expect(limiter.retryAfter('second', { limit: 1, window: 60 })).toBe(0);
   });
 });
 

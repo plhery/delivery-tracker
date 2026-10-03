@@ -3,7 +3,10 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { POST } from '../../app/api/carriers/detect/route';
 import { POST as detectWithoutAccount } from '../../app/api/public/detect/route';
 import { detectCarrierMatch, recognitionAskedCarriers } from '../lib/carriers';
+import * as amazon from './amazonShippingEligibility';
 import { SupabaseAuthenticator } from './auth';
+import * as metrics from './metrics';
+import { SupabaseServiceClient } from './supabase';
 
 // The route asks carriers through the adapter registry; no test reaches a carrier.
 const recognize = vi.hoisted(() => vi.fn());
@@ -15,19 +18,24 @@ const request = (trackingNumber: unknown, authenticated = true) => POST(new Next
   method: 'POST', headers: { 'content-type': 'application/json', ...(authenticated ? { Authorization: 'Bearer detection-test' } : {}) },
   body: JSON.stringify({ trackingNumber }),
 }), { params: Promise.resolve({}) });
+const withoutAccount = (trackingNumber: unknown, ip = '198.51.100.30') => detectWithoutAccount(new NextRequest('https://delivery.example/api/public/detect', {
+  method: 'POST', headers: { 'content-type': 'application/json', 'x-real-ip': ip }, body: JSON.stringify({ trackingNumber }),
+}), { params: Promise.resolve({}) });
 const knows = (...carriers: string[]) => async (carrier: string) => ({ known: carriers.includes(carrier) });
 const asked = () => recognize.mock.calls.map(([carrier]) => carrier);
 
 beforeEach(() => {
   vi.stubEnv('SUPABASE_URL', 'https://database.example');
   vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', 'public-key');
+  vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
+  vi.stubEnv('TRUST_PROXY_HEADERS', 'true');
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
   recognize.mockReset().mockImplementation(knows());
   vi.spyOn(SupabaseAuthenticator.prototype, 'validate').mockResolvedValue({
     id: '10000000-0000-0000-0000-000000000002', email: null, authenticatedAt: null, sessionId: null,
   });
 });
-afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 // Answers are cached per number for a few minutes, so every test uses its own numbers.
 
@@ -135,11 +143,9 @@ it('counts served detections by confidence, including a recognized carrier', asy
 });
 
 it('answers the front door without a session, the same way, within a limit per client', async () => {
-  vi.stubEnv('TRUST_PROXY_HEADERS', 'true');
   const authenticate = vi.mocked(SupabaseAuthenticator.prototype.validate);
-  const withoutAccount = (trackingNumber: unknown, ip = '198.51.100.30') => detectWithoutAccount(new NextRequest('https://delivery.example/api/public/detect', {
-    method: 'POST', headers: { 'content-type': 'application/json', 'x-real-ip': ip }, body: JSON.stringify({ trackingNumber }),
-  }), { params: Promise.resolve({}) });
+  vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance').mockResolvedValue({ allowed: true, scope: null, overallUsed: 1 });
+  const counted = vi.spyOn(metrics, 'recordPublicDetection');
   recognize.mockImplementation(knows('dpd'));
   const response = await withoutAccount('0608 0000 0000 92');
   expect(response.status).toBe(200);
@@ -156,5 +162,62 @@ it('answers the front door without a session, the same way, within a limit per c
   const refused = await withoutAccount('1Z999AA10123456784');
   expect(refused.status).toBe(429);
   expect(refused.headers.get('retry-after')).toBeTruthy();
+  expect(counted).toHaveBeenLastCalledWith('limited_burst');
   expect((await withoutAccount('1Z999AA10123456784', '198.51.100.31')).status).toBe(200);
+});
+
+it('counts a number that carriers are asked about against the day\'s allowances without an account', async () => {
+  const claim = vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance').mockResolvedValue({ allowed: true, scope: null, overallUsed: 1 });
+  const counted = vi.spyOn(metrics, 'recordPublicDetection');
+  const from = (number: string) => withoutAccount(number, '198.51.100.40');
+
+  // A shape that names its carrier asks nobody and counts nothing.
+  expect(await (await from('1Z999AA10123456784')).json()).toMatchObject({ carrier: 'ups' });
+  expect(claim).not.toHaveBeenCalled();
+
+  recognize.mockImplementation(knows('dpd'));
+  expect(await (await from('12345678901251')).json()).toMatchObject({ carrier: 'dpd' });
+  expect(claim).toHaveBeenCalledExactlyOnceWith({
+    bucket: expect.stringMatching(/^detection:[0-9a-f]{64}$/), limit: 60, overall: { bucket: 'detection', limit: 10_000 },
+  });
+  expect(counted).toHaveBeenCalledExactlyOnceWith('asked');
+  // The answer kept from a moment ago is not counted again.
+  expect(await (await from('12345678901251')).json()).toMatchObject({ carrier: 'dpd' });
+  expect(claim).toHaveBeenCalledOnce();
+
+  // Amazon is a carrier to ask, too.
+  const amazonCheck = vi.spyOn(amazon, 'checkAmazonShipping').mockResolvedValue('available');
+  expect(await (await from('TBA000000000019')).json()).toMatchObject({ carrier: 'amazon-shipping' });
+  expect(claim).toHaveBeenCalledTimes(2);
+
+  // The signed-in sheet has its account's limits instead.
+  await request('12345678901252');
+  expect(claim).toHaveBeenCalledTimes(2);
+  amazonCheck.mockClear();
+  recognize.mockClear();
+
+  // Past an allowance the carriers are not asked, until the next UTC midnight.
+  vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-02T21:30:00Z') });
+  claim.mockResolvedValue({ allowed: false, scope: 'bucket', overallUsed: 1 });
+  const refused = await from('12345678901253');
+  expect(refused.status).toBe(429);
+  expect(refused.headers.get('retry-after')).toBe(String(2.5 * 3_600));
+  expect(counted).toHaveBeenLastCalledWith('limited_daily');
+  claim.mockResolvedValue({ allowed: false, scope: 'global', overallUsed: 0 });
+  expect((await from('TBA000000000027')).status).toBe(429);
+  expect(counted).toHaveBeenLastCalledWith('limited_global');
+  expect(recognize).not.toHaveBeenCalled();
+  expect(amazonCheck).not.toHaveBeenCalled();
+  // A shape that names its carrier is still answered.
+  expect((await from('1Z999AA10123456784')).status).toBe(200);
+});
+
+it('takes the detection allowances from the environment, and fails closed when they cannot be counted', async () => {
+  vi.stubEnv('PUBLIC_DETECTIONS_PER_DAY', '5');
+  vi.stubEnv('PUBLIC_DETECTIONS_GLOBAL_PER_DAY', '0');
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const claim = vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance').mockRejectedValue(new Error('database down'));
+  expect((await withoutAccount('12345678901254', '198.51.100.41')).status).toBe(500);
+  expect(claim).toHaveBeenCalledExactlyOnceWith({ bucket: expect.any(String), limit: 5, overall: { bucket: 'detection', limit: 0 } });
+  expect(recognize).not.toHaveBeenCalled();
 });

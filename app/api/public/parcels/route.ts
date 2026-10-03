@@ -3,8 +3,7 @@ import { apiRoute, clientIp, json, readJsonObject, requireService } from '../../
 import { wakeSyncWorker } from '../../../../src/server/background';
 import { recordPublicLookup } from '../../../../src/server/metrics';
 import {
-  lookupBucket,
-  lookupLimits,
+  claimLookup,
   newOwnerKey,
   ownerKeyHash,
   parcelAlerts,
@@ -26,15 +25,12 @@ export const POST = apiRoute(async (context) => {
   const service = requireService(context);
   // The name stays on the device: only the number, the carrier and its inputs are read.
   const values = newPackageValues({ ...await readJsonObject(context.request), label: '' });
-  await verifyAmazonShippingAddition(values.carrier, values.trackingNumber);
 
   const now = new Date();
-  const limits = lookupLimits();
-  const allowance = await service.claimPublicLookup(
-    lookupBucket(clientIp(context.request), now), limits.perClient, limits.overall,
-  );
+  const allowance = await claimLookup(service, clientIp(context.request), now);
   if (!allowance.allowed) {
-    recordPublicLookup(allowance.scope === 'global' ? 'limited_global' : 'limited_daily');
+    recordPublicLookup(allowance.scope === 'global' ? 'limited_global'
+      : allowance.scope === 'network' ? 'limited_network' : 'limited_daily');
     // `scope` lets a client offer signing in instead of a countdown to midnight.
     return json(
       { error: 'No lookups are left for today. Sign in to keep going.', scope: 'daily' },
@@ -42,6 +38,8 @@ export const POST = apiRoute(async (context) => {
       { 'Retry-After': String(secondsUntilUtcMidnight(now)) },
     );
   }
+  // Amazon is asked only for a lookup that was counted.
+  await verifyAmazonShippingAddition(values.carrier, values.trackingNumber);
 
   const key = newOwnerKey();
   const created = await service.createOneOffParcel(values, ownerKeyHash(key)!);

@@ -6,6 +6,7 @@ import { POST as lookUp } from '../../app/api/public/parcels/route';
 import { DELETE as forget, GET as read, PATCH as change } from '../../app/api/public/parcels/[linkId]/route';
 import { DELETE as alertOff, PUT as alertOn } from '../../app/api/public/parcels/[linkId]/alerts/route';
 import { AMAZON_ACCOUNT_MESSAGE } from '../lib/amazon';
+import * as amazon from './amazonShippingEligibility';
 import { SupabaseAuthenticator } from './auth';
 import * as background from './background';
 import * as metrics from './metrics';
@@ -106,9 +107,9 @@ let address = 0;
 const nextIp = () => `192.0.2.${++address}`;
 const route = (id: string) => ({ params: Promise.resolve({ linkId: id }) });
 
-function lookup(body: unknown, ip = nextIp()) {
+function lookup(body: unknown, ip = nextIp(), headers: Record<string, string> = {}) {
   return lookUp(new NextRequest('https://delivery.example/api/public/parcels', {
-    method: 'POST', headers: { 'content-type': 'application/json', 'x-real-ip': ip }, body: JSON.stringify(body),
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-real-ip': ip, ...headers }, body: JSON.stringify(body),
   }), { params: Promise.resolve({}) });
 }
 function open(id = linkId, key?: string, ip = nextIp()) {
@@ -160,7 +161,8 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 describe('looking up a parcel without an account', () => {
-  const allow = () => vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicLookup').mockResolvedValue({ allowed: true, scope: null });
+  const allow = (overallUsed = 1) => vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance')
+    .mockResolvedValue({ allowed: true, scope: null, overallUsed });
   const store = (created = true) => vi.spyOn(SupabaseServiceClient.prototype, 'createOneOffParcel').mockResolvedValue({
     link: storedLink({ owner: true }), package: storedPackage({ last_synced_at: null, sync_status: 'pending' }), created,
   });
@@ -191,7 +193,9 @@ describe('looking up a parcel without an account', () => {
     expect(text).not.toContain(hash);
     expect(text).not.toContain('Surprise');
     // The daily counter is keyed by a hash of the address, with the default allowances.
-    expect(claim).toHaveBeenCalledExactlyOnceWith(expect.stringMatching(/^[0-9a-f]{64}$/), 15, 3_000);
+    expect(claim).toHaveBeenCalledExactlyOnceWith({
+      bucket: expect.stringMatching(/^[0-9a-f]{64}$/), limit: 15, overall: { bucket: 'global', limit: 3_000 }, network: null,
+    });
     expect(enqueue).toHaveBeenCalledExactlyOnceWith({ packageId });
     expect(wake).toHaveBeenCalledOnce();
     expect(counted).toHaveBeenCalledExactlyOnceWith('created');
@@ -231,10 +235,10 @@ describe('looking up a parcel without an account', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it.each([['bucket', 'limited_daily'], ['global', 'limited_global']] as const)(
+  it.each([['bucket', 'limited_daily'], ['network', 'limited_network'], ['global', 'limited_global']] as const)(
     'refuses once the daily %s allowance is used up, until the next UTC midnight', async (scope, outcome) => {
       vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-02T21:30:00Z') });
-      vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicLookup').mockResolvedValue({ allowed: false, scope });
+      vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance').mockResolvedValue({ allowed: false, scope, overallUsed: 0 });
       const create = store();
       const counted = vi.spyOn(metrics, 'recordPublicLookup');
       const response = await lookup({ trackingNumber });
@@ -253,8 +257,82 @@ describe('looking up a parcel without an account', () => {
     vi.stubEnv('PUBLIC_LOOKUPS_GLOBAL_PER_DAY', '0');
     const claim = allow();
     store();
+    await lookup({ trackingNumber }, '2001:db8:0:9::1');
+    // An IPv6 /48 may make ten clients' lookups.
+    expect(claim).toHaveBeenCalledExactlyOnceWith({
+      bucket: expect.any(String), limit: 3, overall: { bucket: 'global', limit: 0 },
+      network: { bucket: expect.stringMatching(/^network:[0-9a-f]{64}$/), limit: 30 },
+    });
+  });
+
+  it('counts the lines of one IPv6 /48 against a shared allowance as well', async () => {
+    const claim = allow();
+    store();
+    await lookup({ trackingNumber }, '2001:db8:7:1::1');
+    await lookup({ trackingNumber }, '2001:db8:7:2::1');
+    await lookup({ trackingNumber }, '2001:db8:8:1::1');
+    const claims = claim.mock.calls.map(([claimed]) => claimed);
+    expect(claims[0]!.bucket).not.toBe(claims[1]!.bucket);
+    expect(claims[0]!.network).toEqual({ bucket: claims[1]!.network!.bucket, limit: 150 });
+    expect(claims[2]!.network!.bucket).not.toBe(claims[0]!.network!.bucket);
+    // The network's counter is not a client's.
+    expect(claims.map((claimed) => claimed.bucket)).not.toContain(claims[0]!.network!.bucket.slice('network:'.length));
+  });
+
+  it('asks Amazon about an Amazon Shipping number only once the lookup is counted', async () => {
+    const check = vi.spyOn(amazon, 'verifyAmazonShippingAddition').mockResolvedValue(undefined);
+    vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance').mockResolvedValue({ allowed: false, scope: 'bucket', overallUsed: 0 });
+    expect((await lookup({ trackingNumber })).status).toBe(429);
+    expect(check).not.toHaveBeenCalled();
+    const claim = allow();
+    store();
+    expect((await lookup({ trackingNumber })).status).toBe(201);
+    expect(check).toHaveBeenCalledExactlyOnceWith('unknown', trackingNumber);
+    expect(claim.mock.invocationCallOrder[0]).toBeLessThan(check.mock.invocationCallOrder[0]!);
+  });
+
+  it('says once a day that the overall allowance is running out, and that it is used up', async () => {
+    const report = vi.spyOn(observability, 'capturePublicAllowance').mockReturnValue(null);
+    store();
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-05T10:00:00Z') });
+    const claim = allow(2_399);
     await lookup({ trackingNumber });
-    expect(claim).toHaveBeenCalledExactlyOnceWith(expect.any(String), 3, 0);
+    expect(report).not.toHaveBeenCalled();
+    claim.mockResolvedValue({ allowed: true, scope: null, overallUsed: 2_400 });
+    await lookup({ trackingNumber });
+    await lookup({ trackingNumber });
+    expect(report.mock.calls).toEqual([['lookup', 'running_out', { used: 2_400, limit: 3_000 }]]);
+    claim.mockResolvedValue({ allowed: false, scope: 'global', overallUsed: 3_000 });
+    await lookup({ trackingNumber });
+    await lookup({ trackingNumber });
+    expect(report.mock.calls.at(-1)).toEqual(['lookup', 'used_up', { used: 3_000, limit: 3_000 }]);
+    expect(report).toHaveBeenCalledTimes(2);
+    // The next day it is said again.
+    vi.setSystemTime(new Date('2026-11-06T00:00:01Z'));
+    await lookup({ trackingNumber });
+    expect(report).toHaveBeenCalledTimes(3);
+    // An allowance of 0 was turned off on purpose.
+    vi.setSystemTime(new Date('2026-11-07T00:00:01Z'));
+    vi.stubEnv('PUBLIC_LOOKUPS_GLOBAL_PER_DAY', '0');
+    claim.mockResolvedValue({ allowed: false, scope: 'global', overallUsed: 0 });
+    await lookup({ trackingNumber });
+    expect(report).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    [{ 'sec-fetch-site': 'cross-site', origin: 'https://elsewhere.example' }, 403],
+    [{ 'sec-fetch-site': 'same-site', origin: 'https://sibling.delivery.example' }, 403],
+    [{ origin: 'https://elsewhere.example' }, 403],
+    [{ 'content-type': 'text/plain' }, 415],
+  ])('refuses a lookup that a page of another site could send (%j), before counting it', async (headers, status) => {
+    const claim = allow();
+    const create = store();
+    const response = await lookup({ trackingNumber }, nextIp(), headers);
+    expect(response.status).toBe(status);
+    expect(claim).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+    // The page's own requests go through.
+    expect((await lookup({ trackingNumber }, nextIp(), { 'sec-fetch-site': 'same-origin', origin: 'https://delivery.example' })).status).toBe(201);
   });
 
   it('allows a burst of six lookups a minute per client, and counts an IPv6 line as one client', async () => {
@@ -272,9 +350,9 @@ describe('looking up a parcel without an account', () => {
     expect(claim).toHaveBeenCalledTimes(6);
     expect(counted).toHaveBeenLastCalledWith('limited_burst');
     // Every address of the line fed the same daily counter; another line has its own.
-    expect(new Set(claim.mock.calls.map(([bucket]) => bucket)).size).toBe(1);
+    expect(new Set(claim.mock.calls.map(([claimed]) => claimed.bucket)).size).toBe(1);
     expect((await lookup({ trackingNumber }, '2001:db8:0:2::1')).status).toBe(201);
-    expect(claim.mock.calls.at(-1)![0]).not.toBe(claim.mock.calls[0]![0]);
+    expect(claim.mock.calls.at(-1)![0].bucket).not.toBe(claim.mock.calls[0]![0].bucket);
   });
 
   it('counts every client together when the proxy headers are not trusted', async () => {
@@ -283,7 +361,7 @@ describe('looking up a parcel without an account', () => {
     store();
     await lookup({ trackingNumber }, '203.0.113.1');
     await lookup({ trackingNumber }, '203.0.113.2');
-    expect(claim.mock.calls[0]![0]).toBe(claim.mock.calls[1]![0]);
+    expect(claim.mock.calls[0]![0].bucket).toBe(claim.mock.calls[1]![0].bucket);
   });
 });
 
@@ -359,7 +437,7 @@ describe('reading a parcel link', () => {
     for (const number of [trackingNumber, 'TESTDELIVERYLEG01', 'TESTORIGINLEG0001']) expect(text).not.toContain(number);
     const answer = JSON.parse(text);
     expect(answer.link).toMatchObject({ role: 'viewer', numberShown: false, canKeep: false });
-    expect(answer.package).toMatchObject({ tracking_number: null, number_hint: { head: 'TEST', tail: '456' }, tracking_url: null });
+    expect(answer.package).toMatchObject({ tracking_number: null, number_hint: { head: '', tail: '3456' }, tracking_url: null });
     expect(answer.package.carrier_data).not.toHaveProperty('active_tracking_number');
     expect(answer.package.carrier_data).not.toHaveProperty('original_tracking_number');
     expect(answer.package.carrier_data).toMatchObject({ sender_name: 'Example Shop', active_tracking_carrier: 'swiss-post' });
@@ -437,7 +515,7 @@ describe('reading a parcel link', () => {
     for (const hidden of [trackingNumber, 'Example Shop', 'Hamburg', 'TESTDELIVERYLEG01', 'weight_kg', 'In transit']) expect(text).not.toContain(hidden);
     const answer = JSON.parse(text);
     expect(answer.link).toMatchObject({ role: 'viewer', gift: true, numberShown: false, canKeep: false });
-    expect(answer.package).toMatchObject({ tracking_number: null, number_hint: { head: 'TEST', tail: '456' }, last_status_text: null });
+    expect(answer.package).toMatchObject({ tracking_number: null, number_hint: { head: '', tail: '3456' }, last_status_text: null });
     expect(answer.package.tracking_events).toEqual([
       expect.objectContaining({ id: 'scan-3', description: 'Arrived in Switzerland', location: 'Basel, CH' }),
       { id: 'scan-2', package_id: packageId, stage: 'accepted', description: 'Left the sender', location: 'DE',

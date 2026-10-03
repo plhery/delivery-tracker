@@ -43,15 +43,14 @@ extension Parcel {
 }
 
 extension ParcelNumberHint {
-    /// How a hidden tracking number reads: "1234 ••• 899".
-    var masked: String { "\(head) ••• \(tail)" }
+    /// How a hidden tracking number reads: "••• 0899".
+    var masked: String { "\(head) ••• \(tail)".trimmingCharacters(in: .whitespaces) }
 
-    /// The two ends a link shows of a number it hides, by the service's rule: up to four leading
-    /// and three trailing characters, fewer for a short number.
+    /// What a link shows of a number it hides, by the service's rule: its last quarter, four
+    /// characters at most, and nothing of its start.
     init(hiding trackingNumber: String) {
-        let head = min(4, trackingNumber.count / 3)
-        let tail = min(3, trackingNumber.count / 4)
-        self.init(head: String(trackingNumber.prefix(head)), tail: String(trackingNumber.suffix(tail)))
+        let tail = min(4, trackingNumber.count / 4)
+        self.init(head: "", tail: String(trackingNumber.suffix(tail)))
     }
 }
 

@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import * as Sentry from '@sentry/node';
 import type { Event } from '@sentry/node';
-import { captureOperationalError, captureTrackingHealth, flushObservability, initObservability, reportRoutingEvent } from './observability';
+import { captureOperationalError, capturePublicAllowance, captureTrackingHealth, flushObservability, initObservability, reportRoutingEvent } from './observability';
 import { UniversalTrackingError } from 'universal-parcel-scraper/node';
 import { UpstreamHttpError } from 'universal-parcel-scraper/node';
 import { createAdapterRegistry } from './adapterRegistry';
@@ -183,4 +183,22 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(opportunity.contexts?.upstream_http).toBeUndefined();
   expect(opportunity.tags?.upstream_body_read).toBeUndefined();
   expect(opportunity.breadcrumbs?.some((crumb) => crumb.category === 'tracking-routing' && crumb.message === 'provider_recovered')).toBe(true);
+
+  // An overall allowance without an account is one issue per allowance and state.
+  const low = capturePublicAllowance('lookup', 'running_out', { used: 2_400, limit: 3_000 });
+  const gone = capturePublicAllowance('detection', 'used_up', { used: 10_000, limit: 10_000 });
+  await flushObservability();
+  const runningOut = captured.events.find((event) => event.event_id === low)!;
+  expect(runningOut.message).toBe("Lookups without an account: today's allowance is running out");
+  expect(runningOut.level).toBe('warning');
+  expect(runningOut.exception).toBeUndefined();
+  expect(runningOut.fingerprint).toEqual(['delivery-tracker', 'public-allowance', 'lookup', 'running_out']);
+  expect(runningOut.contexts?.public_allowance).toMatchObject({ used: 2_400, limit: 3_000 });
+  expect(runningOut.contexts?.public_allowance?.next_steps).toContain('PUBLIC_LOOKUPS_GLOBAL_PER_DAY');
+  expect(runningOut.contexts?.upstream_http).toBeUndefined();
+  const usedUp = captured.events.find((event) => event.event_id === gone)!;
+  expect(usedUp.message).toBe("Carrier detection without an account: today's allowance is used up");
+  expect(usedUp.level).toBe('error');
+  expect(usedUp.tags).toMatchObject({ component: 'public-allowance', allowance: 'detection', allowance_state: 'used_up' });
+  expect(usedUp.contexts?.public_allowance?.next_steps).toContain('PUBLIC_DETECTIONS_GLOBAL_PER_DAY');
 });

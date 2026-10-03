@@ -102,7 +102,7 @@ part of a link after `#`, which browsers do not send to the service.
 
 Your device keeps a key that shows it made the lookup; the service stores only
 a hash of that key. Anyone who has the link can see the parcel's status and
-history, with the tracking number masked to its first and last characters.
+history, with the tracking number masked to its last characters.
 Only the device holding the key sees the full number, can forget the parcel,
 and can keep it after signing in. The postcode or tracking link you entered is
 never shown through a link.
@@ -112,9 +112,9 @@ link, its key if this device made the lookup, the name you gave it and the last
 tracking history it showed, so the parcel is still there offline. The list
 stays on the device until the parcel is forgotten or kept in an account.
 
-To limit abuse, the service counts lookups per day under a keyed hash of the
-network address and the date. The address itself is not stored, and the
-counters are deleted after seven days.
+To limit abuse, the service counts lookups, and numbers it asked carriers
+about, per day under a keyed hash of the network address and the date. The
+address itself is not stored, and the counters are deleted after seven days.
 
 The same number looked up by several people, with the same carrier and
 details, is stored once; each lookup has its own link.

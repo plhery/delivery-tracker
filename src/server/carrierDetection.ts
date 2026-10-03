@@ -22,10 +22,11 @@ const MAX_ANSWERS = 500;
 let registry: AdapterRegistry | undefined;
 const answers = new Map<string, { at: number; answer: ApiCarrierDetectionResponse }>();
 
-async function recognize(trackingNumber: string): Promise<ApiCarrierDetectionResponse> {
+async function recognize(trackingNumber: string, beforeAsking?: () => Promise<void>): Promise<ApiCarrierDetectionResponse> {
   const cached = answers.get(trackingNumber);
   if (cached && Date.now() - cached.at < ANSWER_TTL_MS) return cached.answer;
   const candidates = recognitionCandidates(trackingNumber).slice(0, MAX_RECOGNITIONS);
+  if (candidates.length) await beforeAsking?.();
   const outcomes = await recognizeAll(candidates, async (carrier) => {
     const adapter = (registry ??= createAdapterRegistry()).for(carrier);
     if (!adapter?.recognize) throw new RangeError(`${carrier} cannot recognize a number`);
@@ -59,8 +60,13 @@ async function recognize(trackingNumber: string): Promise<ApiCarrierDetectionRes
   return answer;
 }
 
-/** The carrier of a number, for the signed-in Add sheet and the front door alike. */
-export async function detectCarrier(body: JsonObject): Promise<ApiCarrierDetectionResponse> {
+/**
+ * The carrier of a number, for the signed-in Add sheet and the front door
+ * alike. `beforeAsking` runs before a carrier is asked about the number, and
+ * may refuse by throwing. It does not run for an answer read from the number's
+ * shape or kept from a moment ago.
+ */
+export async function detectCarrier(body: JsonObject, beforeAsking?: () => Promise<void>): Promise<ApiCarrierDetectionResponse> {
   if (typeof body.trackingNumber !== 'string' || body.trackingNumber.length > 80) {
     throw new HttpError(400, 'Invalid tracking number');
   }
@@ -69,6 +75,7 @@ export async function detectCarrier(body: JsonObject): Promise<ApiCarrierDetecti
     throw new HttpError(400, 'Invalid tracking number');
   }
   if (isAmazonTrackingNumber(trackingNumber)) {
+    await beforeAsking?.();
     const amazonShippingStatus = await checkAmazonShipping(trackingNumber);
     recordDetection('high');
     return { trackingNumber, carrier: ['available', 'expired'].includes(amazonShippingStatus) ? 'amazon-shipping' : 'amazon-logistics', amazonShippingStatus };
@@ -76,7 +83,7 @@ export async function detectCarrier(body: JsonObject): Promise<ApiCarrierDetecti
   const detected = detectCarrierMatch(trackingNumber);
   // A shape shared by several carriers: ask the ones that can answer cheaply.
   // Only a carrier that knows the number is returned; the rest stay suggestions.
-  const answer = detected.confidence === 'low' ? await recognize(trackingNumber)
+  const answer = detected.confidence === 'low' ? await recognize(trackingNumber, beforeAsking)
     : { trackingNumber, carrier: detected.carrier } satisfies ApiCarrierDetectionResponse;
   recordDetection(answer.carrier !== 'unknown' ? 'high' : detected.confidence);
   return answer;

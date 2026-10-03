@@ -81,8 +81,8 @@
       "id": "43000000-0000-0000-0000-000000000004",
       "tracking_number": null,
       "number_hint": {
-        "head": "TEST",
-        "tail": "456"
+        "head": "",
+        "tail": "3456"
       },
       "label": "",
       "carrier": "dpd",
@@ -176,8 +176,8 @@
       "id": "43000000-0000-0000-0000-000000000006",
       "tracking_number": null,
       "number_hint": {
-        "head": "TEST",
-        "tail": "789"
+        "head": "",
+        "tail": "6789"
       },
       "label": "",
       "carrier": "dhl",

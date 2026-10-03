@@ -528,7 +528,8 @@ describe('FrontDoor: on this device', () => {
     expect(links.map((link) => link.getAttribute('href'))).toEqual([`/p/${LINK_ID}`, `/p/${OTHER_LINK_ID}`]);
     expect(links[0]).toHaveAccessibleName(/DHL.*New sneakers.*In transit/);
     expect(links[0].style.getPropertyValue('--carrier-surface-light')).not.toBe('');
-    expect(links[1]).toHaveTextContent('123 ••• 99');
+    expect(links[1]).toHaveTextContent('••• 99');
+    expect(links[1]).not.toHaveTextContent('123');
     expect(links[1]).toHaveTextContent('Delivered');
     expect(within(list).getByText('Kept in this browser only.')).toBeVisible();
     await user.click(within(list).getByRole('button', { name: 'Sign in to keep them, with alerts' }));

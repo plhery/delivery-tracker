@@ -34,12 +34,12 @@ const failed = async (operation: Promise<unknown>) => {
 };
 
 describe('sharing in the device demo', () => {
-  it('shows a viewer the number’s ends until the owner shows the number, and tells the owner everything all along', async () => {
+  it('shows a viewer the number’s end until the owner shows the number, and tells the owner everything all along', async () => {
     const { links, id, key, read } = await looked();
     const hidden = await read(false);
     expect(hidden.link).toMatchObject({ role: 'viewer', numberShown: false, canKeep: false, gift: false, shared: true, alerts: { available: true, vapidPublicKey: null } });
     expect(hidden.parcel.trackingNumber).toBe('');
-    expect(hidden.numberHint).toEqual({ head: '123', tail: '99' });
+    expect(hidden.numberHint).toEqual({ head: '', tail: '99' });
 
     const owner = await links.updateParcelLink(id, key, { showNumber: true });
     expect(owner.link).toMatchObject({ role: 'owner', numberShown: true });

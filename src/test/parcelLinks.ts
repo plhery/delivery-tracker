@@ -38,7 +38,7 @@ export function testView({ id = LINK_ID, owner = true, parcel, stages }: {
       forgetAt: '2026-12-30T08:00:00.000Z', numberShown: owner, canKeep: owner,
     },
     parcel: owner ? shown : { ...shown, trackingNumber: '' },
-    numberHint: owner ? null : { head: '123', tail: '99' },
+    numberHint: owner ? null : { head: '', tail: '99' },
   };
 }
 

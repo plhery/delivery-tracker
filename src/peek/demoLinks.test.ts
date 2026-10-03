@@ -73,7 +73,7 @@ describe('the device demo backend', () => {
       const view = await read(links, id, { key });
       expect(view.link).toMatchObject({ role: 'viewer', numberShown: false, canKeep: false });
       expect(view.parcel.trackingNumber).toBe('');
-      expect(view.numberHint).toEqual({ head: '1ZDE', tail: '001' });
+      expect(view.numberHint).toEqual({ head: '', tail: '0001' });
     }
   });
 

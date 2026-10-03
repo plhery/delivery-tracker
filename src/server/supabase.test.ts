@@ -145,8 +145,8 @@ describe('one-off parcels and their links', () => {
       .mockResolvedValueOnce(found).mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ ...found, created: true })
       .mockResolvedValueOnce({ links: 1, packages: 1 }).mockResolvedValueOnce({ links: 3, packages: 2 })
-      .mockResolvedValueOnce({ allowed: false, scope: 'global', remaining: 4 })
-      .mockResolvedValueOnce({ buckets: 4, p50: 2, p90: 10, max: 10 });
+      .mockResolvedValueOnce({ allowed: false, scope: 'global', remaining: 4, overall: 3_000 })
+      .mockResolvedValueOnce({ buckets: 4, p50: 2, p90: 10, max: 10, detection: { buckets: 2, p50: 4, p90: 8, max: 8 } });
     const userRequest = vi.spyOn(user, 'request').mockResolvedValue({ outcome: 'kept', package_id: 'package-2' });
 
     await expect(client.publicParcel('k7Qm2xHd9RtW', hash, true)).resolves.toEqual(found);
@@ -155,8 +155,12 @@ describe('one-off parcels and their links', () => {
       .resolves.toEqual({ ...found, created: true });
     await expect(client.forgetParcelLink('k7Qm2xHd9RtW', hash)).resolves.toEqual({ links: 1, packages: 1 });
     await expect(client.forgetExpiredParcelLinks()).resolves.toEqual({ links: 3, packages: 2, stopped: 0, alerts: 0 });
-    await expect(client.claimPublicLookup(hash, 15, 3_000)).resolves.toEqual({ allowed: false, scope: 'global' });
-    await expect(client.publicLookupUsageSummary()).resolves.toEqual({ buckets: 4, p50: 2, p90: 10, max: 10 });
+    await expect(client.claimPublicAllowance({
+      bucket: hash, limit: 15, overall: { bucket: 'global', limit: 3_000 }, network: { bucket: `network:${hash}`, limit: 150 },
+    })).resolves.toEqual({ allowed: false, scope: 'global', overallUsed: 3_000 });
+    await expect(client.publicLookupUsageSummary()).resolves.toEqual({
+      buckets: 4, p50: 2, p90: 10, max: 10, detection: { buckets: 2, p50: 4, p90: 8, max: 8 },
+    });
     await expect(user.claimParcelLink('k7Qm2xHd9RtW', hash, 'Sneakers')).resolves.toEqual({ outcome: 'kept', packageId: 'package-2' });
 
     expect(request.mock.calls.map(([path]) => path)).toEqual([
@@ -167,6 +171,9 @@ describe('one-off parcels and their links', () => {
     expect(request.mock.calls[0][1]).toEqual({ method: 'POST', body: { p_link_id: 'k7Qm2xHd9RtW', p_owner_key_hash: hash, p_touch: true } });
     expect(request.mock.calls[2][1]).toEqual({ method: 'POST', body: {
       p_tracking_number: 'TEST1234', p_carrier: 'unknown', p_tracking_url: null, p_dpd_postcode: null, p_owner_key_hash: hash,
+    } });
+    expect(request.mock.calls[5][1]).toEqual({ method: 'POST', body: {
+      p_bucket: hash, p_limit: 15, p_global_bucket: 'global', p_global_limit: 3_000, p_network_bucket: `network:${hash}`, p_network_limit: 150,
     } });
     expect(userRequest).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/claim_parcel_link', {
       method: 'POST', body: { p_link_id: 'k7Qm2xHd9RtW', p_owner_key_hash: hash, p_label: 'Sneakers' },
