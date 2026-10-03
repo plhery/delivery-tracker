@@ -1153,7 +1153,7 @@ export function pushServices(client: SupabaseServiceClient): CompositePushNotifi
     publicKey: process.env.VAPID_PUBLIC_KEY?.trim() ?? '',
     privateKey: process.env.VAPID_PRIVATE_KEY?.trim() ?? '',
     // Push services ask who sends: the site itself, unless a contact is set.
-    subject: process.env.VAPID_SUBJECT?.trim() || process.env.CANONICAL_ORIGIN?.trim() || 'https://peek.plhery.com',
+    subject: process.env.VAPID_SUBJECT?.trim() || process.env.CANONICAL_ORIGIN?.trim() || 'https://peektracker.com',
   };
   const nativeValues = {
     teamId: process.env.APNS_TEAM_ID?.trim() ?? '',

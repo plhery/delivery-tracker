@@ -3,7 +3,7 @@ import XCTest
 
 final class ParcelShareTests: XCTestCase {
     private let linkID = "g8Rn3yJe2SuX"
-    private let base = URL(string: "https://peek.plhery.com")!
+    private let base = URL(string: "https://peektracker.com")!
 
     private struct Fixture: Decodable {
         let publicParcel: PublicParcelResponse
@@ -83,7 +83,7 @@ final class ParcelShareTests: XCTestCase {
 
     func testALinkCarriesItsNameNoteAndSignatureAfterTheHash() {
         func route(_ fragment: String) -> ParcelLinkRoute? {
-            ParcelLinkRoute(url: URL(string: "https://peek.plhery.com/p/" + linkID + fragment)!, baseURL: base)
+            ParcelLinkRoute(url: URL(string: "https://peektracker.com/p/" + linkID + fragment)!, baseURL: base)
         }
         XCTAssertEqual(route("#n=New%20sneakers&g=Happy%20birthday%2C%20Alex!&f=Sam"),
                        ParcelLinkRoute(id: linkID, name: "New sneakers", note: "Happy birthday, Alex!", from: "Sam"))
@@ -119,19 +119,19 @@ final class ParcelShareTests: XCTestCase {
     }
 
     func testTheAddressIsBuiltOnTheSiteAsTheSiteBuildsIt() {
-        XCTAssertEqual(ParcelLinkRoute.address(id: linkID, baseURL: base).absoluteString, "https://peek.plhery.com/p/g8Rn3yJe2SuX")
+        XCTAssertEqual(ParcelLinkRoute.address(id: linkID, baseURL: base).absoluteString, "https://peektracker.com/p/g8Rn3yJe2SuX")
         let words = ParcelLinkWords(name: "New sneakers 👟", note: "Happy birthday, Alex! (It's me) & co #1 100%", from: "Sam & Léa")
         let address = ParcelLinkRoute.address(id: linkID, words: words, baseURL: base)
         // The same escapes as JavaScript's encodeURIComponent, in the order n, g, f.
         XCTAssertEqual(address.absoluteString,
-                       "https://peek.plhery.com/p/g8Rn3yJe2SuX#n=New%20sneakers%20%F0%9F%91%9F"
+                       "https://peektracker.com/p/g8Rn3yJe2SuX#n=New%20sneakers%20%F0%9F%91%9F"
                        + "&g=Happy%20birthday%2C%20Alex!%20(It's%20me)%20%26%20co%20%231%20100%25&f=Sam%20%26%20L%C3%A9a")
         // What is written is what is read back.
         XCTAssertEqual(ParcelLinkRoute(url: address, baseURL: base),
                        ParcelLinkRoute(id: linkID, name: words.name, note: words.note, from: words.from))
         // Words are cleaned on their way out, and empty ones left out.
         XCTAssertEqual(ParcelLinkRoute.address(id: linkID, words: ParcelLinkWords(name: " ", note: "a\nb", from: ""), baseURL: base).absoluteString,
-                       "https://peek.plhery.com/p/g8Rn3yJe2SuX#g=a%20b")
+                       "https://peektracker.com/p/g8Rn3yJe2SuX#g=a%20b")
         // A development site keeps its port; a query never travels.
         XCTAssertEqual(ParcelLinkRoute.address(id: linkID, words: ParcelLinkWords(name: "Lamp"), baseURL: URL(string: "http://localhost:3000")!).absoluteString,
                        "http://localhost:3000/p/g8Rn3yJe2SuX#n=Lamp")
@@ -337,7 +337,7 @@ final class ParcelShareTests: XCTestCase {
 
         let address = await model.addressToHandOut()
         XCTAssertEqual(service.calls, ["GET", "PUT true true"])
-        XCTAssertEqual(address?.absoluteString, "https://peek.plhery.com/p/2222222222BA#n=New%20sneakers&g=Enjoy")
+        XCTAssertEqual(address?.absoluteString, "https://peektracker.com/p/2222222222BA#n=New%20sneakers&g=Enjoy")
         XCTAssertEqual(model.address, address)
         XCTAssertEqual(ParcelShareNotes(defaults: defaults).words(for: model.parcelID), ParcelShareWords(name: true, note: "Enjoy", from: ""))
 
@@ -410,21 +410,21 @@ final class ParcelShareTests: XCTestCase {
         service.link = ParcelShare(id: linkID, showNumber: true, gift: false, createdAt: "2026-10-01T08:00:00.000Z")
         let model = model(service, defaults: defaults)
         await model.load()
-        XCTAssertEqual(model.address?.absoluteString, "https://peek.plhery.com/p/g8Rn3yJe2SuX")
+        XCTAssertEqual(model.address?.absoluteString, "https://peektracker.com/p/g8Rn3yJe2SuX")
 
         model.words.name = true
-        XCTAssertEqual(model.address?.absoluteString, "https://peek.plhery.com/p/g8Rn3yJe2SuX#n=New%20sneakers")
+        XCTAssertEqual(model.address?.absoluteString, "https://peektracker.com/p/g8Rn3yJe2SuX#n=New%20sneakers")
 
         // A note typed for a gift stays off the link until the link is a gift.
         model.words.note = "Happy birthday! "
         model.words.from = " Sam"
-        XCTAssertEqual(model.address?.absoluteString, "https://peek.plhery.com/p/g8Rn3yJe2SuX#n=New%20sneakers")
+        XCTAssertEqual(model.address?.absoluteString, "https://peektracker.com/p/g8Rn3yJe2SuX#n=New%20sneakers")
         await model.set(.gift, to: true)
-        XCTAssertEqual(model.address?.absoluteString, "https://peek.plhery.com/p/g8Rn3yJe2SuX#n=New%20sneakers&g=Happy%20birthday!&f=Sam")
+        XCTAssertEqual(model.address?.absoluteString, "https://peektracker.com/p/g8Rn3yJe2SuX#n=New%20sneakers&g=Happy%20birthday!&f=Sam")
         XCTAssertEqual(model.words.note, "Happy birthday! ", "What is being typed keeps its spaces")
 
         model.words.name = false
-        XCTAssertEqual(model.address?.absoluteString, "https://peek.plhery.com/p/g8Rn3yJe2SuX#g=Happy%20birthday!&f=Sam")
+        XCTAssertEqual(model.address?.absoluteString, "https://peektracker.com/p/g8Rn3yJe2SuX#g=Happy%20birthday!&f=Sam")
 
         // What is typed stays within what a link may carry.
         model.words.note = String(repeating: "a", count: 300)

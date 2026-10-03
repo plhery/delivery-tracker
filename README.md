@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://peek.plhery.com">Open app</a> ·
+  <a href="https://peektracker.com">Open app</a> ·
   <a href="#local-development">Run locally</a> ·
   <a href="#iphone">iPhone</a> ·
   <a href="#self-hosting">Self-hosting</a>

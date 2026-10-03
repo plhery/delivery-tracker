@@ -21,7 +21,7 @@ struct AppConfiguration: Sendable {
     static let current: AppConfiguration = {
         let useAPI = value("SDTUseAPI").uppercased() == "YES"
         let baseURL = URL(string: value("SDTAPIBaseURL"))
-            ?? URL(string: "https://peek.plhery.com")!
+            ?? URL(string: "https://peektracker.com")!
         let supabase = URL(string: value("SDTSupabaseURL"))
         return AppConfiguration(
             mode: useAPI ? .api : .demo,

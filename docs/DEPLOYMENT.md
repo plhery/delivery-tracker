@@ -2,7 +2,7 @@
 
 The app is one long-running Next.js container: web, API and background worker. It needs
 Supabase (Auth, PostgREST, Postgres 16+) and HTTPS. The official instance runs at
-`https://peek.plhery.com`, behind Cloudflare.
+`https://peektracker.com`, behind Cloudflare.
 
 ## Requirements
 
