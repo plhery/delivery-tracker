@@ -448,6 +448,7 @@ function fakeClient(packages: JsonObject[] = []) {
   const client = {
     listActivePackages: vi.fn().mockResolvedValue(packages),
     listFollowedOneOffPackages: vi.fn().mockResolvedValue([]),
+    listUnwatchedPackageIds: vi.fn().mockResolvedValue([]),
     autoLinkPackages: vi.fn().mockResolvedValue(0),
     updatePackage: vi.fn().mockResolvedValue(undefined),
     insertEvents: vi.fn().mockResolvedValue(undefined),
@@ -715,6 +716,41 @@ describe('TrackingSyncService', () => {
       { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null);
     await expect(service.sync()).resolves.toMatchObject({ checked: 1, updated: 1 });
     expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'tracking', operation: 'list_one_off_packages' });
+  });
+
+  it.each([
+    { name: 'a watched parcel', unwatched: false, stage: 'in_transit', time: '10:10:00', checked: 2 },
+    { name: 'an unwatched parcel', unwatched: true, stage: 'in_transit', time: '10:10:00', checked: 0 },
+    { name: 'an unwatched parcel', unwatched: true, stage: 'in_transit', time: '10:59:59', checked: 0 },
+    { name: 'an unwatched parcel', unwatched: true, stage: 'in_transit', time: '11:00:00', checked: 2 },
+    { name: 'an unwatched parcel out for delivery', unwatched: true, stage: 'out_for_delivery', time: '10:02:00', checked: 0 },
+  ])('checks $name at $time: $checked checks', async ({ unwatched, stage, time, checked }) => {
+    const parcel = { carrier: 'swiss-post', current_stage: stage, tracking_number: 'TEST1234',
+      last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok' };
+    const client = fakeClient([{ ...parcel, id: 'owned', user_id: 'a' }]);
+    client.listFollowedOneOffPackages.mockResolvedValue([{ ...parcel, id: 'one-off', user_id: null, one_off: true }]);
+    client.listUnwatchedPackageIds.mockResolvedValue(unwatched ? ['owned', 'one-off'] : ['another']);
+    const now = new Date(`2026-09-09T${time}Z`);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null, () => now);
+    await expect(service.sync()).resolves.toMatchObject({ checked });
+    // Opened within the last hour is watched; a one-off parcel is still followed for 24 hours.
+    expect(client.listUnwatchedPackageIds).toHaveBeenCalledExactlyOnceWith(new Date(now.getTime() - 3_600_000));
+    expect(client.listFollowedOneOffPackages).toHaveBeenCalledExactlyOnceWith(new Date(now.getTime() - 86_400_000));
+    // A manual refresh is never held back by it.
+    if (!checked) await expect(service.syncPackage({ ...parcel, id: 'owned', user_id: 'a' })).resolves.toMatchObject({ checked: 1 });
+  });
+
+  it('keeps every parcel on the full cadence when the unwatched ones cannot be listed', async () => {
+    const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const client = fakeClient([{ id: 'a1', user_id: 'a', carrier: 'swiss-post', current_stage: 'in_transit',
+      tracking_number: 'TEST1234', last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok' }]);
+    const failure = new Error('function unavailable');
+    client.listUnwatchedPackageIds.mockRejectedValue(failure);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null, () => new Date('2026-09-09T10:10:00Z'));
+    await expect(service.sync()).resolves.toMatchObject({ checked: 1, updated: 1 });
+    expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'tracking', operation: 'list_unwatched_packages' });
   });
 
   it('queues a check when a link is opened only if the schedule would check the parcel now', () => {

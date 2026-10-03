@@ -9,6 +9,7 @@ import {
   requireUserClient,
 } from '../../../src/server/api';
 import { withEventPlaces } from '../../../src/server/eventPlaces';
+import { captureOperationalError } from '../../../src/server/observability';
 import { SupabaseError } from '../../../src/server/supabase';
 import { wakeSyncWorker } from '../../../src/server/background';
 import { newPackageValues } from '../../../src/server/validation';
@@ -18,9 +19,16 @@ export const runtime = 'nodejs';
 
 export const GET = apiRoute(async (context) => {
   const includeArchived = new URL(context.request.url).searchParams.get('includeArchived') === 'true';
-  return json({
-    packages: (await requireUserClient(context).listPackages(includeArchived)).map(withEventPlaces),
-  });
+  const client = requireUserClient(context);
+  const [packages] = await Promise.all([
+    client.listPackages(includeArchived),
+    // The parcels are still readable when this fails; the next read records it.
+    client.recordOpened().catch((error: unknown) => {
+      if (!(error instanceof SupabaseError)) throw error;
+      captureOperationalError(error, { component: 'packages', operation: 'record_account_opened' });
+    }),
+  ]);
+  return json({ packages: packages.map(withEventPlaces) });
 }, { serviceRequired: true });
 
 export const POST = apiRoute(async (context) => {

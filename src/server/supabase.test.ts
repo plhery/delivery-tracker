@@ -121,6 +121,19 @@ describe('one-off parcels and their links', () => {
     expect(params(path).get('order')).toBe('last_synced_at.asc.nullsfirst,created_at.asc');
   });
 
+  it('lists the parcels nobody is waiting for, and records that an account read its parcels', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request').mockResolvedValue([{ id: 'quiet-1' }, { id: 'quiet-2' }, { id: null }]);
+    await expect(client.listUnwatchedPackageIds(new Date('2026-10-01T10:00:00Z'))).resolves.toEqual(['quiet-1', 'quiet-2']);
+    expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/unwatched_package_ids', {
+      method: 'POST', body: { p_opened_since: '2026-10-01T10:00:00.000Z' },
+    });
+    const account = new SupabaseUserClient('https://database.example', 'public-key', 'token');
+    const recorded = vi.spyOn(account, 'request').mockResolvedValue(null);
+    await account.recordOpened();
+    expect(recorded).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/record_account_opened', { method: 'POST', body: {} });
+  });
+
   it('queues a one-off parcel\'s check without an owner, behind accounts and the scheduled run', async () => {
     const client = service();
     const request = vi.spyOn(client, 'request').mockResolvedValue([{ id: 'job' }]);

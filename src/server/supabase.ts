@@ -808,6 +808,17 @@ export class SupabaseServiceClient extends SupabaseClient {
   }
 
   /**
+   * The open parcels nobody is waiting for: no notification can reach anyone
+   * about them, and neither their account's apps nor one of their links were
+   * opened since `openedSince`.
+   */
+  async listUnwatchedPackageIds(openedSince: Date): Promise<string[]> {
+    return rows(await this.request('/rest/v1/rpc/unwatched_package_ids', {
+      method: 'POST', body: { p_opened_since: openedSince.toISOString() },
+    })).flatMap((row) => typeof row.id === 'string' ? [row.id] : []);
+  }
+
+  /**
    * One parcel of an account in the shape the API gives its owner, events
    * included. Null when the parcel is gone or belongs to someone else.
    */
@@ -1320,6 +1331,11 @@ export class SupabaseUserClient extends SupabaseClient {
       throw new SupabaseError('Supabase did not return the kept parcel');
     }
     return { outcome: result.outcome, packageId: typeof result.package_id === 'string' ? result.package_id : null };
+  }
+
+  /** Records that the account read its parcels: they keep the full schedule for the next hour. */
+  async recordOpened(): Promise<void> {
+    await this.request('/rest/v1/rpc/record_account_opened', { method: 'POST', body: {} });
   }
 
   /** The live link this account shares the parcel through, or null. A parcel of another account is a 404. */

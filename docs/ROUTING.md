@@ -89,12 +89,21 @@ Daytime is 08:00–22:00 Europe/Zurich. Overnight, everything is checked hourly.
 | PostNL | every 30 min, also after a failure |
 | GLS (DE, CH, FR) | at most hourly, 4 h after a failure, manual refresh included |
 | No new event for 48 h (from when it was added) | hourly around the clock; manual refresh still allowed |
+| Nobody waiting for it | hourly around the clock; manual refresh still allowed |
 
 Cooldowns use the persisted `last_synced_at` and `sync_status`, so restarts and repeated
 Refresh taps don't bypass them. New or reconfigured parcels are checked at once. A scheduled
 run handles at most five due parcels per account, round-robin.
 
-**Parcels followed without an account** keep this cadence only while one of their links was
+**Someone is waiting** for a parcel while a notification can reach them: its account has
+browser or phone notifications or the delivery email on and the parcel is not muted for
+them, the account has a Live Activity device, or one of the parcel's links has an alert on.
+So is someone who looked lately: for an hour after the account's apps read its parcels
+(recorded at most every five minutes) or one of the parcel's links was opened. Any other
+open parcel is checked hourly
+([`unwatched_package_ids`](../supabase/migrations/20261003180000_unwatched_parcels.sql)).
+
+**Parcels followed without an account** are checked only while one of their links was
 opened in the last 24 hours or has an alert on. Otherwise a parcel waits until a link is
 opened again; that read queues a check at once when the schedule would run one, and never
 more often than the schedule, however often the link is polled. A scheduled run checks at

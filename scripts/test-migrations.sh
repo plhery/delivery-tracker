@@ -139,3 +139,6 @@ psql "$database_url" -X -v ON_ERROR_STOP=1 \
 
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/delivery_emails.sql"
+
+psql "$database_url" -X -v ON_ERROR_STOP=1 \
+  -f "$repo_root/supabase/tests/unwatched_parcels.sql"

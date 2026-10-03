@@ -47,6 +47,8 @@ const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 const MAX_ONE_OFF_PACKAGES_PER_SYNC = 10;
 /** A one-off parcel stays on the schedule this long after one of its links was last opened. */
 const ONE_OFF_FOLLOWED_MS = 24 * 60 * 60 * 1_000;
+/** A parcel no notification can reach keeps the daytime cadence this long after its account's apps or one of its links were last opened; then it is checked hourly. */
+const WATCHED_AFTER_OPEN_MS = 60 * 60 * 1_000;
 const VALID_STAGES = new Set<string>(STAGES);
 /** Scheduled checks fall back to hourly this long after a parcel's newest carrier event, or after it was added. */
 const IDLE_AFTER_MS = 48 * 60 * 60 * 1_000;
@@ -100,7 +102,8 @@ function lastActivity(parcel: JsonObject): number | null {
   return times.length ? Math.max(...times) : null;
 }
 
-function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
+/** `unwatched`: nobody is waiting for the parcel, so it is checked hourly, as an idle one is. */
+function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date, unwatched = false): boolean {
   if (!isTrackingSyncDue(parcel, now)) return false;
   const lastChecked = Date.parse(String(parcel.last_synced_at ?? ''));
   if (!Number.isFinite(lastChecked)) return true;
@@ -108,7 +111,7 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
   const intervalMinutes = parcel.current_stage === 'out_for_delivery'
     ? 2 : Math.max(10, (CARRIER_DEFINITIONS[String(parcel.carrier) as CarrierId]?.tracking.refresh?.minMinutes ?? 0));
   const activity = lastActivity(parcel);
-  const idle = activity !== null && now.getTime() - activity >= IDLE_AFTER_MS;
+  const idle = unwatched || (activity !== null && now.getTime() - activity >= IDLE_AFTER_MS);
   // Compare schedule windows so request duration does not skip the next tick.
   const windowStart = !idle && local.hour >= 8 && local.hour < 22
     ? local.startOf('minute').minus({ minutes: local.minute % intervalMinutes })
@@ -488,7 +491,8 @@ export class TrackingSyncService {
       context.signal?.throwIfAborted();
       const summary = emptySyncSummary();
       const now = this.now();
-      const due = (parcel: JsonObject) => isScheduledTrackingSyncDue(parcel, now);
+      const unwatched = await this.unwatchedPackages(now, context.signal);
+      const due = (parcel: JsonObject) => isScheduledTrackingSyncDue(parcel, now, unwatched.has(String(parcel.id)));
       const accounts = fairSyncPackages((await this.client.listActivePackages()).filter(due));
       for (const parcel of [...accounts, ...await this.followedOneOffPackages(due, now, context.signal)]) {
         summary.checked += 1;
@@ -519,7 +523,22 @@ export class TrackingSyncService {
   }
 
   /**
-   * One-off parcels follow the same cadence while a link was opened lately.
+   * The open parcels nobody is waiting for: no notification can reach anyone
+   * about them and nobody opened them in the last hour. When they cannot be
+   * read, every parcel keeps the full cadence.
+   */
+  private async unwatchedPackages(now: Date, signal?: AbortSignal): Promise<Set<string>> {
+    try {
+      return new Set(await this.client.listUnwatchedPackageIds(new Date(now.getTime() - WATCHED_AFTER_OPEN_MS)));
+    } catch (error) {
+      signal?.throwIfAborted();
+      captureOperationalError(error, { component: 'tracking', operation: 'list_unwatched_packages' });
+      return new Set();
+    }
+  }
+
+  /**
+   * One-off parcels stay on the schedule while a link was opened lately.
    * They come after every account's share and count as one owner, the least
    * recently checked first, so lookups cannot starve accounts. Nor can they
    * stop them: when the list cannot be read, the accounts are still checked.
