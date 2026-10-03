@@ -145,6 +145,7 @@ export function toParcel(row: ApiPackageRow): ParcelWithEvents {
     destinationCountry: row.carrier_data?.destination_country ?? undefined,
     archivedAt: row.archived_at ?? undefined,
     notificationsMuted: row.notifications_muted,
+    emailMuted: row.email_muted,
     events: (row.tracking_events ?? []).map(toEvent),
   };
 }
@@ -325,6 +326,19 @@ export function createApiRepo(
     return parcel;
   }
 
+  /** Mutes one of a parcel's alerts, or brings it back. Each request names only the alert it changes. */
+  async function setAlerts(id: string, body: ApiPackageNotificationRequest): Promise<ParcelWithEvents> {
+    const row = await request<ApiPackageRow>(
+      `/api/packages/${encodeURIComponent(id)}/notifications`,
+      auth,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      },
+    );
+    return rememberParcel(toParcel(row));
+  }
+
   return {
     mode: 'api',
     list,
@@ -387,16 +401,11 @@ export function createApiRepo(
     },
 
     async setNotificationsMuted(id: string, muted: boolean): Promise<ParcelWithEvents> {
-      const body: ApiPackageNotificationRequest = { muted };
-      const row = await request<ApiPackageRow>(
-        `/api/packages/${encodeURIComponent(id)}/notifications`,
-        auth,
-        {
-          method: 'PATCH',
-          body: JSON.stringify(body),
-        },
-      );
-      return rememberParcel(toParcel(row));
+      return setAlerts(id, { muted });
+    },
+
+    async setEmailMuted(id: string, emailMuted: boolean): Promise<ParcelWithEvents> {
+      return setAlerts(id, { emailMuted });
     },
 
     async remove(id: string): Promise<void> {

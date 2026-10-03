@@ -47,6 +47,7 @@ interface ParcelsState {
   renameParcel: (id: string, label: string) => Promise<ParcelWithEvents>;
   changeParcelCarrier: (id: string, input: ParcelCarrierInput) => Promise<ParcelWithEvents>;
   setParcelNotificationsMuted: (id: string, muted: boolean) => Promise<void>;
+  setParcelEmailMuted: (id: string, muted: boolean) => Promise<void>;
   removeParcel: (id: string) => Promise<void>;
   restoreParcel: (id: string) => Promise<void>;
   deleteParcel: (id: string) => Promise<void>;
@@ -294,6 +295,26 @@ export function ParcelsProvider({
     }
   }, [repo, rememberError]);
 
+  const setParcelEmailMuted = useCallback(async (id: string, muted: boolean) => {
+    try {
+      if (!repo.setEmailMuted) {
+        throw new Error('Parcel email settings are unavailable');
+      }
+      const updated = await repo.setEmailMuted(id, muted);
+      revision.current += 1;
+      if (mounted.current) {
+        setParcels((current) =>
+          current.map((parcel) => parcel.id === updated.id ? updated : parcel),
+        );
+        setError(null);
+        setAuthenticationRequired(false);
+      }
+    } catch (error) {
+      rememberError(error);
+      throw error;
+    }
+  }, [repo, rememberError]);
+
   const refresh = useCallback(async () => {
     setRefreshing(true);
     const startedRevision = revision.current;
@@ -354,6 +375,7 @@ export function ParcelsProvider({
       renameParcel,
       changeParcelCarrier,
       setParcelNotificationsMuted,
+      setParcelEmailMuted,
       removeParcel,
       restoreParcel,
       deleteParcel,
@@ -374,6 +396,7 @@ export function ParcelsProvider({
       renameParcel,
       changeParcelCarrier,
       setParcelNotificationsMuted,
+      setParcelEmailMuted,
       removeParcel,
       restoreParcel,
       deleteParcel,

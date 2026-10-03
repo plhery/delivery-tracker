@@ -386,6 +386,29 @@ describe('createApiRepo', () => {
     );
   });
 
+  it('mutes the delivery email of one parcel with a request that names only the email', async () => {
+    const fetch = vi.fn().mockResolvedValue(response({ ...packageRow, email_muted: true }));
+    vi.stubGlobal('fetch', fetch);
+
+    const parcel = await createApiRepo().setEmailMuted!(packageRow.id, true);
+
+    expect(parcel).toMatchObject({ emailMuted: true, notificationsMuted: packageRow.notifications_muted });
+    expect(fetch).toHaveBeenCalledExactlyOnceWith(
+      `/api/packages/${packageRow.id}/notifications`,
+      expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ emailMuted: true }) }),
+    );
+  });
+
+  it('reads the email mute of an account’s parcels, and none from an answer that says nothing', async () => {
+    const fetch = vi.fn().mockResolvedValue(response({ packages: [
+      { ...packageRow, id: 'muted', email_muted: true }, { ...packageRow, id: 'open', email_muted: false }, { ...packageRow, id: 'older' },
+    ] }));
+    vi.stubGlobal('fetch', fetch);
+
+    expect((await createApiRepo().list()).map((parcel) => [parcel.id, parcel.emailMuted]))
+      .toEqual([['muted', true], ['open', false], ['older', undefined]]);
+  });
+
   it('surfaces API errors and malformed success responses', async () => {
     const fetch = vi
       .fn()

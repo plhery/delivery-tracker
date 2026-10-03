@@ -56,6 +56,8 @@ export interface Parcel {
   swissPostReady?: boolean;
   archivedAt?: string;
   notificationsMuted?: boolean;
+  /** The account's delivery email is off for this parcel. */
+  emailMuted?: boolean;
   /** Where the carrier says the parcel is heading, when it says. */
   destinationCountry?: string;
 }
@@ -123,6 +125,8 @@ export interface ParcelRepo {
   rename(id: string, label: string): Promise<ParcelWithEvents>;
   changeCarrier?(id: string, input: ParcelCarrierInput): Promise<ParcelWithEvents>;
   setNotificationsMuted?(id: string, muted: boolean): Promise<ParcelWithEvents>;
+  /** Turns the account's delivery email off or back on for one parcel; only an account has it. */
+  setEmailMuted?(id: string, muted: boolean): Promise<ParcelWithEvents>;
   /** Soft-delete an active parcel so it can still be restored. */
   remove(id: string): Promise<void>;
   restore?(id: string): Promise<ParcelWithEvents>;
