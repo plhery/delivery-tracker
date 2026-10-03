@@ -7,19 +7,24 @@ import {
   DELIVERY_DAY_NOTIFICATION_STAGES,
   disablePushNotifications,
   enablePushNotifications,
-  getNotificationPreferences,
   IMPORTANT_NOTIFICATION_STAGES,
   inspectPushState,
-  saveNotificationPreferences,
   updatePushNotificationLocale,
-  type NotificationPreferences,
   type NotificationStage,
   type PushState,
 } from '../lib/pushNotifications';
 import type { ApiAuth } from '../lib/apiClient';
 import { useSheetDialog } from '../lib/modal';
 import { dismissNotificationInvitation } from '../lib/notificationInvitation';
-import { type Translate, useI18n } from '../i18n';
+import {
+  loadNotificationPreferences,
+  saveEmailOnDelivery,
+  saveNotificationStages,
+  useDeliveryEmail,
+  useNotificationPreferences,
+} from '../store/notificationPreferences';
+import { type MessageKey, type Translate, useI18n } from '../i18n';
+import { Icon } from './Icon';
 import './Settings.css';
 
 type EventPreset = 'all' | 'important' | 'delivery-day';
@@ -30,17 +35,27 @@ const PRESET_STAGES: Record<EventPreset, NotificationStage[]> = {
   'delivery-day': DELIVERY_DAY_NOTIFICATION_STAGES,
 };
 
-export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: ApiAuth; variant?: 'icon' | 'row' }) {
+export function NotificationControl({ apiAuth, email, variant = 'icon' }: {
+  apiAuth?: ApiAuth;
+  /** The address the account signs in with: the delivery email goes there. */
+  email?: string;
+  variant?: 'icon' | 'row';
+}) {
   const { t, locale } = useI18n();
   const [open, setOpen] = useState(false);
   useEffect(() => { if (open) return trackOverlay('notifications'); }, [open]);
   const [state, setState] = useState<PushState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
-  const [preset, setPreset] = useState<EventPreset>('all');
+  // The saved preferences are the account's shared copy; the radios hold a draft until it is saved.
+  const preferences = useNotificationPreferences(apiAuth);
+  const [draft, setDraft] = useState<EventPreset | null>(null);
+  const preset = draft ?? (preferences ? presetFor(preferences.enabledStages) : 'all');
   const [preferencesBusy, setPreferencesBusy] = useState(false);
   const [preferencesNotice, setPreferencesNotice] = useState<string | null>(null);
+  const deliveryEmail = useDeliveryEmail(apiAuth, email);
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailFailed, setEmailFailed] = useState(false);
   const enabled = state?.kind === 'enabled';
   const closeButton = useRef<HTMLButtonElement>(null);
   const languageUpdate = useRef(Promise.resolve());
@@ -64,10 +79,7 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
 
   useEffect(() => {
     if (!apiAuth) return;
-    void getNotificationPreferences(apiAuth).then((next) => {
-      setPreferences(next);
-      setPreset(presetFor(next.enabledStages));
-    }).catch((reason: unknown) => {
+    void loadNotificationPreferences(apiAuth).catch((reason: unknown) => {
       setError(userErrorMessage(reason, t, 'notifications.error.preferences'));
     });
   }, [apiAuth, t]);
@@ -108,26 +120,35 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
   }
 
   async function savePreferences() {
-    if (!apiAuth || preferencesBusy) return;
+    if (!apiAuth || preferencesBusy || emailBusy) return;
     setPreferencesBusy(true);
     setPreferencesNotice(null);
     setError(null);
     try {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-        || preferences?.timezone
-        || 'Europe/Zurich';
-      const saved = await saveNotificationPreferences({
-        enabledStages: PRESET_STAGES[preset],
-        quietHoursStart: null,
-        quietHoursEnd: null,
-        timezone,
-      }, apiAuth);
-      setPreferences(saved);
+      await saveNotificationStages(PRESET_STAGES[preset], apiAuth);
+      // The radios follow what the server kept.
+      setDraft(null);
       setPreferencesNotice(t('notifications.saved'));
     } catch (reason) {
       setError(userErrorMessage(reason, t, 'notifications.error.save'));
     } finally {
       setPreferencesBusy(false);
+    }
+  }
+
+  // The email switch saves at once and on its own: the radios' draft is not sent along.
+  async function switchEmail() {
+    if (!apiAuth || !deliveryEmail || emailBusy || preferencesBusy) return;
+    setEmailBusy(true);
+    setEmailFailed(false);
+    try {
+      await saveEmailOnDelivery(deliveryEmail.choice !== true, apiAuth);
+      trackAction('email-delivery-change', 'success');
+    } catch {
+      trackAction('email-delivery-change', 'error');
+      setEmailFailed(true);
+    } finally {
+      setEmailBusy(false);
     }
   }
 
@@ -142,7 +163,7 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
         </svg>
-        {variant === 'row' && <><span>{t('settings.deliveryUpdates')}</span><span className="settings-value">{enabled && preferences ? t(presetTitle(presetFor(preferences.enabledStages))) : state?.kind === 'prompt' ? t('settings.off') : ''}</span><span className="settings-chevron" aria-hidden="true">›</span></>}
+        {variant === 'row' && <><span>{t('settings.deliveryUpdates')}</span><span className="settings-value">{enabled && preferences ? t(presetTitleKey(preferences.enabledStages)) : state?.kind === 'prompt' ? t('settings.off') : ''}</span><span className="settings-chevron" aria-hidden="true">›</span></>}
       </button>
 
       {open && createPortal(
@@ -177,26 +198,26 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
 
             {apiAuth && preferences && (
               <div className="notification-preferences">
-                <fieldset disabled={preferencesBusy}>
+                <fieldset disabled={preferencesBusy || emailBusy}>
                   <legend>{t('notifications.preferencesTitle')}</legend>
                   <PreferenceOption
                     value="all"
                     selected={preset}
-                    onChange={setPreset}
+                    onChange={setDraft}
                     title={t('notifications.preset.all')}
                     description={t('notifications.preset.allDescription')}
                   />
                   <PreferenceOption
                     value="important"
                     selected={preset}
-                    onChange={setPreset}
+                    onChange={setDraft}
                     title={t('notifications.preset.important')}
                     description={t('notifications.preset.importantDescription')}
                   />
                   <PreferenceOption
                     value="delivery-day"
                     selected={preset}
-                    onChange={setPreset}
+                    onChange={setDraft}
                     title={t('notifications.preset.deliveryDay')}
                     description={t('notifications.preset.deliveryDayDescription')}
                   />
@@ -210,12 +231,45 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
                 <button
                   className="button button--primary notification-action"
                   type="button"
-                  disabled={preferencesBusy}
+                  disabled={preferencesBusy || emailBusy}
                   onClick={() => void savePreferences()}
                 >
                   {preferencesBusy ? t('notifications.saving') : t('notifications.save')}
                 </button>
               </div>
+            )}
+
+            {deliveryEmail && (
+              <section className="notification-email" aria-labelledby="notification-email-title">
+                <div className="settings-box">
+                  <h3 className="notification-email__title" id="notification-email-title">
+                    {t('email.section')}{' '}<span className="settings-new">{t('email.new')}</span>
+                  </h3>
+                  <button
+                    className="settings-row notification-email__switch"
+                    type="button"
+                    role="switch"
+                    aria-checked={deliveryEmail.choice === true}
+                    aria-labelledby="notification-email-label"
+                    aria-describedby="notification-email-hint"
+                    aria-busy={emailBusy || undefined}
+                    disabled={emailBusy || preferencesBusy}
+                    onClick={() => void switchEmail()}
+                  >
+                    <Icon name="mail" />
+                    <span className="notification-email__text">
+                      <strong id="notification-email-label">{t('email.setting.title')}</strong>
+                      <small id="notification-email-hint">{t('email.setting.body', { email: deliveryEmail.address })}</small>
+                    </span>
+                    <span className="settings-switch" aria-hidden="true" />
+                  </button>
+                </div>
+                {emailFailed && <p className="sheet__error" role="alert">{t('email.setting.failed')}</p>}
+                <p className="notification-email__links">
+                  <a href={`/email/example?lang=${locale}`} target="_blank" rel="noopener" onClick={() => trackAction('email-example-open')}>{t('email.setting.example')}</a>
+                  <a href="/privacy.html" onClick={() => trackAction('privacy-open')}>{t('auth.privacyLink')}</a>
+                </p>
+              </section>
             )}
 
             <p className="notification-schedule">{t('notifications.schedule')}</p>
@@ -277,6 +331,13 @@ function copyFor(state: PushState | null, hasError: boolean, t: Translate): stri
   }
 }
 
-function presetTitle(preset: EventPreset) {
-  return preset === 'all' ? 'notifications.preset.all' : preset === 'important' ? 'notifications.preset.important' : 'notifications.preset.deliveryDay';
+const PRESET_TITLES: Record<EventPreset, MessageKey> = {
+  all: 'notifications.preset.all',
+  important: 'notifications.preset.important',
+  'delivery-day': 'notifications.preset.deliveryDay',
+};
+
+/** What Settings calls the preset a list of events stands for. */
+export function presetTitleKey(stages: readonly NotificationStage[]): MessageKey {
+  return PRESET_TITLES[presetFor(stages)];
 }

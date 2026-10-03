@@ -64,7 +64,7 @@ export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, 
         <div hidden={page !== 'home'}>
           <div className="settings-profile"><span className="settings-profile__avatar">{initial || 'D'}</span>
             <div><strong>{email || t('app.demo')}</strong>{email && <span>{t('account.signedIn')}</span>}</div></div>
-          {apiAuth && <section className="settings-group" aria-labelledby="settings-deliveries"><h3 id="settings-deliveries" className="settings-group__title">{t('native.deliveries')}</h3><div className="settings-box"><NotificationControl apiAuth={apiAuth} variant="row" /></div></section>}
+          {apiAuth && <section className="settings-group" aria-labelledby="settings-deliveries"><h3 id="settings-deliveries" className="settings-group__title">{t('native.deliveries')}</h3><div className="settings-box"><NotificationControl apiAuth={apiAuth} email={email} variant="row" /></div></section>}
           <section className="settings-group" aria-labelledby="settings-preferences"><h3 className="settings-group__title" id="settings-preferences">{t('settings.preferences')}</h3>
             <div className="settings-box"><fieldset className="settings-appearance"><legend>{t('native.appearance.title')}</legend>
               <div>{(['system', 'light', 'dark'] as Appearance[]).map((option) => <button type="button" key={option} aria-pressed={appearance === option} onClick={() => { setAppearance(option); trackAction('appearance-change'); }}><span className={`settings-mini-screen settings-mini-screen--${option}`} aria-hidden="true"><i /><i /></span>{t(`native.appearance.${option}`)}</button>)}</div>

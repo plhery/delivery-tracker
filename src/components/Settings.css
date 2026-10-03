@@ -50,6 +50,21 @@
 @media(max-width:480px) { .refined-settings.sheet { padding: 22px 20px max(24px,env(safe-area-inset-bottom)); } }
 @media(forced-colors:active) { .settings-appearance button[aria-pressed=true] { outline: 2px solid Highlight; } }
 
+/* The delivery email: one switch that saves at once, in a box of its own under the event choice. */
+.notification-email { margin-top: 24px; }
+.notification-email__title { display: flex; align-items: center; gap: 8px; margin: 0; padding: 14px 14px 0; color: var(--ink-soft); font-size: 10px; font-weight: 550; letter-spacing: 1px; text-transform: uppercase; }
+.settings-new { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 6px; background: var(--yellow-soft); color: var(--ochre); font-size: 9.5px; font-weight: 700; letter-spacing: .4px; }
+.refined-settings .notification-email__switch { align-items: flex-start; gap: 12px; padding: 15px 14px; }
+.notification-email__switch > svg { margin-top: 2px; }
+.notification-email__text { display: grid; gap: 3px; flex: 1; }
+.notification-email__text strong { font-weight: 400; }
+.notification-email__text small { color: var(--ink-soft); font-size: 11px; line-height: 1.5; }
+.notification-email__switch .settings-switch { margin-top: 1px; }
+.notification-email__switch[aria-busy] .settings-switch { opacity: .6; }
+.notification-email .sheet__error { margin-top: 10px; }
+.notification-email__links { display: flex; flex-wrap: wrap; gap: 0 18px; margin: 2px 2px 0; }
+.notification-email__links a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-soft); font-size: 12px; }
+
 .settings-device-control { margin-bottom: 24px; }
 .settings-switch { display: block; flex: 0 0 33px; width: 33px; height: 20px; margin-left: auto; border-radius: 20px; background: var(--line); position: relative; }
 .settings-switch::after { content: ''; position: absolute; width: 16px; height: 16px; top: 2px; left: 2px; border-radius: 50%; background: white; box-shadow: 0 1px 2px #0001; }
