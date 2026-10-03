@@ -8,10 +8,11 @@ on:
 permissions:
   contents: read
 
-# A newer push to a pull request replaces its run. Every commit on main keeps its own run.
+# A newer push replaces the run of the one before it, on a pull request and on main alike.
+# Only the newest commit is deployed, and its run should not queue behind superseded ones.
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   checks:
