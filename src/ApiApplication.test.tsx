@@ -93,7 +93,8 @@ const USER = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  window.localStorage.setItem('sdt.web.experience.v1', 'sign-in');
+  window.localStorage.removeItem('sdt.web.experience.v1');
+  window.sessionStorage.setItem('sdt.web.experience.v1', 'sign-in');
   window.dispatchEvent(new Event('storage'));
   mocks.auth = {
     status: 'anonymous',
@@ -173,7 +174,7 @@ describe('ApiApplication', () => {
   });
 
   it('greets a visitor with the front door, opens sign-in from it and comes back', async () => {
-    window.localStorage.removeItem('sdt.web.experience.v1');
+    window.sessionStorage.removeItem('sdt.web.experience.v1');
     window.dispatchEvent(new Event('storage'));
     const user = userEvent.setup();
     render(<ApiApplication />);
@@ -182,9 +183,37 @@ describe('ApiApplication', () => {
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(screen.getByText('Configured sign in')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Explore the demo' })).toBeVisible();
-    expect(window.localStorage.getItem('sdt.web.experience.v1')).toBe('sign-in');
+    expect(window.sessionStorage.getItem('sdt.web.experience.v1')).toBe('sign-in');
     await user.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+  });
+
+  it('opens the front door again once the tab that was at sign-in is closed', async () => {
+    window.sessionStorage.removeItem('sdt.web.experience.v1');
+    window.dispatchEvent(new Event('storage'));
+    const first = render(<ApiApplication />);
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(screen.getByText('Configured sign in')).toBeVisible();
+    first.unmount();
+    // A new tab shares the browser's storage, not the closed tab's.
+    window.sessionStorage.clear();
+    window.dispatchEvent(new Event('storage'));
+    render(<ApiApplication />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(screen.queryByText('Configured sign in')).not.toBeInTheDocument();
+  });
+
+  it('ends at the front door when the account signed in here is signed out from another tab', () => {
+    const result = render(<ApiApplication />);
+    expect(screen.getByText('Configured sign in')).toBeVisible();
+    mocks.auth.status = 'authenticated'; mocks.auth.user = USER;
+    result.rerender(<ApiApplication />);
+    expect(screen.getByText('owner@example.test')).toBeVisible();
+    // The other tab's sign-out reaches this one as a session that is gone.
+    mocks.auth.status = 'anonymous'; mocks.auth.user = null;
+    result.rerender(<ApiApplication />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(screen.queryByText('Configured sign in')).not.toBeInTheDocument();
   });
 
   it('shows the demo at its address to someone signed in, and returns to their deliveries when they leave it', async () => {
@@ -278,7 +307,7 @@ describe('ApiApplication', () => {
   });
 
   it('keeps the parcel a visitor asked to keep, once, as soon as they are signed in', async () => {
-    window.localStorage.removeItem('sdt.web.experience.v1');
+    window.sessionStorage.removeItem('sdt.web.experience.v1');
     window.dispatchEvent(new Event('storage'));
     history.replaceState(null, '', `/p/${LINK_ID}`);
     rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView() });
@@ -344,7 +373,7 @@ describe('ApiApplication', () => {
   });
 
   it('draws the landing while it makes sure nobody is signed in, and keeps it in place once it knows', () => {
-    window.localStorage.removeItem('sdt.web.experience.v1');
+    window.sessionStorage.removeItem('sdt.web.experience.v1');
     window.dispatchEvent(new Event('storage'));
     mocks.auth.status = 'loading';
     const result = render(<ApiApplication />);
@@ -360,7 +389,7 @@ describe('ApiApplication', () => {
   });
 
   it('keeps the splash, not the landing, for a browser that said before the first paint that it holds a sign-in', () => {
-    window.localStorage.removeItem('sdt.web.experience.v1');
+    window.sessionStorage.removeItem('sdt.web.experience.v1');
     window.dispatchEvent(new Event('storage'));
     document.documentElement.dataset.entry = 'app';
     mocks.auth.status = 'loading';
@@ -376,7 +405,7 @@ describe('ApiApplication', () => {
   });
 
   it('shows the landing after all when the sign-in the browser held turns out to be gone', () => {
-    window.localStorage.removeItem('sdt.web.experience.v1');
+    window.sessionStorage.removeItem('sdt.web.experience.v1');
     window.dispatchEvent(new Event('storage'));
     document.documentElement.dataset.entry = 'app';
     mocks.auth.status = 'loading';

@@ -4,7 +4,7 @@ import { useAuth } from './auth/AuthContext';
 import { ArrivalScreen } from './components/ArrivalScreen';
 import { ParcelIllustration } from './components/Icon';
 import { useEntryHint } from './lib/entryHint';
-import { useDemoAddress, useEntryExperience } from './lib/experience';
+import { endSignInStep, useDemoAddress, useEntryExperience } from './lib/experience';
 import { createDemoRepo } from './store/demoRepo';
 import { deleteAccount, downloadAccountExport, exportAccount } from './lib/account';
 import {
@@ -112,7 +112,9 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
   const friendsClient = useMemo(() => createFriendsClient(false, apiAuth), [apiAuth]);
   // Signed in after a round trip to a sign-in provider: the parcel the address asked for before it opens now.
   useEffect(() => {
-    if (userId) restoreRequestedParcel();
+    if (!userId) return;
+    endSignInStep();
+    restoreRequestedParcel();
   }, [userId]);
   const invitationProps: ComponentProps<typeof FriendInvitation> = {
     invitation, onDismiss: () => { invitation.clear(); if (!auth.user) experience.navigate('welcome'); },

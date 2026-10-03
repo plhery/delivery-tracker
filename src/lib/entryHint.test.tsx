@@ -17,8 +17,8 @@ function Probe({ settled }: { settled: boolean }) {
   return <p>{useEntryHint(settled) ?? 'none'}</p>;
 }
 
-beforeEach(() => { localStorage.clear(); delete root.dataset.entry; history.replaceState(null, '', '/'); });
-afterEach(() => { localStorage.clear(); delete root.dataset.entry; history.replaceState(null, '', '/'); });
+beforeEach(() => { localStorage.clear(); sessionStorage.clear(); delete root.dataset.entry; history.replaceState(null, '', '/'); });
+afterEach(() => { localStorage.clear(); sessionStorage.clear(); delete root.dataset.entry; history.replaceState(null, '', '/'); });
 
 describe('the entry hint script', () => {
   it('reads the names the page’s own stores write', () => {
@@ -52,13 +52,18 @@ describe('the entry hint script', () => {
     expect(bootstrap()).toBeUndefined();
   });
 
-  it('marks an open demo or sign-in step', () => {
-    for (const screen of ['demo', 'sign-in']) {
-      localStorage.setItem(EXPERIENCE_STORAGE_KEY, screen);
-      expect(bootstrap()).toBe('app');
-      delete root.dataset.entry;
-    }
+  it('marks an open demo, and the sign-in step of this tab', () => {
+    localStorage.setItem(EXPERIENCE_STORAGE_KEY, 'demo');
+    expect(bootstrap()).toBe('app');
+    delete root.dataset.entry;
     localStorage.setItem(EXPERIENCE_STORAGE_KEY, 'welcome');
+    expect(bootstrap()).toBeUndefined();
+    sessionStorage.setItem(EXPERIENCE_STORAGE_KEY, 'sign-in');
+    expect(bootstrap()).toBe('app');
+    delete root.dataset.entry;
+    // A sign-in step another tab left behind is not this tab's.
+    sessionStorage.clear();
+    localStorage.setItem(EXPERIENCE_STORAGE_KEY, 'sign-in');
     expect(bootstrap()).toBeUndefined();
   });
 

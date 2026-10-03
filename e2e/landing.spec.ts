@@ -336,6 +336,19 @@ test('a browser that has the demo open is never shown the landing on its way the
   await expect(page.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
 });
 
+test('the sign-in step lasts a reload of its tab, and the next visit opens the landing again', async ({ page, context }) => {
+  await openLanding(page);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  // A new tab shares the browser's storage with the one left at sign-in, not the tab's own.
+  const later = await context.newPage();
+  await openLanding(later);
+  expect(await later.evaluate(() => document.documentElement.dataset.entry)).toBeUndefined();
+  await later.close();
+});
+
 test('a visitor with parcels on this device never sees the first visit’s screen before their own', async ({ page }) => {
   await openLanding(page);
   await field(page).fill('1ZDEMO202600000001');

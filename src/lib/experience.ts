@@ -2,7 +2,8 @@ import { trackAction } from './analytics';
 import { useEffect, useSyncExternalStore } from 'react';
 
 export type EntryScreen = 'welcome' | 'sign-in' | 'demo';
-export const EXPERIENCE_STORAGE_KEY = 'sdt.web.experience.v1'; // gitleaks:allow -- public localStorage preference name
+/** One name in two stores: the browser remembers the demo, a tab its sign-in step. */
+export const EXPERIENCE_STORAGE_KEY = 'sdt.web.experience.v1'; // gitleaks:allow -- public browser storage preference name
 /** The demo's own address. Anyone who opens it sees the demo, with an account or without. */
 export const DEMO_PATH = '/demo';
 const DEMO_ARRIVAL_KEY = 'sdt.web.demo-arrival.v1'; // gitleaks:allow -- sessionStorage marker name
@@ -13,8 +14,10 @@ function read(): EntryScreen {
   // The address decides before anything this browser remembers.
   if (atDemoAddress()) return 'demo';
   try {
-    const value = localStorage.getItem(EXPERIENCE_STORAGE_KEY);
-    if (value === 'sign-in' || value === 'demo') return value;
+    // The sign-in step belongs to its tab: it lasts a reload and the trip to a sign-in provider, and ends with the tab.
+    if (sessionStorage.getItem(EXPERIENCE_STORAGE_KEY) === 'sign-in') return 'sign-in';
+    // The demo is the browser's, for the next visit too.
+    if (localStorage.getItem(EXPERIENCE_STORAGE_KEY) === 'demo') return 'demo';
   } catch { return memoryScreen ?? 'welcome'; }
   return 'welcome';
 }
@@ -45,7 +48,18 @@ function navigate(next: EntryScreen) {
     try { sessionStorage.removeItem(DEMO_ARRIVAL_KEY); } catch { /* Nothing was noted. */ }
   }
   memoryScreen = next;
-  try { localStorage.setItem(EXPERIENCE_STORAGE_KEY, next); } catch { /* Keep the session working. */ }
+  try {
+    if (next === 'sign-in') sessionStorage.setItem(EXPERIENCE_STORAGE_KEY, next);
+    else sessionStorage.removeItem(EXPERIENCE_STORAGE_KEY);
+    localStorage.setItem(EXPERIENCE_STORAGE_KEY, next === 'demo' ? next : 'welcome');
+  } catch { /* Keep the session working. */ }
+  window.dispatchEvent(new Event(eventName));
+}
+
+/** Someone signed in: the sign-in step is done, so signing out, here or in another tab, ends at the front door. */
+export function endSignInStep() {
+  if (memoryScreen === 'sign-in') memoryScreen = null;
+  try { sessionStorage.removeItem(EXPERIENCE_STORAGE_KEY); } catch { /* Nothing was stored. */ }
   window.dispatchEvent(new Event(eventName));
 }
 

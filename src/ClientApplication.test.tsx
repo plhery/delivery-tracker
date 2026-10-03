@@ -41,8 +41,9 @@ describe('shouldUseDemoRepository', () => {
 
 describe('DemoApplication', () => {
   const experience = (screen: 'welcome' | 'sign-in' | 'demo') => {
-    if (screen === 'welcome') localStorage.removeItem('sdt.web.experience.v1');
-    else localStorage.setItem('sdt.web.experience.v1', screen);
+    localStorage.removeItem('sdt.web.experience.v1');
+    sessionStorage.removeItem('sdt.web.experience.v1');
+    if (screen !== 'welcome') (screen === 'demo' ? localStorage : sessionStorage).setItem('sdt.web.experience.v1', screen);
     window.dispatchEvent(new Event('storage'));
   };
   const app = () => render(<DemoApplication repo={createDemoRepo(window.localStorage)} />);

@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { trackAction } from './analytics';
-import { DEMO_PATH, EXPERIENCE_STORAGE_KEY, useDemoAddress, useEntryExperience } from './experience';
+import { DEMO_PATH, EXPERIENCE_STORAGE_KEY, endSignInStep, useDemoAddress, useEntryExperience } from './experience';
 
 vi.mock('./analytics', () => ({ trackAction: vi.fn() }));
 
@@ -26,14 +26,47 @@ describe('the entry experience', () => {
     expect(vi.mocked(trackAction).mock.calls).toEqual([['demo-start'], ['demo-exit']]);
   });
 
-  it('shows the demo at its own address, whatever this browser remembers', () => {
+  it('keeps the sign-in step for its tab, and the demo for the browser', () => {
+    const { result } = renderHook(() => useEntryExperience());
+    act(() => result.current.navigate('sign-in'));
+    expect(sessionStorage.getItem(EXPERIENCE_STORAGE_KEY)).toBe('sign-in');
+    expect(localStorage.getItem(EXPERIENCE_STORAGE_KEY)).toBe('welcome');
+    // A reload of the tab finds the step again.
+    expect(renderHook(() => useEntryExperience()).result.current.screen).toBe('sign-in');
+    // The tab is closed: the next visit starts at the front door.
+    act(() => { sessionStorage.clear(); window.dispatchEvent(new Event('storage')); });
+    expect(result.current.screen).toBe('welcome');
+    act(() => result.current.navigate('demo'));
+    act(() => { sessionStorage.clear(); window.dispatchEvent(new Event('storage')); });
+    expect(result.current.screen).toBe('demo');
+  });
+
+  it('opens the front door in a browser that an earlier version left at the sign-in step', () => {
     localStorage.setItem(EXPERIENCE_STORAGE_KEY, 'sign-in');
+    expect(renderHook(() => useEntryExperience()).result.current.screen).toBe('welcome');
+  });
+
+  it('ends the sign-in step once someone is signed in', () => {
+    const { result } = renderHook(() => useEntryExperience());
+    act(() => result.current.navigate('sign-in'));
+    act(() => endSignInStep());
+    expect(result.current.screen).toBe('welcome');
+    expect(sessionStorage.getItem(EXPERIENCE_STORAGE_KEY)).toBeNull();
+    // The demo another tab opened meanwhile stays open.
+    act(() => result.current.navigate('demo'));
+    act(() => endSignInStep());
+    expect(result.current.screen).toBe('demo');
+  });
+
+  it('shows the demo at its own address, whatever this browser remembers', () => {
+    sessionStorage.setItem(EXPERIENCE_STORAGE_KEY, 'sign-in');
     history.replaceState(null, '', DEMO_PATH);
     const { result } = renderHook(() => ({ experience: useEntryExperience(true), demoAddress: useDemoAddress(true) }));
     expect(result.current.experience.screen).toBe('demo');
     expect(result.current.demoAddress).toBe(true);
     // The address is the demo: nothing is remembered for `/`.
-    expect(localStorage.getItem(EXPERIENCE_STORAGE_KEY)).toBe('sign-in');
+    expect(sessionStorage.getItem(EXPERIENCE_STORAGE_KEY)).toBe('sign-in');
+    expect(localStorage.getItem(EXPERIENCE_STORAGE_KEY)).toBeNull();
   });
 
   it('leaves the demo’s address for `/` when the demo is left', () => {
