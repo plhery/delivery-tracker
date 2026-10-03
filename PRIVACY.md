@@ -1,6 +1,6 @@
 # Peek privacy notice
 
-Effective: 12 September 2026
+Effective: 3 October 2026
 
 This notice describes the official Peek parcel-tracking service.
 A third party running a fork controls its own deployment and must publish its
@@ -23,6 +23,9 @@ own notice.
   installation identifier, ActivityKit push-to-start and per-activity update
   tokens, delivery acknowledgements, and delivery errors when you enable the
   corresponding notification or Live Activity setting.
+- Whether you asked for an email when a parcel is delivered and when you
+  turned it on, the parcels you muted for it, and a record of each of these
+  emails: the parcel, when it was sent and whether sending worked.
 - Technical request data processed by the hosting, reverse-proxy, Auth, and mail
   infrastructure, such as IP address, timestamp, and user agent.
 - Your chosen nickname, sharing preferences, invitations, connections and
@@ -45,8 +48,8 @@ carrier updates, synchronize devices, send requested notifications, prevent
 abuse, diagnose failures, and honor export or deletion requests.
 
 Supabase processes authentication and database requests. Google provides social
-sign-in, and the configured SMTP provider delivers sign-in codes when email OTP
-is enabled. Cloudflare and the container host may process network metadata. A
+sign-in. Resend delivers the service's emails, as described under "Emails".
+Cloudflare and the container host may process network metadata. A
 selected carrier necessarily receives its tracking number or carrier-specific
 tracking credential. Fallback tracking providers (Ship24, ParcelsApp and
 17TRACK, plus Postal Ninja when enabled) also receive the tracking number when
@@ -71,6 +74,33 @@ Maps receives that pickup point's name and address, and nothing else about the p
 
 Peek does not sell personal data, serve advertising, or
 use advertising analytics.
+
+## Emails
+
+Peek sends two kinds of email, both through Resend (Resend, Inc., United
+States): the sign-in code you ask for and, only if you turn it on, one email
+when a parcel is delivered.
+
+The delivery email is off until you turn it on under Settings › Delivery
+updates, or accept the offer shown once after a delivery. It goes to the
+address you sign in with and contains the name you gave the parcel, the
+carrier, the delivery time and a picture of the journey with its towns. It
+never contains the tracking number. It has no tracking pixel, no tracked links
+and no remote images. Peek sends one per parcel and nothing else: no
+newsletter and no promotion.
+
+These emails rest on your consent. Turn them off at any time with the same
+switch, for one parcel in that parcel's alerts, or with the link in every
+email, which works without signing in and takes effect at once. That link
+carries a token that tells the service which account it belongs to.
+
+Resend receives your email address and the content of each email. It sends
+from the European Union and keeps messages and delivery logs in the United
+States for 30 days. The transfer relies on the EU–US Data Privacy Framework and
+on standard contractual clauses, with their Swiss additions, in Resend's data
+processing agreement. Amazon Web Services sends the messages on Resend's
+behalf; Resend publishes its other sub-processors at
+[resend.com/legal/subprocessors](https://resend.com/legal/subprocessors).
 
 ## Usage analytics
 
@@ -172,6 +202,8 @@ may remain until account deletion or operational cleanup. Infrastructure backups
 and security logs may persist for the limited retention configured by their
 operator. Server diagnostic logs and Sentry reports can retain tracking numbers
 after a parcel or account is deleted, until their configured retention expires.
+The record of a delivery email goes with the account; Resend deletes its own
+copy after 30 days.
 
 Use **Download my data** in the account menu for a machine-readable export. Use
 **Delete account** to permanently delete the Auth user and cascade-delete their
@@ -200,7 +232,13 @@ The service uses HTTPS, short-lived access tokens, rotating refresh tokens,
 Postgres row-level security, account-scoped rate limits, and server-only secret
 keys. No internet service can promise absolute security.
 
-For a privacy or security concern, use GitHub's
+Peek is a personal, non-commercial project run by its author
+([plhery](https://github.com/plhery) on GitHub). For a question or a request
+about your data, such as a copy, a correction or its deletion, write to
+[hello@peektracker.com](mailto:hello@peektracker.com). You can also complain to
+your data protection authority.
+
+For a security concern, use GitHub's
 [private vulnerability report](https://github.com/plhery/delivery-tracker/security/advisories/new).
 Do not include a real tracking number or combined tracking credential, delivery
 postcode, sign-in code, access token, Planzer shared link, or Dachser detail
