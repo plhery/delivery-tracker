@@ -60,6 +60,9 @@ The build fails early unless API mode is on and at least one sign-in method is e
 `NEXT_PUBLIC_IOS_APP_URL` is an optional build argument: the https address of the iPhone
 app's page. The landing shows "Get the iPhone app" only when it is set.
 
+`IMAGE_COMMIT` is an optional build argument too: the full commit the image is built from.
+It names the Sentry release, unless the platform sets `IMAGE_COMMIT` at runtime.
+
 At runtime, set the server Supabase values and `SUPABASE_SERVICE_ROLE_KEY`. Push is
 optional:
 
@@ -96,6 +99,24 @@ credentials and don't follow redirects, so keep it reachable through any edge pr
   browsers re-download everything.
 
 After deploying, run `scripts/smoke-url.sh https://your-hostname` from outside the origin.
+
+## Deploying from CI
+
+The CI workflow builds the image while the tests run. To let it publish and deploy, set
+in the repository:
+
+- the public build values as variables (`NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and the `NEXT_PUBLIC_AUTH_*` switches). With
+  them, a commit on `main` is published as `ghcr.io/<owner>/<repository>:<commit>`;
+- `DEPLOY_ENABLED=true` and `DEPLOY_URL` (the public origin) as variables;
+- `DEPLOY_SSH_TARGET` (`user@host`), `DEPLOY_SSH_KEY` and `DEPLOY_SSH_KNOWN_HOSTS` as
+  secrets.
+
+Once the web checks, the migration tests, the browser tests and the image have passed,
+the workflow runs `deploy <commit>` over SSH on the target and then the smoke test on
+`DEPLOY_URL`. Restrict the key on the host to a command that accepts only that request
+and starts the published image. A commit that is no longer the newest on `main` is
+skipped. The iPhone app's tests do not hold a deploy back.
 
 ## Delivery email
 

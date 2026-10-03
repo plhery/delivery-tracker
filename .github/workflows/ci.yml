@@ -8,11 +8,16 @@ on:
 permissions:
   contents: read
 
+# A newer push to a pull request replaces its run. Every commit on main keeps its own run.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  frontend:
-    name: Frontend (Node 26)
+  checks:
+    name: Lint, types and build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -25,12 +30,24 @@ jobs:
       - run: npm run test:scripts
       - run: npm run test:contract
       - run: npm run test:dev
-      - run: npm run test:coverage
       - run: npm run test:coverage:server
       - run: npm run build
       - run: npm run test:deployment
       - run: npm run test:pwa
       - run: npm audit --omit=dev
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci
+      - run: npm run test:coverage
 
   migrations:
     name: Supabase migrations and RLS
@@ -55,10 +72,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - run: scripts/test-migrations.sh
 
+  # The suite runs on eight runners at once; each one builds the app and takes an eighth of the tests.
   browser:
-    name: Browser journeys
+    name: Browser journeys (${{ matrix.shard }}/8)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -66,8 +88,19 @@ jobs:
           node-version: 26
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
-      - run: npm run test:e2e
+      - name: Restore the browsers
+        id: browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Download the browsers
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium webkit
+      - name: Install the browsers' system libraries
+        if: steps.browsers.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium webkit
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/8
 
   ios:
     name: Native iPhone app
@@ -95,35 +128,119 @@ jobs:
           -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest'
           CODE_SIGNING_ALLOWED=NO test
 
-  container:
-    name: Production container smoke
+  # Builds the container while the tests run. On main, where the instance's public build
+  # values are set as repository variables, the image is also published for the deploy.
+  image:
+    name: Production image
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [frontend, migrations, browser]
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEXT_PUBLIC_SUPABASE_URL != '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Build production image
-        run: >-
-          docker build
-          --build-arg SOURCE_COMMIT=${{ github.sha }}
-          --build-arg NEXT_PUBLIC_SUPABASE_URL=https://supabase.invalid
-          --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_ci
-          --build-arg NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=false
-          --build-arg NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED=true
-          -t swiss-delivery-tracker:test .
-      - name: Start and verify the application port
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build the image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          provenance: false
+          tags: ${{ env.IMAGE }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          build-args: |
+            IMAGE_COMMIT=${{ github.sha }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://supabase.invalid' }}
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_ci' }}
+            NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=${{ vars.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED || 'false' }}
+            NEXT_PUBLIC_AUTH_APPLE_ENABLED=${{ vars.NEXT_PUBLIC_AUTH_APPLE_ENABLED || 'false' }}
+            NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED=${{ vars.NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED || 'true' }}
+            NEXT_PUBLIC_IOS_APP_URL=${{ vars.NEXT_PUBLIC_IOS_APP_URL }}
+          # Only the layers of the final image are kept between runs: the system packages
+          # stay byte-identical, so a deploy transfers little more than the application.
+          cache-from: type=gha,scope=production-image
+          cache-to: type=gha,scope=production-image,mode=min
+      - name: Start the container and check it
         run: |
           set -euo pipefail
           docker run -d --name swiss-delivery-tracker-test -p 127.0.0.1:3000:3000 \
             -e SUPABASE_URL=http://supabase.invalid \
             -e SUPABASE_PUBLISHABLE_KEY=test-public-key \
             -e SUPABASE_SERVICE_ROLE_KEY=test-service-key \
-            swiss-delivery-tracker:test
+            "$IMAGE"
           trap 'docker logs swiss-delivery-tracker-test; docker rm -f swiss-delivery-tracker-test' EXIT
-          for attempt in $(seq 1 20); do
+          for _ in $(seq 1 20); do
             if curl -fsS http://127.0.0.1:3000/health/live >/dev/null; then
               break
             fi
             sleep 1
           done
           SMOKE_EXPECT_READY=false scripts/smoke-url.sh http://127.0.0.1:3000
+      - name: Log in to the registry
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the image
+        if: env.PUBLISH == 'true'
+        run: docker push "$IMAGE"
+
+  # Runs only where an instance has set it up: DEPLOY_ENABLED and DEPLOY_URL as repository
+  # variables, and the DEPLOY_SSH_* secrets. The iPhone app's tests do not hold a deploy back.
+  deploy:
+    name: Deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    needs: [checks, unit, migrations, browser, image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Skip a commit that is no longer the newest on main
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          if [ "$current_sha" = "$GITHUB_SHA" ]; then
+            echo 'latest=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "Skipping $GITHUB_SHA: main is now $current_sha"
+            echo 'latest=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Deploy this commit
+        if: steps.current.outputs.latest == 'true'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+          DEPLOY_SSH_TARGET: ${{ secrets.DEPLOY_SSH_TARGET }}
+        run: |
+          set -euo pipefail
+          ssh_dir="$(mktemp -d)"
+          trap 'rm -rf "$ssh_dir"' EXIT
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$ssh_dir/id_ed25519"
+          printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          chmod 600 "$ssh_dir/id_ed25519" "$ssh_dir/known_hosts"
+          timeout 10m ssh \
+            -i "$ssh_dir/id_ed25519" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=10 \
+            -o IdentitiesOnly=yes \
+            -o LogLevel=ERROR \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$ssh_dir/known_hosts" \
+            "$DEPLOY_SSH_TARGET" deploy "$GITHUB_SHA"
+      - name: Check the public site
+        if: steps.current.outputs.latest == 'true'
+        env:
+          DEPLOY_URL: ${{ vars.DEPLOY_URL }}
+        run: scripts/smoke-url.sh "$DEPLOY_URL"

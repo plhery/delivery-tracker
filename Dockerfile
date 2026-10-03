@@ -39,6 +39,10 @@ RUN apk add --no-cache curl chromium \
     && addgroup --system --gid 10001 delivery \
     && adduser --system --uid 10001 --ingroup delivery delivery
 COPY --from=build --chown=delivery:delivery /app/.next/standalone ./
+# The commit the image was built from. It names the release in error reports; a platform
+# that sets IMAGE_COMMIT at runtime overrides it.
+ARG IMAGE_COMMIT
+ENV IMAGE_COMMIT=$IMAGE_COMMIT
 USER delivery
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
