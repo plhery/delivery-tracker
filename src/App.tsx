@@ -6,7 +6,6 @@ import { takeResumedScreen, type ResumedScreen } from './lib/pwaUpdates';
 import { REFRESH_MESSAGES, refreshOutcome, userErrorMessage } from './lib/userMessages';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AddParcelSheet } from './components/AddParcelSheet';
-import { DeliveriesField, type DeliveriesFieldHandle } from './components/DeliveriesField';
 import { ParcelAddedBurst } from './components/ParcelAddedBurst';
 import { AccountMenu } from './components/AccountMenu';
 import { NotificationPrompt } from './components/NotificationPrompt';
@@ -43,7 +42,11 @@ import {
   type ParcelSort,
   type ParcelStatusFilter,
 } from './lib/parcelView';
-import { clearSharedParcelInput, readSharedParcelInput } from './lib/shareTarget';
+import {
+  clearSharedParcelInput,
+  readSharedParcelInput,
+  type SharedParcelInput,
+} from './lib/shareTarget';
 import { currentStage, isDelivered } from './lib/stages';
 import { useParcels } from './store/ParcelsContext';
 import { onKeepOutcome, type KeepOutcome } from './peek/pending';
@@ -107,14 +110,11 @@ export default function App({
     retryLoad,
     resetDemoData,
   } = useParcels();
-  // The Add sheet, with what it opens on: a shared text, or what the field could not settle on its own.
-  const [adding, setAdding] = useState<{ label?: string; trackingInput?: string } | null>(null);
-  const field = useRef<DeliveriesFieldHandle>(null);
-  // The card that celebrates; the field keeps the focus, the Add sheet hands it to the card.
-  const [parcelBurst, setParcelBurst] = useState<{ id: string; focus: boolean } | null>(null);
+  const [sharedParcelInput, setSharedParcelInput] = useState<SharedParcelInput | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [parcelBurst, setParcelBurst] = useState<string | null>(null);
   const finishParcelBurst = useCallback(() => setParcelBurst(null), []);
-  // What the toast can take back: an archived parcel returns, a parcel the field just added goes.
-  const [undo, setUndo] = useState<{ parcel: ParcelWithEvents; of: 'archive' | 'add' } | null>(null);
+  const [undoParcel, setUndoParcel] = useState<ParcelWithEvents | null>(null);
   const [undoing, setUndoing] = useState(false);
   const [undoError, setUndoError] = useState<string | null>(null);
   // Working notices report a refresh in progress and stay until it ends.
@@ -151,7 +151,8 @@ export default function App({
     void readSharedParcelInput().then((input) => {
       if (active && input) {
         trackAction('parcel-share-received');
-        setAdding(input);
+        setSharedParcelInput(input);
+        setAdding(true);
       }
     }).finally(() => clearSharedParcelInput());
     return () => {
@@ -160,10 +161,10 @@ export default function App({
   }, []);
 
   useEffect(() => {
-    if (!undo || undoing || undoError) return;
-    const timeout = window.setTimeout(() => setUndo(null), 7_000);
+    if (!undoParcel || undoing || undoError) return;
+    const timeout = window.setTimeout(() => setUndoParcel(null), 7_000);
     return () => window.clearTimeout(timeout);
-  }, [undo, undoing, undoError]);
+  }, [undoParcel, undoing, undoError]);
 
   useEffect(() => {
     if (!refreshNotice || refreshNotice.working) return;
@@ -188,7 +189,7 @@ export default function App({
   // The kept parcel's card celebrates once the list has it.
   if (keptParcelId && parcels.some((parcel) => parcel.id === keptParcelId)) {
     setKeptParcelId(null);
-    setParcelBurst({ id: keptParcelId, focus: true });
+    setParcelBurst(keptParcelId);
   }
 
   useEffect(() => {
@@ -354,13 +355,13 @@ export default function App({
     if (openParcelId === parcel.id) closeParcelDetail();
     setUndoError(null);
     setUndoing(false);
-    setUndo({ parcel, of: 'archive' });
+    setUndoParcel(parcel);
   }
 
   async function handleDelete(parcel: ParcelWithEvents) {
     await changeList(() => deleteParcel(parcel.id));
     if (openParcelId === parcel.id) closeParcelDetail();
-    setUndo((current) => current?.parcel.id === parcel.id ? null : current);
+    setUndoParcel((current) => current?.id === parcel.id ? null : current);
     setRefreshNotice({ mark: 'success', text: t('app.deletedToast', {
       name: parcel.label || t('common.parcel'),
     }) });
@@ -375,50 +376,18 @@ export default function App({
 
   async function handleRestore(parcel: ParcelWithEvents) {
     await changeList(() => restoreParcel(parcel.id));
-    setUndo((current) => current?.parcel.id === parcel.id ? null : current);
+    setUndoParcel((current) => current?.id === parcel.id ? null : current);
     if (openParcelId === parcel.id) closeParcelDetail();
   }
 
-  /** The new card shows itself: on the Deliveries tab, in view, with its sparkle. */
-  function revealAdded(id: string, focus: boolean) {
-    if (!visibleParcels.some((parcel) => parcel.id === id)) clearView();
-    setViewControlsOpen(false);
-    switchTab('deliveries');
-    setParcelBurst({ id, focus });
-  }
-
-  /** The field added a parcel without asking: the toast offers to take that back. */
-  function handleFieldAdded(parcel: ParcelWithEvents) {
-    revealAdded(parcel.id, false);
-    setUndoError(null);
-    setUndoing(false);
-    setUndo({ parcel, of: 'add' });
-  }
-
-  function openExistingParcel(packageId: string) {
-    openParcelDetail(packageId);
-    setRefreshNotice({ mark: 'success', text: t('link.already.title') });
-  }
-
-  /** "Don't keep" deletes the parcel the field just added, for good. */
-  async function discardAdded(parcel: ParcelWithEvents) {
-    await changeList(() => deleteParcel(parcel.id));
-    if (openParcelId === parcel.id) closeParcelDetail();
-    setUndo((current) => current?.parcel.id === parcel.id ? null : current);
-    setParcelBurst((current) => current?.id === parcel.id ? null : current);
-    setRefreshNotice({ mark: 'success', text: t('field.removed') });
-    field.current?.focus();
-  }
-
-  async function runUndo() {
-    if (!undo || undoing) return;
+  async function undoArchive() {
+    if (!undoParcel || undoing) return;
     setUndoing(true);
     setUndoError(null);
     try {
-      if (undo.of === 'add') await discardAdded(undo.parcel);
-      else await handleRestore(undo.parcel);
+      await handleRestore(undoParcel);
     } catch (reason) {
-      setUndoError(userErrorMessage(reason, t, undo.of === 'add' ? 'detail.deleteFailed' : 'detail.restoreFailed'));
+      setUndoError(userErrorMessage(reason, t, 'detail.restoreFailed'));
     } finally {
       setUndoing(false);
     }
@@ -437,14 +406,12 @@ export default function App({
 
   async function resetDemo() {
     await resetDemoData();
-    setUndo(null); setUndoError(null); setRefreshNotice(null);
+    setUndoParcel(null); setUndoError(null); setRefreshNotice(null);
     setParcelBurst(null); setOpenParcelId(null); setDetailOrigin(null);
     setQuery(''); setStatusFilter('all'); setCarrierFilter('');
     setViewNow(Date.now());
   }
 
-  // A parcel that has joined another one since it was added is no longer the toast's to take back.
-  const undoOffer = undo?.of === 'add' && parcels.some((parcel) => parcel.id === undo.parcel.id && parcel.originalParcelId) ? null : undo;
   const remainingDeliveries = [...prioritized.arrivingToday, ...prioritized.onTheWay];
   const allArrived = !hasCustomView && parcels.length > 0
     && parcels.every((parcel) => isDelivered(parcel.events));
@@ -470,19 +437,11 @@ export default function App({
           <span className="app__brand"><PeekMark size={30} /><PeekLockup /></span>
           <h1 className="app__title">{t(tab === 'deliveries' ? 'native.deliveries' : tab === 'passport' ? 'passport.title' : 'friends.title')}</h1>
           <div className="app__actions">
+            <button type="button" className="app__add-button" aria-label={t('app.addParcelAria')} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t('app.addParcel')}</span></button>
             <AccountMenu email={accountEmail} onExport={onExportAccount} onDelete={onDeleteAccount} onSignOut={onSignOut} onExitDemo={onExitDemo} onResetDemo={mode === 'demo' ? resetDemo : undefined} apiAuth={apiAuth} />
           </div>
+          <AppNavigation selected={tab} onSelect={switchTab} />
         </div>
-        <DeliveriesField
-          ref={field}
-          parcels={parcels}
-          apiAuth={apiAuth}
-          onAdd={addParcel}
-          onAdded={handleFieldAdded}
-          onFinishInSheet={(trackingInput) => setAdding({ trackingInput })}
-          onOpenExisting={openExistingParcel}
-        />
-        <AppNavigation selected={tab} onSelect={switchTab} />
       </header>
       {mode === 'demo' && <div className="demo-banner"><span>{t('app.demo')}</span>{onExitDemo && <button type="button" onClick={onExitDemo}>{t('native.exitDemo')}<Icon name="close" /></button>}</div>}
       <main className="app__content" id="main-content">
@@ -574,7 +533,7 @@ export default function App({
             <p className="empty-state__eyebrow">{t('app.emptyEyebrow')}</p>
             <h2>{t('app.emptyTitle')}</h2>
             <p>{t('app.emptyDescription')}</p>
-            <button className="button button--primary" type="button" onClick={() => setAdding({})}><Icon name="plus" />{t('app.addParcel')}</button>
+            <button className="button button--primary" type="button" onClick={() => setAdding(true)}><Icon name="plus" />{t('app.addParcel')}</button>
           </div>
         )}
 
@@ -612,7 +571,7 @@ export default function App({
             <Icon name="check" />
             <h2>{t('app.allArrived')}</h2>
             <p>{t('app.allArrivedDescription')}</p>
-            <button type="button" className="button button--primary" onClick={() => setAdding({})}>{t('app.trackAnother')}</button>
+            <button type="button" className="button button--primary" onClick={() => setAdding(true)}>{t('app.trackAnother')}</button>
           </div>
         )}
         </div>
@@ -695,13 +654,18 @@ export default function App({
         <AddParcelSheet
           apiAuth={apiAuth}
           onAdd={addParcel}
-          onClose={() => setAdding(null)}
-          onAdded={(id) => revealAdded(id, true)}
+          onClose={() => setAdding(false)}
+          onAdded={(id) => {
+            if (!visibleParcels.some((parcel) => parcel.id === id)) clearView();
+            setViewControlsOpen(false);
+            switchTab('deliveries');
+            setParcelBurst(id);
+          }}
           onOpenParcel={(parcelId) => openParcelDetail(parcelId)}
           lastDpdPostcode={lastDpdPostcode}
           usedCarriers={usedCarriers}
-          initialLabel={adding.label}
-          initialTrackingInput={adding.trackingInput}
+          initialLabel={sharedParcelInput?.label}
+          initialTrackingInput={sharedParcelInput?.trackingInput}
         />
       )}
 
@@ -711,11 +675,11 @@ export default function App({
           apiAuth={apiAuth}
           eligible={tab === 'deliveries' && parcels.length > 0 && !loading && !error
             && !authenticationRequired && !adding && !openParcelId && !parcelBurst
-            && !undo && !refreshNotice}
+            && !undoParcel && !refreshNotice}
         />
       )}
 
-      {parcelBurst && <ParcelAddedBurst key={parcelBurst.id} parcelId={parcelBurst.id} focusCard={parcelBurst.focus} onFinished={finishParcelBurst} />}
+      {parcelBurst && <ParcelAddedBurst key={parcelBurst} parcelId={parcelBurst} onFinished={finishParcelBurst} />}
 
       {openParcel && (
         <ParcelDetail
@@ -737,21 +701,20 @@ export default function App({
         />
       )}
 
-      {undoOffer && (
+      {undoParcel && (
         <div className="undo-toast" role="status">
-          <ToastMark kind={undoOffer.of === 'add' ? 'success' : 'archive'} />
+          <ToastMark kind="archive" />
           <span className="undo-toast__message">
-            <span>{undoOffer.of === 'add' ? t('link.added') : t('app.archivedToast', { name: undoOffer.parcel.label || t('common.parcel') })}</span>
+            <span>{t('app.archivedToast', { name: undoParcel.label || t('common.parcel') })}</span>
             {undoError && <small role="alert">{undoError}</small>}
           </span>
-          <button type="button" disabled={undoing} onClick={() => void runUndo()}>
-            {undoing ? t(undoOffer.of === 'add' ? 'detail.deleting' : 'common.restoring')
-              : undoError ? t('common.retry') : t(undoOffer.of === 'add' ? 'field.dontKeep' : 'app.undo')}
+          <button type="button" disabled={undoing} onClick={() => void undoArchive()}>
+            {undoing ? t('common.restoring') : undoError ? t('common.retry') : t('app.undo')}
           </button>
         </div>
       )}
 
-      {refreshNotice && !undoOffer && (
+      {refreshNotice && !undoParcel && (
         <div className="action-toast" role="status">
           <ToastMark kind={refreshNotice.mark} />
           <span>{refreshNotice.text}</span>

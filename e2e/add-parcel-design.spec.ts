@@ -4,9 +4,7 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  // Enter in the deliveries' empty field opens the whole form; the field is live once its Paste button is.
-  await expect(page.locator('.deliveries-field__paste')).toBeEnabled();
-  await page.getByRole('textbox', { name: 'Track a parcel' }).press('Enter');
+  await page.getByRole('button', { name: 'Add a parcel', exact: true }).click();
 });
 
 test('opens tracking first, keeps naming optional, and returns focus on close', async ({ page, isMobile }) => {
@@ -30,8 +28,7 @@ test('opens tracking first, keeps naming optional, and returns focus on close', 
   await expect(dialog.getByRole('button', { name: 'Add parcel', exact: true })).toBeEnabled();
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(dialog).toBeHidden();
-  // The focus returns to the field; on a touch screen to its Paste button, which opens no keyboard.
-  await expect(isMobile ? page.getByRole('button', { name: 'Paste', exact: true }) : page.getByRole('textbox', { name: 'Track a parcel' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Add a parcel', exact: true })).toBeFocused();
 });
 
 test('keeps Add above a reduced visual viewport while required fields scroll', async ({ page, isMobile }) => {

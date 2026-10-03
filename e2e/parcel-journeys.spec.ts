@@ -23,19 +23,6 @@ test.afterEach(async ({ page }) => {
   expect(browserErrors.get(page) ?? []).toEqual([]);
 });
 
-/** The deliveries' field, once the page is live. */
-async function deliveriesField(page: Page) {
-  const field = page.getByRole('textbox', { name: 'Track a parcel' });
-  await expect(page.locator('.deliveries-field__paste')).toBeEnabled();
-  return field;
-}
-
-/** The Add sheet, opened from the field: Enter with nothing typed asks for the whole form. */
-async function openAddSheet(page: Page) {
-  await (await deliveriesField(page)).press('Enter');
-  return page.getByRole('dialog', { name: 'Add a parcel' });
-}
-
 test('finds, filters, and opens a parcel', async ({ page }) => {
   const search = page.getByRole('searchbox', { name: 'Search parcels' });
   await expect(search).toBeHidden();
@@ -90,7 +77,8 @@ test('carefully deletes an active parcel from its detail screen', async ({ page 
 });
 
 test('adds a parcel from tracking text', async ({ page }) => {
-  const sheet = await openAddSheet(page);
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
   await sheet.getByLabel(/^Name/).fill('Fondue set');
   await sheet.getByLabel('Tracking number or link').fill('Track 99.34.111111.22222222');
   await expect(sheet.getByText('Swiss Post', { exact: true })).toBeVisible();
@@ -131,7 +119,8 @@ test('adds a parcel from tracking text', async ({ page }) => {
 });
 
 test('accepts a Swiss postcode for GLS Germany and leaves unknown carriers to detection', async ({ page }) => {
-  const sheet = await openAddSheet(page);
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
   await sheet.getByLabel(/^Name/).fill('Cross-border GLS parcel');
   await sheet.getByLabel('Tracking number or link').fill('123456789018');
   await expect(sheet.getByRole('button', { name: /^Detect automatically/ })).toBeVisible();
@@ -154,7 +143,8 @@ test('accepts a Swiss postcode for GLS Germany and leaves unknown carriers to de
 });
 
 test('adds a DPD parcel without its optional postcode', async ({ page }) => {
-  const sheet = await openAddSheet(page);
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
   await sheet.getByLabel(/^Name/).fill('Postcode-free DPD parcel');
   await sheet.getByLabel('Tracking number or link')
     .fill('https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber=06080000000001');
@@ -181,7 +171,8 @@ test('parcel celebration respects reduced motion and clears before the next inte
   await expect(page.getByRole('button', { name: 'Search & filters' })).toBeVisible();
   await page.clock.pauseAt(now + 60_000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  let sheet = await openAddSheet(page);
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  let sheet = page.getByRole('dialog', { name: 'Add a parcel' });
   await sheet.getByLabel('Tracking number or link').fill('99.34.111111.22222222');
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
   const burst = page.locator('.parcel-added-burst');
@@ -196,9 +187,9 @@ test('parcel celebration respects reduced motion and clears before the next inte
     .every((animation) => (animation.effect as KeyframeEffect).getKeyframes()
       .every((frame) => frame.transform === undefined)))).toBe(true);
   // The decorative layer must let the next tap through, and leave no stale burst.
-  await page.getByRole('textbox', { name: 'Track a parcel' }).click();
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
   await expect(burst).toHaveCount(0);
-  sheet = await openAddSheet(page);
+  sheet = page.getByRole('dialog', { name: 'Add a parcel' });
   await sheet.getByLabel('Tracking number or link').fill('99.34.111111.22222222');
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
   await expect(sheet.getByRole('alert')).toContainText('already tracking this parcel');
@@ -207,25 +198,27 @@ test('parcel celebration respects reduced motion and clears before the next inte
   await expect(burst).toHaveCount(0);
 });
 
-test('reveals the added card from another tab even when delivery filters hide it', async ({ page, isMobile }) => {
+test('reveals the added card from another tab even when delivery filters hide it', async ({ page }) => {
   await page.getByRole('button', { name: 'Search & filters' }).click();
   await page.getByRole('searchbox', { name: 'Search parcels' }).fill('birthday');
-  const field = await deliveriesField(page);
-  // The header keeps the field on every tab of a wide screen; a phone has it on Deliveries.
-  if (!isMobile) await page.locator('.app__navigation').getByRole('button', { name: 'Passport' }).click();
-  await field.fill('99.34.111111.33333333');
-  await field.press('Enter');
-  const card = page.locator('.parcel-card-swipe').filter({ hasText: 'Added to tracking' });
+  await page.locator('.app__navigation').getByRole('button', { name: 'Passport' }).click();
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
+  await sheet.getByLabel(/^Name/).fill('A new adventure');
+  await sheet.getByLabel('Tracking number or link').fill('99.34.111111.33333333');
+  await sheet.getByRole('button', { name: 'Add parcel' }).click();
+  const card = page.locator('.parcel-card-swipe').filter({ hasText: 'A new adventure' });
   await expect(page.locator('.app__navigation').getByRole('button', { name: 'Deliveries' })).toHaveAttribute('aria-current', 'page');
   await expect(card).toHaveAttribute('data-celebrating', 'rumble');
   await expect(card).toBeInViewport();
   await card.locator('.parcel-card').click();
-  await expect(page.getByRole('dialog', { name: 'Parcel', exact: true })).toContainText('99.34.111111.33333333');
+  await expect(page.getByRole('dialog', { name: 'A new adventure' })).toBeVisible();
   await expect(page.locator('.parcel-added-burst')).toHaveCount(0);
 });
 
 test('opens unknown postal tracking on 17TRACK in the selected language', async ({ page }) => {
-  const sheet = await openAddSheet(page);
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
   await sheet.getByLabel(/^Name/).fill('Postal shipment');
   await sheet.getByLabel('Tracking number or link').fill('RA123456785DE');
   await expect(sheet.getByText('Unknown postal carrier', { exact: true })).toBeVisible();
@@ -259,7 +252,8 @@ test('opens unknown postal tracking on 17TRACK in the selected language', async 
 });
 
 test('keeps invalid tracking input safely in the add sheet', async ({ page }) => {
-  const sheet = await openAddSheet(page);
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
   await sheet.getByLabel('Tracking number or link').fill('hello there');
 
   await expect(sheet.getByText(/couldn’t find a tracking number/i)).toBeVisible();
@@ -320,21 +314,21 @@ test('navigates nested carrier dialogs entirely by keyboard', async ({ page }) =
 test('keeps translated add-parcel guidance readable in every app language', async ({ page }) => {
   // Change away from the initial English value first: selecting an unchanged
   // option does not emit a change event or save a language preference.
-  for (const [locale, field, title, close] of [
-    ['de', 'Paket verfolgen', 'Paket hinzufügen', 'Schliessen'],
-    ['fr', 'Suivre un colis', 'Ajouter un colis', 'Fermer'],
-    ['it', 'Traccia un pacco', 'Aggiungi un pacco', 'Chiudi'],
-    ['es', 'Seguir un paquete', 'Añadir un paquete', 'Cerrar'],
-    ['pt', 'Seguir um envio', 'Adicionar um envio', 'Fechar'],
-    ['pl', 'Śledź przesyłkę', 'Dodaj przesyłkę', 'Zamknij'],
-    ['en', 'Track a parcel', 'Add a parcel', 'Close'],
+  for (const [locale, action, title, close] of [
+    ['de', 'Ein Paket hinzufügen', 'Paket hinzufügen', 'Schliessen'],
+    ['fr', 'Ajouter un colis', 'Ajouter un colis', 'Fermer'],
+    ['it', 'Aggiungi un pacco', 'Aggiungi un pacco', 'Chiudi'],
+    ['es', 'Añadir un paquete', 'Añadir un paquete', 'Cerrar'],
+    ['pt', 'Adicionar um envio', 'Adicionar um envio', 'Fechar'],
+    ['pl', 'Dodaj przesyłkę', 'Dodaj przesyłkę', 'Zamknij'],
+    ['en', 'Add a parcel', 'Add a parcel', 'Close'],
   ]) {
     await page.locator('.account-trigger').click();
     await page.locator('.language-control select').selectOption(locale);
     await page.keyboard.press('Escape');
     await expect(page.locator('.settings-sheet')).toBeHidden();
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
-    await page.getByRole('textbox', { name: field, exact: true }).press('Enter');
+    await page.getByRole('button', { name: action, exact: true }).click();
     const sheet = page.getByRole('dialog', { name: title });
     await sheet.locator('#add-parcel-tracking').fill('99.34.111111.22222222');
     await expect(sheet.getByText('Swiss Post', { exact: true })).toBeVisible();

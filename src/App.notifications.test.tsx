@@ -51,8 +51,7 @@ describe('web notification invitation placement', () => {
     renderApp(repo);
     await act(async () => {});
     expect(inspectPushState).not.toHaveBeenCalled();
-    // The empty list's own call to action still opens the Add sheet.
-    await user.click(screen.getByRole('button', { name: 'Add parcel' }));
+    await user.click(screen.getByRole('button', { name: 'Add a parcel' }));
     const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
     await user.type(within(sheet).getByLabelText('Tracking number or link'), 'LX123456785NL');
     expect(invitation()).not.toBeInTheDocument();
