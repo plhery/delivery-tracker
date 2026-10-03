@@ -2,9 +2,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as image } from '../../app/api/public/parcels/[linkId]/image/route';
 import { generateMetadata } from '../../app/p/[id]/page';
+import { STAGES, SYNC_STATUSES } from '../generated/apiContract';
+import { carrierInfo, type CarrierInfo } from '../lib/carriers';
+import { SUPPORTED_LOCALES } from '../lib/locale';
+import { languageTags, translateMessage, type Translate } from '../lib/messages';
+import { giftPreviewText, parcelPreviewText } from '../peek/parcel/summary';
+import { refuseTheWeb } from '../test/pictureRequests';
+import type { ParcelWithEvents } from '../types';
 import { genericSocialImage, parcelLinkSocialImage } from './ParcelLinkSocialImage';
 import { parcelLinkPreview } from './parcelLinkPreview';
 import * as observability from './observability';
+import { GEIST, writable } from './pictureFont';
+import { messagesFor } from './requestLocale';
 import { SupabaseError, SupabaseServiceClient } from './supabase';
 import type { JsonObject } from './types';
 
@@ -48,6 +57,7 @@ afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
 describe('parcelLinkPreview', () => {
@@ -244,6 +254,56 @@ describe('the link preview image', () => {
     }), { params: Promise.resolve({ linkId }) });
     expect(served.status).toBe(200);
     expect(await size(served)).toEqual([1200, 630]);
+  });
+
+  it('never asks the web for a font or an emoji, whatever the carrier, the estimate and the host are called', async () => {
+    // The renderer fetches a font for any character its own lacks, and a drawing for any emoji.
+    const asked = refuseTheWeb();
+    const same = async (one: Response, other: Response) => Buffer.from(await one.arrayBuffer()).equals(Buffer.from(await other.arrayBuffer()));
+    const yamato: CarrierInfo = { ...carrierInfo('yamato', 'en'), name: 'ヤマト運輸 🐈' };
+    const drawn = parcelLinkSocialImage(preview({ carrier: yamato, detail: 'Αύριο ⏰' }), 'παράδειγμα.example 🌐');
+    expect(await size(drawn.clone())).toEqual([1200, 630]);
+    // What the face cannot write is left out; the truck in the carrier's livery stays.
+    expect(await same(drawn, parcelLinkSocialImage(preview({ carrier: { ...yamato, name: '' }, detail: null }), null))).toBe(true);
+    expect(await same(parcelLinkSocialImage(preview({ carrier: yamato }), null), parcelLinkSocialImage(preview(), null))).toBe(false);
+    // A status it cannot write gets Peek's own picture.
+    for (const headline of ['配達完了', 'Παραδόθηκε', 'Delivered ✅', ' ']) {
+      const response = parcelLinkSocialImage(preview({ headline }), 'peek.example.test');
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(await same(response, genericSocialImage()), headline).toBe(true);
+    }
+    expect(asked).not.toHaveBeenCalled();
+  });
+
+  it('can write every status and every estimate in each language', () => {
+    const day = 86_400_000;
+    const parcel = (overrides: Partial<ParcelWithEvents>): ParcelWithEvents => ({
+      id: 'p', trackingNumber, label: 'A private name', carrier: 'dhl', createdAt: '2026-09-30T08:00:00Z', syncStatus: 'ok', events: [], ...overrides,
+    });
+    for (const locale of SUPPORTED_LOCALES) {
+      const messages = messagesFor(locale);
+      const t: Translate = (key, variables) => translateMessage(locale, key, variables, messages);
+      const wording = { t, languageTag: languageTags[locale], now: NOW };
+      const said = new Set<string>();
+      const say = (overrides: Partial<ParcelWithEvents>) => {
+        for (const { headline, detail } of [parcelPreviewText(parcel(overrides), 'DHL', wording), giftPreviewText(parcel(overrides), wording)]) {
+          said.add(headline);
+          if (detail) said.add(detail);
+        }
+      };
+      for (const syncStatus of SYNC_STATUSES) say({ syncStatus });
+      // Every stage, with scans through the weekdays and months behind and estimates through those ahead.
+      for (const stage of STAGES) {
+        for (let days = 0; days < 371; days += 5) {
+          const events = [{ id: 'e', parcelId: 'p', stage, description: 'A scan', occurredAt: new Date(NOW - days * day).toISOString() }];
+          const on = new Date(NOW + days * day).toISOString().slice(0, 10);
+          say({ events, expectedDelivery: on });
+          say({ events, expectedDelivery: `${on}T17:00`, expectedDeliveryFrom: `${on}T13:00` });
+        }
+      }
+      expect(said.size).toBeGreaterThan(200);
+      for (const text of said) expect(writable(text, GEIST), `${locale}: ${text}`).not.toBeNull();
+    }
   });
 
   it('serves the parcel’s picture in the asked language, with every carrier’s own livery', async () => {

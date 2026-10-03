@@ -28,6 +28,9 @@ locations, emails, photos, active shipments or ids.
   sender's nickname and never consume the link. Pages send `Referrer-Policy: no-referrer`,
   clients strip the key from the address bar before sign-in, and analytics never records
   URLs or keys. Social platforms may cache previews on their side.
+- The social card's picture is drawn with the server's own fonts
+  ([ARCHITECTURE.md](ARCHITECTURE.md)). An emoji in the nickname is left out, and a
+  nickname with a letter they lack is not shown: the card then says "A friend".
 - A pending invitation survives sign-in, kept in sessionStorage on the web and
   UserDefaults on iOS, for up to seven days. Newcomers choose their sharing settings before
   accepting.

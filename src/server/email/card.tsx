@@ -11,8 +11,8 @@ import type { Translate } from '../../lib/messages';
 import { formatJourneyDuration } from '../../lib/passport';
 import { CORE_STAGES } from '../../lib/stages';
 import type { ParcelWithEvents } from '../../types';
+import { GEIST, writable } from '../pictureFont';
 import { journeyMap, LABEL_SIZE, type Tint } from './cardMap';
-import { FONT_NAME, fontData, writable } from './font';
 
 /** The card's width in CSS pixels: the column of the email it is shown in. Every measure below is in these. */
 const WIDTH = 456;
@@ -102,7 +102,7 @@ function journeyFacts(route: Route, parcel: ParcelWithEvents, timed: boolean, t:
     // A length in hours needs the delivery on the carrier's clock.
     timed && times.length > 1 && duration > 0 ? formatJourneyDuration(duration, languageTag) : null,
   ].filter(Boolean);
-  return facts.length ? writable(facts.join(' · ')) : null;
+  return facts.length ? writable(facts.join(' · '), GEIST) : null;
 }
 
 export interface DeliveryCardInput {
@@ -142,10 +142,10 @@ export async function deliveryCard({ parcel, carrier, when, timed, t, languageTa
   const brand = palette?.['brand-light'] ?? tone;
   const map = await journeyMap(parcel, languageTag, { width: WIDTH, height: MAP.height }, MAP.insets, tint);
   const family = carrier ? carrierBrandFamily(carrier.id) : '';
-  const name = carrier ? writable(WORDMARKS[family] ?? carrier.name) : null;
-  const headline = writable(t('stage.delivered')) ?? '';
+  const name = carrier ? writable(WORDMARKS[family] ?? carrier.name, GEIST) : null;
+  const headline = writable(t('stage.delivered'), GEIST) ?? '';
   const facts = map ? journeyFacts(map.route, parcel, timed, t, languageTag) : null;
-  const time = when ? writable(when) : null;
+  const time = when ? writable(when, GEIST) : null;
   const from = map?.route.origin?.place.name;
   const to = (map?.route.destination ?? map?.route.current?.place)?.name;
   const pipHeight = (width: number) => width * PIP_FRAME.height / PIP_FRAME.width;
@@ -154,7 +154,7 @@ export async function deliveryCard({ parcel, carrier, when, timed, t, languageTa
   const clear = `rgba(${[1, 3, 5].map((offset) => parseInt(surface.slice(offset, offset + 2), 16)).join(', ')}, `;
 
   const response = new ImageResponse(
-    <div style={{ display: 'flex', flexDirection: 'column', position: 'relative', width: '100%', height: '100%', overflow: 'hidden', borderRadius: u(24), background: surface, color: INK, fontFamily: FONT_NAME }}>
+    <div style={{ display: 'flex', flexDirection: 'column', position: 'relative', width: '100%', height: '100%', overflow: 'hidden', borderRadius: u(24), background: surface, color: INK, fontFamily: GEIST.name }}>
       {map && <div style={{ display: 'flex', position: 'relative', width: u(WIDTH), height: u(MAP.height) }}>
         <Drawing svg={map.svg} width={WIDTH} height={MAP.height} style={{ position: 'absolute', left: 0, top: 0 }} />
         {map.labels.map((label) => <div key={label.id} style={{
@@ -192,7 +192,7 @@ export async function deliveryCard({ parcel, carrier, when, timed, t, languageTa
         }} />)}
       </div>
     </div>,
-    { width: CARD_PIXELS, height: Math.round(u(height)), fonts: [{ name: FONT_NAME, data: fontData, weight: 400, style: 'normal' }] },
+    { width: CARD_PIXELS, height: Math.round(u(height)), fonts: [{ name: GEIST.name, data: GEIST.data, weight: 400, style: 'normal' }] },
   );
   return {
     png: new Uint8Array(await response.arrayBuffer()),

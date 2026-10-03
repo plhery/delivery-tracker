@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { carrierInfo, type CarrierInfo } from '../../lib/carriers';
 import { SUPPORTED_LOCALES, type Locale } from '../../lib/locale';
 import { languageTags, translateMessage, type Translate } from '../../lib/messages';
+import { refuseTheWeb } from '../../test/pictureRequests';
 import type { EventPlace, ParcelWithEvents, Stage } from '../../types';
 import { messagesFor } from '../requestLocale';
 import { CARD_PIXELS, deliveryCard, type DeliveryCardInput } from './card';
@@ -95,11 +96,7 @@ describe('deliveryCard', () => {
   });
 
   it('never asks the web for a font or an emoji, whatever the parcel’s places and its carrier are called', async () => {
-    // The renderer fetches a font for any character its own lacks, and a drawing for any emoji.
-    const fetched = globalThis.fetch;
-    const asked = vi.fn(async (address: string | URL | Request) => { throw new Error(`the picture must not load ${String(address).slice(0, 60)}`); });
-    // It unpacks its own WebAssembly from a data: address, which leaves the machine no more than a file read does.
-    vi.stubGlobal('fetch', (address: string | URL | Request, init?: RequestInit) => String(address).startsWith('data:') ? fetched(address, init) : asked(address));
+    const asked = refuseTheWeb();
     const far = parcel([
       ['accepted', '2026-09-20T09:00:00Z', town('深圳市 🏭', 'CN', 22.54, 114.06)],
       ['in_transit', '2026-09-28T09:00:00Z', town('Αθήνα', 'GR', 37.98, 23.73)],

@@ -5,8 +5,8 @@ import { CARRIER_PALETTES, CARRIER_TRUCK, carrierBrand, carrierBrandFamily, carr
 import mark from '../brand/mark.json';
 import type { CarrierInfo } from '../lib/carriers';
 import type { ParcelLinkPreview } from './parcelLinkPreview';
+import { GEIST, writable } from './pictureFont';
 
-const sansFont = readFileSync(join(process.cwd(), 'node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf'));
 const HEADERS = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow' };
 const INK = '#20251e';
 /** The wordmarks the app sets by hand, by brand family. */
@@ -125,9 +125,18 @@ function headlineSize(headline: string): number {
 /**
  * The 1200 × 630 picture of a parcel link: the card in its carrier's colours
  * with the status as the headline, and Pip. `host` is where the link lives.
+ *
+ * The picture is drawn without the web: a line its face cannot write is left
+ * out, and a status it cannot write gets Peek's own picture.
  */
-export function parcelLinkSocialImage(preview: ParcelLinkPreview, host: string | null): ImageResponse {
-  const { carrier, headline, detail, steps, gift = false } = preview;
+export function parcelLinkSocialImage(preview: ParcelLinkPreview, host: string | null): Response {
+  const { carrier, steps, gift = false } = preview;
+  const written = (text: string | null) => (text && writable(text, GEIST)) || null;
+  const headline = written(preview.headline);
+  if (!headline) return genericSocialImage();
+  const detail = written(preview.detail);
+  const name = written(carrier && (WORDMARKS[carrierBrandFamily(carrier.id)] ?? carrier.name));
+  const site = written(host);
   const palette = carrier ? carrierBrand(carrier.color, CARRIER_PALETTES[carrier.id]) : null;
   const surface = gift ? GIFT.surface : palette?.['surface-light'] ?? '#eceee7';
   const tone = gift ? GIFT.tone : palette?.['ink-light'] ?? '#657060';
@@ -139,7 +148,7 @@ export function parcelLinkSocialImage(preview: ParcelLinkPreview, host: string |
       <div style={{ display: 'flex', flexDirection: 'column', position: 'absolute', left: 80, top: 72, width: 660 }}>
         <div style={{ display: 'flex', alignItems: 'center', height: 48, fontSize: 29, color: palette?.['brand-light'] ?? tone, ...bold(1, palette?.['brand-light'] ?? tone) }}>
           {carrier && palette && <Truck carrier={carrier} palette={palette} width={65} />}
-          {carrier && <span style={{ marginLeft: 17 }}>{WORDMARKS[carrierBrandFamily(carrier.id)] ?? carrier.name}</span>}
+          {name && <span style={{ marginLeft: 17 }}>{name}</span>}
         </div>
         <div style={{ display: 'flex', marginTop: 62, fontSize: size, lineHeight: 1.02, letterSpacing: -size * .035, ...bold(size * .028, INK) }}>{headline}</div>
         {detail && <div style={{ display: 'flex', marginTop: 30, marginLeft: 4, fontSize: 40, color: tone }}>{detail}</div>}
@@ -153,10 +162,10 @@ export function parcelLinkSocialImage(preview: ParcelLinkPreview, host: string |
       <div style={{ display: 'flex', alignItems: 'center', position: 'absolute', left: 84, bottom: 44, fontSize: 26, color: tone }}>
         <Mark size={38} />
         <span style={{ marginLeft: 9, fontSize: 28, color: INK, ...bold(1.1, INK) }}>Peek</span>
-        {host && <span style={{ marginLeft: 14 }}>{host}</span>}
+        {site && <span style={{ marginLeft: 14 }}>{site}</span>}
       </div>
     </div>,
-    { width: 1200, height: 630, fonts: [{ name: 'Geist', data: sansFont, weight: 400, style: 'normal' }], headers: HEADERS },
+    { width: 1200, height: 630, fonts: [{ name: 'Geist', data: GEIST.data, weight: 400, style: 'normal' }], headers: HEADERS },
   );
 }
 

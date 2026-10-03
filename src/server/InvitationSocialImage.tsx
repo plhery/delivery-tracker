@@ -3,29 +3,50 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { invitationInitial } from '../lib/invitationInitial';
 import { invitationInitialPath } from '../lib/invitationInitialPath';
+import { GEIST, pictureFont, writable } from './pictureFont';
 
-// Preserve ImageResponse's bundled sans face when adding the serif name font.
-const sansFont = readFileSync(join(process.cwd(), 'node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf'));
-const nameFont = readFileSync(join(process.cwd(), 'public/fonts/gelasio/Gelasio-SemiBoldItalic.ttf'));
+/** The serif the sender's name is set in. The renderer's own sans is loaded beside it, or it would be lost. */
+const GELASIO = pictureFont('Gelasio', readFileSync(join(process.cwd(), 'public/fonts/gelasio/Gelasio-SemiBoldItalic.ttf')));
+
+const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
+/**
+ * A sender's name as the picture writes it. The picture is drawn without the
+ * web, so an emoji or a symbol its faces lack is left out. A name with a
+ * letter they lack is not written at all, rather than misspelt.
+ */
+function writtenName(nickname: string | null): string | null {
+  let name = '';
+  for (const { segment } of graphemes.segment(nickname ?? '')) {
+    // What the serif lacks is written in the sans, as the renderer does it.
+    if (writable(segment, GELASIO, GEIST) !== null) name += segment;
+    else if (/^\p{L}/u.test(segment)) return null;
+    else name += ' ';
+  }
+  return writable(name, GELASIO, GEIST) || null;
+}
 
 /** A still of the welcome parcel: the same kraft paper, face and seal. */
 export function invitationSocialImage(nickname: string | null): ImageResponse {
-  const initial = invitationInitial(nickname);
+  const name = writtenName(nickname);
+  const initial = invitationInitial(name);
   const initialPath = invitationInitialPath(initial);
+  // An initial with no drawing of its own is set in type, when the faces have it.
+  const letter = initialPath ? null : writable(initial, GEIST, GELASIO) || null;
   // Project the seal's SVG coordinates into ImageResponse's 360 × 300 image.
   const parcelScale = 300 / 215;
   const sealSize = 28 * parcelScale;
   const sealLeft = (183 - 25) * (360 / 250) - sealSize / 2;
   const sealTop = (234 - 85) * parcelScale - sealSize / 2;
-  const nameLength = [...(nickname ?? '')].length;
+  const nameLength = [...(name ?? '')].length;
   const greetingSize = nameLength > 18 ? 34 : nameLength > 12 ? 44 : 54;
   return new ImageResponse(
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#F4F5F1', color: '#26372E', padding: '38px 60px', fontFamily: 'Geist' }}>
       <div style={{ display: 'flex', alignItems: 'center', fontSize: 20, color: '#637568', letterSpacing: 1 }}>PEEK</div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: 1020, height: 160, marginTop: 4, textAlign: 'center', fontWeight: 700, lineHeight: 1.15 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: greetingSize * 0.26, fontSize: greetingSize }}>
-          <span>{nickname ? 'Your friend' : 'A friend'}</span>
-          {nickname && <span style={{ fontFamily: 'Gelasio', fontStyle: 'italic', fontWeight: 600 }}>{nickname}</span>}
+          <span>{name ? 'Your friend' : 'A friend'}</span>
+          {name && <span style={{ fontFamily: 'Gelasio', fontStyle: 'italic', fontWeight: 600 }}>{name}</span>}
         </div>
         <div style={{ display: 'flex', fontSize: 54 }}>sent you an invitation</div>
       </div>
@@ -51,20 +72,20 @@ export function invitationSocialImage(nickname: string | null): ImageResponse {
           <circle r="14" fill="#DECCE2" />
           <circle r="11.5" stroke="#FFF6FF" strokeWidth="1.2" />
           {initialPath && <path d={initialPath} stroke="#7C6787" strokeWidth="1.5" strokeLinejoin="round" />}
-          {!initial && <path d="M0-7V7m-6-10 12 6M-6 3 6-3" stroke="#7C6787" strokeWidth="1.5" strokeLinecap="round" />}
+          {!initialPath && !letter && <path d="M0-7V7m-6-10 12 6M-6 3 6-3" stroke="#7C6787" strokeWidth="1.5" strokeLinecap="round" />}
         </g>
         <path d="m96 122 13-7 95 48-13 7-95-48Z" fill="#EBDDCA" />
         <path d="m103 119 94 47" stroke="#AF9474" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" />
       </svg>
-      {initial && !initialPath && <div style={{ display: 'flex', position: 'absolute', left: sealLeft, top: sealTop, width: sealSize, height: sealSize, alignItems: 'center', justifyContent: 'center', fontSize: 18 * parcelScale, color: '#7C6787', transform: 'rotate(-27deg)', lineHeight: 1 }}>{initial}</div>}
+      {letter && <div style={{ display: 'flex', position: 'absolute', left: sealLeft, top: sealTop, width: sealSize, height: sealSize, alignItems: 'center', justifyContent: 'center', fontSize: 18 * parcelScale, color: '#7C6787', transform: 'rotate(-27deg)', lineHeight: 1 }}>{letter}</div>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', marginTop: 16, fontSize: 28, color: '#526E5B' }}>Tap to open your parcel →</div>
     </div>,
     {
       width: 1200, height: 630,
       fonts: [
-        { name: 'Geist', data: sansFont, weight: 400, style: 'normal' },
-        { name: 'Gelasio', data: nameFont, weight: 600, style: 'italic' },
+        { name: 'Geist', data: GEIST.data, weight: 400, style: 'normal' },
+        { name: 'Gelasio', data: GELASIO.data, weight: 600, style: 'italic' },
       ],
       headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow' },
     },

@@ -152,6 +152,12 @@ Key server modules:
 - **Private data**: tracking numbers, labels, carrier history, push endpoints and capability
   URLs (Planzer, Dachser) never go into analytics. They do appear in operator logs and
   Sentry; see [OBSERVABILITY.md](OBSERVABILITY.md).
+- **Pictures**: the invitation card, a parcel link's preview image and the delivery
+  email's card are drawn on the server with the fonts it ships, and ask nothing of the web.
+  The renderer would fetch a font for a character they lack and a drawing for an emoji, so
+  every line is checked against them first (`src/server/pictureFont.ts`). A line they
+  cannot write is left out, and a parcel link whose status they cannot write gets Peek's
+  own picture.
 - **Carrier responses are untrusted**. Adapters use fixed timeouts, a shared bounded
   response reader, and host validation wherever they accept a URL.
 - **Push**: browser endpoints must belong to known push services, and delivery never
