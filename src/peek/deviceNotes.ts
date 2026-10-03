@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { cleanLinkText, isParcelLinkId, MAX_GIFT_FROM_LENGTH, MAX_GIFT_NOTE_LENGTH, PARCEL_ALERT_PRESETS, type ParcelAlertPreset } from './linkModel';
+import { SAMPLE_LINK_ID } from './sample';
 
 /**
  * What this browser keeps about a parcel link besides the parcel itself: the
@@ -33,6 +34,8 @@ export interface LinkNote {
 }
 
 type Notes = Record<string, LinkNote>;
+/** Notes are kept about parcel links, and about the sample, whose alert is nothing but a note. */
+const noted = (id: string) => isParcelLinkId(id) || id === SAMPLE_LINK_ID;
 const EMPTY: Notes = {};
 // Storage that cannot be read or written leaves the notes working for as long as the page lives.
 let memory: string | null = null;
@@ -70,7 +73,7 @@ function read(): Notes {
     const value: unknown = raw ? JSON.parse(raw) : null;
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       notes = Object.fromEntries(Object.entries(value)
-        .map(([id, entry]): [string, LinkNote | null] => [id, isParcelLinkId(id) ? note(entry) : null])
+        .map(([id, entry]): [string, LinkNote | null] => [id, noted(id) ? note(entry) : null])
         .filter((entry): entry is [string, LinkNote] => entry[1] !== null));
     }
   } catch { /* Damaged notes are no notes. */ }
@@ -118,7 +121,7 @@ export function useLinkNote(id: string | null): LinkNote {
 
 /** Changes what this browser keeps about a link. A part set to null is dropped; the newest link is kept longest. */
 export function noteLink(id: string, changes: { share?: ShareWords | null; alert?: DeviceAlert | null }): void {
-  if (!isParcelLinkId(id)) return;
+  if (!noted(id)) return;
   const { [id]: existing, ...others } = read();
   const next = note({
     share: changes.share === undefined ? existing?.share : changes.share ?? undefined,

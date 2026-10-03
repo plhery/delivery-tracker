@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { cleanLinkText, MAX_GIFT_FROM_LENGTH, MAX_GIFT_NOTE_LENGTH } from './linkModel';
 import { cleanParcelName } from './recents';
+import { SAMPLE_LINK_ID, SAMPLE_PATH } from './sample';
 
 const eventName = 'peek-route-change';
 
@@ -10,16 +11,20 @@ export const PIP_TRANSITION_NAME = 'peek-pip';
 /**
  * The link id in a `/p/<id>` address, or null anywhere else. Any id makes a
  * parcel address: a malformed one opens the same unavailable page as a
- * forgotten one.
+ * forgotten one. The sample parcel has an address of its own.
  */
 export function parcelLinkIdFromPath(pathname: string): string | null {
+  if (pathname === SAMPLE_PATH || pathname === `${SAMPLE_PATH}/`) return SAMPLE_LINK_ID;
   const segment = /^\/p\/([^/]+)\/?$/.exec(pathname)?.[1];
   if (!segment) return null;
-  try { return decodeURIComponent(segment); } catch { return segment; }
+  let id = segment;
+  try { id = decodeURIComponent(segment); } catch { /* The segment as written is as malformed as any. */ }
+  // Only the sample's own address shows the sample.
+  return id === SAMPLE_LINK_ID ? 'unavailable' : id;
 }
 
 export function parcelLinkPath(id: string): string {
-  return `/p/${encodeURIComponent(id)}`;
+  return id === SAMPLE_LINK_ID ? SAMPLE_PATH : `/p/${encodeURIComponent(id)}`;
 }
 
 /** A parcel's own address, to share or copy. It never carries the name. */

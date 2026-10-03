@@ -3,9 +3,8 @@ import { ParcelIllustration } from '../../components/Icon';
 import { useI18n } from '../../i18n';
 import { bindArrivalMotion } from '../../lib/arrivalMotion';
 import type { CarrierInfo } from '../../lib/carriers';
-import { DEMO_PATH } from '../../lib/experience';
 import { PIP_TRANSITION_NAME } from '../route';
-import { openDemo } from './links';
+import { SAMPLE_PATH } from '../sample';
 
 /** He presses, the flaps open and the card rises out of the box before the sample shows. */
 export const UNBOXING_MS = 1_300;
@@ -24,7 +23,7 @@ function around(sentence: (value: string) => string): [string, string] {
  * answers. With nothing in the field, tapping him opens a sample parcel: the
  * box opens first. Pasting a number never opens it.
  */
-export function HeroPip({ label, sample, happy, hop, onOpening }: {
+export function HeroPip({ label, sample, happy, hop, onOpening, onOpen }: {
   /** The carrier's label on the box, once the carrier is known. */
   label?: { carrier: CarrierInfo; number: string };
   /** Whether tapping Pip opens a sample: only while the field is empty. */
@@ -34,6 +33,8 @@ export function HeroPip({ label, sample, happy, hop, onOpening }: {
   hop: string;
   /** The box starts to open: nothing else on the page should move for attention now. */
   onOpening: () => void;
+  /** The box is open: the sample parcel shows. */
+  onOpen: () => void;
 }) {
   const { t } = useI18n();
   const [opening, setOpening] = useState(false);
@@ -68,7 +69,7 @@ export function HeroPip({ label, sample, happy, hop, onOpening }: {
     if (paper) root.current?.style.setProperty('--parcel-rest', getComputedStyle(paper).transform);
     setOpening(true);
     onOpening();
-    timer.current = setTimeout(openDemo, still() ? 80 : UNBOXING_MS);
+    timer.current = setTimeout(onOpen, still() ? 80 : UNBOXING_MS);
   }
 
   const [before, after] = around((action) => t('landing.pip.hint', { action }));
@@ -76,7 +77,7 @@ export function HeroPip({ label, sample, happy, hop, onOpening }: {
     <div ref={root} className={`door-pip${opening ? ' door-pip--opening' : ''}`} data-mood={happy && !opening ? 'happy' : undefined}
       style={{ viewTransitionName: PIP_TRANSITION_NAME }}>
       {/* Without an address this is no link: Pip is then the parcel being tracked, not the way to a sample. */}
-      <a className="door-pip__tap" href={sample ? DEMO_PATH : undefined} aria-label={sample ? t('landing.pip.open') : undefined}
+      <a className="door-pip__tap" href={sample ? SAMPLE_PATH : undefined} aria-label={sample ? t('landing.pip.open') : undefined}
         draggable={false} onClick={sample ? open : undefined}>
         <span className="door-pip__tilt"><span ref={hopper} className="door-pip__hop"><ParcelIllustration label={label} /></span></span>
       </a>

@@ -15,7 +15,7 @@ import type { SignInMethods } from '../session';
 import { Glyph } from './glyphs';
 
 /** The parcel among other parcels: three little cards, the front one in its carrier's colours. */
-function CardStack({ carrier }: { carrier: CarrierInfo }) {
+export function CardStack({ carrier }: { carrier: CarrierInfo }) {
   return <span className="peekp-stack" aria-hidden="true">
     <span><CarrierTruck carrier={carrierInfo('gls-de')} /></span>
     <span><CarrierTruck carrier={carrierInfo('swiss-post')} /></span>

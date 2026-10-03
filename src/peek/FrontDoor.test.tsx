@@ -11,13 +11,14 @@ import { ParcelLinkError, type ParcelLookup } from './links';
 import { forgetDeviceChecks } from './lookup/deviceList';
 import { forgetAllRecents, recentFor, rememberParcel, renameParcel } from './recents';
 
-const mocks = vi.hoisted(() => ({ lookup: vi.fn(), detect: vi.fn(), read: vi.fn(), forget: vi.fn() }));
+const mocks = vi.hoisted(() => ({ lookup: vi.fn(), detect: vi.fn(), read: vi.fn(), forget: vi.fn(), sample: vi.fn() }));
 vi.mock('./links', async (original) => ({
   ...await original<typeof import('./links')>(),
   lookupParcel: mocks.lookup,
   detectCarrierPublic: mocks.detect,
   readParcelLink: mocks.read,
   forgetParcelLink: mocks.forget,
+  startSample: mocks.sample,
 }));
 
 // Every number here is fictional.
@@ -25,13 +26,14 @@ const UPS = '1ZDEMO202600000001';
 const SHARED = '01234567890123';
 const lookup: ParcelLookup = { id: LINK_ID, key: OWNER_KEY, view: testView() };
 const onTracked = vi.fn();
+const onSample = vi.fn();
 const onSignIn = vi.fn();
 const notFound = 'We couldn’t find a tracking number. Paste the number or a tracking link.';
 
 function door() {
   // The clipboard the Paste button reads exists from here on, as it does in a browser.
   const user = userEvent.setup();
-  const view = render(<FrontDoor onTracked={onTracked} onSignIn={onSignIn} />);
+  const view = render(<FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />);
   return {
     view,
     user,
@@ -55,6 +57,7 @@ beforeEach(() => {
   mocks.detect.mockImplementation(async (trackingNumber: string) => ({ trackingNumber, carrier: 'unknown' }));
   mocks.read.mockImplementation(async (id: string) => recentFor(id)?.snapshot ?? 'unavailable');
   mocks.forget.mockResolvedValue(undefined);
+  mocks.sample.mockResolvedValue(lookup.view);
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -493,7 +496,7 @@ describe('FrontDoor', () => {
     userEvent.setup();
     const container = document.createElement('div');
     document.body.append(container);
-    container.innerHTML = renderToString(<FrontDoor onTracked={onTracked} onSignIn={onSignIn} />);
+    container.innerHTML = renderToString(<FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />);
     // The page as the server sent it: the field takes text, the buttons wait.
     const field = container.querySelector('textarea')!;
     expect(within(container).getByRole('button', { name: 'Sign in' })).toBeDisabled();
@@ -501,7 +504,7 @@ describe('FrontDoor', () => {
     expect(within(container).getByRole('button', { name: 'Paste' })).toBeDisabled();
     field.value = UPS;
     let root: Root;
-    await act(async () => { root = hydrateRoot(container, <FrontDoor onTracked={onTracked} onSignIn={onSignIn} />); });
+    await act(async () => { root = hydrateRoot(container, <FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />); });
     expect(container.querySelector('textarea')).toBe(field);
     expect(field.value).toBe(UPS);
     expect(container.querySelector('.door-line')).toHaveTextContent('UPS Detected carrier');
@@ -658,7 +661,7 @@ describe('FrontDoor: the landing', () => {
     stillMotion(false);
     stubIntersections();
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
-    const view = render(<FrontDoor onTracked={onTracked} onSignIn={onSignIn} />);
+    const view = render(<FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />);
     scroll(hero(), 1);
     return { view, field: screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Tracking number or link' }) };
   }
@@ -667,7 +670,7 @@ describe('FrontDoor: the landing', () => {
     door();
     expect(screen.getByRole('link', { name: 'Open source 3,500+ carriers' })).toHaveAttribute('href', 'https://github.com/plhery/delivery-tracker');
     expect(screen.getByText('Paste a tracking number, a carrier link or a whole shipping email. No account needed.')).toBeVisible();
-    expect(screen.getByRole('link', { name: 'Open a sample parcel' })).toHaveAttribute('href', '/demo');
+    expect(screen.getByRole('link', { name: 'Open a sample parcel' })).toHaveAttribute('href', '/sample');
     expect(screen.getByRole('img', { name: /^Works with Swiss Post, DHL, UPS/ })).toBeVisible();
     // Four sections, each a visitor's question.
     expect(screen.getAllByRole('heading').filter((heading) => /^H[12]$/.test(heading.tagName)).map((heading) => heading.textContent)).toEqual([
@@ -766,25 +769,31 @@ describe('FrontDoor: the landing', () => {
   it('shows the placeholder, and nothing else, to someone who asked for less motion', () => {
     stubIntersections();
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
-    render(<FrontDoor onTracked={onTracked} onSignIn={onSignIn} />);
+    render(<FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />);
     scroll(hero(), 1);
     pass(5 * SAMPLE_PERIOD_MS);
     expect(sample()).toBeNull();
     expect(line()).toHaveAttribute('data-phase', 'rest');
     expect(screen.getByRole('textbox', { name: 'Tracking number or link' })).toHaveAttribute('placeholder', 'Paste a number, link, or message');
     // Pip stands still, and still opens a sample.
-    expect(screen.getByRole('link', { name: 'Open a sample parcel' })).toHaveAttribute('href', '/demo');
+    expect(screen.getByRole('link', { name: 'Open a sample parcel' })).toHaveAttribute('href', '/sample');
   });
 
-  it('stops showing itself while Pip opens a sample', () => {
+  it('stops showing itself while Pip opens a sample, and hands the sample parcel over once the box is open', async () => {
     arrive();
     pass(FIRST_SAMPLE_MS + 100);
     expect(sample()).toBe('1234567899');
     fireEvent.click(screen.getByRole('link', { name: 'Open a sample parcel' }));
     expect(sample()).toBeNull();
     expect(document.querySelector('.door-pip')).toHaveClass('door-pip--opening');
-    pass(1_300);
-    expect(location.pathname).toBe('/demo');
+    // The sample is read while the box opens, and shown only once it is open.
+    expect(mocks.sample).toHaveBeenCalledExactlyOnceWith('en');
+    await act(async () => { await vi.advanceTimersByTimeAsync(1_299); });
+    expect(onSample).not.toHaveBeenCalled();
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect(onSample).toHaveBeenCalledExactlyOnceWith(lookup.view);
+    // The address is the page's to change, with the hand-over.
+    expect(location.pathname).toBe('/');
   });
 
   it('pastes and tracks with the one button a phone’s first visit has, which gives way to Track once the field has something', async () => {
@@ -812,7 +821,7 @@ describe('FrontDoor: the landing', () => {
     stillMotion(false);
     stubIntersections();
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
-    const view = render(<FrontDoor onTracked={onTracked} onSignIn={onSignIn} />);
+    const view = render(<FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />);
     scroll(hero(), 1);
     pass(3 * SAMPLE_PERIOD_MS);
     expect(document.querySelector('.door')).toHaveAttribute('data-view', 'device');
@@ -834,15 +843,15 @@ describe('FrontDoor: the landing', () => {
     const analytics = await import('../lib/analytics');
     const seen = vi.spyOn(analytics, 'trackScreen');
     const { PeekSessionProvider } = await import('./session');
-    const view = render(<PeekSessionProvider value={{ account: 'checking', signIn: () => undefined }}><FrontDoor onTracked={onTracked} onSignIn={onSignIn} /></PeekSessionProvider>);
+    const view = render(<PeekSessionProvider value={{ account: 'checking', signIn: () => undefined }}><FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} /></PeekSessionProvider>);
     expect(seen).not.toHaveBeenCalled();
-    view.rerender(<PeekSessionProvider value={{ account: 'visitor', signIn: () => undefined }}><FrontDoor onTracked={onTracked} onSignIn={onSignIn} /></PeekSessionProvider>);
+    view.rerender(<PeekSessionProvider value={{ account: 'visitor', signIn: () => undefined }}><FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} /></PeekSessionProvider>);
     expect(seen).toHaveBeenCalledWith('front-door', 'anonymous');
     seen.mockRestore();
   });
 
   it('draws the whole first screen on the server: Pip included, nothing of the map or the cards', () => {
-    const html = renderToString(<FrontDoor onTracked={onTracked} onSignIn={onSignIn} />);
+    const html = renderToString(<FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />);
     for (const text of ['Where’s my parcel?', 'Open a sample parcel', 'door-pip', 'door-ribbon__truck', 'Who’s behind Peek?']) expect(html).toContain(text);
     expect(html).not.toContain('landing-journey__canvas');
     expect(html).not.toContain('parcel-card');

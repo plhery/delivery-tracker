@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LINK_ID, OWNER_KEY, pendingView, testView } from '../test/parcelLinks';
 import { PeekRoot } from './PeekRoot';
-import { forgetAllRecents, recentFor } from './recents';
+import { forgetAllRecents, recentFor, RECENTS_STORAGE_KEY } from './recents';
 import { usePeekSession, type PeekSession } from './session';
 
 const mocks = vi.hoisted(() => ({ lookup: vi.fn(), read: vi.fn() }));
@@ -71,6 +71,28 @@ describe('PeekRoot', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'In transit' })).toBeVisible();
     expect(document.querySelector('main')).toHaveAttribute('data-entrance', 'direct');
     expect(mocks.read).toHaveBeenCalledWith(LINK_ID, expect.objectContaining({ key: OWNER_KEY }));
+  });
+
+  it('opens the sample parcel from Pip: its own address, the page revealed with it, and nothing kept on the device', async () => {
+    // Someone who asked for less motion: the box opens at once.
+    vi.stubGlobal('matchMedia', vi.fn((query: string) => ({ matches: query.includes('reduce'), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+    render(<PeekRoot session={visitor} />);
+    const entries = history.length;
+    await userEvent.setup().click(screen.getByRole('link', { name: 'Open a sample parcel' }));
+    await waitFor(() => expect(location.pathname).toBe('/sample'));
+    expect(history.length).toBe(entries + 1);
+    expect(screen.getByText('Sample parcel · nothing here is real')).toBeVisible();
+    expect(screen.getByRole('heading', { level: 1, name: 'In transit' })).toBeVisible();
+    expect(screen.getByText('Moon lamp 🌙')).toBeVisible();
+    // The page opens with the sample the door read: no link is asked for, and no parcel is remembered.
+    expect(document.querySelector('main')).toHaveAttribute('data-entrance', 'reveal');
+    expect(mocks.read).not.toHaveBeenCalled();
+    expect(localStorage.getItem(RECENTS_STORAGE_KEY)).toBeNull();
+    const waiting = moved();
+    history.back();
+    await act(() => waiting);
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(document.querySelector('.door')).toHaveAttribute('data-view', 'first');
   });
 
   it('lets the browser move Pip between the two views where it can', async () => {

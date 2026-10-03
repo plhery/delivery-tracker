@@ -56,8 +56,8 @@ npm run dev
 ```
 
 Open [localhost:3000](http://localhost:3000) and tap Pip, the parcel under the field,
-to open the demo; [localhost:3000/demo](http://localhost:3000/demo) opens it directly.
-Refresh advances the sample parcels; **Reset demo data** in settings restores them.
+for a sample parcel on its own page; [localhost:3000/demo](http://localhost:3000/demo)
+opens the demo deliveries. Refresh advances the sample parcels; **Reset demo data** in settings restores them.
 The samples live in `shared/delivery-demo.json` in English, with their translations
 in `shared/demo-locales/`; the demo writes them in the app's language.
 

@@ -5,6 +5,8 @@ import { linkNote, noteLink } from './deviceNotes';
 import { ParcelLinkError, type ParcelLinkRead, type ParcelLinkView } from './links';
 import { forgetAllRecents, recentFor, rememberParcel, renameParcel } from './recents';
 import type { Stage } from '../types';
+import { I18nProvider, loadMessages, useI18n, type Locale } from '../i18n';
+import { SAMPLE_LINK_ID } from './sample';
 import { firstCheckLanded, newScan, useParcelLink } from './useParcelLink';
 
 const mocks = vi.hoisted(() => ({ read: vi.fn() }));
@@ -323,5 +325,47 @@ describe('useParcelLink', () => {
     await pass(120_000);
     expect(mocks.read).toHaveBeenCalledTimes(1);
     expect(recentFor(LINK_ID)).toBeNull();
+  });
+});
+
+describe('useParcelLink in the reader’s language', () => {
+  /** The hook under the app's languages, with the way to choose another. */
+  function follow(linkId: string) {
+    let choose: (locale: Locale) => void = () => undefined;
+    const hook = renderHook(() => {
+      choose = useI18n().setLocale;
+      return useParcelLink(linkId);
+    }, { wrapper: I18nProvider });
+    return { hook, choose: (locale: Locale) => choose(locale) };
+  }
+  // A language that is loaded shows as soon as it is chosen.
+  beforeEach(async () => { await loadMessages('fr'); });
+  afterEach(() => { localStorage.clear(); document.cookie = 'sdt.locale=; Max-Age=0; Path=/'; });
+
+  it('says which language it reads in, and has the sample told again in another one, without counting a scan', async () => {
+    mocks.read.mockResolvedValue(testView({ id: SAMPLE_LINK_ID }));
+    const { hook, choose } = follow(SAMPLE_LINK_ID);
+    await pass(0);
+    expect(mocks.read).toHaveBeenCalledTimes(1);
+    expect(mocks.read).toHaveBeenLastCalledWith(SAMPLE_LINK_ID, expect.objectContaining({ locale: 'en', advance: false }));
+    // The sample is no parcel of this device.
+    expect(recentFor(SAMPLE_LINK_ID)).toBeNull();
+    act(() => choose('fr'));
+    await pass(0);
+    expect(mocks.read).toHaveBeenCalledTimes(2);
+    expect(mocks.read).toHaveBeenLastCalledWith(SAMPLE_LINK_ID, expect.objectContaining({ locale: 'fr', advance: false }));
+    expect(hook.result.current).toMatchObject({ status: 'ready', news: null });
+  });
+
+  it('leaves a parcel link alone when the language changes: its words are the carrier’s', async () => {
+    const { choose } = follow(LINK_ID);
+    await pass(0);
+    expect(mocks.read).toHaveBeenCalledTimes(1);
+    act(() => choose('fr'));
+    await pass(0);
+    expect(mocks.read).toHaveBeenCalledTimes(1);
+    // Its next read names the new language all the same.
+    await pass(30_000);
+    expect(mocks.read).toHaveBeenLastCalledWith(LINK_ID, expect.objectContaining({ locale: 'fr' }));
   });
 });

@@ -59,6 +59,12 @@ async function demoDictionary(locale: Locale): Promise<DemoDictionary> {
   return dictionary;
 }
 
+/** Says the demo's own text in a language. Text the demo did not write stays as it is. */
+export async function demoWording(locale: Locale): Promise<(text: string) => string> {
+  const dictionary = await demoDictionary(locale);
+  return (text) => dictionary[text] ?? text;
+}
+
 function createMemoryStorage(): Storage {
   const values = new Map<string, string>();
   return {

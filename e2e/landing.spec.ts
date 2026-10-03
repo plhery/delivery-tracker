@@ -15,6 +15,8 @@ const pip = (page: Page) => page.getByRole('link', { name: 'Open a sample parcel
 const journey = (page: Page) => page.getByRole('img', { name: 'A parcel’s journey, scan by scan' });
 /** What the field shows itself with: the sample over the placeholder, or nothing. */
 const sample = (page: Page) => page.locator('.door-sample[data-on] .door-sample__text');
+/** The page of the sample parcel Pip opens. */
+const samplePage = (page: Page) => page.getByText('Sample parcel · nothing here is real');
 const path = (page: Page) => new URL(page.url()).pathname;
 
 async function openLanding(page: Page) {
@@ -145,7 +147,7 @@ test('a paste still tracks, whatever the field was showing', async ({ page }) =>
   await expect(page.locator('.door-sample')).toHaveCount(0);
 });
 
-test('tapping Pip opens the box, then the sample parcels, and Back returns to the landing', async ({ page }) => {
+test('tapping Pip opens the box, then the sample parcel, and Back returns to the landing', async ({ page }) => {
   await openLanding(page);
   await expect(page.getByText('No number handy? Tap Pip to open a sample.')).toBeVisible();
   await pip(page).click();
@@ -153,15 +155,31 @@ test('tapping Pip opens the box, then the sample parcels, and Back returns to th
   await expect(page.locator('.door-pip')).toHaveClass(/door-pip--opening/);
   await expect(page.getByText('Opening a sample…')).toBeVisible();
   expect(path(page)).toBe('/');
-  await expect(page.locator('.demo-banner')).toBeVisible();
-  expect(path(page)).toBe('/demo');
-  await expect(page.getByText('Coffee beans ☕', { exact: true })).toBeVisible();
+  // Then one parcel on its own page, as a pasted number would open: not the deliveries of an account.
+  await expect(samplePage(page)).toBeVisible();
+  expect(path(page)).toBe('/sample');
+  await expect(page.getByRole('heading', { level: 1, name: 'In transit' })).toBeVisible();
+  await expect(page.locator('.peekp-card__name')).toHaveText('Moon lamp 🌙');
+  await expect(page.locator('.demo-banner')).toHaveCount(0);
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
   expect(path(page)).toBe('/');
-  // Nothing was remembered: `/` is still the landing.
+  // Nothing was remembered: `/` is still the landing of a first visit.
   await page.reload();
   await expect(page.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+  await expect(page.locator('.door')).toHaveAttribute('data-view', 'first');
+});
+
+test('the demo deliveries open from the section about following several parcels', async ({ page }) => {
+  await openLanding(page);
+  const demo = page.getByRole('link', { name: 'Try the demo' });
+  await expect(demo).toHaveAttribute('href', '/demo');
+  await demo.click();
+  await expect(page.locator('.demo-banner')).toBeVisible();
+  expect(path(page)).toBe('/demo');
+  await page.goBack();
+  await expect(page.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+  expect(path(page)).toBe('/');
 });
 
 test('everything that can be used is reached by keyboard, and Pip opens with Enter', async ({ page, browserName }) => {
@@ -181,15 +199,15 @@ test('everything that can be used is reached by keyboard, and Pip opens with Ent
     if (name) reached.push(name);
   }
   expect(reached).not.toContain('INSIDE A PICTURE');
-  for (const name of ['Sign in', 'Paste', 'Open a sample parcel', 'Sign in to keep them all', 'View on GitHub', '@plhery on X', 'Privacy', 'Language']) expect(reached).toContain(name);
+  for (const name of ['Sign in', 'Paste', 'Open a sample parcel', 'Sign in to keep them all', 'Try the demo', 'View on GitHub', '@plhery on X', 'Privacy', 'Language']) expect(reached).toContain(name);
   // The field comes before Pip, and Pip before what the page says below.
   expect(reached.indexOf('Paste')).toBeLessThan(reached.indexOf('Open a sample parcel'));
   expect(reached.indexOf('Open a sample parcel')).toBeLessThan(reached.indexOf('Sign in to keep them all'));
 
   await pip(page).focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('.demo-banner')).toBeVisible();
-  expect(path(page)).toBe('/demo');
+  await expect(samplePage(page)).toBeVisible();
+  expect(path(page)).toBe('/sample');
 });
 
 test('the journey plays only while its card is on screen', async ({ page }) => {
@@ -246,7 +264,7 @@ test('shows still frames to someone who asked for less motion, and Pip still ope
   // Pip stands still, and still opens on tap.
   await page.evaluate(() => window.scrollTo(0, 0));
   await pip(page).click();
-  await expect(page.locator('.demo-banner')).toBeVisible();
+  await expect(samplePage(page)).toBeVisible();
 });
 
 test('fits a 320 px phone in every language, from the field to the foot of the page', async ({ page }) => {

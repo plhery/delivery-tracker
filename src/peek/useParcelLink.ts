@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useI18n } from '../i18n';
 import { parcelHasCarrierUpdate } from '../lib/parcelStatus';
 import { currentEvent } from '../lib/stages';
 import type { TrackingEvent } from '../types';
 import { isWrappedGift, ParcelLinkError, readParcelLink, type ParcelLinkView } from './links';
 import { forgetRecent, recentFor, rememberParcel, useRecents } from './recents';
 import { linkWordsFromHash, type LinkWords } from './route';
+import { SAMPLE_LINK_ID } from './sample';
 
 /** Until the first check lands the page asks again after 2 s, then ever more slowly up to 10 s. */
 const FIRST_CHECK_MS = 2_000;
@@ -90,6 +92,8 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
     { news: null, unseen: 0, previousEstimate: null },
   );
   const visible = useSyncExternalStore(onVisibilityChange, () => !document.hidden, () => true);
+  const { locale } = useI18n();
+  const language = useRef(locale);
   const [refreshing, setRefreshing] = useState(false);
   const reader = useRef<(advance: boolean) => Promise<boolean>>(async () => false);
   const first = useRef(initial);
@@ -120,7 +124,7 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
       controller?.abort();
       const current = controller = new AbortController();
       try {
-        const result = await readParcelLink(linkId, { key: recentFor(linkId)?.key, signal: current.signal, advance, tellStopped: true });
+        const result = await readParcelLink(linkId, { key: recentFor(linkId)?.key, signal: current.signal, advance, tellStopped: true, locale: language.current });
         if (disposed || current.signal.aborted) return false;
         if (result === 'unavailable') {
           // Nothing is left to follow, on the server or here.
@@ -189,6 +193,13 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
       window.removeEventListener('online', onOnline);
     };
   }, [linkId]);
+
+  // The sample is told in the reader's language: another language tells it again.
+  useEffect(() => {
+    if (language.current === locale) return;
+    language.current = locale;
+    if (linkId === SAMPLE_LINK_ID) void reader.current(false);
+  }, [locale, linkId]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);

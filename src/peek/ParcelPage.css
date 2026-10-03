@@ -17,7 +17,7 @@
 .peekp-main { padding: 2px 16px 0; }
 .peekp-columns { display: grid; gap: 12px; width: min(100%, 520px); margin: 0 auto; }
 .peekp-column { display: grid; gap: 12px; align-content: start; min-width: 0; }
-.peekp-textlink { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0; background: none; color: inherit; font-size: 13px; font-weight: 600; text-align: start; }
+.peekp-textlink { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0; background: none; color: inherit; font-size: 13px; font-weight: 600; text-align: start; text-decoration: none; }
 .peekp-textlink svg { width: 14px; height: 14px; }
 
 /* The card. */
@@ -189,8 +189,13 @@ button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
 /* Keeping, the passport and what comes afterwards. */
 .peekp-keep, .peekp-passport { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); }
 .peekp-keep > div, .peekp-passport > div { display: grid; gap: 4px; flex: 1; min-width: 0; }
-.peekp-keep h2, .peekp-passport h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: -.1px; }
-.peekp-keep p, .peekp-passport p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+.peekp-keep h2, .peekp-passport h2, .peekp-yours h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: -.1px; }
+.peekp-keep p, .peekp-passport p, .peekp-yours p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+.peekp-keep__ways { display: flex; flex-wrap: wrap; gap: 0 18px; }
+/* The sample's way to a parcel of one's own: the words, then the button; side by side where the map stands beside the card. */
+.peekp-yours { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); }
+.peekp-yours > div { display: grid; gap: 4px; }
+.peekp-yours .button svg { width: 18px; height: 18px; }
 .peekp-stack { position: relative; flex-shrink: 0; width: 58px; height: 50px; }
 .peekp-stack > span { position: absolute; display: flex; align-items: center; width: 46px; height: 30px; padding: 0 6px; border-radius: 8px; box-shadow: 0 1px 3px rgb(0 0 0 / 10%); }
 .peekp-stack > span:nth-child(1) { top: 0; left: 0; background: light-dark(#dfebfa, #263748); transform: rotate(-9deg); }
@@ -281,6 +286,7 @@ button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
 .peekp-columns[data-beside] .peekp-card--hero h1 { font-size: 44px; letter-spacing: -1.4px; }
 .peekp-columns[data-beside] .peekp-pip--hero { width: 300px; }
 .peekp-columns[data-beside] .peekp-column:last-child { gap: 20px; }
+.peekp-columns[data-beside] .peekp-yours { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 20px; padding-inline-start: 20px; }
 @media (max-width: 360px) {
   .peekp-header { padding-left: 16px; padding-right: 10px; }
   .peekp-main { padding-inline: 12px; }

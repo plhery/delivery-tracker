@@ -11,6 +11,7 @@ import type {
   ApiShareParcelRequest,
   ApiUpdateParcelLinkRequest,
 } from '../generated/apiContract';
+import type { Locale } from '../i18n';
 import { authenticatedFetch, type ApiAuth } from '../lib/apiClient';
 import { isDemoBuild } from '../lib/buildMode';
 import { CARRIERS, detectCarrier, normalizeTrackingNumber } from '../lib/carriers';
@@ -34,6 +35,8 @@ import {
   type ParcelShare,
   type ParcelShareClient,
 } from './linkModel';
+import { SAMPLE_LINK_ID } from './sample';
+import { readSampleLink, restartSample } from './sampleLink';
 
 export * from './linkModel';
 export { createDemoLinks, DEMO_LINKS_STORAGE_KEY } from './demoLinks';
@@ -259,7 +262,14 @@ export function lookupParcel(input: ParcelLookupInput, signal?: AbortSignal): Pr
  * `tellStopped` asks for the `stopped` failure a parcel page tells apart.
  */
 export function readParcelLink(id: string, options?: ParcelLinkReadOptions): Promise<ParcelLinkRead> {
-  return client.readParcelLink(id, options);
+  // The sample is told by the browser, in every build.
+  return id === SAMPLE_LINK_ID ? readSampleLink(options) : client.readParcelLink(id, options);
+}
+
+/** Opens the sample parcel at the beginning of its story, told in the reader's language. */
+export function startSample(locale: Locale): Promise<ParcelLinkView> {
+  restartSample();
+  return readSampleLink({ locale });
 }
 
 /** Forgets a lookup on the server. Only the owner key can. */
@@ -274,12 +284,13 @@ export function updateParcelLink(id: string, key: string, changes: ParcelLinkCha
 
 /** Turns a browser's alerts on for a link, or changes what they announce. */
 export function setParcelAlert(id: string, alert: ParcelAlertInput, key?: string | null): Promise<void> {
-  return client.setParcelAlert(id, alert, key);
+  // The sample's alert is this browser's note alone.
+  return id === SAMPLE_LINK_ID ? Promise.resolve() : client.setParcelAlert(id, alert, key);
 }
 
 /** Turns a browser's alerts off for a link. */
 export function removeParcelAlert(id: string, endpoint: string): Promise<void> {
-  return client.removeParcelAlert(id, endpoint);
+  return id === SAMPLE_LINK_ID ? Promise.resolve() : client.removeParcelAlert(id, endpoint);
 }
 
 /**

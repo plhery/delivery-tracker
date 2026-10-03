@@ -3,8 +3,9 @@ import { Icon, type IconName } from '../../components/Icon';
 import { Seal } from '../../components/Passport';
 import { PeekMark } from '../../components/PeekMark';
 import { useI18n, type MessageKey } from '../../i18n';
+import { DEMO_PATH } from '../../lib/experience';
 import { LandingIcon } from './glyphs';
-import { IOS_APP_URL } from './links';
+import { followDemoLink, IOS_APP_URL } from './links';
 import { lazyPicture, useNear, useRise } from './useLive';
 import './More.css';
 
@@ -29,7 +30,7 @@ const DELIVERED = 10;
 /**
  * "Following more than one?": the deliveries list as the app shows it, what
  * signing in adds, and the passport, where a stamp lands each time the
- * journey above delivers.
+ * journey above delivers. The demo deliveries are there to try before signing in.
  */
 export function More({ onSignIn, landed }: {
   onSignIn: () => void;
@@ -85,6 +86,7 @@ export function More({ onSignIn, landed }: {
         <button type="button" className="button button--primary" onClick={onSignIn}>
           <span>{t('arrival.signInTitle')}{' '}<span className="sr-only">{t('landing.more.signInFor')}</span></span>
         </button>
+        <a className="button button--secondary" href={DEMO_PATH} onClick={followDemoLink}>{t('landing.more.demo')}</a>
         {IOS_APP_URL && <a className="button button--secondary" href={IOS_APP_URL} target="_blank" rel="noopener noreferrer"><LandingIcon name="iphone" />{t('landing.more.app')}</a>}
       </div>
     </div>

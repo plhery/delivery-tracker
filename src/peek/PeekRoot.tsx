@@ -6,6 +6,7 @@ import { ParcelPage } from './ParcelPage';
 import { NoticeToast } from './parcel/Toast';
 import { rememberParcel } from './recents';
 import { openParcelLink, useParcelLinkRoute } from './route';
+import { SAMPLE_LINK_ID } from './sample';
 import { PeekSessionProvider, type PeekSession } from './session';
 
 type ViewTransitions = { startViewTransition?: (update: () => void) => unknown };
@@ -14,7 +15,7 @@ type ViewTransitions = { startViewTransition?: (update: () => void) => unknown }
  * What someone without an open deliveries app sees: the parcel page at
  * `/p/<id>`, the front door anywhere else. It owns the hand-over between the
  * two: when a lookup answers, the address becomes the parcel's own and the
- * page opens with that answer.
+ * page opens with that answer. The sample parcel is handed over the same way.
  */
 export function PeekRoot({ session, serverLinkId = null }: {
   session: PeekSession;
@@ -26,11 +27,9 @@ export function PeekRoot({ session, serverLinkId = null }: {
   // The reveal belongs to one arrival: coming back to the page later opens it like any link.
   if (revealed && revealed.id !== linkId) setRevealed(null);
 
-  const onTracked = useCallback(({ id, key, response }: TrackedParcel) => {
-    // The owner key is given once: it is on the device before anything else happens.
-    rememberParcel({ id, key, view: response });
+  const reveal = useCallback((id: string, view: ParcelLinkView) => {
     const show = () => {
-      setRevealed({ id, view: response });
+      setRevealed({ id, view });
       openParcelLink(id);
     };
     // The address and the answer change in one render, so the page mounts with its answer.
@@ -42,6 +41,13 @@ export function PeekRoot({ session, serverLinkId = null }: {
     else transitions.startViewTransition(handOver);
   }, []);
 
+  const onTracked = useCallback(({ id, key, response }: TrackedParcel) => {
+    // The owner key is given once: it is on the device before anything else happens.
+    rememberParcel({ id, key, view: response });
+    reveal(id, response);
+  }, [reveal]);
+  const onSample = useCallback((sample: ParcelLinkView) => reveal(SAMPLE_LINK_ID, sample), [reveal]);
+
   const signIn = session.signIn;
   const onSignIn = useCallback(() => signIn(), [signIn]);
   const answer = revealed?.id === linkId ? revealed.view : undefined;
@@ -49,7 +55,7 @@ export function PeekRoot({ session, serverLinkId = null }: {
   return <PeekSessionProvider value={session}>
     {linkId
       ? <ParcelPage key={linkId} linkId={linkId} entrance={answer ? 'reveal' : 'direct'} initial={answer} />
-      : <FrontDoor onTracked={onTracked} onSignIn={onSignIn} />}
+      : <FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />}
     {/* A word that outlives the page it was said on, such as a parcel forgotten. */}
     <NoticeToast />
   </PeekSessionProvider>;

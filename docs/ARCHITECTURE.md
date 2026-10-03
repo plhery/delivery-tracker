@@ -146,6 +146,7 @@ Key server modules:
 | --- | --- |
 | `/` | The landing to a visitor, with the parcels of their device right under the field; the deliveries to someone signed in |
 | `/p/<id>` | One parcel, to anyone with the link |
+| `/sample` | A made-up parcel on a parcel page, told by the browser: nothing is asked of the server or kept on the device |
 | `/i/<key>`, `/invite` | A friend invitation ([FRIENDS.md](FRIENDS.md)) |
 | `/demo` | The demo deliveries, kept on the device, to anyone; leaving the demo returns to `/` |
 

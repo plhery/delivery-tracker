@@ -29,6 +29,7 @@ import { Glyph } from './parcel/glyphs';
 import { useNow, useOffline, useTabTitle, useWideLayout } from './parcel/hooks';
 import { AddToDeliveries, AlreadyFollowed, KeepCard, KeepSheet, PassportTeaser, SharedWithYou } from './parcel/Keep';
 import { RouteMap } from './parcel/RouteMap';
+import { SampleInvitation, SampleNote } from './parcel/Sample';
 import { copyText, shareParcelLink } from './parcel/share';
 import { LinkShareSheet } from './parcel/ShareSheet';
 import {
@@ -50,6 +51,7 @@ import { announceNotice, Toast } from './parcel/Toast';
 import { announceKeepOutcome, onKeepOutcome, usePendingKeep, type KeepOutcome } from './pending';
 import { recentFor, renameParcel } from './recents';
 import { leaveParcelLink, parcelLinkURL, PIP_TRANSITION_NAME } from './route';
+import { SAMPLE_LINK_ID } from './sample';
 import { usePeekSession } from './session';
 import { useParcelLink, type ParcelLinkState } from './useParcelLink';
 import './ParcelPage.css';
@@ -63,7 +65,9 @@ const NEWS_MS = 7_000;
 /**
  * One parcel at its own address, for anyone with the link. `entrance="reveal"`
  * is the hand-over from the front door, with the lookup's answer as `initial`;
- * a link opened directly loads on its own.
+ * a link opened directly loads on its own. The sample parcel is shown the same
+ * way, as its owner would see it: it says that it is a sample, and leads to a
+ * parcel of one's own instead of being kept or forgotten.
  */
 export function ParcelPage({ linkId, entrance = 'direct', initial }: {
   linkId: string;
@@ -74,7 +78,8 @@ export function ParcelPage({ linkId, entrance = 'direct', initial }: {
   const session = usePeekSession();
   const state = useParcelLink(linkId, initial);
   const signedIn = session.account === 'signed-in';
-  useEffect(() => { trackScreen('parcel-link', signedIn ? 'account' : 'anonymous'); }, [signedIn]);
+  const sample = linkId === SAMPLE_LINK_ID;
+  useEffect(() => { trackScreen('parcel-link', sample ? 'demo' : signedIn ? 'account' : 'anonymous'); }, [sample, signedIn]);
 
   // Someone signed in goes back to their deliveries; a visitor to the front door.
   const openDeliveries = session.openDeliveries;
@@ -160,12 +165,15 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const stage = parcelStage(parcel);
   const delivered = stage === 'delivered';
   const owner = link.role === 'owner';
+  const sample = linkId === SAMPLE_LINK_ID;
+  // The sample comes with a name; another one lasts as long as the page.
+  const [renamed, setRenamed] = useState<{ name: string | null } | null>(null);
   // A gift, as its recipient sees it: wrapped while it is on its way, opened once it is delivered.
   const wrapped = isWrappedGift(view);
   const opened = link.gift === true && !owner && delivered;
   const present = wrapped || opened;
   // The recipient of a gift reads its name as what is inside, and only once it is there.
-  const name = present ? null : state.name;
+  const name = present ? null : sample ? (renamed ? renamed.name : parcel.label || null) : state.name;
   const displayed = carrierInfo(displayedCarrierId(parcel), locale);
   const moving = parcelHasCarrierUpdate(parcel);
   // No carrier has been found for the number yet: the card stays neutral.
@@ -201,10 +209,10 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   // The reveal's last beat: the parcel's own link, offered once the card has settled.
   const [word, setWord] = useState<Word | null>(null);
   useEffect(() => {
-    if (entrance !== 'reveal') return;
+    if (entrance !== 'reveal' || sample) return;
     const timer = setTimeout(() => setWord({ kind: 'own-link' }), OWN_LINK_AFTER_MS);
     return () => clearTimeout(timer);
-  }, [entrance]);
+  }, [entrance, sample]);
   useEffect(() => {
     if (!word) return;
     const timer = setTimeout(() => setWord((current) => current === word ? null : current), word.kind === 'own-link' ? OWN_LINK_MS : TOAST_MS);
@@ -334,7 +342,8 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   };
   const forgetOn = forgetDate(link.forgetAt, languageTag);
   const forgetLine = forgetOn ? t('link.forget.on', { date: forgetOn }) : null;
-  const promise = afterwards ? null : final ? forgetLine : link.kind === 'lookup' ? t('link.forget.promise') : null;
+  // Nothing of the sample is stored, so there is nothing to promise to forget.
+  const promise = afterwards || sample ? null : final ? forgetLine : link.kind === 'lookup' ? t('link.forget.promise') : null;
 
   const visitorCanKeep = !signedIn && session.account === 'visitor' && link.canKeep;
   const keepAction: MessageKey = owner ? 'link.keep.action' : 'link.signInToAdd';
@@ -349,7 +358,8 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const summary = [headline, detail].filter(Boolean).join(' · ');
 
   const teaser = abroad && !afterwards && !present && session.account === 'visitor' && <PassportTeaser parcel={parcel} origin={abroad} onStart={signInToKeep} />;
-  const keepCard = visitorCanKeep && !afterwards && <KeepCard carrier={displayed} action={keepAction} onKeep={signInToKeep} />;
+  const keepCard = sample ? <SampleInvitation carrier={displayed} onTrack={onHome} onSignIn={session.account === 'visitor' ? signInToKeep : undefined} />
+    : visitorCanKeep && !afterwards && <KeepCard carrier={displayed} action={keepAction} onKeep={signInToKeep} />;
   const map = (shape: 'card' | 'tile') => <RouteMap route={route} parcel={parcel} stage={stage} shape={shape} pip={figure === 'map' || figure === 'none'} onOpen={openMap} />;
 
   return <Shell
@@ -368,7 +378,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
     <div className="peekp-columns" data-beside={beside || undefined}>
       <div className="peekp-column">
         {followed && <AlreadyFollowed name={followed.label || t('common.parcel')} onOpen={() => { trackAction('parcel-link-open-existing'); openDeliveries?.(followed.id); }} />}
-        {!owner && !present && <SharedWithYou visitor={!signedIn} />}
+        {sample ? <SampleNote /> : !owner && !present && <SharedWithYou visitor={!signedIn} />}
         <LinkCard parcel={parcel} stage={stage} carrier={carrierKnown ? displayed : null} headline={headline} name={name} detail={detail}
           notes={notes} flag={flag} figure={figure} number={number} links={links} settled={entrance === 'reveal' && !checking}
           gift={wrapped ? 'wrapped' : opened ? 'opened' : link.gift ? 'own' : undefined}
@@ -384,7 +394,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
           onHave={key && delivered && link.kind === 'lookup' ? () => setForgetting('arrived') : undefined}
           onCalendar={!owner && slot ? addToCalendar : undefined}
           onShare={owner ? () => void share() : undefined}
-          onRename={present ? undefined : (next) => renameParcel(linkId, next)} compactName={!owner} />}
+          onRename={present ? undefined : sample ? (next) => setRenamed({ name: next }) : (next) => renameParcel(linkId, next)} compactName={!owner} />}
         {carrierKnown && <Notes view={view} stage={stage} flag={flag} trouble={failing} carrier={displayed} />}
         {waitingAt && <PickupPointCard point={waitingAt} />}
         {!beside && teaser}
@@ -421,7 +431,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
       onNameIt={() => setRenaming((count) => count + 1)} onClose={() => setSharing(false)} />}
     {alerting && <AlertsSheet linkId={linkId} ownerKey={key} alerts={link.alerts} initialPreset={early ? 'all' : 'important'}
       calendar={calendarWindow} onCalendar={calendarFile}
-      onSignIn={session.account === 'visitor' ? signInToKeep : undefined} onClose={() => setAlerting(false)} />}
+      onSignIn={session.account === 'visitor' && !sample ? signInToKeep : undefined} onClose={() => setAlerting(false)} />}
     {forgetting && <ForgetDialog arrived={forgetting === 'arrived' ? { forgetLine } : undefined} onForget={forget} onCancel={() => setForgetting(false)} />}
     {mapOpen && route && <ParcelMapSheet route={route} stage={stage ?? undefined} brand={brand} onClose={() => setMapOpen(false)} />}
   </Shell>;

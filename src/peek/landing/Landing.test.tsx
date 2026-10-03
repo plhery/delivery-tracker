@@ -26,7 +26,7 @@ beforeEach(() => {
   stubIntersections();
   motion(false);
 });
-afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); history.replaceState(null, '', '/'); });
 
 describe('Landing', () => {
   it('asks the visitor’s next three questions, in order, and answers each in words', () => {
@@ -66,6 +66,20 @@ describe('Landing', () => {
     render(<Landing onSignIn={onSignIn} />);
     await userEvent.setup().click(screen.getByRole('button', { name: 'Sign in to keep them all' }));
     expect(onSignIn).toHaveBeenCalledOnce();
+  });
+
+  it('offers the demo deliveries beside signing in, at their own address', async () => {
+    const arrived = vi.fn();
+    window.addEventListener('popstate', arrived);
+    render(<Landing onSignIn={onSignIn} />);
+    const demo = within(screen.getByRole('region', { name: 'Following more than one?' })).getByRole('link', { name: 'Try the demo' });
+    expect(demo).toHaveAttribute('href', '/demo');
+    await userEvent.setup().click(demo);
+    // The page opens the demo itself: Back returns to the landing.
+    expect(location.pathname).toBe('/demo');
+    expect(arrived).toHaveBeenCalledOnce();
+    expect(onSignIn).not.toHaveBeenCalled();
+    window.removeEventListener('popstate', arrived);
   });
 
   it('offers the iPhone app only to a build that names its page', async () => {

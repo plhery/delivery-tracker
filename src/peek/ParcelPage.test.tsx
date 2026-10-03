@@ -8,6 +8,7 @@ import { ParcelPage } from './ParcelPage';
 import { NoticeToast } from './parcel/Toast';
 import { clearPendingKeep, onKeepOutcome, pendingKeep, rememberPendingKeep, announceKeepOutcome, type KeepOutcome } from './pending';
 import { forgetAllRecents, recentFor, rememberParcel } from './recents';
+import { SAMPLE_LINK_ID } from './sample';
 import { PeekSessionProvider, type PeekSession } from './session';
 
 const mocks = vi.hoisted(() => ({ read: vi.fn(), forget: vi.fn() }));
@@ -688,5 +689,124 @@ describe('ParcelPage keeping', () => {
     await user.click(await screen.findByRole('button', { name: 'Sign in to add it to your deliveries' }));
     expect(signIn).toHaveBeenCalledWith(LINK_ID);
     expect(screen.queryByRole('button', { name: 'Forget it now' })).toBeNull();
+  });
+});
+
+describe('ParcelPage for the sample parcel', () => {
+  /** The sample as the browser tells it: a lookup's owner view that cannot be kept. */
+  function sampleView(events: TrackingEvent[] = journey): ParcelLinkView {
+    const shown = view(events, { label: 'Moon lamp 🌙', expectedDelivery: '2099-01-05' });
+    return { ...shown, link: { ...shown.link, id: SAMPLE_LINK_ID, forgetAt: null, canKeep: false, alerts: { available: true, vapidPublicKey: null } } };
+  }
+  const openSample = (session?: PeekSession, props: Partial<Parameters<typeof ParcelPage>[0]> = {}) => open(session, { linkId: SAMPLE_LINK_ID, ...props });
+
+  beforeEach(() => {
+    history.replaceState(null, '', '/sample');
+    mocks.read.mockResolvedValue(sampleView());
+  });
+
+  it('shows the parcel as its owner would see it, says that it is a sample, and promises nothing about forgetting it', async () => {
+    openSample();
+    expect(await screen.findByRole('heading', { level: 1, name: 'In transit' })).toBeVisible();
+    expect(mocks.read).toHaveBeenCalledWith(SAMPLE_LINK_ID, expect.anything());
+    expect(screen.getByText('Sample parcel · nothing here is real')).toBeVisible();
+    expect(within(card()).getByText('Moon lamp 🌙')).toBeVisible();
+    expect(document.title).toMatch(/^Moon lamp 🌙 · In transit/);
+    expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('1234567899');
+    expect(screen.getByRole('button', { name: /^Ping me/ })).toBeVisible();
+    expect(screen.getAllByRole('button', { name: 'Share' }).length).toBeGreaterThan(0);
+    // Nothing of it is stored: no promise to forget, nothing to forget now, nothing to keep.
+    expect(screen.queryByText('Peek forgets this parcel 30 days after delivery.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Forget it now' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Keep it with your other parcels' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Shared with you')).not.toBeInTheDocument();
+    expect(recentFor(SAMPLE_LINK_ID)).toBeNull();
+  });
+
+  it('opens revealed from the door without offering a link of its own', async () => {
+    vi.useFakeTimers();
+    openSample(undefined, { entrance: 'reveal', initial: sampleView() });
+    expect(screen.getByRole('heading', { level: 1, name: 'In transit' })).toBeVisible();
+    expect(document.querySelector('main')).toHaveAttribute('data-entrance', 'reveal');
+    await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+    expect(screen.queryByText('This parcel has its own link')).not.toBeInTheDocument();
+  });
+
+  it('takes another name for as long as the page lives', async () => {
+    const user = userEvent.setup();
+    openSample();
+    await screen.findByRole('heading', { level: 1, name: 'In transit' });
+    await user.click(screen.getByRole('button', { name: 'Edit parcel name' }));
+    const input = screen.getByRole('textbox', { name: 'Parcel name' });
+    expect(input).toHaveValue('Moon lamp 🌙');
+    await user.clear(input);
+    await user.type(input, 'Night light{Enter}');
+    expect(within(card()).getByText('Night light')).toBeVisible();
+    // Taking the name away leaves the parcel without one.
+    await user.click(screen.getByRole('button', { name: 'Edit parcel name' }));
+    await user.clear(screen.getByRole('textbox', { name: 'Parcel name' }));
+    await user.keyboard('{Enter}');
+    expect(within(card()).queryByText('Night light')).not.toBeInTheDocument();
+    expect(within(card()).queryByText('Moon lamp 🌙')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Name it' })).toBeVisible();
+    expect(recentFor(SAMPLE_LINK_ID)).toBeNull();
+  });
+
+  it('leads a visitor to a parcel of their own, to signing in, and to the demo deliveries', async () => {
+    const user = userEvent.setup();
+    const signIn = vi.fn();
+    const arrived = vi.fn();
+    window.addEventListener('popstate', arrived);
+    openSample({ account: 'visitor', signIn });
+    await screen.findByRole('heading', { level: 1, name: 'In transit' });
+    expect(screen.getByRole('heading', { level: 2, name: 'Waiting for a real one?' })).toBeVisible();
+    expect(screen.getByText('Paste a tracking number, a carrier link or a whole shipping email. No account needed.')).toBeVisible();
+    expect(screen.getByRole('heading', { level: 2, name: 'Following more than one?' })).toBeVisible();
+
+    // Signing in keeps nothing: there is no parcel to keep.
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(signIn).toHaveBeenCalledExactlyOnceWith(undefined);
+    expect(pendingKeep()).toBeNull();
+
+    // The demo opens in place; a modified click is the browser's, for a new tab.
+    const demo = screen.getByRole('link', { name: 'Try the demo' });
+    expect(demo).toHaveAttribute('href', '/demo');
+    const modified = new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true });
+    act(() => { demo.dispatchEvent(modified); });
+    expect(modified.defaultPrevented).toBe(false);
+    expect(location.pathname).toBe('/sample');
+    await user.click(demo);
+    expect(location.pathname).toBe('/demo');
+    expect(arrived).toHaveBeenCalledOnce();
+    window.removeEventListener('popstate', arrived);
+
+    history.replaceState(null, '', '/sample');
+    await user.click(screen.getByRole('button', { name: 'Track your parcel' }));
+    expect(location.pathname).toBe('/');
+  });
+
+  it('offers someone signed in the way back to their deliveries, and no account', async () => {
+    const user = userEvent.setup();
+    const openDeliveries = vi.fn();
+    const keep = vi.fn();
+    openSample({ account: 'signed-in', signIn: vi.fn(), keep, openDeliveries, deliveries: [] });
+    await screen.findByRole('heading', { level: 1, name: 'In transit' });
+    expect(screen.getByText('Sample parcel · nothing here is real')).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Following more than one?' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Try the demo' })).not.toBeInTheDocument();
+    // A sample is not added to an account.
+    expect(screen.queryByRole('button', { name: 'Add to my deliveries' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Track your parcel' }));
+    expect(openDeliveries).toHaveBeenCalledExactlyOnceWith();
+    expect(keep).not.toHaveBeenCalled();
+  });
+
+  it('opens the alerts without the account’s pitch: the sample joins no deliveries', async () => {
+    const user = userEvent.setup();
+    openSample({ account: 'visitor', signIn: vi.fn() });
+    await screen.findByRole('heading', { level: 1, name: 'In transit' });
+    await user.click(screen.getByRole('button', { name: /^Ping me/ }));
+    const sheet = screen.getByRole('dialog', { name: 'Ping me when it arrives' });
+    expect(within(sheet).queryByText('Alerts on all your devices')).not.toBeInTheDocument();
   });
 });

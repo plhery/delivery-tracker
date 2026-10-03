@@ -14,6 +14,7 @@ import {
   useParcelLinkRoute,
 } from './route';
 import { LINK_ID, OTHER_LINK_ID } from '../test/parcelLinks';
+import { SAMPLE_LINK_ID } from './sample';
 
 afterEach(() => { history.replaceState(null, '', '/'); });
 
@@ -30,6 +31,18 @@ describe('the parcel page’s address', () => {
     }
     expect(parcelLinkPath(LINK_ID)).toBe(`/p/${LINK_ID}`);
     expect(parcelLinkURL(LINK_ID, 'https://peek.example')).toBe(`https://peek.example/p/${LINK_ID}`);
+  });
+
+  it('gives the sample parcel an address of its own, which no link’s address stands in for', () => {
+    expect(parcelLinkIdFromPath('/sample')).toBe(SAMPLE_LINK_ID);
+    expect(parcelLinkIdFromPath('/sample/')).toBe(SAMPLE_LINK_ID);
+    expect(parcelLinkPath(SAMPLE_LINK_ID)).toBe('/sample');
+    expect(parcelLinkURL(SAMPLE_LINK_ID, 'https://peek.example')).toBe('https://peek.example/sample');
+    expect(parcelLinkIdFromPath('/sample/more')).toBeNull();
+    // A link's address with the sample's id leads nowhere.
+    expect(parcelLinkIdFromPath(`/p/${SAMPLE_LINK_ID}`)).toBe('unavailable');
+    openParcelLink(SAMPLE_LINK_ID);
+    expect(location.pathname).toBe('/sample');
   });
 
   it('reads the name a link carries after the #, cleaned, and nothing else', () => {

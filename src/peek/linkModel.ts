@@ -109,6 +109,8 @@ export interface ParcelLinkReadOptions {
   signal?: AbortSignal;
   advance?: boolean;
   tellStopped?: boolean;
+  /** The reader's language. The sample parcel is told in it; a server's answer is the carrier's own words. */
+  locale?: Locale;
 }
 
 /**

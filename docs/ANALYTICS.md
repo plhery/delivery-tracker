@@ -61,7 +61,7 @@ Demo actions never count as account API successes.
 
 Never sent: emails, account or parcel ids, parcel link ids or owner keys, labels and names,
 gift notes, push addresses, tracking numbers, postcodes, invitation codes, errors, search
-terms, query strings or referrers. A parcel page is the `parcel-link` screen, whatever its address. Umami still
+terms, query strings or referrers. A parcel page is the `parcel-link` screen, whatever its address; the sample parcel's is in `demo` mode. Umami still
 sees the IP, user agent, basic device data and language.
 
 The **Usage analytics** switch in Account turns collection off and clears the queue. The

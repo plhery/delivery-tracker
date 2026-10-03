@@ -18,7 +18,7 @@ import { SOURCE_URL } from './landing/links';
 import { SAMPLE_COUNT, SampleLine, SampleText } from './landing/Sample';
 import { useLive, useReducedMotion } from './landing/useLive';
 import { useSampleLoop } from './landing/useSampleLoop';
-import type { ParcelLinkView, ParcelLookup } from './links';
+import { startSample, type ParcelLinkView, type ParcelLookup } from './links';
 import { DeviceParcels } from './lookup/DeviceParcels';
 import { DoorIcon } from './lookup/DoorNote';
 import { LookupFeedback } from './lookup/LookupFeedback';
@@ -45,11 +45,13 @@ export interface TrackedParcel {
  * link or a pasted message, recognises the carrier, asks for what is missing,
  * and opens the parcel's own page. Right under it stand the parcels this
  * device already looked up. A first visit gets the whole first screen: the
- * field shows what it takes until someone touches it, and Pip opens a sample.
- * Below, three more sections answer what a visitor asks next.
+ * field shows what it takes until someone touches it, and Pip opens a sample
+ * parcel. Below, three more sections answer what a visitor asks next.
  */
-export function FrontDoor({ onTracked, onSignIn }: {
+export function FrontDoor({ onTracked, onSample, onSignIn }: {
   onTracked: (tracked: TrackedParcel) => void;
+  /** Pip's box is open: the sample parcel takes the door's place. */
+  onSample: (sample: ParcelLinkView) => void;
   onSignIn: () => void;
 }) {
   const { t, locale } = useI18n();
@@ -72,6 +74,8 @@ export function FrontDoor({ onTracked, onSignIn }: {
   // The field shows itself until someone touches it, and never again.
   const [touched, setTouched] = useState(false);
   const [unboxing, setUnboxing] = useState(false);
+  // The sample is read while the box opens, so its page opens with it.
+  const sample = useRef<Promise<ParcelLinkView> | null>(null);
   const touch = useCallback(() => setTouched(true), []);
   const written = Boolean(state.text.trim());
   const beat = useSampleLoop(SAMPLE_COUNT, ready && firstVisit && !touched && !written && !unboxing && !still && live);
@@ -255,7 +259,8 @@ export function FrontDoor({ onTracked, onSignIn }: {
           </form>
           <p className="sr-only" role="status">{opening ? t('door.opening') : ''}</p>
           {pip && <HeroPip label={named ? { carrier, number } : undefined} sample={firstVisit && !written} happy={beat.phase === 'found'}
-            hop={answered} onOpening={() => setUnboxing(true)} />}
+            hop={answered} onOpening={() => { setUnboxing(true); sample.current = startSample(locale); }}
+            onOpen={() => void sample.current?.then(onSample)} />}
           {opening && <div className="door-skeleton" aria-hidden="true"><span /><span /><span /></div>}
           <DeviceParcels onSignIn={onSignIn} onForgotten={() => field.current?.focus()} />
         </div>
