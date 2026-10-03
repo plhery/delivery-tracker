@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type ComponentProps } from 'react';
+import { useCallback, useEffect, useMemo, type ComponentProps } from 'react';
 import App from './App';
 import { useAuth } from './auth/AuthContext';
 import { ArrivalScreen } from './components/ArrivalScreen';
@@ -16,6 +16,7 @@ import { ParcelsProvider } from './store/ParcelsContext';
 import { useI18n } from './i18n';
 import { usePendingInvitation } from './lib/friendInvites';
 import { createFriendsClient } from './lib/friends';
+import { restoreRequestedParcel } from './lib/requestedParcel';
 import { FriendInvitation } from './components/FriendInvitation';
 import { useParcels } from './store/ParcelsContext';
 import { FriendsActivityProvider } from './components/FriendsActivity';
@@ -109,6 +110,10 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
     [apiAuth, storage],
   );
   const friendsClient = useMemo(() => createFriendsClient(false, apiAuth), [apiAuth]);
+  // Signed in after a round trip to a sign-in provider: the parcel the address asked for before it opens now.
+  useEffect(() => {
+    if (userId) restoreRequestedParcel();
+  }, [userId]);
   const invitationProps: ComponentProps<typeof FriendInvitation> = {
     invitation, onDismiss: () => { invitation.clear(); if (!auth.user) experience.navigate('welcome'); },
     configured: auth.status !== 'unconfigured', googleEnabled: auth.googleEnabled, appleEnabled: auth.appleEnabled, emailOtpEnabled: auth.emailOtpEnabled,

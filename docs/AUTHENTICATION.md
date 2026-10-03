@@ -41,7 +41,9 @@ On self-hosted Supabase, configure GoTrue through environment variables (site UR
 list, SMTP, templates). The hosted dashboard doesn't configure a self-hosted Auth server.
 
 Web sign-in with Google or Apple returns to the origin it started on, which must be the
-Site URL or in the allow list. When the site answers on more than one host
+Site URL or in the allow list. The return carries no path or query: a parcel the address
+asked for (`/?parcel=<id>`, as a delivery email links it) is noted for the tab before
+leaving and opened after the return. When the site answers on more than one host
 ([DEPLOYMENT.md](DEPLOYMENT.md)), set `GOTRUE_SITE_URL` to the canonical origin and list
 every origin in `GOTRUE_URI_ALLOW_LIST`, next to the iPhone callback. Providers return
 through the Supabase callback, so their consoles don't name the app's host as a redirect.

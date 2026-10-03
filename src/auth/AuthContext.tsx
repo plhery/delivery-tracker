@@ -13,6 +13,7 @@ import {
 } from 'react';
 import { useI18n } from '../i18n';
 import { abortable } from '../lib/apiClient';
+import { rememberRequestedParcel } from '../lib/requestedParcel';
 import { browserStorage, clearApiCache } from '../store/apiRepo';
 import { SessionStorage } from './sessionStorage';
 
@@ -219,6 +220,8 @@ export function AuthProvider({
     if (!client) throw new Error('Authentication is not configured');
     await logout.current;
     storage?.allowSignIn();
+    // The provider returns to the origin alone: a parcel the address asks for is noted for the way back.
+    rememberRequestedParcel();
     const redirectTo = typeof window === 'undefined' ? undefined : window.location.origin;
     const { error } = await client.auth.signInWithOAuth({
       provider,
