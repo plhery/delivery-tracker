@@ -326,6 +326,7 @@ final class ParcelLinkStore: ObservableObject {
 extension ParcelLinkStore {
     /// Opens the link sheet at launch without a server, to look at it in the simulator:
     /// `-sdt.debug.parcelLink fixture` (the contract fixture: a viewer, number hidden),
+    /// `delivered` (the fixture once it has arrived: no route, so its box opens),
     /// `route` (a demo parcel with a route, which may be kept), `gift` (the gift fixture, on its
     /// way), `giftDelivered` (the same gift, delivered, with the words its link carried),
     /// `stopped` or `gone`.
@@ -356,6 +357,13 @@ extension ParcelLinkStore {
             } else {
                 response?.package.expectedDelivery = ParcelOrganizer.dayKey(now) + " 13:00–17:00"
             }
+            response?.package.lastSyncedAt = DateParser.isoString(now.addingTimeInterval(-120))
+        }
+        if variant == "delivered", let package = response?.package {
+            let now = Date()
+            response?.package.trackingEvents.insert(TrackingEvent(
+                id: UUID(), packageID: package.id, stage: .delivered, description: "Delivered",
+                occurredAt: DateParser.isoString(now.addingTimeInterval(-180))), at: 0)
             response?.package.lastSyncedAt = DateParser.isoString(now.addingTimeInterval(-120))
         }
         if variant == "route", let parcel = DemoRepository().list().first(where: { $0.isActive && $0.trackingEvents.contains { $0.place != nil } }) {

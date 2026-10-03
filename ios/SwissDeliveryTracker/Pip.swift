@@ -61,6 +61,31 @@ enum PipGeometry {
     static let spotBelow = CGPoint(x: 0, y: 1.08)
     /// The left side's plane, where the face is drawn.
     static let facePlane = CGAffineTransform(a: 1, b: 0.505263, c: 0, d: 1, tx: 55, ty: 142)
+    /// The right side's plane, where the carrier's label sits: just below where the open front flap reaches.
+    static let labelPlane = CGAffineTransform(a: 1, b: -0.505263, c: 0, d: 1, tx: 160, ty: 209)
+
+    /// The label's own measures, as the web draws it. A name or a number too long for its line is set narrower to fit.
+    enum Label {
+        static let size = CGSize(width: 74, height: 48)
+        static let scale: CGFloat = 0.97
+        static let cornerRadius: CGFloat = 2.5
+        static let margin: CGFloat = 6
+        /// The truck at half its size, and the name beside it.
+        static let truck = CGPoint(x: 5, y: 5)
+        static let nameStart = CGPoint(x: 23, y: 13)
+        static let nameSize: CGFloat = 7
+        /// The barcode's bars, down from 20 to 34.
+        static let bars: [CGFloat] = [6, 8.2, 11.2, 12.8, 16.2, 18.2, 21.2, 22.6, 26.2, 28.2, 30.8, 32.6, 35.8, 37.8, 40.2, 43.2, 44.8]
+        static let barWidth: CGFloat = 1.05
+        static let numberBaseline: CGFloat = 43
+        static let numberSize: CGFloat = 5.6
+        static let numberSpacing: CGFloat = 0.3
+
+        /// A point of the label, in Pip's frame.
+        static func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: x * scale, y: y * scale).applying(labelPlane)
+        }
+    }
 
     static let inside = points([(55, 142), (150, 95), (245, 142), (150, 190)])
     static let leftSide = points([(55, 142), (150, 190), (150, 277), (55, 229)])
@@ -192,6 +217,14 @@ enum PipGeometry {
     }
 }
 
+/// The carrier's label on the kraft parcel's right side, in place of the arrow and the seal:
+/// whose parcel it is, and its number as the reader may see it.
+struct PipLabel {
+    let identity: CarrierVisualIdentity
+    /// Whole or masked; none for a parcel whose number is not shown.
+    var number: String?
+}
+
 // MARK: - Colours
 
 /// Every colour Pip is drawn with: kraft paper, or a card's ink mixed toward its surface.
@@ -272,6 +305,50 @@ enum PipArtwork {
         flap(context, palette, PipGeometry.frontLeft, palette.frontLeft, open: open)
     }
 
+    /// The carrier's label on the box's right side: its truck, its name in its own colour, a barcode and the
+    /// tracking number. The label's paper is light in either appearance, so the name takes the brand's light colour.
+    static func label(_ context: GraphicsContext, _ label: PipLabel) {
+        let measures = PipGeometry.Label.self
+        let ink = Color(hex: "#20251E")
+        var paper = context
+        paper.concatenate(PipGeometry.labelPlane)
+        paper.scaleBy(x: measures.scale, y: measures.scale)
+        paper.fill(Path(roundedRect: CGRect(origin: .zero, size: measures.size), cornerRadius: measures.cornerRadius),
+                   with: .color(Color(hex: "#FFFEFA")))
+        var truck = paper
+        truck.translateBy(x: measures.truck.x, y: measures.truck.y)
+        truck.scaleBy(x: 0.5, y: 0.5)
+        CarrierTruckGeometry.draw(truck, label.identity)
+        let name = Text(label.identity.name)
+            .font(.system(size: measures.nameSize, weight: .heavy))
+            .italic(label.identity.family == "dhl")
+            .foregroundStyle(Color(hex: label.identity.colors[4]))
+        line(paper, name, from: measures.nameStart, room: measures.size.width - measures.nameStart.x - 4)
+        var bars = Path()
+        for x in measures.bars {
+            bars.move(to: CGPoint(x: x, y: 20))
+            bars.addLine(to: CGPoint(x: x, y: 34))
+        }
+        paper.stroke(bars, with: .color(ink), lineWidth: measures.barWidth)
+        if let number = label.number?.nonEmpty {
+            let digits = Text(number)
+                .font(.system(size: measures.numberSize, design: .monospaced))
+                .kerning(measures.numberSpacing)
+                .foregroundStyle(ink)
+            line(paper, digits, from: CGPoint(x: measures.margin, y: measures.numberBaseline), room: measures.size.width - 2 * measures.margin)
+        }
+    }
+
+    /// One line of the label, from the start of its baseline, set narrower when it is too long for its room.
+    private static func line(_ context: GraphicsContext, _ text: Text, from start: CGPoint, room: CGFloat) {
+        let resolved = context.resolve(text)
+        let size = resolved.measure(in: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))
+        var line = context
+        line.translateBy(x: start.x, y: start.y - resolved.firstBaseline(in: size))
+        if size.width > room { line.scaleBy(x: room / size.width, y: 1) }
+        line.draw(resolved, in: CGRect(origin: .zero, size: size))
+    }
+
     /// The tape and its dashed seam, across a closed box.
     static func tape(_ context: GraphicsContext, _ palette: PipPalette) {
         context.fill(PipGeometry.polygon(PipGeometry.tape), with: .color(palette.tape))
@@ -323,9 +400,11 @@ enum PipArtwork {
         }
     }
 
-    /// The kraft parcel at sticker size: closed and still, with a face large enough to read.
-    static func sticker(_ context: GraphicsContext) {
+    /// The kraft parcel at sticker size: closed and still, with a face large enough to read,
+    /// and its carrier's label when it has one.
+    static func sticker(_ context: GraphicsContext, label: PipLabel? = nil) {
         box(context, .kraft, open: false)
+        if let label { Self.label(context, label) }
         kraftFace(context, k: 1.3, happy: 0)
         frontFlaps(context, .kraft, open: false)
         tape(context, .kraft)
@@ -652,6 +731,9 @@ struct InkPip: View {
 
 /// The kraft parcel at sticker size, cropped to the box. Decorative.
 struct SmallPip: View {
+    /// The carrier's label on its right side, for a parcel whose carrier is known.
+    var label: PipLabel? = nil
+
     private static let crop = CGRect(x: 48, y: 88, width: 204, height: 196)
 
     var body: some View {
@@ -659,7 +741,7 @@ struct SmallPip: View {
             let scale = size.width / Self.crop.width
             context.scaleBy(x: scale, y: scale)
             context.translateBy(x: -Self.crop.minX, y: -Self.crop.minY)
-            PipArtwork.sticker(context)
+            PipArtwork.sticker(context, label: label)
         }
         .aspectRatio(Self.crop.width / Self.crop.height, contentMode: .fit)
         .accessibilityHidden(true)

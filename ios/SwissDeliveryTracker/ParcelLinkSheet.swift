@@ -73,7 +73,8 @@ struct ParcelLinkSheet: View {
                         Task { await refresh() }
                     }
                 } else {
-                    SharedParcelCard(parcel: parcel, name: links.route?.name, gift: gift == .own, refreshing: refreshing) {
+                    SharedParcelCard(parcel: parcel, name: links.route?.name, numberHint: response.package.numberHint,
+                                     gift: gift == .own, refreshing: refreshing) {
                         Task { await refresh() }
                     }
                 }
@@ -311,6 +312,8 @@ struct ParcelLinkSheet: View {
 private struct SharedParcelCard: View {
     let parcel: Parcel
     let name: String?
+    /// What stands for the number when the link hides it.
+    var numberHint: ParcelNumberHint? = nil
     /// The parcel is a gift, seen by its sender: the usual card, marked.
     var gift = false
     let refreshing: Bool
@@ -322,12 +325,21 @@ private struct SharedParcelCard: View {
     @ObservedObject private var catalog = CarrierCatalog.shared
     @State private var atlas: WorldAtlas?
     @State private var showingMap = false
+    /// How far the box of a parcel that arrived has opened: it is seen closed first, so the opening is seen.
+    @State private var open = 0.0
 
     private var identity: CarrierVisualIdentity {
         CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
     }
     /// Scans with places are drawn as a route across the top of the card, as on the parcel's own page.
     private var placed: Bool { parcel.trackingEvents.contains { $0.place != nil } }
+    /// Without a route, a parcel that arrived shows its open box above the words, as its page does.
+    private var arrived: Bool { !placed && parcel.currentStage == .delivered && !typeSize.isAccessibilitySize }
+    /// The label on the kraft parcel's side, with the number as the link shows it. A number no carrier knows has none.
+    private var label: PipLabel? {
+        guard parcel.carrier != .unknown || parcel.hasCarrierUpdate else { return nil }
+        return PipLabel(identity: identity, number: numberHint?.masked ?? CarrierCatalog.format(parcel.trackingNumber, carrier: parcel.carrier))
+    }
 
     var body: some View {
         let identity = identity
@@ -355,8 +367,15 @@ private struct SharedParcelCard: View {
                 // Room for the route engraved behind this part of the card.
                 Color.clear.frame(height: 68).allowsHitTesting(false)
             }
+            if arrived {
+                UnwrappingParcel(open: open, celebrating: open > 0, label: label)
+                    .frame(width: 230, height: 230 * PipGeometry.frame.height / PipGeometry.frame.width)
+                    .padding(.top, -34)
+                    .padding(.bottom, -22)
+                    .frame(maxWidth: .infinity)
+            }
             HStack(alignment: .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: arrived ? .center : .leading, spacing: 6) {
                     if gift {
                         Label(localizer.text("share.gift.marker"), systemImage: "gift")
                             .font(.caption.weight(.semibold))
@@ -369,7 +388,7 @@ private struct SharedParcelCard: View {
                         Text(name).font(.subheadline.weight(.medium))
                     }
                     Text(localizer.parcelStatus(parcel))
-                        .font(.title.weight(.semibold))
+                        .font((arrived ? Font.largeTitle : .title).weight(.semibold))
                         .accessibilityAddTraits(.isHeader)
                     if let detail {
                         Text(detail)
@@ -381,11 +400,12 @@ private struct SharedParcelCard: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
+                .multilineTextAlignment(arrived ? .center : .leading)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                // Without a route to draw, the kraft parcel keeps the card company.
-                if !placed, !typeSize.isAccessibilitySize {
-                    SmallPip().frame(width: 84)
+                .frame(maxWidth: .infinity, alignment: arrived ? .center : .leading)
+                // Without a route to draw, the kraft parcel keeps the card company, its carrier's label on its side.
+                if !placed, !arrived, !typeSize.isAccessibilitySize {
+                    SmallPip(label: label).frame(width: 84)
                 }
             }
             ExperimentalJourneyRail(stage: parcel.currentStage, tint: identity.ink.opacity(0.45), compact: true)
@@ -408,6 +428,10 @@ private struct SharedParcelCard: View {
             guard placed, atlas == nil else { return }
             let loaded = await WorldAtlas.bundled.value
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.5)) { atlas = loaded }
+        }
+        .onChange(of: arrived, initial: true) { _, arrived in
+            guard arrived else { open = 0; return }
+            withAnimation(reduceMotion ? nil : .spring(duration: 0.9, bounce: 0.2).delay(0.25)) { open = 1 }
         }
         .fullScreenCover(isPresented: $showingMap) {
             if let atlas {

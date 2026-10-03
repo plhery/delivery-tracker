@@ -337,6 +337,40 @@ final class ParcelRouteTests: XCTestCase {
         XCTAssertEqual(PipGeometry.settle(0.9), 1, accuracy: 0.01)
     }
 
+    @MainActor func testTheCarriersLabelSitsOnTheBoxsRightSideClosedAndOpen() throws {
+        let label = PipLabel(identity: CarrierVisualIdentity.of(.dhl, language: .en), number: "00340434161094042557")
+        // A clear patch of the label's paper, right of its barcode, as a point of Pip's frame.
+        let patch = PipGeometry.Label.point(62, 28)
+        XCTAssertEqual(patch.x, 220.14, accuracy: 0.01)
+        XCTAssertEqual(patch.y, 205.77, accuracy: 0.01)
+        // The sticker is cut to the closed box; the opening parcel fills the frame.
+        let sticker = CGPoint(x: patch.x - 48, y: patch.y - 88)
+        let localizer = Localizer()
+        for (plain, labelled, point, size) in [
+            (AnyView(SmallPip()), AnyView(SmallPip(label: label)), sticker, CGSize(width: 204, height: 196)),
+            (AnyView(UnwrappingParcel(open: 1, grounded: false).environmentObject(localizer)),
+             AnyView(UnwrappingParcel(open: 1, label: label, grounded: false).environmentObject(localizer)), patch, CGSize(width: 300, height: 310)),
+        ] {
+            // Kraft paper without a label, the label's own paper with one.
+            XCTAssertLessThan(try pixel(of: plain, size: size, at: point)[2], 200)
+            for channel in try pixel(of: labelled, size: size, at: point) { XCTAssertGreaterThan(channel, 240) }
+        }
+    }
+
+    /// The colour a view draws at one point, as red, green and blue out of 255.
+    @MainActor private func pixel(of view: AnyView, size: CGSize, at point: CGPoint) throws -> [Int] {
+        let renderer = ImageRenderer(content: view.frame(width: size.width, height: size.height))
+        renderer.scale = 1
+        let image = try XCTUnwrap(renderer.cgImage)
+        var bytes = [UInt8](repeating: 0, count: 4)
+        let context = try XCTUnwrap(CGContext(
+            data: &bytes, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.draw(image, in: CGRect(x: -point.x.rounded(.down), y: point.y.rounded(.down) - CGFloat(image.height) + 1,
+                                       width: CGFloat(image.width), height: CGFloat(image.height)))
+        return bytes.prefix(3).map(Int.init)
+    }
+
     func testPipBlinksAtTheEndOfEachPeriodAndIsLeftAloneBetween() {
         let period = PipBlink.period
         for time in [0, 1, 0.93 * period, period, period + 2] {

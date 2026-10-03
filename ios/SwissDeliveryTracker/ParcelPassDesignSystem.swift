@@ -436,6 +436,42 @@ enum CarrierTruckGeometry {
     static let hubRadius: CGFloat = 0.9
     static let hubColor = "#d2d4c7"
 
+    /// Draws the truck in a carrier's livery, in its own 32 × 21 units: scale the context to the size wanted first.
+    static func draw(_ context: GraphicsContext, _ identity: CarrierVisualIdentity) {
+        let body = Path(roundedRect: Self.body, cornerRadius: bodyCornerRadius)
+        context.fill(body, with: .color(identity.truck))
+        context.stroke(body, with: .color(identity.edge), lineWidth: strokeWidth)
+        let cab = polygon(Self.cab)
+        context.fill(cab, with: .color(identity.truck))
+        context.stroke(cab, with: .color(identity.edge), lineWidth: strokeWidth)
+        context.fill(polygon(windshield), with: .color(Color(hex: windshieldColor)))
+        let decals = CarrierBrandAssets.shared.truck.decals
+        for shape in decals[identity.decal] ?? decals["default"]! {
+            let paint = GraphicsContext.Shading.color(identity.paint(shape.paint))
+            if shape.type == .line {
+                context.stroke(shape.path, with: paint, lineWidth: shape.strokeWidth!)
+            } else {
+                context.fill(shape.path, with: paint)
+            }
+        }
+        for center in wheelCenters {
+            context.fill(disc(center, tireRadius), with: .color(Color(hex: tireColor)))
+            context.fill(disc(center, hubRadius), with: .color(Color(hex: hubColor)))
+        }
+    }
+
+    private static func polygon(_ points: [CGPoint]) -> Path {
+        Path { path in
+            guard let first = points.first else { return }
+            path.move(to: first)
+            for point in points.dropFirst() { path.addLine(to: point) }
+            path.closeSubpath()
+        }
+    }
+
+    private static func disc(_ center: CGPoint, _ radius: CGFloat) -> Path {
+        Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+    }
 }
 
 /// The carrier's truck alone, in its livery, beside a name written elsewhere.
@@ -446,42 +482,10 @@ struct CarrierTruckMark: View {
         Canvas { context, size in
             let truck = CarrierTruckGeometry.self
             context.scaleBy(x: size.width / truck.viewBox.width, y: size.height / truck.viewBox.height)
-            let body = Path(roundedRect: truck.body, cornerRadius: truck.bodyCornerRadius)
-            context.fill(body, with: .color(identity.truck))
-            context.stroke(body, with: .color(identity.edge), lineWidth: truck.strokeWidth)
-            let cab = polygon(truck.cab)
-            context.fill(cab, with: .color(identity.truck))
-            context.stroke(cab, with: .color(identity.edge), lineWidth: truck.strokeWidth)
-            context.fill(polygon(truck.windshield), with: .color(Color(hex: truck.windshieldColor)))
-            let decals = CarrierBrandAssets.shared.truck.decals
-            for shape in decals[identity.decal] ?? decals["default"]! {
-                let paint = GraphicsContext.Shading.color(identity.paint(shape.paint))
-                if shape.type == .line {
-                    context.stroke(shape.path, with: paint, lineWidth: shape.strokeWidth!)
-                } else {
-                    context.fill(shape.path, with: paint)
-                }
-            }
-            for center in truck.wheelCenters {
-                context.fill(disc(center, truck.tireRadius), with: .color(Color(hex: truck.tireColor)))
-                context.fill(disc(center, truck.hubRadius), with: .color(Color(hex: truck.hubColor)))
-            }
+            truck.draw(context, identity)
         }
         .frame(width: 27, height: 18)
         .accessibilityHidden(true)
-    }
-
-    private func polygon(_ points: [CGPoint]) -> Path {
-        Path { path in
-            guard let first = points.first else { return }
-            path.move(to: first)
-            for point in points.dropFirst() { path.addLine(to: point) }
-            path.closeSubpath()
-        }
-    }
-
-    private func disc(_ center: CGPoint, _ radius: CGFloat) -> Path {
-        Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
     }
 }
 

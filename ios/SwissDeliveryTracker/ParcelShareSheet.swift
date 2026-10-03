@@ -392,7 +392,7 @@ private struct SharePreviewCard: View {
                 }
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                if !typeSize.isAccessibilitySize { figure }
+                if !typeSize.isAccessibilitySize { figure(identity) }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
@@ -422,12 +422,16 @@ private struct SharePreviewCard: View {
     private static let boxWidth: CGFloat = 78
 
     /// Pip, as on the page: the kraft parcel while it travels, the open box once it has arrived, a ribbon for a gift.
-    @ViewBuilder private var figure: some View {
+    /// Its side carries the carrier's label, with the number as the link shows it; a gift has none, nor has a
+    /// number no carrier knows.
+    @ViewBuilder private func figure(_ identity: CarrierVisualIdentity) -> some View {
+        let known = parcel.carrier != .unknown || parcel.hasCarrierUpdate
+        let label = known && !gift ? PipLabel(identity: identity, number: number) : nil
         if gift || delivered {
             // Drawn at the sticker's scale and cut to the box, without the shadow under it.
             let scale = Self.boxWidth / Self.closedBox.width
             let crop = delivered ? Self.openBox : Self.closedBox
-            UnwrappingParcel(open: delivered ? 1 : 0, ribbon: gift, grounded: false)
+            UnwrappingParcel(open: delivered ? 1 : 0, label: label, ribbon: gift, grounded: false)
                 .frame(width: PipGeometry.frame.width * scale, height: PipGeometry.frame.height * scale)
                 .offset(x: -crop.minX * scale, y: -crop.minY * scale)
                 .frame(width: crop.width * scale, height: crop.height * scale, alignment: .topLeading)
@@ -435,7 +439,7 @@ private struct SharePreviewCard: View {
                 .padding(.vertical, delivered ? -8 : 0)
                 .accessibilityHidden(true)
         } else {
-            SmallPip().frame(width: Self.boxWidth)
+            SmallPip(label: label).frame(width: Self.boxWidth)
         }
     }
 }

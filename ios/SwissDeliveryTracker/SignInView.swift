@@ -977,6 +977,8 @@ struct UnwrappingParcel: View, Animatable {
     var pressed = false
     var celebrating = false
     var senderName: String? = nil
+    /// The carrier's label on the right side, in place of the arrow and the seal.
+    var label: PipLabel? = nil
     /// Wrapped as a gift: a lilac ribbon tied in a bow on its lid, and a gift on the card inside.
     var ribbon = false
     /// Standing on the ground, with a soft shadow under it. Off where it is cut to its box, as a sticker is.
@@ -1082,20 +1084,24 @@ struct UnwrappingParcel: View, Animatable {
                     }
                     .stroke(Color(hex: "#FFF2CF").opacity(0.22 + (tilt.x + 1) * 0.18), lineWidth: 1)
 
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color(hex: "#735C43"))
-                        .rotationEffect(.degrees(-27))
-                        .position(x: 218, y: 214)
+                    if let label {
+                        Canvas { context, _ in PipArtwork.label(context, label) }
+                    } else {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(Color(hex: "#735C43"))
+                            .rotationEffect(.degrees(-27))
+                            .position(x: 218, y: 214)
 
-                    Image(systemName: "asterisk")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Color(hex: "#7C6787"))
-                        .frame(width: 28, height: 28)
-                        .background(Color(hex: "#DECCE2"), in: Circle())
-                        .overlay(Circle().inset(by: 2.5).stroke(Color(hex: "#FFF6FF").opacity(0.2 + (tilt.y + 1) * 0.28), lineWidth: 1.2))
-                        .rotationEffect(.degrees(-27))
-                        .position(x: 183, y: 234)
+                        Image(systemName: "asterisk")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color(hex: "#7C6787"))
+                            .frame(width: 28, height: 28)
+                            .background(Color(hex: "#DECCE2"), in: Circle())
+                            .overlay(Circle().inset(by: 2.5).stroke(Color(hex: "#FFF6FF").opacity(0.2 + (tilt.y + 1) * 0.28), lineWidth: 1.2))
+                            .rotationEffect(.degrees(-27))
+                            .position(x: 183, y: 234)
+                    }
 
                     // Pip's face, on the left side: its eyes turn into happy arcs as the box opens.
                     // A ribbon runs where Pip smiles: until the box opens, the eyes say it all.
