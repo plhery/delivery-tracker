@@ -12,6 +12,17 @@ final class AnalyticsTests: XCTestCase {
         for operation in catalog.operations { XCTAssertTrue(catalog.actions.contains(operation.event)) }
     }
 
+    func testDeliveryEmailNamesAreInTheSharedCatalog() throws {
+        let catalog = try XCTUnwrap(AnalyticsCatalog.bundled)
+        // A name the catalog does not list is never sent.
+        for name in ["email-delivery-change", "email-offer-accept", "email-offer-decline", "email-example-open"] {
+            XCTAssertTrue(catalog.actions.contains(name), name)
+        }
+        XCTAssertEqual(catalog.event(path: "/api/packages/private-id/notifications", method: "PATCH", body: Data("{\"emailMuted\":true}".utf8)), "parcel-notifications-change")
+        XCTAssertEqual(catalog.event(path: "/api/push/preferences", method: "PATCH", body: Data("{\"emailOnDelivery\":true}".utf8)), "notifications-preferences")
+        XCTAssertNil(catalog.event(path: "/api/push/preferences", method: "GET", body: nil))
+    }
+
     @MainActor func testPayloadContainsOnlyFixedNamesAndDeviceMetadata() throws {
         let configuration = DeliveryAnalytics.Configuration(endpoint: URL(string: "https://analytics.example/api/send")!, hostname: "delivery.example", iosWebsite: UUID().uuidString)
         let payload = DeliveryAnalytics.payload(.init(screen: "parcel", name: "parcel-add", outcome: .success, mode: .account), configuration: configuration)

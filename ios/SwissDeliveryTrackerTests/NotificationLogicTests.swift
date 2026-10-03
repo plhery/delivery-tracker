@@ -296,6 +296,68 @@ final class NotificationLogicTests: XCTestCase {
         XCTAssertNil(repo.notificationPreferences.emailOnDelivery)
     }
 
+    @MainActor func testEmailSettingsFitNarrowScreensInEveryLanguageAndLargeType() throws {
+        // At large type the group also says a save failed: the tallest it gets.
+        try renderInEveryLanguage(named: "email-settings", width: 327, maximumHeight: (270, 1_060)) { largeType in
+            DeliveryEmailSettings(
+                address: "alex@example.com", isOn: .constant(true), failed: largeType,
+                privacy: URL(string: "https://peek.example/privacy.html")!, showExample: {}
+            )
+        }
+    }
+
+    @MainActor func testParcelAlertsFitNarrowScreensInEveryLanguageAndLargeType() throws {
+        let parcel = parcel(.outForDelivery, label: "New sneakers")
+        let email = try email(true)
+        try renderInEveryLanguage(named: "parcel-alerts", width: 375, padding: 0, maximumHeight: (440, 1_200)) { _ in
+            ParcelAlertSwitches(parcel: parcel, email: email, preset: .important) { _, _ in }
+        }
+    }
+
+    @MainActor func testEmailOfferFitsNarrowScreensInEveryLanguageAndLargeType() throws {
+        for (phase, name) in [(DeliveryEmailOffer.Phase.open, "open"), (.saving(true), "saving"), (.failed, "failed"), (.accepted, "accepted")] {
+            try renderInEveryLanguage(named: "email-offer-\(name)", width: 307, maximumHeight: (330, 820)) { _ in
+                DeliveryEmailOffer(address: "alex@example.com", phase: phase, turnOn: {}, notNow: {})
+            }
+        }
+    }
+
+    /// Renders a view at a phone's content width in every language, at regular type in
+    /// light and at large type in dark, and keeps each picture with the test's results.
+    @MainActor private func renderInEveryLanguage<Content: View>(
+        named name: String,
+        width: CGFloat,
+        padding: CGFloat = 16,
+        maximumHeight: (regular: CGFloat, large: CGFloat),
+        @ViewBuilder content: (_ largeType: Bool) -> Content
+    ) throws {
+        let localizer = Localizer()
+        let previousLanguage = localizer.language
+        defer { localizer.language = previousLanguage }
+        for language in AppLanguage.allCases {
+            localizer.language = language
+            for largeType in [false, true] {
+                let view = content(largeType)
+                    .frame(width: width)
+                    .padding(padding)
+                    .background(Brand.background)
+                    .environmentObject(localizer)
+                    .environment(\.dynamicTypeSize, largeType ? .accessibility3 : .large)
+                    .environment(\.colorScheme, largeType ? .dark : .light)
+                let renderer = ImageRenderer(content: view)
+                renderer.scale = 2
+                let image = try XCTUnwrap(renderer.uiImage)
+                XCTAssertEqual(image.size.width, width + 2 * padding, accuracy: 1, "\(name) \(language.rawValue)")
+                XCTAssertLessThan(image.size.height, largeType ? maximumHeight.large : maximumHeight.regular,
+                                  "\(name) \(language.rawValue) \(largeType ? "large" : "regular")")
+                let attachment = XCTAttachment(image: image)
+                attachment.name = "\(name)-\(language.rawValue)-\(largeType ? "large-dark" : "regular-light")"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+            }
+        }
+    }
+
     private func preferences(email: Bool?, available: Bool? = true) -> NotificationPreferences {
         NotificationPreferences(
             enabledStages: NotificationPreset.important.stages, timezone: "Europe/Zurich",

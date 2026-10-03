@@ -9,6 +9,7 @@ struct ParcelDetailView: View {
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var showingTitleEditor = false
     @State private var editedTitle = ""
@@ -21,6 +22,8 @@ struct ParcelDetailView: View {
     @State private var notificationAnimation = 0
     @State private var showingMap = false
     @State private var showingShare = false
+    @State private var showingAlerts = false
+    @State private var emailOffer = DeliveryEmailOffer.Phase.open
     @State private var atlas: WorldAtlas?
 
     @ObservedObject private var catalog = CarrierCatalog.shared
@@ -37,6 +40,7 @@ struct ParcelDetailView: View {
                         }
                         syncStatus(parcel, tint: identity(parcel).ink)
                     }
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: emailOffer)
                     .padding(18)
                     .background(Brand.paper, in: RoundedRectangle(cornerRadius: 26))
                     .padding(.horizontal, 16)
@@ -129,6 +133,13 @@ struct ParcelDetailView: View {
                     .environmentObject(localizer)
             }
         }
+        .sheet(isPresented: $showingAlerts) {
+            if let parcel {
+                ParcelAlertsSheet(parcelID: parcel.id)
+                    .environmentObject(store)
+                    .environmentObject(localizer)
+            }
+        }
         #if DEBUG
         .task {
             if ParcelSharePreview.variant != nil { showingShare = true }
@@ -178,6 +189,9 @@ struct ParcelDetailView: View {
         let trackingLinks = catalog.trackingLinks(for: parcel, language: localizer.language)
         let placed = parcel.trackingEvents.contains { $0.place != nil }
         let route = placed ? atlas.map { ParcelRoute(parcel: parcel, atlas: $0, language: localizer.language) } : nil
+        let email = store.deliveryEmail
+        // While the account's email is on, the bell opens the parcel's alerts instead of muting.
+        let opensAlerts = email?.bellOpensAlerts(for: parcel) == true
 
         return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 16) {
@@ -210,20 +224,26 @@ struct ParcelDetailView: View {
                     .foregroundStyle(branding.ink.opacity(0.75))
                     .accessibilityLabel(localizer.text("link.shareAria"))
                     Button {
+                        if opensAlerts {
+                            showingAlerts = true
+                            return
+                        }
                         run {
                             try await store.setMuted(parcel, muted: !parcel.notificationsMuted)
                             notificationAnimation += 1
                             UISelectionFeedbackGenerator().selectionChanged()
                         }
                     } label: {
-                        ParcelNotificationBell(muted: parcel.notificationsMuted, trigger: notificationAnimation)
+                        ParcelNotificationBell(muted: opensAlerts ? parcel.allAlertsMuted : parcel.notificationsMuted,
+                                               trigger: notificationAnimation)
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(branding.ink.opacity(0.75))
                     .disabled(working)
-                    .accessibilityLabel(localizer.text(parcel.notificationsMuted ? "detail.unmute" : "detail.mute"))
+                    .accessibilityLabel(localizer.text(opensAlerts ? "email.parcel.open"
+                        : parcel.notificationsMuted ? "detail.unmute" : "detail.mute"))
                 }
                 if placed {
                     // Room for the route engraved behind this part of the card.
@@ -282,6 +302,13 @@ struct ParcelDetailView: View {
                 }
             }
             .background(branding.surface, in: RoundedRectangle(cornerRadius: 18))
+
+            // Offered once, on a delivered parcel. Accepted, it stays as one line until the parcel is closed.
+            if let email, emailOffer == .accepted || email.isOffered(on: parcel) {
+                DeliveryEmailOffer(address: email.address, phase: emailOffer,
+                                   turnOn: { answerEmailOffer(true) }, notNow: { answerEmailOffer(false) })
+                    .transition(DeliveryEmailOffer.leaving)
+            }
 
             // While the parcel waits, its pickup point gets a card; afterwards it is a plain fact.
             let waitingAt = parcel.currentStage == .readyForPickup ? PickupPoint(parcel.carrierData?.pickupPoint) : nil
@@ -572,6 +599,30 @@ struct ParcelDetailView: View {
             do { try await operation() }
             catch { errorMessage = localizer.errorMessage(error) }
             working = false
+        }
+    }
+
+    /// Saves the answer to the email offer. The server remembers either answer, so the
+    /// offer leaves once declined, says the email is on once accepted, and stays, saying
+    /// so, when the answer could not be saved.
+    private func answerEmailOffer(_ accepted: Bool) {
+        if case .saving = emailOffer { return }
+        DeliveryAnalytics.shared.action(accepted ? "email-offer-accept" : "email-offer-decline")
+        emailOffer = .saving(accepted)
+        Task {
+            do {
+                try await store.setEmailOnDelivery(accepted)
+                emailOffer = accepted && store.deliveryEmail?.isOn == true ? .accepted : .open
+                if emailOffer == .accepted {
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    AccessibilityNotification.Announcement(
+                        localizer.text("email.offer.on", ["place": localizer.deliveryUpdatesPlace])
+                    ).post()
+                }
+            } catch {
+                emailOffer = .failed
+                AccessibilityNotification.Announcement(localizer.text("email.setting.failed")).post()
+            }
         }
     }
 }

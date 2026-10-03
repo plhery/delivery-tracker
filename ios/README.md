@@ -78,6 +78,11 @@ team ([AUTHENTICATION.md](../docs/AUTHENTICATION.md)).
   registration.
 - **The widget** shows the next parcel and up to two out-for-delivery parcels. Tapping one
   opens it.
+- **The delivery email** belongs to the account, not the device. Settings › Delivery updates
+  has its switch, which saves the moment it is flipped. While it is on, the bell of a parcel
+  still on its way opens that parcel's alerts, where notifications and the email are switched
+  for it alone. A delivered parcel offers the email once to an account that has never chosen.
+  None of this shows unless the server says it can email the account, and never in the demo.
 
 ## Resources and tests
 

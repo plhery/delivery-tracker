@@ -63,6 +63,38 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testDeliveryEmailCopyFillsItsVariablesInEveryLanguage() {
+        let localizer = Localizer()
+        let previousLanguage = localizer.language
+        defer { localizer.language = previousLanguage }
+        let address = "alex@example.com"
+        for language in AppLanguage.allCases {
+            localizer.language = language
+            let place = localizer.deliveryUpdatesPlace
+            XCTAssertEqual(place, "\(localizer.text("settings.title")) › \(localizer.text("settings.deliveryUpdates"))")
+            let preset = localizer.text(NotificationPreset.important.titleKey)
+            let filled: [(text: String, value: String)] = [
+                (localizer.text("email.setting.body", ["email": address]), address),
+                (localizer.text("email.parcel.title", ["name": "New sneakers"]), "New sneakers"),
+                (localizer.text("email.parcel.notificationsBody", ["preset": preset]), preset),
+                (localizer.text("email.parcel.emailBody", ["email": address]), address),
+                (localizer.text("email.parcel.note", ["place": place]), place),
+                (localizer.text("email.offer.body", ["email": address]), address),
+                (localizer.text("email.offer.on", ["place": place]), place),
+            ]
+            for (text, value) in filled {
+                XCTAssertTrue(text.contains(value), "\(language.rawValue): \(text)")
+                XCTAssertFalse(text.contains("{{"), "\(language.rawValue): \(text)")
+            }
+            for key in ["email.section", "email.new", "email.setting.title", "email.setting.example", "email.setting.failed",
+                        "email.parcel.open", "email.parcel.notifications", "email.parcel.email", "email.offer.title",
+                        "auth.privacyLink", "alerts.turnOn", "onboarding.notifications.notNow", "native.done"] {
+                let text = localizer.text(key)
+                XCTAssertFalse(text.isEmpty || text == key || text.contains("{{"), "\(language.rawValue).\(key)")
+            }
+        }
+    }
+
     func testNativeWelcomeAndErrorCopyExistsInEveryLanguage() throws {
         let dictionaries = try localizationDictionaries()
         let keys = [

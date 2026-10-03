@@ -1,3 +1,4 @@
+import SafariServices
 import SwiftUI
 import UIKit
 
@@ -100,6 +101,10 @@ struct NotificationSettingsView: View {
     @State private var working = false
     @State private var notice: String?
     @State private var errorMessage: String?
+    /// The position the email switch was flipped to, until the server has answered.
+    @State private var emailChoice: Bool?
+    @State private var emailFailed = false
+    @State private var showingEmailExample = false
 
     var embedded = false
 
@@ -180,6 +185,19 @@ struct NotificationSettingsView: View {
                 if let error = errorMessage ?? store.notificationError {
                     Text(error).font(.caption).foregroundStyle(.red)
                 }
+                if let email = store.deliveryEmail {
+                    DeliveryEmailSettings(
+                        address: email.address,
+                        isOn: Binding(get: { emailChoice ?? email.isOn }, set: setEmail),
+                        saving: emailChoice != nil,
+                        failed: emailFailed,
+                        privacy: store.configuration.privacyURL,
+                        showExample: emailExampleURL == nil ? nil : {
+                            DeliveryAnalytics.shared.action("email-example-open")
+                            showingEmailExample = true
+                        }
+                    )
+                }
                 Text(localizer.text("notifications.schedule")).font(.caption).foregroundStyle(.secondary)
             }
             .padding(24)
@@ -187,7 +205,8 @@ struct NotificationSettingsView: View {
             .frame(maxWidth: .infinity)
         }
         .background(Brand.background)
-        .disabled(working)
+        // One save at a time: a preset saved while the email switch waits could undo its answer.
+        .disabled(working || emailChoice != nil)
         .navigationTitle(localizer.text("settings.deliveryUpdates"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -197,12 +216,29 @@ struct NotificationSettingsView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingEmailExample) {
+            if let emailExampleURL { SafariPage(url: emailExampleURL).ignoresSafeArea() }
+        }
         .task {
+            // What is already loaded shows at once; a change the reload brings follows below.
+            hydrate()
             await store.refreshNotificationState()
             await store.loadNotificationPreferences()
-            hydrate()
         }
-        .onChange(of: store.notificationPreferences) { _, _ in hydrate() }
+        .onChange(of: store.notificationPreferences) { old, new in
+            // The email switch saves on its own: a preset picked but not saved yet stays picked.
+            if let old, let new, old.enabledStages == new.enabledStages {
+                draft.emailOnDelivery = new.emailOnDelivery
+            } else {
+                hydrate()
+            }
+            // The choice changed after all, here or from a link in an email: the failure is old news.
+            if old?.emailOnDelivery != new?.emailOnDelivery { emailFailed = false }
+        }
+    }
+
+    private var emailExampleURL: URL? {
+        DeliveryEmail.exampleURL(site: store.configuration.apiBaseURL, language: localizer.language)
     }
 
     private var systemStatusText: String {
@@ -228,6 +264,26 @@ struct NotificationSettingsView: View {
         }
     }
 
+    /// Saves the email switch at once. It shows the server's answer, and goes back to
+    /// what was saved when the server cannot be reached.
+    private func setEmail(_ enabled: Bool) {
+        guard emailChoice == nil else { return }
+        emailChoice = enabled
+        emailFailed = false
+        notice = nil
+        Task {
+            do {
+                try await store.setEmailOnDelivery(enabled)
+                DeliveryAnalytics.shared.action("email-delivery-change", .success)
+            } catch {
+                emailFailed = true
+                DeliveryAnalytics.shared.action("email-delivery-change", .error)
+                AccessibilityNotification.Announcement(localizer.text("email.setting.failed")).post()
+            }
+            emailChoice = nil
+        }
+    }
+
     private func run(_ operation: @escaping @MainActor () async throws -> Void) {
         guard !working else { return }
         working = true
@@ -237,6 +293,67 @@ struct NotificationSettingsView: View {
             catch { errorMessage = localizer.errorMessage(error) }
             working = false
         }
+    }
+}
+
+/// "By email": the switch for the account's delivery email, with what the email looks
+/// like and the privacy notice a tap away.
+struct DeliveryEmailSettings: View {
+    let address: String
+    @Binding var isOn: Bool
+    /// The switch waits for the server's answer before it can be flipped again.
+    var saving = false
+    var failed = false
+    let privacy: URL
+    /// Opens the example email. Nil when there is no page to open.
+    var showExample: (() -> Void)?
+
+    @EnvironmentObject private var localizer: Localizer
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            SettingsGroup(title: localizer.text("email.section"), badge: localizer.text("email.new")) {
+                Toggle(isOn: $isOn) {
+                    SettingsRow(title: localizer.text("email.setting.title"), symbol: "envelope",
+                                detail: localizer.text("email.setting.body", ["email": address]), padded: false)
+                }
+                .padding(15)
+                .disabled(saving)
+                .accessibilityIdentifier("settings.deliveryEmail")
+            }
+            .tint(settingsGreen)
+            if failed {
+                Text(localizer.text("email.setting.failed")).font(.caption).foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("settings.deliveryEmail.error")
+            }
+            // Quiet links, each with a full-height touch target that takes no extra room.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 20) { links }
+                VStack(alignment: .leading, spacing: 0) { links }
+            }
+            .buttonStyle(.plain)
+            .padding(.leading, 2)
+            .padding(.vertical, -10)
+        }
+    }
+
+    @ViewBuilder private var links: some View {
+        if let showExample {
+            Button(action: showExample) { quietLink("email.setting.example") }
+                .accessibilityIdentifier("settings.deliveryEmail.example")
+        }
+        Link(destination: privacy) { quietLink("auth.privacyLink") }
+            .accessibilityIdentifier("settings.deliveryEmail.privacy")
+    }
+
+    private func quietLink(_ key: String) -> some View {
+        Text(localizer.text(key)).font(.caption)
+            .underline(color: Color(uiColor: .tertiaryLabel))
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
     }
 }
 
@@ -459,6 +576,17 @@ private struct ActivityShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
+/// A page of the site, read without leaving the app. It opens web addresses only.
+private struct SafariPage: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let controller = SFSafariViewController(url: url)
+        controller.dismissButtonStyle = .close
+        return controller
+    }
+    func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
+}
+
 private extension String {
     var cleaned: String { trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
 }
@@ -469,13 +597,25 @@ private var settingsDivider: some View { Rectangle().fill(Brand.separator.opacit
 
 private struct SettingsGroup<Content: View>: View {
     var title: String? = nil
+    /// A word beside the title, such as "New".
+    var badge: String? = nil
     @ViewBuilder let content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             if let title {
-                Text(title.uppercased()).font(.caption2.weight(.medium)).tracking(1)
-                    .foregroundStyle(.secondary).padding(.leading, 2)
+                HStack(spacing: 8) {
+                    Text(title.uppercased()).font(.caption2.weight(.medium)).tracking(1)
+                        .foregroundStyle(.secondary)
+                    if let badge {
+                        Text(badge.uppercased()).font(.caption2.weight(.bold)).tracking(0.4)
+                            .foregroundStyle(ExperimentalPalette.ochre)
+                            .padding(.horizontal, 7).padding(.vertical, 3)
+                            .background(ExperimentalPalette.ochreSurface, in: RoundedRectangle(cornerRadius: 7))
+                    }
+                }
+                .padding(.leading, 2)
+                .accessibilityElement(children: .combine)
             }
             VStack(spacing: 0) { content }
                 .frame(maxWidth: .infinity, alignment: .leading)
