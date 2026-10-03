@@ -7,7 +7,7 @@ Supabase (Auth, PostgREST, Postgres 16+) and HTTPS. The official instance runs a
 ## Requirements
 
 - A Supabase stack and a tested backup/restore path.
-- SMTP with an authenticated sending domain, if email sign-in is on.
+- SMTP with an authenticated sending domain, if email sign-in or the delivery email is on.
 - A host that can build the `Dockerfile` and keep the container running. Serverless
   won't work: the worker must stay alive.
 - Optional: stable VAPID keys (Web Push), and an APNs key with an Apple team (iPhone
@@ -97,6 +97,35 @@ credentials and don't follow redirects, so keep it reachable through any edge pr
 
 After deploying, run `scripts/smoke-url.sh https://your-hostname` from outside the origin.
 
+## Delivery email
+
+Optional. With mail settings, an account can ask for one email when a parcel is delivered,
+sent to the address it signs in with. Without them, nothing in the app mentions email.
+
+Set `SMTP_HOST`, `EMAIL_FROM` and `CANONICAL_ORIGIN`; [`.env.example`](../.env.example)
+lists the rest. Any SMTP service works. The connection is always encrypted: TLS from the
+start on port 465 or with `SMTP_SECURE=true`, STARTTLS otherwise. A partial or malformed
+set stops the server at startup.
+
+- **Sending domain**: the domain of `EMAIL_FROM` needs SPF, DKIM and DMARC.
+- **Unsubscribe header**: every email carries `List-Unsubscribe` and
+  `List-Unsubscribe-Post`, which give mail apps their own "Unsubscribe". The provider's
+  DKIM signature must cover both headers, or mail apps ignore them. They need an HTTPS
+  `CANONICAL_ORIGIN`; over HTTP they are left out.
+- **Tracking**: switch the provider's open and click tracking off. The email loads nothing
+  when it is read and its links go straight to the site.
+- **Privacy notice**: the mail provider receives each recipient's address and the email.
+  Name it in your own privacy notice.
+- **Allowances**: `DELIVERY_EMAILS_PER_ACCOUNT_PER_DAY` (default 20) and
+  `DELIVERY_EMAILS_PER_DAY` (default 80) cap the emails of any 24 hours. An email beyond
+  one is skipped, not sent later. Keep the second under the provider's allowance, which
+  sign-in codes sent through the same service share.
+- **Unsubscribe links** are signed with a key derived from `SUPABASE_SERVICE_ROLE_KEY` and
+  never expire. Rotating that key invalidates the links of emails already sent; the switch
+  in the app still works.
+- **Apple relay addresses** (`@privaterelay.appleid.com`) are skipped until the sender is
+  registered with Apple's email relay and `EMAIL_APPLE_RELAY=true`.
+
 ## Moving to another host
 
 One container can answer on several hosts. To move the site, serve the new host next to
@@ -168,7 +197,8 @@ checks the handoff, restarts and finishes the job.
 - **Backups**: back up Postgres independently and regularly test restoring Auth, parcels,
   events and push tables together.
 - **Secrets**: rotate anything exposed. New VAPID keys invalidate all browser subscriptions.
-  Revoke an exposed APNs key in the Apple Developer portal before replacing it.
+  Revoke an exposed APNs key in the Apple Developer portal before replacing it. A new
+  service-role key invalidates the unsubscribe links of delivery emails already sent.
 
 ## Migrating from a pre-account deployment
 

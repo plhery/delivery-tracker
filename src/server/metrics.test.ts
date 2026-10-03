@@ -117,6 +117,24 @@ describe('prometheus carrier metrics', () => {
     expect(text).not.toContain('parcel_forgotten_total{kind="package",reason="expired"}');
   });
 
+  it('counts delivery emails by how they ended and why, and nothing else', async () => {
+    metrics.recordDeliveryEmail('sent', 'none');
+    metrics.recordDeliveryEmail('sent', 'none');
+    metrics.recordDeliveryEmail('failed', 'smtp');
+    metrics.recordDeliveryEmail('skipped', 'no_address');
+    metrics.recordDeliveryEmail('skipped', 'account_cap', 3);
+    metrics.recordDeliveryEmail('skipped', 'service_cap', 0);
+    const text = await scraped();
+    expect(text).toContain('delivery_email_total{outcome="sent",reason="none"} 2');
+    expect(text).toContain('delivery_email_total{outcome="failed",reason="smtp"} 1');
+    expect(text).toContain('delivery_email_total{outcome="skipped",reason="no_address"} 1');
+    expect(text).toContain('delivery_email_total{outcome="skipped",reason="account_cap"} 3');
+    // Nothing was skipped for everyone's allowance, so no series appears for it.
+    expect(text).not.toContain('reason="service_cap"');
+    const series = text.split('\n').filter((line) => line.startsWith('delivery_email_total{'));
+    expect(series.every((line) => /^delivery_email_total\{outcome="[a-z]+",reason="[a-z_]+"\} \d+$/.test(line))).toBe(true);
+  });
+
   it('serves yesterday\'s lookups and detections per client as gauges', async () => {
     metrics.recordPublicLookupUsage({ buckets: 40, p50: 2, p90: 9, max: 15, detection: { buckets: 31, p50: 3, p90: 12, max: 60 } });
     let text = await metrics.metricsText();

@@ -25,6 +25,7 @@ import {
   logOperationalEvent,
   reportRoutingEvent,
 } from './observability';
+import type { DeliveryEmailService } from './email/deliveryEmails';
 import { PushDispatchError, type CompositePushNotificationService } from './push';
 import { STORED_EVENT_IDENTITIES, type SupabaseServiceClient } from './supabase';
 import { sameInstantIdentities, sharedScans, withIdentities, withoutCopyDrift } from './eventIdentity';
@@ -177,6 +178,8 @@ export interface SyncSummary extends JsonObject {
   notifications_sent: number;
   notification_errors: number;
   subscriptions_expired: number;
+  emails_sent: number;
+  email_errors: number;
 }
 
 export function emptySyncSummary(): SyncSummary {
@@ -190,6 +193,8 @@ export function emptySyncSummary(): SyncSummary {
     notifications_sent: 0,
     notification_errors: 0,
     subscriptions_expired: 0,
+    emails_sent: 0,
+    email_errors: 0,
   };
 }
 
@@ -475,6 +480,7 @@ export class TrackingSyncService {
     readonly adapter: TrackingAdapter = new CarrierTrackingAdapter(),
     readonly notifier: CompositePushNotificationService | null = null,
     readonly now: () => Date = () => new Date(),
+    readonly emails: DeliveryEmailService | null = null,
   ) {}
 
   async sync(context: SyncRunContext = { trigger: 'scheduled' }): Promise<SyncSummary> {
@@ -554,7 +560,28 @@ export class TrackingSyncService {
     }
   }
 
+  /** Tells what the job found: notifications first, then the delivery emails, which need no push channel. */
   private async dispatchNotifications(summary: SyncSummary, signal?: AbortSignal): Promise<void> {
+    await this.dispatchPush(summary, signal);
+    await this.dispatchEmails(summary, signal);
+  }
+
+  private async dispatchEmails(summary: SyncSummary, signal?: AbortSignal): Promise<void> {
+    signal?.throwIfAborted();
+    if (!this.emails) return;
+    try {
+      const emails = await this.emails.dispatch(signal);
+      summary.emails_sent = emails.sent;
+      summary.email_errors = emails.failed;
+    } catch (error) {
+      signal?.throwIfAborted();
+      // The job's tracking work is done: an email run that could not start is tried by the next job.
+      summary.email_errors += 1;
+      captureOperationalError(error, { component: 'delivery-email', operation: 'dispatch' });
+    }
+  }
+
+  private async dispatchPush(summary: SyncSummary, signal?: AbortSignal): Promise<void> {
     signal?.throwIfAborted();
     if (!this.notifier) return;
     try {

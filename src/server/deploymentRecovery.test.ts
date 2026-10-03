@@ -7,7 +7,7 @@ import { TrackingSyncAudit } from './trackingAudit';
 
 afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
 const summary: SyncSummary = { checked: 0, updated: 0, waiting: 0, errors: 0, unsupported: 0,
-  superseded: 0, notifications_sent: 0, notification_errors: 0, subscriptions_expired: 0 };
+  superseded: 0, notifications_sent: 0, notification_errors: 0, subscriptions_expired: 0, emails_sent: 0, email_errors: 0 };
 function setup() {
   vi.useFakeTimers();
   const client = new SupabaseServiceClient('https://database.test', 'test');

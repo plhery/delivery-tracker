@@ -617,6 +617,66 @@ describe('TrackingSyncService', () => {
     expect(notifier.dispatch).toHaveBeenCalledOnce();
   });
 
+  it('sends the delivery emails after the notifications of every job, and counts them', async () => {
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    const notifier = { dispatch: vi.fn().mockResolvedValue({ sent: 2, failed: 0, expired: 1 }) };
+    const emails = { dispatch: vi.fn().mockResolvedValue({ sent: 3, failed: 1, skipped: 4 }) };
+    const service = new TrackingSyncService(fakeClient() as unknown as SupabaseServiceClient, adapter, notifier as never, undefined, emails as never);
+    const controller = new AbortController();
+    const parcel = { id: 'parcel', user_id: 'owner', carrier: 'swiss-post', tracking_number: 'TEST1234' };
+    await expect(service.syncPackage(parcel, { trigger: 'package', signal: controller.signal })).resolves.toMatchObject({
+      checked: 1, notifications_sent: 2, notification_errors: 0, subscriptions_expired: 1, emails_sent: 3, email_errors: 1,
+    });
+    expect(emails.dispatch).toHaveBeenCalledExactlyOnceWith(controller.signal);
+    expect(emails.dispatch.mock.invocationCallOrder[0]).toBeGreaterThan(notifier.dispatch.mock.invocationCallOrder[0]!);
+    await expect(service.sync()).resolves.toMatchObject({ emails_sent: 3, email_errors: 1 });
+    expect(emails.dispatch).toHaveBeenCalledTimes(2);
+  });
+
+  it('sends the delivery emails on a deployment without push, and after a push dispatch that failed', async () => {
+    const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    const emails = { dispatch: vi.fn().mockResolvedValue({ sent: 1, failed: 0, skipped: 0 }) };
+    const parcel = { id: 'parcel', user_id: 'owner', carrier: 'swiss-post', tracking_number: 'TEST1234' };
+    const withoutPush = new TrackingSyncService(fakeClient() as unknown as SupabaseServiceClient, adapter, null, undefined, emails as never);
+    await expect(withoutPush.syncPackage(parcel)).resolves.toMatchObject({ notifications_sent: 0, emails_sent: 1, email_errors: 0 });
+    expect(emails.dispatch).toHaveBeenCalledOnce();
+
+    const notifier = { dispatch: vi.fn().mockRejectedValue(new Error('push queue unavailable')) };
+    const afterFailure = new TrackingSyncService(fakeClient() as unknown as SupabaseServiceClient, adapter, notifier as never, undefined, emails as never);
+    await expect(afterFailure.syncPackage(parcel)).resolves.toMatchObject({ notification_errors: 1, emails_sent: 1 });
+    expect(emails.dispatch).toHaveBeenCalledTimes(2);
+    expect(report).toHaveBeenCalledExactlyOnceWith(expect.any(Error), { component: 'push', operation: 'dispatch' });
+    // Without mail settings there is no service, and the summary says nothing was sent.
+    await expect(new TrackingSyncService(fakeClient() as unknown as SupabaseServiceClient, adapter, null).syncPackage(parcel))
+      .resolves.toMatchObject({ emails_sent: 0, email_errors: 0 });
+  });
+
+  it('finishes the job when the delivery emails cannot be dispatched, and reports it', async () => {
+    const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const client = fakeClient();
+    const failure = new Error('claim function unavailable');
+    const emails = { dispatch: vi.fn().mockRejectedValue(failure) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null, undefined, emails as never);
+    await expect(service.syncPackage({ id: 'parcel', user_id: 'owner', carrier: 'swiss-post', tracking_number: 'TEST1234' }))
+      .resolves.toMatchObject({ checked: 1, updated: 1, errors: 0, emails_sent: 0, email_errors: 1 });
+    expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'delivery-email', operation: 'dispatch' });
+  });
+
+  it('stops with the job when it is stopped while the delivery emails are sent', async () => {
+    const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const controller = new AbortController();
+    const emails = { dispatch: vi.fn().mockImplementation(async () => { controller.abort(); throw new Error('stopped'); }) };
+    const service = new TrackingSyncService(fakeClient() as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null, undefined, emails as never);
+    await expect(service.syncPackage(
+      { id: 'parcel', user_id: 'owner', carrier: 'swiss-post', tracking_number: 'TEST1234' },
+      { trigger: 'package', signal: controller.signal },
+    )).rejects.toThrow();
+    expect(report).not.toHaveBeenCalled();
+  });
+
   it('follows one-off parcels opened in the last 24 hours, after the accounts and ten at most', async () => {
     const due = { carrier: 'swiss-post', current_stage: 'in_transit', tracking_number: 'TEST1234',
       last_synced_at: '2026-09-09T09:00:00Z', sync_status: 'ok' };

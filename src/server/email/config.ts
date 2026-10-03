@@ -94,3 +94,36 @@ export function emailConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
     return false;
   }
 }
+
+/** Why an account is not written to, as the code a skipped email is recorded with. */
+export type UndeliverableAddress = 'no_address' | 'relay_address';
+
+/**
+ * Why the server does not write to an account's address, or null when it does.
+ * The address must be one the Auth server confirmed. Apple's Hide My Email
+ * relay only takes mail from a sender registered with Apple, so its addresses
+ * wait for `EMAIL_APPLE_RELAY`.
+ */
+export function undeliverableAddress(
+  settings: Pick<EmailSettings, 'appleRelay'>,
+  email: string | null,
+  confirmed: boolean,
+): UndeliverableAddress | null {
+  if (!email || !confirmed || !addressPattern.test(email)) return 'no_address';
+  if (!settings.appleRelay && /@privaterelay\.appleid\.com$/i.test(email)) return 'relay_address';
+  return null;
+}
+
+/** Whether this server can email an account: mail is configured, and the account has a confirmed address it writes to. */
+export function emailAvailable(
+  account: { email: string | null; emailConfirmed?: boolean },
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  let settings: EmailSettings | null;
+  try {
+    settings = emailSettings(env);
+  } catch {
+    return false;
+  }
+  return settings !== null && undeliverableAddress(settings, account.email, account.emailConfirmed === true) === null;
+}

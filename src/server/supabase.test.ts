@@ -75,10 +75,10 @@ describe('guarded tracking writes', () => {
     const identities = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at,stage,description)`;
     expect(select(serviceRequest, 0).endsWith(`,${identities}`)).toBe(true);
     expect(select(serviceRequest, 1).endsWith(`,${identities}`)).toBe(true);
-    // The API's package shape is unchanged and never names provider_event_id.
+    // The API's package shape never names provider_event_id, nor when the parcel joined its account.
     const apiShape = 'id,tracking_number,label,carrier,created_at,expected_delivery,last_status_text,'
       + 'last_synced_at,sync_status,sync_error,tracking_url,dpd_postcode,carrier_data,archived_at,'
-      + 'notifications_muted,tracking_events(id,package_id,stage,description,location,occurred_at,point:raw_data->point)';
+      + 'notifications_muted,email_muted,tracking_events(id,package_id,stage,description,location,occurred_at,point:raw_data->point)';
     expect(select(userRequest, 0)).toBe(apiShape);
     expect(select(userRequest, 1)).toBe(apiShape);
     expect(select(userRequest, 2)).not.toContain('provider_event_id');
@@ -408,5 +408,155 @@ describe('owner package PostgREST client', () => {
         p_dpd_postcode: '59650',
       },
     });
+  });
+});
+
+describe('delivery emails', () => {
+  // Synthetic identifiers only.
+  const owner = '5b000000-0000-4000-a000-000000000001';
+  const parcel = '5b000000-0000-4000-a000-000000000002';
+  const service = () => new SupabaseServiceClient('https://database.example', 'service-key');
+  const user = () => new SupabaseUserClient('https://database.example', 'public-key', 'token');
+
+  it('claims what must be sent now in one call, with the allowances', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request').mockResolvedValue({
+      send: [
+        { id: 'claim-1', package_id: parcel, user_id: owner, event_id: 'scan-1', timezone: 'Europe/Paris', delivered_time: 'date' },
+        { id: 'claim-2', package_id: 'parcel-2', user_id: owner, event_id: 'scan-2', timezone: null, delivered_time: 'sometime' },
+      ],
+      account_cap: 2,
+      service_cap: 1,
+    });
+    await expect(client.claimDeliveryEmails(20, 5, 80)).resolves.toEqual({
+      send: [
+        { id: 'claim-1', packageId: parcel, userId: owner, eventId: 'scan-1', timezone: 'Europe/Paris', deliveredTime: 'date' },
+        // Without a time zone or a known kind of time, the email says less rather than something wrong.
+        { id: 'claim-2', packageId: 'parcel-2', userId: owner, eventId: 'scan-2', timezone: 'Europe/Zurich', deliveredTime: 'none' },
+      ],
+      accountCap: 2,
+      serviceCap: 1,
+    });
+    expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/claim_delivery_emails', {
+      method: 'POST', body: { p_limit: 20, p_per_account: 5, p_per_day: 80 },
+    });
+    request.mockResolvedValue({ send: [] });
+    await expect(client.claimDeliveryEmails(20, 5, 80)).resolves.toEqual({ send: [], accountCap: 0, serviceCap: 0 });
+    for (const unexpected of [null, [], { send: 'none' }]) {
+      request.mockResolvedValue(unexpected);
+      await expect(client.claimDeliveryEmails(20, 5, 80)).rejects.toThrow('did not return the delivery emails');
+    }
+  });
+
+  it('ends a claim with its outcome and a reason code', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request').mockResolvedValueOnce(true).mockResolvedValueOnce(true).mockResolvedValue(false);
+    await expect(client.finishDeliveryEmail('claim-1', 'sent')).resolves.toBe(true);
+    await expect(client.finishDeliveryEmail('claim-1', 'failed', 'smtp')).resolves.toBe(true);
+    await expect(client.finishDeliveryEmail('claim-1', 'skipped', 'no_address')).resolves.toBe(false);
+    expect(request.mock.calls).toEqual([
+      ['/rest/v1/rpc/finish_delivery_email', { method: 'POST', body: { p_id: 'claim-1', p_status: 'sent', p_reason: null } }],
+      ['/rest/v1/rpc/finish_delivery_email', { method: 'POST', body: { p_id: 'claim-1', p_status: 'failed', p_reason: 'smtp' } }],
+      ['/rest/v1/rpc/finish_delivery_email', { method: 'POST', body: { p_id: 'claim-1', p_status: 'skipped', p_reason: 'no_address' } }],
+    ]);
+  });
+
+  it('switches an account\'s email by its id, sent in the body', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request').mockResolvedValueOnce(false).mockResolvedValueOnce(true).mockResolvedValue(null);
+    await expect(client.setDeliveryEmail(owner, false)).resolves.toBe(false);
+    await expect(client.setDeliveryEmail(owner, true)).resolves.toBe(true);
+    // No such account.
+    await expect(client.setDeliveryEmail(owner, false)).resolves.toBeNull();
+    expect(request.mock.calls[0]).toEqual(['/rest/v1/rpc/set_delivery_email', { method: 'POST', body: { p_user_id: owner, p_enabled: false } }]);
+    expect(request.mock.calls.every(([path]) => !String(path).includes(owner))).toBe(true);
+  });
+
+  it('reads what an email to an account needs from the Auth server', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request').mockResolvedValue({
+      id: owner, email: 'alex@example.com', email_confirmed_at: '2026-09-01T08:00:00Z',
+      user_metadata: { locale: 'fr', name: 'never read' }, app_metadata: { provider: 'email' },
+    });
+    await expect(client.getAuthAccount(owner)).resolves.toEqual({ email: 'alex@example.com', emailConfirmed: true, locale: 'fr' });
+    expect(request).toHaveBeenCalledExactlyOnceWith(`/auth/v1/admin/users/${owner}`);
+    request.mockResolvedValue({ id: owner, email: 'alex@example.com', email_confirmed_at: null, user_metadata: null });
+    await expect(client.getAuthAccount(owner)).resolves.toEqual({ email: 'alex@example.com', emailConfirmed: false, locale: null });
+    request.mockResolvedValue({ id: owner, email: '', user_metadata: { locale: 42 } });
+    await expect(client.getAuthAccount(owner)).resolves.toEqual({ email: null, emailConfirmed: false, locale: null });
+    // An account that is gone, and an answer that is not an account.
+    request.mockRejectedValueOnce(new SupabaseError('Supabase GET request failed (404)', 404));
+    await expect(client.getAuthAccount(owner)).resolves.toBeNull();
+    request.mockResolvedValue({ users: [] });
+    await expect(client.getAuthAccount(owner)).resolves.toBeNull();
+    // The Auth server not answering is a failure, not a missing account.
+    request.mockRejectedValue(new SupabaseError('Supabase GET request failed (503)', 503));
+    await expect(client.getAuthAccount(owner)).rejects.toThrow('503');
+  });
+
+  it('loads an account\'s parcel in the shape the API gives its owner', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request').mockResolvedValueOnce([{ id: parcel }]).mockResolvedValue([]);
+    await expect(client.getOwnedPackage(parcel, owner)).resolves.toEqual({ id: parcel });
+    await expect(client.getOwnedPackage(parcel, owner)).resolves.toBeNull();
+    const params = new URL(`https://database.example${request.mock.calls[0]![0]}`).searchParams;
+    expect(params.get('id')).toBe(`eq.${parcel}`);
+    expect(params.get('user_id')).toBe(`eq.${owner}`);
+    const owned = user();
+    const ownerRequest = vi.spyOn(owned, 'request').mockResolvedValue([{ id: parcel }]);
+    await owned.getPackage(parcel);
+    expect(params.get('select')).toBe(new URL(`https://database.example${ownerRequest.mock.calls[0]![0]}`).searchParams.get('select'));
+    expect(params.get('select')).not.toContain('provider_event_id');
+  });
+
+  it('saves the email choice only when a request makes one', async () => {
+    const client = user();
+    const request = vi.spyOn(client, 'request').mockResolvedValue({ enabled_stages: ['delivered'], email_on_delivery: true });
+    const base = { p_enabled_stages: ['delivered'], p_quiet_hours_start: null, p_quiet_hours_end: null, p_timezone: 'Europe/Zurich' };
+    await client.setNotificationPreferences(['delivered'], null, null, 'Europe/Zurich');
+    await client.setNotificationPreferences(['delivered'], null, null, 'Europe/Zurich', null);
+    await client.setNotificationPreferences(['delivered'], null, null, 'Europe/Zurich', true);
+    await client.setNotificationPreferences(['delivered'], null, null, 'Europe/Zurich', false);
+    expect(request.mock.calls.map(([, options]) => options!.body)).toEqual([
+      // The four arguments every server before this one sent: the stored choice stays.
+      base, base, { ...base, p_email_on_delivery: true }, { ...base, p_email_on_delivery: false },
+    ]);
+  });
+
+  it('reads the email choice with the preferences, and says never chosen without a row', async () => {
+    const client = user();
+    const request = vi.spyOn(client, 'request').mockResolvedValueOnce([{ enabled_stages: ['delivered'], email_on_delivery: false }]).mockResolvedValue([]);
+    await expect(client.getNotificationPreferences()).resolves.toMatchObject({ email_on_delivery: false });
+    await expect(client.getNotificationPreferences()).resolves.toMatchObject({ email_on_delivery: null, timezone: 'Europe/Zurich' });
+    expect(new URL(`https://database.example${request.mock.calls[0]![0]}`).searchParams.get('select'))
+      .toBe('enabled_stages,quiet_hours_start,quiet_hours_end,timezone,email_on_delivery');
+  });
+
+  it('leaves a parcel out of the email through the owner-scoped RPC', async () => {
+    const client = user();
+    const request = vi.spyOn(client, 'request').mockResolvedValueOnce(true).mockResolvedValue(false);
+    await client.updatePackage(parcel, { email_muted: true });
+    expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/set_owned_package_email_muted', {
+      method: 'POST', body: { p_package_id: parcel, p_muted: true },
+    });
+    // Another account's parcel, or none.
+    await expect(client.updatePackage(parcel, { email_muted: false })).rejects.toMatchObject({ status: 404 });
+    for (const values of [{ email_muted: 'yes' }, { email_muted: true, notifications_muted: true }, { owned_since: '2026-10-03T00:00:00Z' }]) {
+      await expect(client.updatePackage(parcel, values)).rejects.toThrow('approved mutation');
+    }
+  });
+
+  it('lists the emails an account was sent, for its export', async () => {
+    const client = user();
+    const request = vi.spyOn(client, 'request').mockResolvedValue([
+      { package_id: parcel, sent_at: '2026-10-03T12:13:00+00:00' },
+      { package_id: null, sent_at: '2026-09-30T09:00:00+00:00' },
+      { package_id: parcel, sent_at: null },
+    ]);
+    await expect(client.listDeliveryEmails()).resolves.toEqual([
+      { packageId: parcel, sentAt: '2026-10-03T12:13:00+00:00' },
+      { packageId: null, sentAt: '2026-09-30T09:00:00+00:00' },
+    ]);
+    expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/owned_delivery_emails', { method: 'POST', body: {} });
   });
 });

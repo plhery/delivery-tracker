@@ -14,6 +14,7 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
           +--- service role ---> background sync writes
           +--------------------> universal-parcel-scraper
           +--------------------> Web Push + APNs
+          +--------------------> SMTP (delivery email)
 ```
 
 ## Where things live
@@ -24,7 +25,7 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
 | `proxy.ts` | Per-request CSP nonce and security headers; redirects pages from a host the site has left |
 | `src/` | React client (`components/`, `store/`, `auth/`, `i18n.tsx`) |
 | `src/peek/` | The landing and the parcel page for visitors: the field, parcel link client, this device's parcels, keeping a parcel after sign-in; `landing/` holds the sections below the field |
-| `src/server/` | API helpers, auth, sync worker, routing, push, observability |
+| `src/server/` | API helpers, auth, sync worker, routing, push, email, observability |
 | `universal-parcel-scraper` (npm dependency) | Every carrier: catalog, detection, adapters, universal providers ([README](https://github.com/plhery/universal-parcel-scraper/blob/main/README.md)) |
 | `shared/` | Translations, tracking message map and analytics catalog, shared by web and iOS |
 | `contracts/` | OpenAPI contract (source of TypeScript and Swift types) and cross-platform fixtures |
@@ -52,19 +53,23 @@ Key server modules:
   devices, and Web Push to the alerts of the parcel's links. Each batch of new scans
   announces its newest one, and only when it is the parcel's newest scan: history a carrier
   change backfills, or a scan reported late, is recorded as handled without an alert.
+- `email/` tells an account by email that a parcel was delivered, when the account asked
+  for it. The database hands each delivered scan out once (`claim_delivery_emails`),
+  `deliveryEmails.ts` writes the email and sends it through any SMTP service, and
+  `unsubscribe.ts` signs the link that switches it off.
 - `observability.ts` and `trackingAudit.ts` link Sentry and logs to the private audit
   tables ([OBSERVABILITY.md](OBSERVABILITY.md)).
 
 ## Trust boundaries
 
-- **Secrets**: the service-role key, VAPID private key and APNs `.p8` stay on the server.
-  The Supabase URL and publishable key are public by design.
+- **Secrets**: the service-role key, VAPID private key, APNs `.p8` and SMTP password stay
+  on the server. The Supabase URL and publishable key are public by design.
 - **Ownership**: every private request needs a valid Supabase token. Reads go through
   PostgREST with that token, so RLS is the final check. Writes use owner-bound database
   functions that re-validate, enforce quotas and can't target another account.
-- **Service role**: used only for scheduled carrier work, push delivery, account
-  deletion, parcels followed without an account and what a parcel link shows. It never
-  reaches the browser.
+- **Service role**: used only for scheduled carrier work, push delivery, the delivery
+  email, account deletion, parcels followed without an account and what a parcel link
+  shows. It never reaches the browser.
 - **Parcel links**: a parcel followed without an account has no owner and is reached
   through `/p/<id>`. The id (12 symbols, about 70 bits) is the capability to read it.
   - The device that made the lookup also gets an owner key, once; the database keeps its
@@ -131,6 +136,11 @@ Key server modules:
     The browser is asked for the permission, and subscribes, only on "Turn on". It reuses
     the subscription an account or another parcel already made, so turning one alert off
     leaves the subscription in place. The calendar file is made in the browser.
+- **Delivery email**: sent only to the address an account signs in with, once the Auth
+  server has confirmed it. `delivery_emails` is service-role only.
+  - Addresses stay out of logs, metric labels and error reports.
+  - The email has no tracking pixel, no rewritten link and no remote content: its picture
+    travels inside it.
 - **Private data**: tracking numbers, labels, carrier history, push endpoints and capability
   URLs (Planzer, Dachser) never go into analytics. They do appear in operator logs and
   Sentry; see [OBSERVABILITY.md](OBSERVABILITY.md).
@@ -186,9 +196,12 @@ a visitor with parcels on the device gets the map at once, for the routes on the
   sharing is stopped it is deleted 30 days later, by the same maintenance pass.
 - **An alert for a link** is deleted when the parcel is delivered or returned, when its
   browser unsubscribes, when its link goes and, for viewers, when sharing stops.
+- **A delivery email** leaves one row per parcel in `delivery_emails`: sent, failed or
+  skipped, with a reason code and none of its content. The row outlives its parcel, so a
+  delivery is never told twice.
 - **Deleting an account** removes the Auth user. Foreign-key cascades remove parcels,
-  jobs, events, push registrations, Live Activity tokens and audit rows. Other audit rows
-  expire after 90 days.
+  jobs, events, push registrations, Live Activity tokens, delivery email rows and audit
+  rows. Other audit rows expire after 90 days.
 - **Share target**: the PWA receives shared text via `POST`. The service worker keeps it
   in a one-time cache entry, so tracking text never appears in a URL or HTTP log.
 
@@ -204,6 +217,16 @@ a visitor with parcels on the device gets the map at once, for the routes on the
   problem, pickup, return, archive, sign-out or opt-out. At most two run at once. Live
   Activity pushes go first, so a successful one replaces the matching banner; if it fails,
   the banner is sent.
+- The delivery email is apart from notifications: off until the account switches it on,
+  and switched off per parcel. It is sent once per parcel, after the notifications of the
+  sync job that stored the delivered scan, on deployments without push too.
+  - A parcel that was already delivered when it joined the account is never emailed. A
+    delivered scan with a clock time must be later than that moment. One with only a day,
+    or no time, counts when an earlier check of the parcel, since it joined, answered
+    without a delivery. Keeping a looked-up parcel is joining; merging two legs is not.
+  - Nor is a scan stored before the email was switched on or more than 24 hours ago, or
+    one that is not the parcel's newest.
+  - A send that fails is tried again a quarter of an hour later, then an hour later.
 
 ## Copy and languages
 
@@ -214,7 +237,8 @@ shown as-is; known app-generated timeline messages are translated
 diagnostics. Status labels don't imply a carrier delay when only our check failed.
 
 Push registrations store the device language. The web updates it when the user changes
-language, and the Share extension reads it from the app group.
+language, and the Share extension reads it from the app group. The delivery email is
+written in the language the account's apps last stored with its sign-in.
 
 ## Contracts
 

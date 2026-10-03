@@ -23,6 +23,10 @@ of the app still sees the address. The push endpoint and keys of a link's alert 
 logged, and a failed send to one is logged and counted but not reported as an error:
 anyone holding a link can add an endpoint.
 
+The delivery email is another: its lines name a parcel by its id and say how the email
+ended, never the address, the subject or the parcel's name. A mail server's refusal quotes
+the recipient, so only its kind and SMTP status are logged and reported.
+
 ## Postgres audit
 
 All tables and views here are service-role only.
@@ -37,6 +41,13 @@ All tables and views here are service-role only.
 
 Completed rows are kept for 90 days. Attempts still running after 30 min are marked
 `abandoned` and reported. Deleting a package or account deletes its audit.
+
+`delivery_emails` records what was emailed: one row per parcel claimed for a delivery
+email, with the account, the delivered scan, `status` (`claimed`, `sent`, `failed`,
+`skipped`), a `reason` code, the attempts and the times. It holds no address and none of
+the email. A row outlives its parcel and goes with its account. The delivery email also
+reads the attempts above: a delivered scan without a clock time is news only when an
+earlier attempt, since the parcel joined the account, ended `updated` on another stage.
 
 **Anomaly codes:**
 
@@ -112,6 +123,12 @@ where outcome in ('error', 'abandoned') and started_at >= now() - interval '7 da
 group by configured_carrier, error_type
 order by failures desc, last_seen desc;
 
+-- Delivery emails of the last day, by how they ended
+select status, reason, count(*) as emails, max(claimed_at) as last_claimed
+from public.delivery_emails
+where claimed_at >= now() - interval '24 hours'
+group by status, reason order by emails desc;
+
 -- Stuck attempts (maintenance clears these after 30 min)
 select id, job_id, package_id, configured_carrier, current_step, started_at, now() - started_at as age
 from public.tracking_sync_attempts where outcome = 'running' order by started_at;
@@ -144,6 +161,11 @@ Key JSON events:
 - `parcel_link_alerts_failed`: how many alerts of parcel links a dispatch could not send.
 - `public_allowance`: an overall daily allowance without an account (`kind`: `lookup` or
   `detection`) is `running_out` at 80% or `used_up`, with `used` and `limit`.
+- `delivery_email` (by `package_id`): how one delivery email ended, with its `outcome` and
+  `reason`; a refusal by the mail server adds `error_code` and `smtp_status`.
+  `delivery_emails_capped` when emails were skipped for a daily allowance, and
+  `delivery_email_finish_failed` when an ending could not be recorded: that email stays
+  claimed and is not sent again.
 
 The logger allows `tracking_number` explicitly. It drops other fields whose names look
 like parcel, user, label, location, status text, URL, token, cookie or secret data. Keep
@@ -230,6 +252,7 @@ container.
 | `parcel_alert_set_total` (outcome) | Requests to turn on an alert for a link: `added`, `updated`, `full` (ten already), `finished` (journey over), `stopped`, `unavailable` |
 | `parcel_alert_sent_total` (outcome) | Batches of new scans per alert: `sent`, `skipped` (not in its preset, backfilled, or the owner's own browser), `failed`, `expired` (the push service says the subscription is gone) |
 | `parcel_alert_removed_total` (reason) | Alerts ended: `asked`, `delivered` (journey over), `expired`, `failed` (three failed sends in a row) |
+| `delivery_email_total` (outcome, reason) | Delivery emails: `sent`; `failed` and tried again later (`smtp`, `content`, `account`, `parcel`, `interrupted`); `skipped` for good (`no_address`, `relay_address`, `parcel_gone`, `account_cap`, `service_cap`) |
 | `public_lookup_clients` | Clients that made a lookup yesterday (UTC) |
 | `public_lookups_per_client` (stat) | Yesterday's lookups per client: `p50`, `p90`, `max` |
 | `public_detection_clients` | Clients that had carriers asked about a number yesterday (UTC) |
@@ -254,6 +277,10 @@ Useful questions:
   `public_lookup_total{outcome="limited_daily"}` rises with it. The gauges are set by the
   maintenance pass after each scheduled sync. `public_detections_per_client` and
   `PUBLIC_DETECTIONS_PER_DAY` read the same way.
+
+- **Are delivery emails going out?** `delivery_email_total{outcome="failed",reason="smtp"}`
+  rising means the mail server refuses them: the log lines say how. A reason ending in
+  `_cap` means a daily allowance is too small for the traffic, and those emails are lost.
 
 [ops/grafana/carrier-scrapers.json](../ops/grafana/carrier-scrapers.json) is an importable
 Grafana dashboard with these panels. Its "silent carriers" stat flags carriers with lookups

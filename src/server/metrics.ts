@@ -18,11 +18,12 @@ import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from '
  *
  * The parcel-link series count lookups and detections without an account,
  * link reads, kept parcels, forgotten ones, shares and alerts by outcome only:
- * never by number, link, client or push endpoint.
+ * never by number, link, client or push endpoint. The delivery emails are
+ * counted by how they ended and why: never by account, address or parcel.
  */
 
 /** Bump when the series or their labels change, so a hot-reloaded copy does not reuse an older shape. */
-const RUNTIME_VERSION = 6;
+const RUNTIME_VERSION = 7;
 
 interface PrometheusRuntime {
   version: number;
@@ -43,6 +44,7 @@ interface PrometheusRuntime {
   parcelAlertSetTotal: Counter<'outcome'>;
   parcelAlertRemovedTotal: Counter<'reason'>;
   parcelAlertSentTotal: Counter<'outcome'>;
+  deliveryEmailTotal: Counter<'outcome' | 'reason'>;
   publicLookupClients: Gauge;
   publicLookupsPerClient: Gauge<'stat'>;
   publicDetectionClients: Gauge;
@@ -162,6 +164,12 @@ function createRuntime(): PrometheusRuntime {
       name: 'parcel_alert_sent_total',
       help: 'Batches of new scans handled for a parcel link alert by outcome (sent, skipped, failed, expired).',
       labelNames: ['outcome'] as const,
+      registers: [registry],
+    }),
+    deliveryEmailTotal: new Counter({
+      name: 'delivery_email_total',
+      help: 'Delivery emails by outcome (sent, failed, skipped) and reason (none when sent).',
+      labelNames: ['outcome', 'reason'] as const,
       registers: [registry],
     }),
     publicLookupClients: new Gauge({
@@ -319,6 +327,31 @@ export function recordParcelAlertRemoved(reason: 'asked' | 'delivered' | 'expire
 /** One batch of new scans for one alert: announced, passed over, failed, or sent to a subscription that is gone. */
 export function recordParcelAlertSent(outcome: 'sent' | 'skipped' | 'failed' | 'expired'): void {
   count(runtime.parcelAlertSentTotal, 'parcel_alert_sent_total', { outcome });
+}
+
+/**
+ * Why a delivery email was not sent. Skipped, for good: the account has no
+ * confirmed address (`no_address`) or one of Apple's relay addresses the sender
+ * is not registered for (`relay_address`), the parcel left the account
+ * (`parcel_gone`), or the account's or everyone's daily allowance was used up
+ * (`account_cap`, `service_cap`). Failed, and tried again: the Auth server or
+ * the database did not answer (`account`, `parcel`), the email could not be
+ * written (`content`), the mail server did not take it (`smtp`), or the run was
+ * stopped first (`interrupted`).
+ */
+export type DeliveryEmailReason =
+  | 'no_address' | 'relay_address' | 'parcel_gone' | 'account_cap' | 'service_cap'
+  | 'account' | 'parcel' | 'content' | 'smtp' | 'interrupted';
+
+/** Delivery emails by how they ended; `none` is the reason of a sent one. */
+export function recordDeliveryEmail(
+  outcome: 'sent' | 'failed' | 'skipped',
+  reason: DeliveryEmailReason | 'none',
+  total = 1,
+): void {
+  if (total > 0) afterFirstScrape(`delivery_email_total${JSON.stringify({ outcome, reason })}`,
+    () => runtime.deliveryEmailTotal.inc({ outcome, reason }, 0),
+    () => runtime.deliveryEmailTotal.inc({ outcome, reason }, total));
 }
 
 interface UsageStats { buckets: number; p50: number; p90: number; max: number }

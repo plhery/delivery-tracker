@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { ALL_NOTIFICATION_STAGES } from '../lib/notificationPresets';
+import type { DeliveredTime } from './email/types';
 import { isRecord, type JsonObject } from './types';
 
 const REQUEST_TIMEOUT_MS = 20_000;
@@ -20,6 +21,7 @@ const PACKAGE_COLUMNS = [
   'carrier_data',
   'archived_at',
   'notifications_muted',
+  'email_muted',
 ].join(',');
 /**
  * The package shape the API returns. It never carries provider_event_id. A
@@ -107,6 +109,30 @@ function parcelShare(value: unknown): ParcelShare {
     throw new SupabaseError('Supabase did not return the shared link');
   }
   return { id: value.id, showNumber: value.show_number === true, gift: value.gift === true, createdAt: value.created_at };
+}
+
+/** A delivered scan claimed for an email: what must be sent now. */
+export interface DeliveryEmailClaim {
+  /** The claim, to end it with. */
+  id: string;
+  packageId: string;
+  userId: string;
+  eventId: string;
+  /** The account's time zone, which the delivery time is told in. */
+  timezone: string;
+  /** What the delivered scan knows of its time, as the notification queues read it. */
+  deliveredTime: DeliveredTime;
+}
+
+/** How a claimed delivery email ended. A failed one is claimed again while it is fresh and attempts are left. */
+export type DeliveryEmailOutcome = 'sent' | 'failed' | 'skipped';
+
+/** What the Auth server knows of an account that an email to it needs. */
+export interface AuthAccount {
+  email: string | null;
+  emailConfirmed: boolean;
+  /** The language the account last used, as its clients store it. */
+  locale: string | null;
 }
 
 /** A parcel that is not the caller's answers like one that does not exist. */
@@ -717,6 +743,24 @@ export class SupabaseClient {
   async deleteAuthUser(userId: string): Promise<void> {
     await this.request(`/auth/v1/admin/users/${encodeURIComponent(userId)}`, { method: 'DELETE' });
   }
+
+  /** An account as the Auth server holds it, read with the service key. Null when it is gone. */
+  async getAuthAccount(userId: string): Promise<AuthAccount | null> {
+    let user: unknown;
+    try {
+      user = await this.request(`/auth/v1/admin/users/${encodeURIComponent(userId)}`);
+    } catch (error) {
+      if (error instanceof SupabaseError && error.status === 404) return null;
+      throw error;
+    }
+    if (!isRecord(user) || typeof user.id !== 'string') return null;
+    const metadata = isRecord(user.user_metadata) ? user.user_metadata : {};
+    return {
+      email: typeof user.email === 'string' && user.email ? user.email : null,
+      emailConfirmed: typeof user.email_confirmed_at === 'string' && user.email_confirmed_at !== '',
+      locale: typeof metadata.locale === 'string' ? metadata.locale : null,
+    };
+  }
 }
 
 export class SupabaseServiceClient extends SupabaseClient {
@@ -761,6 +805,63 @@ export class SupabaseServiceClient extends SupabaseClient {
     return rows(await this.request(`/rest/v1/rpc/followed_one_off_packages?${params}`, {
       method: 'POST', body: { p_opened_since: openedSince.toISOString() },
     }));
+  }
+
+  /**
+   * One parcel of an account in the shape the API gives its owner, events
+   * included. Null when the parcel is gone or belongs to someone else.
+   */
+  async getOwnedPackage(packageId: string, userId: string): Promise<JsonObject | null> {
+    const params = query({ select: PACKAGE_SELECT, id: `eq.${packageId}`, user_id: `eq.${userId}`, limit: '1' });
+    return rows(await this.request(`/rest/v1/packages?${params}`))[0] ?? null;
+  }
+
+  /**
+   * Claims the delivered scans to email now, at most `limit` of them: a claimed
+   * parcel is never handed out again, to this server or another. `perAccount`
+   * and `perDay` are the emails an account, and everyone, may get in 24 hours;
+   * what is beyond one is recorded as skipped and counted here.
+   */
+  async claimDeliveryEmails(
+    limit: number,
+    perAccount: number,
+    perDay: number,
+  ): Promise<{ send: DeliveryEmailClaim[]; accountCap: number; serviceCap: number }> {
+    const result = await this.request('/rest/v1/rpc/claim_delivery_emails', {
+      method: 'POST', body: { p_limit: limit, p_per_account: perAccount, p_per_day: perDay },
+    });
+    if (!isRecord(result) || !Array.isArray(result.send)) throw new SupabaseError('Supabase did not return the delivery emails');
+    return {
+      send: result.send.filter(isRecord).map((claim) => ({
+        id: String(claim.id),
+        packageId: String(claim.package_id),
+        userId: String(claim.user_id),
+        eventId: String(claim.event_id),
+        timezone: typeof claim.timezone === 'string' ? claim.timezone : 'Europe/Zurich',
+        deliveredTime: claim.delivered_time === 'timed' || claim.delivered_time === 'date' ? claim.delivered_time : 'none',
+      })),
+      accountCap: Number(result.account_cap ?? 0),
+      serviceCap: Number(result.service_cap ?? 0),
+    };
+  }
+
+  /** Ends a claimed delivery email, with a short reason code when it was not sent. False when the claim is not open. */
+  async finishDeliveryEmail(id: string, outcome: DeliveryEmailOutcome, reason: string | null = null): Promise<boolean> {
+    return await this.request('/rest/v1/rpc/finish_delivery_email', {
+      method: 'POST', body: { p_id: id, p_status: outcome, p_reason: reason },
+    }) === true;
+  }
+
+  /**
+   * Switches an account's delivery email, for the link its emails carry. The
+   * account id travels in the body. Answers the stored choice, or null when
+   * there is no such account.
+   */
+  async setDeliveryEmail(userId: string, enabled: boolean): Promise<boolean | null> {
+    const stored = await this.request('/rest/v1/rpc/set_delivery_email', {
+      method: 'POST', body: { p_user_id: userId, p_enabled: enabled },
+    });
+    return typeof stored === 'boolean' ? stored : null;
   }
 
   async autoLinkPackages(userId?: string): Promise<number> {
@@ -1270,6 +1371,11 @@ export class SupabaseUserClient extends SupabaseClient {
         method: 'POST',
         body: { p_package_id: packageId, p_muted: values.notifications_muted },
       });
+    } else if (keys.length === 1 && keys[0] === 'email_muted' && typeof values.email_muted === 'boolean') {
+      changed = await this.request('/rest/v1/rpc/set_owned_package_email_muted', {
+        method: 'POST',
+        body: { p_package_id: packageId, p_muted: values.email_muted },
+      });
     } else {
       throw new TypeError('User-scoped package updates must use an approved mutation');
     }
@@ -1309,7 +1415,7 @@ export class SupabaseUserClient extends SupabaseClient {
 
   async getNotificationPreferences(): Promise<JsonObject> {
     const params = query({
-      select: 'enabled_stages,quiet_hours_start,quiet_hours_end,timezone',
+      select: 'enabled_stages,quiet_hours_start,quiet_hours_end,timezone,email_on_delivery',
       limit: '1',
     });
     const result = rows(await this.request(`/rest/v1/notification_preferences?${params}`));
@@ -1318,14 +1424,17 @@ export class SupabaseUserClient extends SupabaseClient {
       quiet_hours_start: null,
       quiet_hours_end: null,
       timezone: 'Europe/Zurich',
+      email_on_delivery: null,
     };
   }
 
+  /** `emailOnDelivery` switches the delivery email; left out or null, the stored choice stays. */
   async setNotificationPreferences(
     enabledStages: string[],
     quietHoursStart: string | null,
     quietHoursEnd: string | null,
     timezone: string,
+    emailOnDelivery: boolean | null = null,
   ): Promise<JsonObject> {
     let result = await this.request('/rest/v1/rpc/set_owned_notification_preferences', {
       method: 'POST',
@@ -1334,6 +1443,7 @@ export class SupabaseUserClient extends SupabaseClient {
         p_quiet_hours_start: quietHoursStart,
         p_quiet_hours_end: quietHoursEnd,
         p_timezone: timezone,
+        ...(emailOnDelivery === null ? {} : { p_email_on_delivery: emailOnDelivery }),
       },
     });
     if (Array.isArray(result) && result.length === 1) [result] = result;
@@ -1341,5 +1451,14 @@ export class SupabaseUserClient extends SupabaseClient {
       throw new SupabaseError('Supabase did not return notification preferences');
     }
     return result;
+  }
+
+  /** The delivery emails this account was sent: the parcel, when it still exists, and the time. */
+  async listDeliveryEmails(): Promise<Array<{ packageId: string | null; sentAt: string }>> {
+    const sent = rows(await this.request('/rest/v1/rpc/owned_delivery_emails', { method: 'POST', body: {} }));
+    return sent.filter((email) => typeof email.sent_at === 'string').map((email) => ({
+      packageId: typeof email.package_id === 'string' ? email.package_id : null,
+      sentAt: String(email.sent_at),
+    }));
   }
 }

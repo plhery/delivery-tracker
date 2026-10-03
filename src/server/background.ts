@@ -12,6 +12,7 @@ import {
   shouldReportRepeatedFailure,
   type ScheduledCheckIn,
 } from './observability';
+import { deliveryEmailService } from './email/deliveryEmails';
 import { recordParcelAlertRemoved, recordParcelsForgotten, recordPublicLookupUsage } from './metrics';
 import { pushServices } from './push';
 import { FriendshipPushService, FriendshipPushWorker } from './friendshipPush';
@@ -418,10 +419,14 @@ export function startBackgroundServices(): BackgroundRuntime | null {
   current?.friendshipWorker?.stop();
   const state = initialState();
   const notifier = pushServices(client);
+  // The delivery email needs no push channel: it is sent wherever mail is configured.
+  const emails = deliveryEmailService(client);
   const service = new TrackingSyncService(
     client,
     undefined,
     notifier.web || notifier.native || notifier.liveActivities ? notifier : null,
+    undefined,
+    emails,
   );
   const worker = new SyncJobWorker(service, state);
   const scheduler = new ScheduledSync(client, worker, state);
@@ -436,6 +441,7 @@ export function startBackgroundServices(): BackgroundRuntime | null {
     web_push_enabled: Boolean(notifier.web),
     native_push_enabled: Boolean(notifier.native),
     live_activity_push_enabled: Boolean(notifier.liveActivities),
+    delivery_email_enabled: Boolean(emails),
   });
   return runtime;
 }
