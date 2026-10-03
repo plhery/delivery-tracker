@@ -56,7 +56,8 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: '/((?!api|health|_next/static|_next/image|icons|sw\\.js|push-sw\\.js|og\\.png|favicon\\.ico|\\.well-known/apple-app-site-association).*)',
+      // The example email is not a page of the app: it answers with a policy and a lifetime of its own.
+      source: '/((?!api|health|_next/static|_next/image|icons|sw\\.js|push-sw\\.js|og\\.png|favicon\\.ico|\\.well-known/apple-app-site-association|email/example).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },
