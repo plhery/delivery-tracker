@@ -477,6 +477,17 @@ struct MapPalette {
         )
     }
 
+    /// The same engraving with the route in a pale ink and no bright ring, where it is part of a card's picture rather than its subject.
+    static func quietTint(ink: Color, surface: Color) -> MapPalette {
+        var palette = tint(ink: ink, surface: surface)
+        palette.route = surface.mix(with: ink, by: 0.38, in: .device)
+        palette.routeMuted = ink.opacity(0.24)
+        palette.accent = palette.route
+        palette.currentRing = surface
+        palette.card = nil
+        return palette
+    }
+
     private static func rgb(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat, _ alpha: CGFloat) -> UIColor {
         UIColor(red: red / 255, green: green / 255, blue: blue / 255, alpha: alpha)
     }
@@ -895,48 +906,56 @@ enum MapPainter {
         }
     }
 
-    static func drawLegs(_ context: inout GraphicsContext, _ overlay: MapOverlay, palette: MapPalette) {
+    /// A quiet route is a thin line, as part of the picture.
+    static func drawLegs(_ context: inout GraphicsContext, _ overlay: MapOverlay, palette: MapPalette, quiet: Bool = false) {
         for leg in overlay.legs {
             switch leg.kind {
             case .travelled:
-                context.stroke(leg.path, with: .color(palette.route), style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
+                context.stroke(leg.path, with: .color(palette.route),
+                               style: StrokeStyle(lineWidth: quiet ? 0.9 : 1.8, lineCap: .round, lineJoin: .round))
             case .approximate:
                 var faded = context
                 faded.opacity = 0.75
                 faded.stroke(leg.path, with: .color(palette.route),
-                             style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round, dash: [0.1, 5]))
+                             style: StrokeStyle(lineWidth: quiet ? 1.1 : 1.5, lineCap: .round, lineJoin: .round, dash: [0.1, 5]))
             case .remaining:
                 context.stroke(leg.path, with: .color(palette.routeMuted),
-                               style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round, dash: [3, 5]))
+                               style: StrokeStyle(lineWidth: quiet ? 0.8 : 1.4, lineCap: .round, lineJoin: .round, dash: [3, 5]))
             }
         }
     }
 
+    /// How large a place is marked: the parcel's own place largest, a stop on the way smallest. A quiet route marks them all smaller.
+    static func dotRadius(_ kind: MapOverlay.DotKind, quiet: Bool) -> CGFloat {
+        let radius: CGFloat = switch kind {
+        case .current: 5
+        case .origin: 3.5
+        case .stop: 2.6
+        case .lastKnown, .area, .destination: 4.5
+        }
+        return quiet ? radius * 0.64 : radius
+    }
+
     /// Stops, place names and pointers. Faint names and pointers wait for the camera to land.
-    static func drawMarks(_ context: inout GraphicsContext, _ overlay: MapOverlay, palette: MapPalette, moving: Bool) {
+    static func drawMarks(_ context: inout GraphicsContext, _ overlay: MapOverlay, palette: MapPalette, moving: Bool, quiet: Bool = false) {
         for dot in overlay.dots {
-            let radius: CGFloat = switch dot.kind {
-            case .current: 5
-            case .origin: 3.5
-            case .stop: 2.6
-            case .lastKnown, .area, .destination: 4.5
-            }
+            let radius = dotRadius(dot.kind, quiet: quiet)
             let circle = Path(ellipseIn: CGRect(x: dot.point.x - radius, y: dot.point.y - radius, width: radius * 2, height: radius * 2))
             switch dot.kind {
             case .current:
                 context.fill(circle, with: .color(palette.accent))
-                context.stroke(circle, with: .color(palette.currentRing), lineWidth: 2)
+                context.stroke(circle, with: .color(palette.currentRing), lineWidth: quiet ? 1.2 : 2)
             case .lastKnown:
                 context.fill(circle, with: .color(palette.currentRing))
-                context.stroke(circle, with: .color(palette.accent), lineWidth: 2)
+                context.stroke(circle, with: .color(palette.accent), lineWidth: quiet ? 1.2 : 2)
             case .destination:
                 context.fill(circle, with: .color(palette.dotRing))
-                context.stroke(circle, with: .color(palette.routeMuted), lineWidth: 1.5)
+                context.stroke(circle, with: .color(palette.routeMuted), lineWidth: quiet ? 1.1 : 1.5)
             case .area:
-                context.stroke(circle, with: .color(palette.route), style: StrokeStyle(lineWidth: 1.4, dash: [1.6, 2.4]))
+                context.stroke(circle, with: .color(palette.route), style: StrokeStyle(lineWidth: quiet ? 1.1 : 1.4, dash: [1.6, 2.4]))
             case .origin, .stop:
                 context.fill(circle, with: .color(palette.route))
-                context.stroke(circle, with: .color(palette.dotRing), lineWidth: 1.5)
+                context.stroke(circle, with: .color(palette.dotRing), lineWidth: quiet ? 1.1 : 1.5)
             }
         }
         for label in overlay.labels where !(moving && (label.kind == .context || label.kind == .city)) {
@@ -1049,6 +1068,10 @@ struct WorldMapView: View {
     var pip: PipRequest?
     /// Fades the drawing out toward the bottom, as a card does; Pip stands in front of the fade.
     var fades = false
+    /// Fades the drawing in from the leading edge, where a card's words stand.
+    var fadesIn = false
+    /// The route as part of the picture rather than its subject: thinner legs and smaller dots.
+    var quiet = false
     var insets = EdgeInsets()
     /// Changes to bring a moved map back to the parcel.
     var recenter = 0
@@ -1088,17 +1111,19 @@ struct WorldMapView: View {
                     ZStack(alignment: .topLeading) {
                         Canvas { context, size in
                             MapPainter.drawBase(&context, size: size, atlas: atlas, route: route, camera: shown, palette: palette, night: night)
-                            MapPainter.drawLegs(&context, overlay, palette: palette)
+                            MapPainter.drawLegs(&context, overlay, palette: palette, quiet: quiet)
                         }
                         if live, !reduceMotion, let dot = overlay.dots.first(where: { $0.kind == .current }) {
                             PulsingHalo(color: palette.accent).position(dot.point)
                         }
                         Canvas { context, _ in
-                            MapPainter.drawMarks(&context, overlay, palette: palette, moving: moving)
+                            MapPainter.drawMarks(&context, overlay, palette: palette, moving: moving, quiet: quiet)
                         }
                     }
                     .mask(LinearGradient(stops: [.init(color: .black, location: fades ? 0.78 : 1), .init(color: fades ? .clear : .black, location: 1)],
                                          startPoint: .top, endPoint: .bottom))
+                    .mask(LinearGradient(stops: [.init(color: fadesIn ? .clear : .black, location: 0), .init(color: .black, location: fadesIn ? 0.46 : 0)],
+                                         startPoint: .leading, endPoint: .trailing))
                     if let place = overlay.pip, let card = palette.card {
                         InkPip(mood: place.mood, side: place.side, below: place.below, ink: card.ink, surface: card.surface)
                             .frame(width: place.width, height: place.width * PipGeometry.frame.height / PipGeometry.frame.width)

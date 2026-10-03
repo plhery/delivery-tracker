@@ -876,12 +876,20 @@ private struct ExperimentalParcelPassCard: View {
     let onArchive: (() async -> Bool)?
 
     @EnvironmentObject private var localizer: Localizer
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var atlas: WorldAtlas?
     @ObservedObject private var catalog = CarrierCatalog.shared
 
     private var identity: CarrierVisualIdentity {
         CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
     }
     private var date: String? { localizer.parcelDeliveryEstimate(parcel) ?? localizer.parcelCompletionDate(parcel) }
+    /// Scans with places are drawn as a small route at the end of the card.
+    private var placed: Bool { parcel.trackingEvents.contains { $0.place != nil } }
+    /// A past delivery's card is paler.
+    private var past: Bool { parcel.currentStage?.isFinal == true || parcel.isArchived }
+    /// The words under the top row keep clear of the route.
+    private var clearance: CGFloat { placed ? CardRoute.clearance : 0 }
     /// Carrier-reported stages already say what needs attention in the status line.
     private var flag: String? {
         let carrierIssue = [TrackingStage.customs, .readyForPickup, .failedAttempt, .exception].contains { $0 == parcel.currentStage }
@@ -903,36 +911,50 @@ private struct ExperimentalParcelPassCard: View {
                 }
             }
             .padding(.bottom, 3)
-            Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
-                .font(.headline.weight(.semibold))
-                .fixedSize(horizontal: false, vertical: true)
-            AutomaticCarrierNotice(parcel: parcel)
-            if parcel.activeTrackingCarrier != parcel.displayedCarrier {
-                Text(localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName]))
-                    .font(.caption).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 5) {
+                Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
+                    .font(.headline.weight(.semibold))
                     .fixedSize(horizontal: false, vertical: true)
-            }
-            if flag == nil || parcel.hasCarrierUpdate {
-                HStack(spacing: 5) {
-                    if parcel.isDelivered { Image(systemName: "checkmark").font(.caption2.weight(.light)).accessibilityHidden(true) }
-                    Text([localizer.parcelStatus(parcel), parcel.pickupPlace].compactMap { $0 }.joined(separator: " · "))
+                AutomaticCarrierNotice(parcel: parcel)
+                if parcel.activeTrackingCarrier != parcel.displayedCarrier {
+                    Text(localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName]))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                    .font(.caption)
-                    .foregroundStyle(identity.ink)
-                    .fixedSize(horizontal: false, vertical: true)
+                if flag == nil || parcel.hasCarrierUpdate {
+                    HStack(spacing: 5) {
+                        if parcel.isDelivered { Image(systemName: "checkmark").font(.caption2.weight(.light)).accessibilityHidden(true) }
+                        Text([localizer.parcelStatus(parcel), parcel.pickupPlace].compactMap { $0 }.joined(separator: " · "))
+                    }
+                        .font(.caption)
+                        .foregroundStyle(identity.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let flag {
+                    ParcelFlag(text: flag, symbol: parcel.syncStatus == .error ? "arrow.clockwise" : "clock")
+                        .padding(.top, 4)
+                }
             }
-            if let flag {
-                ParcelFlag(text: flag, symbol: parcel.syncStatus == .error ? "arrow.clockwise" : "clock")
-                    .padding(.top, 4)
-            }
+            .padding(.trailing, clearance)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 13)
         .padding(.horizontal, 15)
         .frame(minHeight: 102)
+        .background(alignment: .trailing) {
+            if placed, let atlas {
+                GeometryReader { proxy in
+                    CardRoute(atlas: atlas, route: ParcelRoute(parcel: parcel, atlas: atlas, language: localizer.language), ink: identity.ink,
+                              surface: past ? Brand.paper.mix(with: identity.surface, by: 0.35, in: .device) : identity.surface)
+                        .frame(width: CardRoute.width(in: proxy.size.width))
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+                .transition(.opacity)
+            }
+        }
         .background {
             RoundedRectangle(cornerRadius: 16).fill(Brand.paper)
-                .overlay { RoundedRectangle(cornerRadius: 16).fill(identity.surface.opacity(parcel.currentStage?.isFinal == true || parcel.isArchived ? 0.35 : 1)) }
+                .overlay { RoundedRectangle(cornerRadius: 16).fill(identity.surface.opacity(past ? 0.35 : 1)) }
         }
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .matchedTransitionSource(id: parcel.id, in: transition)
@@ -941,6 +963,11 @@ private struct ExperimentalParcelPassCard: View {
             onOpen: onOpen, action: onArchive
         )
         .accessibilityElement(children: .combine)
+        .task(id: placed) {
+            guard placed, atlas == nil else { return }
+            let loaded = await WorldAtlas.bundled.value
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.5)) { atlas = loaded }
+        }
     }
 
     private func dateLabel(_ date: String) -> some View {

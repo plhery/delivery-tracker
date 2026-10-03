@@ -5,7 +5,7 @@
 .detail__hero--map .detail__hero-meta button { pointer-events: auto; }
 .detail--postcard .detail__hero--map .detail__title-row { margin-top: 118px; }
 .detail__engraving { position: absolute; top: 0; right: 0; left: 0; z-index: 0; height: 176px; cursor: pointer; }
-.detail__hero .detail__engraving-map, .parcel-card .parcel-card__engraving-map {
+.detail__hero .detail__engraving-map, .parcel-card .parcel-card__engraving-map, .card-route .card-route__map {
   --map-space: transparent; --map-ocean: transparent; --map-land: color-mix(in srgb, var(--tone) 10%, transparent);
   --map-visited: color-mix(in srgb, var(--tone) 17%, transparent); --map-border: color-mix(in srgb, var(--tone-surface) 80%, transparent);
   --map-night: transparent; --map-grid: transparent; --map-shade: transparent; --map-limb: color-mix(in srgb, var(--tone) 16%, transparent);
@@ -16,6 +16,17 @@
   position: absolute; inset: 0; animation: parcel-engraving-in .5s var(--ease-out) both;
 }
 .detail__hero .detail__engraving-map *, .parcel-card .parcel-card__engraving-map * { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* A small route at the end of a card, the same size however wide the card is: the journey as part of the card's picture.
+   Its line and dots are pale, close to the map they lie on, and the land fades in from under the card's words. */
+.card-route { position: absolute; inset: 0 0 0 auto; z-index: 0; display: block; width: min(58%, 210px); pointer-events: none; }
+.card-route .card-route__map {
+  --map-route: color-mix(in srgb, var(--tone) 38%, var(--tone-surface)); --map-route-muted: color-mix(in srgb, var(--tone) 24%, transparent);
+  --map-accent: var(--map-route); --map-mask: linear-gradient(to right, transparent, black 46%);
+}
+/* The words of a card with a route keep clear of it; the date above it stands on the land only. */
+.parcel-card--route { overflow: hidden; }
+.parcel-card--route > :not(.card-route) { position: relative; }
+.parcel-card--route > :is(.parcel-card__label, .parcel-card__sender, .parcel-card__state, .parcel-card__notice) { max-width: calc(100% - 116px); }
 /* Next up carries the same engraving. Its card is one button, so the drawing takes no touches. */
 .parcel-card--map { overflow: hidden; }
 .parcel-card--map > :not(.parcel-card__engraving) { position: relative; }
@@ -77,5 +88,5 @@
 }
 @keyframes parcel-map-in { from { opacity: 0; transform: translateY(16px) scale(.985); } }
 @media (prefers-reduced-motion: reduce) {
-  .parcel-map, .detail__hero .detail__engraving-map, .parcel-card .parcel-card__engraving-map { animation: none; }
+  .parcel-map, .detail__hero .detail__engraving-map, .parcel-card .parcel-card__engraving-map, .card-route .card-route__map { animation: none; }
 }

@@ -77,6 +77,20 @@ describe('WorldMap', () => {
     expect(container.querySelectorAll('g[data-kind="current"] circle')).toHaveLength(1);
   });
 
+  it('marks a quiet route smaller, as part of a card’s picture', async () => {
+    const route = buildRoute([scan(kyoto), scan(leipzig), scan(zurich)]);
+    const radius = (container: HTMLElement, kind: string) => Number(container.querySelector(`g[data-kind="${kind}"] circle`)!.getAttribute('r'));
+    const full = render(<WorldMap route={route} mode="journey" time={time} live={false} />);
+    await waitFor(() => expect(full.container.querySelector('g[data-kind="current"]')).not.toBeNull());
+    const quiet = render(<WorldMap route={route} mode="journey" time={time} live={false} labels="none" quiet />);
+    await waitFor(() => expect(quiet.container.querySelector('g[data-kind="current"]')).not.toBeNull());
+    expect(quiet.container.firstElementChild).toHaveAttribute('data-quiet', 'true');
+    expect(full.container.firstElementChild).not.toHaveAttribute('data-quiet');
+    for (const kind of ['current', 'origin', 'stop']) expect(radius(quiet.container, kind)).toBeLessThan(radius(full.container, kind));
+    // The parcel's own place stays the largest mark.
+    expect(radius(quiet.container, 'current')).toBeGreaterThan(radius(quiet.container, 'origin'));
+  });
+
   it('points to the far ends of the journey from a close-up', async () => {
     const route = buildRoute([scan(kyoto), scan(basel), scan(zurich)]);
     const { container } = render(<WorldMap route={route} mode="now" time={time} languageTag="de-CH" label="Parcel map" />);

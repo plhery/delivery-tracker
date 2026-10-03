@@ -132,11 +132,18 @@ test('lists the parcels of this device, opens one already followed instead of lo
   expect(second).not.toBe(first);
   const links = device(page).getByRole('link');
   await expect(links).toHaveCount(2);
-  // Newest first, each with its carrier and where it stands; the list takes Pip's place.
+  // The parcel due first leads on a card that draws its route; the other follows with its carrier and where it stands.
+  // The list takes Pip's place.
   await expect(links.nth(0)).toContainText('DEMOGLS…0001');
+  await expect(links.nth(0)).toHaveClass(/door-nextup/);
+  await expect(links.nth(0).locator('strong')).toHaveText('In transit');
+  await expect(links.nth(0).locator('.door-nextup__map').getByText('Berlin', { exact: true })).toBeVisible();
   await expect(links.nth(1)).toContainText('1ZDEMO2…0001');
   await expect(links.nth(1).getByLabel('UPS', { exact: true })).toBeVisible();
   await expect(links.nth(1)).toContainText('In transit');
+  // Its own journey is drawn small at the end of its card, in quiet marks.
+  await expect(links.nth(1).locator('.card-route [data-quiet]')).toHaveAttribute('data-mode', 'journey');
+  await expect(links.nth(1).locator('.card-route g[data-kind="current"] circle')).toHaveCount(1);
   await expect(page.locator('.door-pip')).toHaveCount(0);
   await expect(device(page).getByText('Kept in this browser only.')).toBeVisible();
 
@@ -145,14 +152,15 @@ test('lists the parcels of this device, opens one already followed instead of lo
   await expect(page).toHaveURL(second);
   await page.goBack();
 
-  // The same number again opens the same link: no second parcel appears. The one just opened leads the list.
+  // The same number again opens the same link: no second parcel appears, and the parcel due first still leads.
   await field(page).fill('1z demo 2026 0000 0001');
   await expect(page.locator('.door-line')).toContainText('already on this device');
   await page.getByRole('button', { name: 'Open it', exact: true }).click();
   await expect(page).toHaveURL(first);
   await page.goBack();
   await expect(links).toHaveCount(2);
-  await expect(links.nth(0)).toContainText('1ZDEMO2…0001');
+  await expect(links.nth(0)).toContainText('DEMOGLS…0001');
+  await expect(links.nth(1)).toContainText('1ZDEMO2…0001');
 
   await device(page).getByRole('button', { name: 'Forget all' }).click();
   const question = page.getByRole('group', { name: 'Forget these 2 parcels?' });

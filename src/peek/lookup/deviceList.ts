@@ -1,5 +1,7 @@
+import { isActiveParcel, nextPriorityParcel } from '../../lib/parcelPriority';
 import { isFinal } from '../../lib/stages';
 import { forgetParcelLink, ParcelLinkError, readParcelLink } from '../links';
+import { journeyEndedBefore } from '../parcel/summary';
 import { forgetRecent, rememberParcel, type RecentParcel } from '../recents';
 
 /** How long an answer is fresh enough for the list: a parcel on its way moves, one that arrived rests. */
@@ -15,6 +17,19 @@ const checkedAt = new Map<string, number>();
 
 /** Whether the parcel is still waiting for its first check with the carrier. */
 const waiting = (recent: Pick<RecentParcel, 'syncStatus'>) => recent.syncStatus === 'pending' || recent.syncStatus === 'syncing';
+
+/**
+ * The parcel the list leads with, on a card that draws its route: the one the
+ * deliveries would call Next up, else the newest one still on its way, else
+ * one that arrived within the last day. Only a parcel with a located scan can
+ * lead; a day after its journey ended it rests among the others.
+ */
+export function leadParcel(recents: readonly RecentParcel[], now = Date.now()): RecentParcel | null {
+  const candidates = recents.filter(({ snapshot: { parcel } }) => parcel.events.some((event) => event.place) && !journeyEndedBefore(parcel, now));
+  const next = nextPriorityParcel(candidates.map((recent) => recent.snapshot.parcel), now);
+  return candidates.find((recent) => recent.snapshot.parcel === next)
+    ?? candidates.find((recent) => isActiveParcel(recent.snapshot.parcel)) ?? candidates[0] ?? null;
+}
 
 /**
  * Brings the device's parcels up to date, quietly: each stale one is read

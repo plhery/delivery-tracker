@@ -39,6 +39,33 @@ struct RouteEngraving: View {
     }
 }
 
+/// A parcel's whole journey, small, at the end of its card. It belongs to the card's picture and is not there to be
+/// read: no names, no Pip, no pulse, and a line and dots as pale as the map they lie on.
+struct CardRoute: View {
+    let atlas: WorldAtlas
+    let route: ParcelRoute
+    let ink: Color
+    /// The card's own colour, which is paler on a past delivery.
+    let surface: Color
+    @EnvironmentObject private var localizer: Localizer
+
+    /// How wide the picture is: the same on every card, however wide the card.
+    static func width(in card: CGFloat) -> CGFloat { min(card * 0.58, 210) }
+    /// How far from the card's trailing edge its words end, so they keep clear of the route.
+    static let clearance: CGFloat = 120
+
+    var body: some View {
+        WorldMapView(
+            atlas: atlas, route: route, mode: .journey, palette: .quietTint(ink: ink, surface: surface), labels: .none, showsContext: false,
+            fadesIn: true, quiet: true,
+            // Room for the date in the card's top row, and for the land to fade in from under the words.
+            insets: EdgeInsets(top: 36, leading: 78, bottom: 16, trailing: 20), language: localizer.language
+        )
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
 /// The whole map over the parcel: the journey on a globe, or the last mile up close.
 struct ParcelMapScreen: View {
     let atlas: WorldAtlas

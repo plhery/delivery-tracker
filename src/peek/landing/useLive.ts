@@ -1,4 +1,7 @@
 import { lazy, useEffect, useState, useSyncExternalStore, type ComponentType, type LazyExoticComponent, type RefObject } from 'react';
+import { useInView } from '../../lib/inView';
+
+export { useNear } from '../../lib/inView';
 
 const subscribeToTab = (notify: () => void) => {
   document.addEventListener('visibilitychange', notify);
@@ -22,23 +25,6 @@ export function useReducedMotion(): boolean {
   return useSyncExternalStore(subscribeToMotion, motionReduced, () => false);
 }
 
-/** Whether `share` of an element is within `margin` of the screen. Without a way to tell, it is not. */
-function useInView(target: RefObject<Element | null>, margin: string, share: number, once: boolean): boolean {
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const element = target.current;
-    if (!element || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver((entries) => {
-      const seen = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= share);
-      setInView(seen);
-      if (seen && once) observer.disconnect();
-    }, { rootMargin: margin, threshold: share });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [target, margin, share, once]);
-  return inView;
-}
-
 /**
  * Whether a loop may run: its element is on screen, in a tab someone is
  * looking at. Off screen or in a background tab it is paused. `share` is how
@@ -47,14 +33,6 @@ function useInView(target: RefObject<Element | null>, margin: string, share: num
 export function useLive(target: RefObject<Element | null>, share = 0): boolean {
   const inView = useInView(target, '0px', share, false);
   return useTabShown() && inView;
-}
-
-/**
- * Turns true once an element comes close to the screen, and stays true: the
- * moment to load what it shows. The first paint never waits for it.
- */
-export function useNear(target: RefObject<Element | null>, margin = '600px'): boolean {
-  return useInView(target, margin, 0, true);
 }
 
 /**

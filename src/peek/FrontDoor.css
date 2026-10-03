@@ -120,7 +120,7 @@ html[data-entry=device] .door > :not(.door-header), html[data-entry=device] .doo
 .door-number__text strong { font-size: 13px; font-weight: 600; }
 .door-number__text span { color: var(--ink-soft); font: 500 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
 .door-carriers { gap: 10px; margin-top: 4px; }
-.door-carrier, .door-parcel, .door-skeleton { --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark)); --tone-surface: light-dark(var(--carrier-surface-light), var(--carrier-surface-dark)); --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark)); }
+.door-carrier, .door-parcel, .door-nextup, .door-skeleton { --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark)); --tone-surface: light-dark(var(--carrier-surface-light), var(--carrier-surface-dark)); --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark)); }
 .door-carrier { display: grid; gap: 6px; padding: 14px 16px; border-radius: 18px; background: var(--tone-surface); cursor: pointer; }
 .door-carrier > span:last-child { color: var(--tone); font-size: 12px; }
 .door-carrier[data-checked] { box-shadow: inset 0 0 0 2px var(--tone); }
@@ -213,7 +213,7 @@ html[data-entry=device] .door > :not(.door-header), html[data-entry=device] .doo
 .door-skeleton span:nth-child(2) { width: 70%; height: 26px; margin-top: 14px; animation-delay: .15s; }
 .door-skeleton span:nth-child(3) { height: 3px; margin-top: 18px; border-radius: 4px; background: color-mix(in srgb, var(--tone, var(--ink-soft)) 13%, transparent); animation: none; }
 
-/* On this device: each parcel in its carrier's colours. */
+/* On this device: each parcel in its carrier's colours, with its route small at the card's end. */
 .door-device { margin-top: 26px; text-align: start; }
 .door-device__heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 44px; margin: 0 2px 10px; }
 .door-device__heading h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0; }
@@ -226,7 +226,7 @@ html[data-entry=device] .door > :not(.door-header), html[data-entry=device] .doo
 .door-device__cancel { background: transparent; color: var(--ink-soft); }
 .door-device__confirm { background: var(--control); font-weight: 600; }
 .door-device__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
-.door-parcel { display: grid; gap: 4px; height: 100%; padding: 14px 16px; border-radius: 18px; background: var(--tone-surface); color: var(--ink); text-decoration: none; transition: scale .2s var(--spring); }
+.door-parcel { position: relative; isolation: isolate; overflow: hidden; display: grid; align-content: space-between; gap: 4px; height: 100%; min-height: 112px; padding: 14px 16px; border-radius: 18px; background: var(--tone-surface); color: var(--ink); text-decoration: none; transition: scale .2s var(--spring); }
 .door-parcel:active { scale: .988; }
 .door-parcel__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .door-parcel__when, .door-parcel__state { color: var(--tone); }
@@ -234,9 +234,41 @@ html[data-entry=device] .door > :not(.door-header), html[data-entry=device] .doo
 .door-parcel__when::first-letter { text-transform: uppercase; }
 .door-parcel strong { font-size: 16px; font-weight: 650; letter-spacing: -.4px; overflow-wrap: anywhere; }
 .door-parcel__state { font-size: 12px; }
+/* The words keep clear of the route; the date above it stands on the land only. */
+.door-parcel--route > :not(.card-route) { position: relative; }
+.door-parcel--route > :is(strong, .door-parcel__state) { max-width: calc(100% - 116px); }
+/* The parcel that matters now leads the list on the card its own page gives it: the words beside its route. */
+.door-device__lead { grid-column: 1 / -1; }
+.door-nextup { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; min-height: 236px; padding: 18px 20px 20px; border-radius: 24px; background: var(--tone-surface); color: var(--ink); text-decoration: none; transition: scale .2s var(--spring); }
+.door-nextup:active { scale: .992; }
+.door-nextup__map { position: absolute; inset: 0 0 0 36%; z-index: -1; }
+.door-nextup .door-nextup__canvas {
+  --map-space: transparent; --map-ocean: transparent; --map-land: color-mix(in srgb, var(--tone) 10%, transparent);
+  --map-visited: color-mix(in srgb, var(--tone) 17%, transparent); --map-border: color-mix(in srgb, var(--tone-surface) 80%, transparent);
+  --map-night: transparent; --map-grid: transparent; --map-shade: transparent; --map-limb: color-mix(in srgb, var(--tone) 16%, transparent);
+  --map-route: var(--tone); --map-route-muted: color-mix(in srgb, var(--tone) 45%, transparent); --map-accent: var(--tone);
+  --map-label: var(--tone); --map-label-strong: var(--tone); --map-label-bg: color-mix(in srgb, var(--tone-surface) 92%, transparent);
+  --map-dot-ring: var(--tone-surface);
+  --map-mask: linear-gradient(to right, transparent, black 26%);
+  position: absolute; inset: 0; animation: door-fade .5s var(--ease-out) both;
+}
+.door-nextup .door-nextup__canvas * { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.door-nextup__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 26px; }
+.door-nextup__fresh { display: inline-flex; align-items: center; gap: 7px; color: var(--tone); font-size: 11px; line-height: 1.2; white-space: nowrap; }
+.door-nextup__fresh i { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.door-nextup__text { display: grid; gap: 2px; max-width: 46%; margin-top: auto; }
+.door-nextup__name { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.door-nextup__text strong { font-size: 30px; line-height: 1.1; letter-spacing: -.9px; font-weight: 650; text-wrap: balance; overflow-wrap: anywhere; }
+.door-nextup__detail { margin-top: 6px; color: var(--tone); font-size: 15px; font-weight: 500; line-height: 1.35; }
+.door-nextup__detail::first-letter { text-transform: uppercase; }
+.door-nextup__progress { max-width: 46%; margin-top: 16px; }
+.door-nextup .progress-track { gap: 4px; }
+.door-nextup .progress-track__dot { background: color-mix(in srgb, var(--tone) 13%, transparent); }
+.door-nextup .progress-track__dot--filled { background: color-mix(in srgb, var(--tone) 55%, var(--tone-surface)); }
 .door-device > .door-aside { margin-top: 14px; }
 
 @keyframes door-in { from { opacity: 0; transform: translateY(7px); } }
+@keyframes door-fade { from { opacity: 0; } }
 @keyframes door-rise { from { opacity: 0; transform: translateY(18px) scale(.98); } }
 @keyframes door-drop { 0% { opacity: 0; transform: translateY(-46px); } 55% { opacity: 1; transform: translateY(0) scale(1.08, .9); } 75% { transform: translateY(-6px) scale(.97, 1.03); } 100% { opacity: 1; transform: none; } }
 @keyframes door-flash { 0%, 11% { background-color: var(--yellow-soft); } 100% { background-color: transparent; } }
@@ -250,6 +282,7 @@ html[data-entry=device] .door > :not(.door-header), html[data-entry=device] .doo
 @media (prefers-reduced-motion: reduce) {
   .door-line__detect.is-busy svg { opacity: .6; }
   .door[data-view=first] :is(.door-pill, .door-body h1, .door-lead, .door-form, .door-pip, .door-hint) { animation: none; }
+  .door-nextup .door-nextup__canvas { animation: none; }
   .door-pip__tilt, .door-pip__hop { transform: none !important; }
 }
 
@@ -287,6 +320,13 @@ html[data-entry=device] .door > :not(.door-header), html[data-entry=device] .doo
   .door-wash { inset-inline: -16px; height: min(520px, 70%); }
   .door-skeleton { display: block; }
   .door-device__list { grid-template-columns: minmax(0, 1fr); }
+  /* On a phone the route runs across the top of the lead card, and the words stand under it. */
+  .door-nextup { min-height: 0; padding: 150px 18px 18px; }
+  .door-nextup__map { inset: 0 0 auto; height: 176px; }
+  .door-nextup .door-nextup__canvas { --map-mask: linear-gradient(black 74%, transparent); }
+  .door-nextup__top { position: absolute; top: 14px; right: 16px; left: 18px; }
+  .door-nextup__text, .door-nextup__progress { max-width: none; }
+  .door-nextup__text strong { font-size: 27px; }
 
   /* With parcels on this device the first screen is theirs: the question, the field, the list. */
   .door[data-view=device] .door-body { padding: 0 4px; text-align: start; }

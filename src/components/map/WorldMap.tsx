@@ -34,7 +34,7 @@ const RESTING_CENTER: Coordinate = [8.2, 42];
 export function WorldMap({
   route, mode, shape = 'rect', insets = NO_INSETS, look = 'map', labels = 'all', sites = false, context = true, interactive = false, night = false,
   time, redrawKey = '', recenter = 0, onFreeChange, className = '', style, label, languageTag = 'en', live = true, peek = false, pip = null,
-  framing, glide = false,
+  framing, glide = false, quiet = false,
 }: {
   route: Route;
   mode: MapMode;
@@ -72,6 +72,8 @@ export function WorldMap({
   framing?: Route;
   /** The parcel's dot and Pip travel to a new place instead of appearing there. */
   glide?: boolean;
+  /** The route as part of the picture rather than its subject: thinner legs and smaller dots, drawn at once. */
+  quiet?: boolean;
 }) {
   const ready = useWorld();
   const root = useRef<HTMLDivElement>(null);
@@ -259,7 +261,7 @@ export function WorldMap({
 
   return <div ref={root} className={`${styles.worldMap} ${className}`} style={style} data-shape={shape} data-look={look}
     role="img" aria-label={label ?? describe(route)}
-    data-interactive={interactive || undefined} data-peek={peek || undefined} data-scale={route.scale} data-mode={mode}
+    data-interactive={interactive || undefined} data-peek={peek || undefined} data-quiet={quiet || undefined} data-scale={route.scale} data-mode={mode}
     onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd}
     onClickCapture={onClickCapture}>
     <span ref={probes} className={styles.probes} aria-hidden="true">
@@ -278,8 +280,8 @@ export function WorldMap({
             return <g key={travels ? 'current' : dot.id} className={styles.dot} data-kind={dot.kind} data-glide={travels || undefined}
               transform={travels ? undefined : `translate(${dot.x} ${dot.y})`}
               style={travels ? { transform: `translate(${dot.x.toFixed(1)}px, ${dot.y.toFixed(1)}px)` } : undefined}>
-              {dot.kind === 'current' && live && <circle className={styles.halo} r="5" />}
-              <circle r={dot.kind === 'current' ? 5 : dot.kind === 'origin' ? 3.5 : dot.kind === 'stop' ? 2.6 : 4.5} />
+              {dot.kind === 'current' && live && <circle className={styles.halo} r={dotRadius(dot.kind, quiet)} />}
+              <circle r={dotRadius(dot.kind, quiet)} />
             </g>;
           })}
         </g>
@@ -300,6 +302,12 @@ export function WorldMap({
       <span className={styles.pipIn}><InkPip mood={overlay.pip.mood} side={overlay.pip.side} below={overlay.pip.below} /></span>
     </span>}
   </div>;
+}
+
+/** How large a place is marked: the parcel's own place largest, a stop on the way smallest. A quiet route marks them all smaller. */
+function dotRadius(kind: Overlay['dots'][number]['kind'], quiet: boolean): number {
+  const radius = kind === 'current' ? 5 : kind === 'origin' ? 3.5 : kind === 'stop' ? 2.6 : 4.5;
+  return quiet ? radius * .64 : radius;
 }
 
 function describe(route: Route): string {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 /** The time, moved on every minute, so "2 min ago" stays true while the page is open. */
 export function useNow(every = 60_000): number {
@@ -10,18 +10,19 @@ export function useNow(every = 60_000): number {
   return now;
 }
 
-/** The width from which the map stands beside the card instead of inside it. */
-const WIDE = '(min-width: 1100px)';
-
-function subscribeToWidth(notify: () => void) {
-  const query = window.matchMedia?.(WIDE);
-  query?.addEventListener('change', notify);
-  return () => query?.removeEventListener('change', notify);
+/** Whether the screen matches a media query. The server, and a browser that cannot tell, say it does not. */
+export function useMedia(query: string): boolean {
+  const subscribe = useCallback((notify: () => void) => {
+    const list = window.matchMedia?.(query);
+    list?.addEventListener('change', notify);
+    return () => list?.removeEventListener('change', notify);
+  }, [query]);
+  return useSyncExternalStore(subscribe, () => window.matchMedia?.(query).matches ?? false, () => false);
 }
 
-/** Whether the page has room for two columns. The server and a narrow screen draw one. */
+/** Whether the page has room for two columns: from this width the map stands beside the card instead of inside it. */
 export function useWideLayout(): boolean {
-  return useSyncExternalStore(subscribeToWidth, () => window.matchMedia?.(WIDE).matches ?? false, () => false);
+  return useMedia('(min-width: 1100px)');
 }
 
 function subscribeToConnection(notify: () => void) {

@@ -23,6 +23,8 @@
 .app--deliveries .parcel-card--hero .parcel-card__label { font-size: 24px; }
 .app--deliveries .parcel-section--past .parcel-card,
 .app--deliveries .archived-section .parcel-card { background: color-mix(in srgb, var(--tone-surface) 35%, var(--paper)); }
+/* A past card is paler: its route is drawn on the card's own surface. */
+.app--deliveries :is(.parcel-section--past, .archived-section) .card-route { --tone-surface: color-mix(in srgb, light-dark(var(--carrier-surface-light), var(--carrier-surface-dark)) 35%, var(--paper)); }
 .app--deliveries .archived-section { border-top: 1px solid var(--line); padding-top: 5px; }
 .app--deliveries .archived-section__count { background: none; padding: 0; font-weight: 400; }
 .app--deliveries .archived-section__count::before { content: '('; }

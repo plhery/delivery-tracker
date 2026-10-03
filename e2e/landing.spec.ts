@@ -27,7 +27,7 @@ async function openLanding(page: Page) {
 
 /** Every element that reaches past the sides of the screen. Drawings that are cut on purpose are left out. */
 const overflowing = (page: Page) => page.evaluate(() => {
-  const cut = '.door-ribbon__road, .landing-journey__map, .parcel-card__engraving, .sr-only, svg';
+  const cut = '.door-ribbon__road, .door-nextup__map, .card-route, .landing-journey__map, .parcel-card__engraving, .sr-only, svg';
   const width = document.documentElement.clientWidth;
   return [...document.querySelectorAll<HTMLElement>('.door *')].filter((element) => {
     if (element.closest(cut)) return false;

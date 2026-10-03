@@ -36,6 +36,14 @@
 .dot[data-kind=last-known] circle { fill: var(--paper); stroke: var(--map-accent); stroke-width: 2; }
 .dot[data-kind=destination] circle { fill: var(--map-dot-ring); stroke: var(--map-route-muted); stroke-width: 1.5; }
 .dot[data-kind=area] circle { fill: none; stroke: var(--map-route); stroke-width: 1.4; stroke-dasharray: 1.6 2.4; }
+/* A quiet route belongs to the picture: a thin line and small dots without the bright ring, there at once. Its card pales the ink. */
+.worldMap[data-quiet] .leg { stroke-width: .9; }
+.worldMap[data-quiet] .leg[data-kind=travelled] { animation: none; }
+.worldMap[data-quiet] .leg[data-kind=approximate] { stroke-width: 1.1; }
+.worldMap[data-quiet] .leg[data-kind=remaining] { stroke-width: .8; }
+.worldMap[data-quiet] .dot circle { stroke-width: 1.1; }
+.worldMap[data-quiet] .dot:is([data-kind=current], [data-kind=last-known]) circle { stroke: var(--map-dot-ring); stroke-width: 1.2; }
+.worldMap[data-quiet] .dot[data-kind=last-known] circle { fill: var(--map-dot-ring); stroke: var(--map-accent); }
 /* A journey told scan by scan: the dot and Pip travel to the next place. */
 .dot[data-glide], .pip[data-glide] { transition: transform .45s var(--spring); }
 @keyframes pulse { from { transform: scale(1); opacity: .35; } to { transform: scale(3.4); opacity: 0; } }

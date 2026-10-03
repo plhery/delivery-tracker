@@ -1,7 +1,8 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { trackAction } from '../lib/analytics';
+import { scroll, stubIntersections } from '../test/intersections';
 import type { EventPlace, ParcelWithEvents, Stage, TrackingEvent } from '../types';
 import { buildRoute, countryPlace, formatKm, type Place, type Scan } from './map/route';
 import { ParcelCard } from './ParcelCard';
@@ -92,9 +93,44 @@ describe('next up engraving', () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
-  it('leaves the other cards, and a parcel without places, as they were', () => {
-    expect(card({}, 'regular').querySelector('.parcel-card__engraving')).toBeNull();
+  it('leaves a parcel without places as it was', () => {
     expect(card({ events: [event(11, 'in_transit')] }).querySelector('.parcel-card--map, .parcel-card__engraving')).toBeNull();
+    expect(card({ events: [event(11, 'in_transit')] }, 'regular').querySelector('.parcel-card--route, .card-route')).toBeNull();
+  });
+});
+
+describe('card route', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('carries the journey small at the end of every other card, drawn once the card comes near the screen', async () => {
+    stubIntersections();
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+    const { container } = render(<ParcelCard parcel={parcel} onOpen={onOpen} />);
+    // Room is kept at once, and the card stays one button; Next up's engraving is not drawn here.
+    const route = container.querySelector('.parcel-card--route > .card-route')!;
+    expect(route).toHaveAttribute('aria-hidden', 'true');
+    expect(container.querySelector('.parcel-card--map, .parcel-card__engraving')).toBeNull();
+    // Far down a long list, nothing is drawn.
+    expect(route.querySelector('.card-route__map')).toBeNull();
+    scroll(route, 1);
+    await waitFor(() => expect(route.querySelector('.card-route__map')).not.toBeNull());
+    // The whole journey in quiet marks, whatever the stage: a picture, not a map to read.
+    const map = route.querySelector('.card-route__map')!;
+    expect(map).toHaveAttribute('data-quiet', 'true');
+    expect(map).toHaveAttribute('data-mode', 'journey');
+    await user.click(screen.getByRole('button', { name: /^Tea/ }));
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays drawn once the card has been seen', async () => {
+    stubIntersections();
+    const { container } = render(<ParcelCard parcel={parcel} onOpen={vi.fn()} />);
+    const route = container.querySelector('.card-route')!;
+    scroll(route, 1);
+    await waitFor(() => expect(route.querySelector('.card-route__map')).not.toBeNull());
+    scroll(route, 0);
+    expect(route.querySelector('.card-route__map')).not.toBeNull();
   });
 });
 

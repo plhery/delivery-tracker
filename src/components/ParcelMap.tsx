@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { useI18n } from '../i18n';
+import { useNear } from '../lib/inView';
 import { useModalDialog } from '../lib/modal';
 import { countryName } from '../lib/trackingLocation';
 import type { ParcelWithEvents, Stage } from '../types';
@@ -68,6 +69,27 @@ export function NextUpEngraving({ route, stage }: { route: Route | null; stage?:
   return <span className="parcel-card__engraving" aria-hidden="true">
     {route && <WorldMap route={route} mode={defaultMode(route, stage)} time={time} look="tint" labels="ends" context={false} live={travelling(stage)}
       pip={pip(stage, 140)} languageTag={languageTag} insets={{ top: 40, right: 16, bottom: 28, left: 16 }} className="parcel-card__engraving-map" />}
+  </span>;
+}
+
+/** Room for the date in the card's top row, and for the land to fade in from under the words, which end short of the route. */
+const CARD_ROUTE_INSETS = { top: 36, right: 20, bottom: 16, left: 78 };
+
+/**
+ * A parcel's whole journey, small, at the end of its card. It belongs to the
+ * card's picture and is not there to be read: no names, no Pip, no pulse, and
+ * a line and dots as pale as the map they lie on. The card it stands in gives the
+ * ink (`--tone`) and the surface (`--tone-surface`). It is drawn once the card
+ * comes near the screen, so a long list draws only what is looked at.
+ */
+export function CardRoute({ route }: { route: Route | null }) {
+  const { languageTag } = useI18n();
+  const [time] = useState(() => new Date());
+  const frame = useRef<HTMLSpanElement>(null);
+  const near = useNear(frame);
+  return <span ref={frame} className="card-route" aria-hidden="true">
+    {route && near && <WorldMap route={route} mode="journey" time={time} look="tint" labels="none" context={false} live={false} quiet
+      languageTag={languageTag} insets={CARD_ROUTE_INSETS} className="card-route__map" />}
   </span>;
 }
 

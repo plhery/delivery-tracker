@@ -5,6 +5,7 @@ import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { scroll, stubIntersections } from '../test/intersections';
 import { LINK_ID, OTHER_LINK_ID, OWNER_KEY, pendingView, testView } from '../test/parcelLinks';
+import type { EventPlace, Stage } from '../types';
 import { FrontDoor } from './FrontDoor';
 import { FIRST_SAMPLE_MS, SAMPLE_PERIOD_MS } from './landing/useSampleLoop';
 import { ParcelLinkError, type ParcelLookup } from './links';
@@ -42,6 +43,13 @@ function door() {
   };
 }
 const type = (field: HTMLElement, text: string) => fireEvent.input(field, { target: { value: text } });
+const zurich: EventPlace = { latitude: 47.38, longitude: 8.54, precision: 'city', country: 'CH', name: 'Zürich' };
+/** A parcel whose scans have a place, so its route can be drawn. */
+function placedView(id: string, stages: Stage[], owner = true) {
+  const view = testView({ id, owner, stages });
+  view.parcel.events = view.parcel.events.map((event) => ({ ...event, place: zurich }));
+  return view;
+}
 /** The parcels of this device; the page around them has links of its own. */
 const deviceLinks = () => within(screen.getByRole('region', { name: 'On this device' })).getAllByRole('link');
 const deviceLink = () => within(screen.getByRole('region', { name: 'On this device' })).getByRole('link');
@@ -531,6 +539,8 @@ describe('FrontDoor: on this device', () => {
     expect(links[1]).toHaveTextContent('••• 99');
     expect(links[1]).not.toHaveTextContent('123');
     expect(links[1]).toHaveTextContent('Delivered');
+    // No scan has a place: no card leads, and none draws a route.
+    expect(list.querySelector('.door-nextup, .card-route')).toBeNull();
     expect(within(list).getByText('Kept in this browser only.')).toBeVisible();
     await user.click(within(list).getByRole('button', { name: 'Sign in to keep them, with alerts' }));
     expect(onSignIn).toHaveBeenCalledOnce();
@@ -544,6 +554,46 @@ describe('FrontDoor: on this device', () => {
     expect(location.pathname).toBe(`/p/${OTHER_LINK_ID}`);
     // Fresh answers are not asked for again.
     expect(mocks.read).not.toHaveBeenCalled();
+  });
+
+  it('leads the list with the parcel that matters now, on a card that draws its route', async () => {
+    rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView(), now: Date.now() });
+    rememberParcel({ id: OTHER_LINK_ID, view: placedView(OTHER_LINK_ID, ['accepted', 'out_for_delivery'], false), now: Date.now() - 60_000 });
+    renameParcel(OTHER_LINK_ID, 'New sneakers');
+    const { user } = door();
+    const links = deviceLinks();
+    // Out for delivery, it leads though the other parcel was looked up later.
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([`/p/${OTHER_LINK_ID}`, `/p/${LINK_ID}`]);
+    expect(links[0]).toHaveClass('door-nextup');
+    expect(links[0]).toHaveAccessibleName(/DHL.*New sneakers.*Out for delivery/);
+    // The status is the card's headline, said once.
+    expect(within(links[0]).getByText('Out for delivery').tagName).toBe('STRONG');
+    expect(links[0].querySelector('.door-nextup__progress')).toHaveAttribute('aria-hidden', 'true');
+    expect(links[0].style.getPropertyValue('--carrier-surface-light')).not.toBe('');
+    // The drawing is for the eye, and arrives with the map data.
+    const map = links[0].querySelector('.door-nextup__map')!;
+    expect(map).toHaveAttribute('aria-hidden', 'true');
+    await waitFor(() => expect(map.querySelector('.door-nextup__canvas')).not.toBeNull());
+    // A parcel with no located scan keeps its plain card.
+    expect(links[1]).toHaveClass('door-parcel');
+    expect(links[1].querySelector('.card-route')).toBeNull();
+    await user.click(links[0]);
+    expect(location.pathname).toBe(`/p/${OTHER_LINK_ID}`);
+  });
+
+  it('draws the journey of the other parcels small, once their cards come near the screen', async () => {
+    stubIntersections();
+    rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: placedView(LINK_ID, ['accepted', 'in_transit']), now: Date.now() });
+    rememberParcel({ id: OTHER_LINK_ID, view: placedView(OTHER_LINK_ID, ['accepted', 'out_for_delivery'], false), now: Date.now() - 60_000 });
+    door();
+    const [lead, other] = deviceLinks();
+    expect(lead).toHaveAttribute('href', `/p/${OTHER_LINK_ID}`);
+    expect(lead.querySelector('.card-route')).toBeNull();
+    const route = other.querySelector('.door-parcel--route > .card-route')!;
+    expect(route).toHaveAttribute('aria-hidden', 'true');
+    expect(route.querySelector('.card-route__map')).toBeNull();
+    scroll(route, 1);
+    await waitFor(() => expect(route.querySelector('.card-route__map')).toHaveAttribute('data-quiet', 'true'));
   });
 
   it('shortens a long number to its two ends', () => {

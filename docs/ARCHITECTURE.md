@@ -166,7 +166,8 @@ The server draws the landing at `/` for everyone, because a sign-in lives in the
 storage. A script that runs before the first paint
 ([`entryHintConfig.ts`](../src/lib/entryHintConfig.ts)) marks a browser that holds a
 sign-in, or has the demo open, so it shows the splash instead until its own screen is
-ready. The map and the sample parcels of the landing load when their sections come near.
+ready. The map and the sample parcels of the landing load when their sections come near;
+a visitor with parcels on the device gets the map at once, for the routes on their cards.
 
 ## Data lifecycle
 

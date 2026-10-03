@@ -52,9 +52,26 @@ test('draws the route on Next up, and opens the parcel on the same picture', asy
   // Waiting at its pickup point: the card shows the last mile, with Hamburg on the edge.
   await expect(engraving.locator('[data-scale]')).toHaveAttribute('data-mode', 'now');
   await expect(engraving.getByText('Hamburg', { exact: true })).toBeVisible();
-  // Only Next up draws its route in the list.
+  // Only Next up draws its route across the card.
   await expect(page.locator('.parcel-card__engraving')).toHaveCount(1);
   const inList = await dotOffset(next);
+
+  // Every other card with a located scan carries its whole journey small, in quiet marks that do not pulse.
+  const routes = page.locator('.parcel-card--route');
+  await expect(routes.first().locator('.card-route [data-quiet]')).toHaveAttribute('data-mode', 'journey');
+  await expect(routes.first().locator('g[data-kind="current"] circle')).toHaveCount(1);
+  expect(await routes.count()).toBeGreaterThan(3);
+  // The words keep clear of the route: a card's name ends before its first mark.
+  for (const card of (await routes.all()).slice(0, 4)) {
+    await card.scrollIntoViewIfNeeded();
+    await expect(card.locator('.card-route g[data-kind] circle').first()).toBeVisible();
+    const name = (await card.locator('.parcel-card__label').boundingBox())!;
+    const marks = await card.locator('.card-route g[data-kind] circle').evaluateAll((circles) => circles.map((circle) => circle.getBoundingClientRect().left));
+    expect(name.x + name.width).toBeLessThanOrEqual(Math.min(...marks));
+  }
+  // A parcel with no located scan keeps its plain card.
+  await expect(page.getByRole('button', { name: /^35mm film rolls/ }).locator('.card-route')).toHaveCount(0);
+  await next.scrollIntoViewIfNeeded();
 
   // The drawing takes no touches: a tap on it opens the parcel like the rest of the card.
   await next.click({ position: { x: 60, y: 70 } });
