@@ -28,12 +28,14 @@ import { leaveParcelLink, useParcelLinkRoute } from './peek/route';
 import type { PeekSession } from './peek/session';
 import { useVisitorSession } from './peek/visitor';
 
-export function ApiApplication({ invitationRoute = false, parcelLinkId = null, demoRoute = false }: {
+export function ApiApplication({ invitationRoute = false, parcelLinkId = null, demoRoute = false, deliveryEmails = false }: {
   invitationRoute?: boolean;
   /** The link id of the parcel page the server rendered, at `/p/<id>`. */
   parcelLinkId?: string | null;
   /** The server rendered the demo's address, `/demo`. */
   demoRoute?: boolean;
+  /** The server emails accounts when a parcel is delivered: the landing says so. */
+  deliveryEmails?: boolean;
 }) {
   const { t } = useI18n();
   const auth = useAuth();
@@ -51,7 +53,8 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
       configured: auth.status !== 'unconfigured', googleEnabled: auth.googleEnabled, appleEnabled: auth.appleEnabled, emailOtpEnabled: auth.emailOtpEnabled,
       signInWithGoogle: auth.signInWithGoogle, signInWithApple: auth.signInWithApple, sendCode: auth.sendCode, verifyCode: auth.verifyCode,
     },
-  }), [visitor, auth.status, auth.googleEnabled, auth.appleEnabled, auth.emailOtpEnabled, auth.signInWithGoogle, auth.signInWithApple, auth.sendCode, auth.verifyCode]);
+    deliveryEmails,
+  }), [visitor, deliveryEmails, auth.status, auth.googleEnabled, auth.appleEnabled, auth.emailOtpEnabled, auth.signInWithGoogle, auth.signInWithApple, auth.sendCode, auth.verifyCode]);
   const demoRepo = useMemo(() => createDemoRepo(), []);
   const signOut = auth.signOut;
   const navigate = experience.navigate;

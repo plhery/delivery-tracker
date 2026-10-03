@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { scroll, stubIntersections } from '../../test/intersections';
+import { PeekSessionProvider } from '../session';
 import { Landing } from './Landing';
 import { LandingFooter } from './Who';
 import { SCAN_MS } from './useJourneyStory';
@@ -49,6 +50,18 @@ describe('Landing', () => {
     expect(author).toHaveAttribute('href', 'https://x.com/plhery');
     expect(author).toHaveAttribute('rel', 'noopener noreferrer');
     expect(author).toHaveTextContent('@plhery');
+  });
+
+  it('says an account gets an email on delivery only where the server sends one', () => {
+    const benefits = () => within(screen.getByRole('region', { name: 'Following more than one?' })).getAllByRole('listitem')
+      .map((item) => item.querySelector('strong')!.textContent);
+    const { unmount } = render(<Landing onSignIn={onSignIn} />);
+    expect(benefits()).toHaveLength(3);
+    expect(document.body).not.toHaveTextContent(/e-?mail/i);
+    unmount();
+    render(<PeekSessionProvider value={{ account: 'visitor', signIn: vi.fn(), deliveryEmails: true }}><Landing onSignIn={onSignIn} /></PeekSessionProvider>);
+    expect(benefits()).toEqual(['One list, the next one on its map', 'Pings for the steps you choose', 'An email when it’s delivered', 'A passport of deliveries']);
+    expect(screen.getByText('One short email per parcel, to the address you sign in with. Only if you turn it on.')).toBeVisible();
   });
 
   it('keeps the moving pictures out of a screen reader’s way', () => {

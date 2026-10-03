@@ -207,8 +207,11 @@ export function parcelLinkView(response: ApiPublicParcelResponse): ParcelLinkVie
       gift: link.gift === true,
       // Only a link that says it was stopped is: an answer from before sharing could be stopped is a shared one.
       shared: link.shared !== false,
-      // A browser can only subscribe with the server's key.
-      alerts: { available: link.alerts?.available === true && vapidPublicKey !== null, vapidPublicKey },
+      // A browser can only subscribe with the server's key. Whether the server emails accounts is said only when it does.
+      alerts: {
+        available: link.alerts?.available === true && vapidPublicKey !== null, vapidPublicKey,
+        ...(link.alerts?.email === true ? { email: true } : {}),
+      },
     },
     parcel: toParcel({ ...row, tracking_number: row.tracking_number ?? '' }),
     numberHint: hint && typeof hint.head === 'string' && typeof hint.tail === 'string'

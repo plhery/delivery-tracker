@@ -123,9 +123,11 @@ export function AlertsSheet({ linkId, ownerKey, alerts, initialPreset, calendar,
     setSaid(done ? 'alerts.calendar.done' : null);
   }
 
+  // Where the server emails accounts, that is what signing in adds to a browser's alerts.
+  const emails = alerts?.email === true;
   const account = (dismiss: () => void) => onSignIn && <div className="peeks-account">
-    <span aria-hidden="true"><Icon name="account" /></span>
-    <span><strong>{t('alerts.account.title')}</strong><small>{t('alerts.account.body')}</small></span>
+    <span aria-hidden="true"><Icon name={emails ? 'mail' : 'account'} /></span>
+    <span><strong>{t(emails ? 'alerts.email.title' : 'alerts.account.title')}</strong><small>{t(emails ? 'alerts.email.body' : 'alerts.account.body')}</small></span>
     <button type="button" onClick={() => { dismiss(); onSignIn(); }}>{t('arrival.signInTitle')}</button>
   </div>;
   const feedback = <>

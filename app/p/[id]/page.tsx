@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { ClientApplication } from '../../../src/ClientApplication';
+import { emailConfigured } from '../../../src/server/email/config';
 import { parcelLinkMetadata } from '../../../src/server/parcelLinkMetadata';
 import { isParcelLinkId } from '../../../src/server/publicParcels';
 import { requestLanguage } from '../../../src/server/requestLocale';
@@ -19,5 +20,5 @@ export default async function ParcelLinkPage({ params }: { params: Promise<{ id:
   await connection();
   const { id } = await params;
   // A malformed id is not echoed into the page; the browser reads its own address and shows the link as unavailable.
-  return <ClientApplication parcelLinkId={isParcelLinkId(id) ? id : 'unavailable'} {...await requestLanguage()} />;
+  return <ClientApplication parcelLinkId={isParcelLinkId(id) ? id : 'unavailable'} deliveryEmails={emailConfigured()} {...await requestLanguage()} />;
 }

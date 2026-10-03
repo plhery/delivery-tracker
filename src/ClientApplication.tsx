@@ -42,6 +42,8 @@ interface ApplicationProps {
   parcelLinkId?: string | null;
   /** The server rendered the demo's address, `/demo`. */
   demoRoute?: boolean;
+  /** The server has mail settings: it emails accounts when a parcel is delivered. */
+  deliveryEmails?: boolean;
   initialLocale?: Locale;
   initialMessages?: Messages;
 }
@@ -54,7 +56,7 @@ export function ClientApplication({ movedTo, ...props }: ApplicationProps & {
   return movedTo ? <MovedHost to={movedTo}><Application {...props} /></MovedHost> : <Application {...props} />;
 }
 
-function Application({ invitationRoute = false, parcelLinkId = null, demoRoute = false, initialLocale, initialMessages }: ApplicationProps) {
+function Application({ invitationRoute = false, parcelLinkId = null, demoRoute = false, deliveryEmails = false, initialLocale, initialMessages }: ApplicationProps) {
   const demoRepo = useMemo(
     () => isDemoBuild ? createDemoRepo() : null,
     [],
@@ -84,7 +86,7 @@ function Application({ invitationRoute = false, parcelLinkId = null, demoRoute =
       <AppearanceProvider>
       {demoRepo ? <DemoApplication repo={demoRepo} invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} demoRoute={demoRoute} /> : (
         <AuthProvider config={authConfig}>
-          <ApiApplication invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} demoRoute={demoRoute} />
+          <ApiApplication invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} demoRoute={demoRoute} deliveryEmails={deliveryEmails} />
         </AuthProvider>
       )}
       </AppearanceProvider>

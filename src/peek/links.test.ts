@@ -71,6 +71,11 @@ describe('parcel link model', () => {
     // Without the server's key no browser can subscribe, whatever the answer claims.
     expect(answer({ alerts: { available: true, vapidPublicKey: null } }).alerts).toEqual({ available: false, vapidPublicKey: null });
     expect(answer({ gift: 'yes', shared: null, alerts: 'on' })).toMatchObject({ gift: false, shared: true, alerts: { available: false } });
+    // That the server emails accounts is carried only when it says so, with or without push.
+    expect(answer({ alerts: { available: true, vapidPublicKey: 'BPublicKey', email: true } }).alerts).toEqual({ available: true, vapidPublicKey: 'BPublicKey', email: true });
+    expect(answer({ alerts: { available: false, vapidPublicKey: null, email: true } }).alerts).toEqual({ available: false, vapidPublicKey: null, email: true });
+    expect(answer({ alerts: { available: true, vapidPublicKey: 'BPublicKey', email: false } }).alerts).toEqual({ available: true, vapidPublicKey: 'BPublicKey' });
+    expect(answer({ alerts: { available: true, vapidPublicKey: 'BPublicKey', email: 'yes' } }).alerts).not.toHaveProperty('email');
   });
 
   it('tells a gift still on its way to someone else from one its owner sees, and from one that arrived', () => {

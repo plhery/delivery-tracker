@@ -19,6 +19,8 @@ export interface PeekSession {
   signIn(keepLinkId?: string): void;
   /** Lets a visitor sign in without leaving the page they are on. Absent where signing in is its own step, as in the demo. */
   signInWith?: SignInMethods;
+  /** The server emails an account that asks for it when a parcel is delivered. Absent where it sends none. */
+  deliveryEmails?: boolean;
   /** Keeps a parcel link in the account. Only someone signed in can. */
   keep?(linkId: string): Promise<KeepOutcome>;
   /** The deliveries of the account, once loaded: tells a parcel already followed from a new one. */

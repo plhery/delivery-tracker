@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { emailConfigured } from '../src/server/email/config';
 import { requestMovedOrigin, requestOrigin } from '../src/server/requestOrigin';
 import { requestLanguage } from '../src/server/requestLocale';
 import { connection } from 'next/server';
@@ -41,5 +42,5 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   await connection();
-  return <ClientApplication movedTo={await requestMovedOrigin()} {...await requestLanguage()} />;
+  return <ClientApplication movedTo={await requestMovedOrigin()} deliveryEmails={emailConfigured()} {...await requestLanguage()} />;
 }

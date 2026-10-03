@@ -213,6 +213,32 @@ describe('the Ping me sheet', () => {
     expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
   });
 
+  it('says what signing in adds where the server emails accounts: an email when the parcel is delivered', async () => {
+    stubAlertBrowser();
+    const user = userEvent.setup();
+    const { onSignIn, onClose, unmount } = open({ alerts: { ...SERVER, email: true } });
+    expect(screen.getByText('An email when it’s delivered')).toBeVisible();
+    expect(screen.getByText('Sign in, and Peek writes to the address you sign in with.')).toBeVisible();
+    expect(screen.queryByText('Alerts on all your devices')).toBeNull();
+    // The browser's own alerts are offered as before.
+    expect(way(/^Notifications in this browser/)).toBeChecked();
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onSignIn).toHaveBeenCalledTimes(1);
+    unmount();
+    // Someone signed in is not asked to.
+    open({ alerts: { ...SERVER, email: true }, onSignIn: undefined });
+    expect(document.body).not.toHaveTextContent(/e-?mail/i);
+  });
+
+  it('keeps saying it once this browser’s alerts are on', () => {
+    stubAlertBrowser({ permission: 'granted', existing: true });
+    noteLink(LINK_ID, { alert: { preset: 'important', endpoint: TEST_PUSH_ENDPOINT } });
+    open({ alerts: { ...SERVER, email: true } });
+    expect(screen.getByText('Alerts are on in this browser')).toBeVisible();
+    expect(screen.getByText('An email when it’s delivered')).toBeVisible();
+  });
+
   it('shows an iPhone outside its Home Screen app the three steps instead of a button that cannot work', async () => {
     const { requestPermission } = stubAlertBrowser({ userAgent: IPHONE_SAFARI });
     const user = userEvent.setup();

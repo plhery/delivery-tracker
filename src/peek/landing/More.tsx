@@ -4,6 +4,7 @@ import { Seal } from '../../components/Passport';
 import { PeekMark } from '../../components/PeekMark';
 import { useI18n, type MessageKey } from '../../i18n';
 import { DEMO_PATH } from '../../lib/experience';
+import { usePeekSession } from '../session';
 import { LandingIcon } from './glyphs';
 import { followDemoLink, IOS_APP_URL } from './links';
 import { lazyPicture, useNear, useRise } from './useLive';
@@ -12,9 +13,10 @@ import './More.css';
 // The cards and their sample parcels are for whoever scrolls this far.
 const SampleList = lazyPicture(() => import('./SampleList'));
 
-const BENEFITS: readonly { icon: IconName; title: MessageKey; body: MessageKey }[] = [
+const BENEFITS: readonly { icon: IconName; title: MessageKey; body: MessageKey; /** Said only where the server sends the email. */ email?: true }[] = [
   { icon: 'parcel', title: 'landing.more.list.title', body: 'landing.more.list.body' },
   { icon: 'bell', title: 'landing.more.pings.title', body: 'landing.more.pings.body' },
+  { icon: 'mail', title: 'landing.more.email.title', body: 'landing.more.email.body', email: true },
   { icon: 'passport', title: 'landing.more.passport.title', body: 'landing.more.passport.body' },
 ];
 const TABS: readonly { icon: IconName; label: MessageKey }[] = [
@@ -38,6 +40,7 @@ export function More({ onSignIn, landed }: {
   landed: boolean;
 }) {
   const { t, languageTag } = useI18n();
+  const { deliveryEmails } = usePeekSession();
   const phone = useRef<HTMLDivElement>(null);
   const near = useNear(phone);
   const rise = useRise(phone);
@@ -66,7 +69,7 @@ export function More({ onSignIn, landed }: {
     </div>
     <div className="landing-more__rest">
       <ul className="landing-benefits">
-        {BENEFITS.map(({ icon, title, body }) => <li key={title}>
+        {BENEFITS.filter(({ email }) => !email || deliveryEmails).map(({ icon, title, body }) => <li key={title}>
           <span className="landing-benefits__icon"><Icon name={icon} /></span>
           <span><strong>{t(title)}</strong><span>{t(body)}</span></span>
         </li>)}
