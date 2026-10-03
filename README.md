@@ -28,6 +28,7 @@
 - A map of each parcel's journey, from the globe down to the last mile.
 - Add parcels from tracking numbers, carrier links, or shipping email text.
 - Optional notifications with quiet hours and per-parcel mute.
+- An optional email when a parcel is delivered, sent through any SMTP service.
 - Passport stamps and statistics from delivery history. Share selected stats
   with friends by invitation; parcel details stay private.
 - Synced accounts, light and dark themes, and English, German, French, Italian, Spanish, Portuguese, and Polish.
