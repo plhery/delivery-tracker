@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { useI18n, type MessageKey } from '../../i18n';
 import { trackAction } from '../../lib/analytics';
+import { LandingIcon } from '../landing/glyphs';
+import { SOURCE_URL } from '../landing/links';
 import { forgetParcelLink, ParcelLinkError, parcelLinkErrorKey } from '../links';
 import { forgetRecent } from '../recents';
-
-const SOURCE_URL = 'https://github.com/plhery/delivery-tracker';
 
 /**
  * Forgets a lookup everywhere: on the server with the owner key, then on this
@@ -86,7 +86,7 @@ export function ForgetFooter({ promise, onForget }: {
     {promise && <p><Icon name="lock" />{promise}</p>}
     <p>
       {onForget && <><button type="button" className="peekp-footer__forget" onClick={onForget}>{t('link.forget.now')}</button> · </>}
-      <a href="/privacy.html" onClick={() => trackAction('privacy-open')}>{t('auth.privacyLink')}</a> · <a href={SOURCE_URL} target="_blank" rel="noopener noreferrer">{t('link.source')}</a>
+      <a href="/privacy.html" onClick={() => trackAction('privacy-open')}>{t('auth.privacyLink')}</a> · <a href={SOURCE_URL} target="_blank" rel="noopener noreferrer"><LandingIcon name="github" />GitHub</a>
     </p>
   </footer>;
 }

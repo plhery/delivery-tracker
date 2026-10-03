@@ -79,7 +79,10 @@ describe('ParcelPage', () => {
     expect(screen.getByText('Peek forgets this parcel 30 days after delivery.')).toBeVisible();
     expect(screen.getByRole('heading', { level: 2, name: 'Keep it with your other parcels' })).toBeVisible();
     expect(screen.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy.html');
-    expect(screen.getByRole('link', { name: 'Open source' })).toHaveAttribute('rel', 'noopener noreferrer');
+    // The foot names the code as the landing's does.
+    const code = screen.getByRole('link', { name: 'GitHub' });
+    expect(code).toHaveAttribute('href', 'https://github.com/plhery/delivery-tracker');
+    expect(code).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('opens revealed from the door with the lookup’s answer, settles when the first check lands, then offers the parcel’s own link', async () => {
