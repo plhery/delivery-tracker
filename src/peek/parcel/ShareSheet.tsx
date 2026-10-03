@@ -1,16 +1,13 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { useI18n, type MessageKey } from '../../i18n';
 import { trackAction } from '../../lib/analytics';
-import { carrierInfo, displayedCarrierId } from '../../lib/carriers';
 import type { ParcelWithEvents } from '../../types';
 import { noteLink, useLinkNote, type ShareWords } from '../deviceNotes';
 import {
   cleanLinkText,
   MAX_GIFT_FROM_LENGTH,
   MAX_GIFT_NOTE_LENGTH,
-  maskedNumber,
-  numberEnds,
   parcelLinkErrorKey,
   updateParcelLink,
   type ParcelLinkChanges,
@@ -21,6 +18,7 @@ import {
 import { parcelShareURL } from '../route';
 import { Glyph } from './glyphs';
 import { copyText, shareParcelLink } from './share';
+import { SharePreview } from './SharePreview';
 import { Sheet, SwitchRow } from './Sheet';
 
 const NO_WORDS: ShareWords = { name: false, note: '', from: '' };
@@ -28,13 +26,16 @@ const NO_WORDS: ShareWords = { name: false, note: '', from: '' };
 interface Settings { showNumber: boolean; gift: boolean }
 
 /**
- * The share sheet: the parcel's link, what it shows, and the way to stop
- * sharing. The name, a gift's note and who it is from are added to the link
- * after its `#`: they reach the recipient's browser and no server.
+ * The share sheet: what the link shows, as the other person will see it, the
+ * switches that change it, the link, and the way to stop sharing. The name, a
+ * gift's note and who it is from are added to the link after its `#`: they
+ * reach the recipient's browser and no server. The link stands under the
+ * switches, so what is copied carries what was chosen.
  */
-function ShareSheetView({ title, linkId, settings, loading, stopped, stoppedLine, pendingLine, numberHint, name, nameTitle, nameHint, unnamedHint, promise, works, words,
-  onWords, onChange, onLink, onStop, onAgain, onNameIt, onAccount, onClose }: {
+function ShareSheetView({ title, parcel, linkId, settings, loading, stopped, stoppedLine, pendingLine, name, worksUntil, words,
+  onWords, onChange, onLink, onStop, onAgain, onAccount, onClose }: {
   title: string;
+  parcel: ParcelWithEvents;
   /** The link, once there is one. */
   linkId: string | null;
   settings: Settings;
@@ -45,15 +46,10 @@ function ShareSheetView({ title, linkId, settings, loading, stopped, stoppedLine
   stoppedLine: string;
   /** What stands in the link's place while there is none. */
   pendingLine: string;
-  numberHint: string;
-  /** The name the link can carry, when the parcel has one. */
+  /** The name the link can carry. A parcel without a name has no such choice. */
   name: string | null;
-  nameTitle: string;
-  nameHint: string;
-  unnamedHint: string;
-  promise: string;
-  /** How long the link works, for a link Peek forgets by itself. */
-  works?: string;
+  /** The day the link stops working, for a link Peek forgets by itself: "30 oct". */
+  worksUntil?: string | null;
   words: ShareWords;
   onWords: (words: ShareWords) => void;
   /** Saves a switch. A rejection puts the switch back and says so. */
@@ -63,8 +59,6 @@ function ShareSheetView({ title, linkId, settings, loading, stopped, stoppedLine
   onStop: () => Promise<void>;
   /** Absent where sharing again simply makes a new link. */
   onAgain?: () => Promise<void>;
-  /** Leaves the sheet to name the parcel. */
-  onNameIt?: () => void;
   /** Leaves the sheet to sign in: a link from an account works for as long as it is shared. */
   onAccount?: () => void;
   onClose: () => void;
@@ -146,41 +140,41 @@ function ShareSheetView({ title, linkId, settings, loading, stopped, stoppedLine
         <button type="button" className="button button--primary" disabled={working} onClick={() => void run(onAgain)}>{t('share.again')}</button>
       </div>}
     </> : <>
+      <SharePreview parcel={parcel} name={carried.name} showNumber={shown.showNumber} gift={shown.gift} />
+      <div className="peeks-switches peeks-switches--joined">
+        <SwitchRow icon={<Glyph name="receipt" />} title={t('share.number.title')}
+          checked={shown.showNumber} disabled={loading} busy={'showNumber' in saving} onChange={(value) => void change('showNumber', value)} />
+        {name && <SwitchRow icon={<Glyph name="pencil" />} title={t('share.name.title')} value={name}
+          checked={words.name} disabled={loading} onChange={(value) => onWords({ ...words, name: value })} />}
+        <SwitchRow icon={<Icon name="gift" />} title={t('share.gift.title')}
+          checked={shown.gift} disabled={loading} busy={'gift' in saving} onChange={(value) => void change('gift', value)} />
+      </div>
+      {shown.gift && <div className="peeks-gift">
+        <label htmlFor={`${fields}-note`}>{t('share.gift.note')}</label>
+        <textarea id={`${fields}-note`} rows={2} maxLength={MAX_GIFT_NOTE_LENGTH} value={note} autoComplete="off"
+          aria-describedby={`${fields}-private`} onChange={(event) => write('note', event.target.value)} />
+        <label htmlFor={`${fields}-from`}>{t('share.gift.from')}</label>
+        <input id={`${fields}-from`} type="text" maxLength={MAX_GIFT_FROM_LENGTH} value={from} autoComplete="off"
+          onChange={(event) => write('from', event.target.value)} />
+        <small id={`${fields}-private`}>{t('share.gift.private')}</small>
+      </div>}
       <div className="peeks-link" aria-busy={loading || undefined}>
         {address
           ? <span className="peeks-link__address" aria-label={t('share.address')}>{address.replace(/^https?:\/\//, '')}</span>
           : <span className="peeks-link__pending">{loading ? '…' : pendingLine}</span>}
         <button type="button" className="peeks-link__copy" disabled={loading || working} onClick={() => void handOut('copy')}><Icon name="copy" /><span>{t('detail.copy')}</span></button>
       </div>
-      {works && <p className="peeks-link__works">
-        <Icon name="hourglass" />
-        <span>{works}{onAccount && <> <button type="button" onClick={() => { dismiss(); onAccount(); }}>{t('share.works.account')}</button></>}</span>
-      </p>}
-      <div className="peeks-switches">
-        <SwitchRow icon={<Glyph name="receipt" />} title={t('share.number.title')} hint={t('share.number.hint', { number: numberHint })}
-          checked={shown.showNumber} disabled={loading} busy={'showNumber' in saving} onChange={(value) => void change('showNumber', value)} />
-        <SwitchRow icon={<Glyph name="pencil" />} title={nameTitle} hint={name ? nameHint : unnamedHint}
-          checked={!!name && words.name} disabled={loading || !name} onChange={(value) => onWords({ ...words, name: value })}>
-          {!name && onNameIt && <button type="button" className="peeks-switch__nudge" onClick={() => { dismiss(); onNameIt(); }}>{t('link.name')}</button>}
-        </SwitchRow>
-        <SwitchRow icon={<Icon name="gift" />} title={t('share.gift.title')} hint={t('share.gift.hint')}
-          checked={shown.gift} disabled={loading} busy={'gift' in saving} onChange={(value) => void change('gift', value)} />
-        {shown.gift && <div className="peeks-gift">
-          <label htmlFor={`${fields}-note`}>{t('share.gift.note')}</label>
-          <textarea id={`${fields}-note`} rows={2} maxLength={MAX_GIFT_NOTE_LENGTH} value={note} autoComplete="off"
-            aria-describedby={`${fields}-private`} onChange={(event) => write('note', event.target.value)} />
-          <label htmlFor={`${fields}-from`}>{t('share.gift.from')}</label>
-          <input id={`${fields}-from`} type="text" maxLength={MAX_GIFT_FROM_LENGTH} value={from} autoComplete="off"
-            onChange={(event) => write('from', event.target.value)} />
-          <small id={`${fields}-private`}>{t('share.gift.private')}</small>
-        </div>}
-      </div>
-      <p className="peeks__promise">{promise}</p>
       {error && <p className="sheet__error" role="alert">{t(error)}</p>}
       <div className="peeks__actions">
         <button type="button" className="button button--primary" disabled={loading || working} onClick={() => void handOut('share')}><Icon name="share" /><span>{t('share.action')}</span></button>
-        {linkId && <button type="button" className="peeks__quiet" disabled={working} onClick={() => void run(onStop)}>{t('share.stop')}</button>}
       </div>
+      {(worksUntil || linkId) && <div className="peeks__foot">
+        {worksUntil && <p>
+          {t('share.works.until', { date: worksUntil })}
+          {onAccount && <> · <button type="button" onClick={() => { dismiss(); onAccount(); }}>{t('share.works.account')}</button></>}
+        </p>}
+        {linkId && <button type="button" className="peeks__stop" disabled={working} onClick={() => void run(onStop)}>{t('share.stop')}</button>}
+      </div>}
     </>}
     <p className="peeks__said" role="status" data-empty={!said || undefined}>{said && <><Icon name="check" />{t(said)}</>}</p>
   </>}</Sheet>;
@@ -190,7 +184,7 @@ function ShareSheetView({ title, linkId, settings, loading, stopped, stoppedLine
  * Sharing a looked-up parcel, for the device that holds its owner key. The
  * switches are saved at once, and the page takes the answer.
  */
-export function LinkShareSheet({ linkId, ownerKey, view, name, worksUntil, onChanged, onNameIt, onAccount, onClose }: {
+export function LinkShareSheet({ linkId, ownerKey, view, name, worksUntil, onChanged, onAccount, onClose }: {
   linkId: string;
   ownerKey: string;
   view: ParcelLinkView;
@@ -199,7 +193,6 @@ export function LinkShareSheet({ linkId, ownerKey, view, name, worksUntil, onCha
   /** The day Peek forgets the parcel, once its journey is over: "30 oct". */
   worksUntil: string | null;
   onChanged: (view: ParcelLinkView) => void;
-  onNameIt: () => void;
   /** Offered to a visitor. */
   onAccount?: () => void;
   onClose: () => void;
@@ -220,19 +213,15 @@ export function LinkShareSheet({ linkId, ownerKey, view, name, worksUntil, onCha
 
   return <ShareSheetView
     title={t('share.title')}
+    parcel={parcel}
     linkId={linkId}
     settings={{ showNumber: link.showNumber === true, gift: link.gift === true }}
     loading={false}
     stopped={link.shared === false}
     stoppedLine={t('share.stopped.owner')}
     pendingLine=""
-    numberHint={maskedNumber(numberEnds(parcel.trackingNumber))}
     name={name}
-    nameTitle={t('share.inside.title')}
-    nameHint={t('share.inside.hint', { name: name ?? '' })}
-    unnamedHint={t('share.inside.unnamed')}
-    promise={t('share.promise.link')}
-    works={worksUntil ? t('share.works.until', { date: worksUntil }) : t('share.works.afterDelivery')}
+    worksUntil={worksUntil}
     words={words}
     onWords={(next) => noteLink(linkId, { share: next })}
     onChange={(next) => save({
@@ -242,7 +231,6 @@ export function LinkShareSheet({ linkId, ownerKey, view, name, worksUntil, onCha
     onLink={async () => linkId}
     onStop={() => save({ shared: false }, 'parcel-link-share-stop')}
     onAgain={() => save({ shared: true }, 'parcel-link-share-change')}
-    onNameIt={onNameIt}
     onAccount={onAccount}
     onClose={onClose}
   />;
@@ -258,7 +246,7 @@ export function AccountShareSheet({ parcel, client, onClose }: {
   client: ParcelShareClient;
   onClose: () => void;
 }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const [state, setState] = useState<{ link: ParcelShare | null; loading: boolean; stopped: boolean }>({ link: null, loading: true, stopped: false });
   // What the next link will show, chosen before there is one.
   const [chosen, setChosen] = useState<Settings>({ showNumber: false, gift: false });
@@ -266,7 +254,6 @@ export function AccountShareSheet({ parcel, client, onClose }: {
   const noted = useLinkNote(state.link?.id ?? null).share;
   const words = state.link ? noted ?? draft : draft;
   const name = parcel.label.trim() || null;
-  const fallback = useMemo(() => t('share.name.fallback', { carrier: carrierInfo(displayedCarrierId(parcel), locale).name }), [parcel, locale, t]);
 
   useEffect(() => {
     let disposed = false;
@@ -291,18 +278,14 @@ export function AccountShareSheet({ parcel, client, onClose }: {
 
   return <ShareSheetView
     title={name ? t('share.titleNamed', { name }) : t('share.title')}
+    parcel={parcel}
     linkId={state.link?.id ?? null}
     settings={chosen}
     loading={state.loading}
     stopped={false}
     stoppedLine=""
     pendingLine={t(state.stopped ? 'share.stopped.account' : 'share.pending')}
-    numberHint={maskedNumber(numberEnds(parcel.trackingNumber))}
     name={name}
-    nameTitle={t('share.name.title')}
-    nameHint={t('share.name.hint', { name: fallback })}
-    unnamedHint={t('share.name.unnamed')}
-    promise={t('share.promise.account')}
     words={words}
     onWords={(next) => { if (state.link) noteLink(state.link.id, { share: next }); else setDraft(next); }}
     onChange={async (next) => { if (state.link) await share(next); else setChosen(next); }}

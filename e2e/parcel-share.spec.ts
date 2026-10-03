@@ -61,13 +61,15 @@ test('the owner chooses what the link shows: a recipient reads the number’s en
   await expect(status(page)).toHaveText('Ready for pickup');
   const address = page.url();
   const sheet = await openShare(page);
-  const number = sheet.getByRole('switch', { name: 'Show the tracking number' });
+  const number = sheet.getByRole('switch', { name: 'Show the full number' });
   await expect(number).not.toBeChecked();
-  await expect(sheet.getByText('Off, it reads ••• 99')).toBeVisible();
-  await expect(sheet.getByText(/Anyone with the link sees the journey, never a pickup code/)).toBeVisible();
-  // On its way, the day the link stops working is not known yet.
-  await expect(sheet.getByText('The link works until 30 days after delivery.')).toBeVisible();
-  await expect(sheet.getByRole('button', { name: 'Create an account and it works for as long as you share it' })).toBeVisible();
+  // The sheet shows what a recipient gets: the status and the number's end.
+  const preview = sheet.getByRole('group', { name: 'What they’ll see' });
+  await expect(preview).toContainText('Ready for pickup');
+  await expect(preview.locator('.peeks-preview__number')).toHaveText('••• 99');
+  // A parcel without a name has no name to show, and on its way no day ends the link yet.
+  await expect(sheet.getByRole('switch')).toHaveCount(2);
+  await expect(sheet.getByText(/Works until/)).toHaveCount(0);
 
   const { context, page: recipient } = await anotherBrowser(browser);
   await show(page, recipient, address);
@@ -85,6 +87,7 @@ test('the owner chooses what the link shows: a recipient reads the number’s en
   await number.focus();
   await page.keyboard.press('Space');
   await expect(number).toBeChecked();
+  await expect(preview.locator('.peeks-preview__number')).toHaveText('1234567899');
   await show(page, recipient, address);
   await expect(recipient.getByText('1234567899', { exact: true }).first()).toBeVisible();
   await expect(recipient.getByRole('button', { name: 'Copy tracking number' })).toBeVisible();
@@ -92,7 +95,7 @@ test('the owner chooses what the link shows: a recipient reads the number’s en
   await page.keyboard.press('Escape');
   await expect(sheet).toHaveCount(0);
   await expect(actions(page).getByRole('button', { name: 'Share', exact: true })).toBeFocused();
-  await expect((await openShare(page)).getByRole('switch', { name: 'Show the tracking number' })).toBeChecked();
+  await expect((await openShare(page)).getByRole('switch', { name: 'Show the full number' })).toBeChecked();
   expect(errors.get(recipient)).toEqual([]);
   await context.close();
 });
@@ -107,7 +110,8 @@ test('once the parcel is delivered, the share sheet and the recipient read the d
   await check.click();
   await expect(status(page)).toHaveText('Delivered');
   const sheet = await openShare(page);
-  await expect(sheet.getByText(/^The link works until \d+ \p{L}+\./u)).toBeVisible();
+  await expect(sheet.getByText(/^Works until \d+ \p{L}+/u)).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Keep it longer' })).toBeVisible();
   await page.keyboard.press('Escape');
 
   const { context, page: recipient } = await anotherBrowser(browser);
@@ -129,10 +133,12 @@ test('a gift stays a surprise until it is delivered, then shows its note and wha
   await page.keyboard.press('Enter');
 
   const sheet = await openShare(page);
-  await sheet.getByRole('switch', { name: 'It’s a gift' }).check();
+  await sheet.getByRole('switch', { name: 'Wrap as a gift' }).check();
+  // The sheet shows the wrapped parcel a recipient gets until then.
+  await expect(sheet.getByRole('group', { name: 'What they’ll see until it’s delivered' })).toContainText('Something’s on its way to you');
   await sheet.getByRole('textbox', { name: 'A note, shown once it’s delivered' }).fill('Happy birthday, Alex! Enjoy every piece.');
   await sheet.getByRole('textbox', { name: 'From' }).fill('Sam');
-  await sheet.getByRole('switch', { name: 'Show what’s inside' }).check();
+  await sheet.getByRole('switch', { name: 'Show its name' }).check();
   await sheet.getByRole('button', { name: 'Copy' }).click();
   await expect(sheet.getByText('Link copied')).toBeVisible();
   const link = await copied(page);
@@ -335,10 +341,14 @@ test('a parcel of the deliveries is shared through the same sheet: its link is m
   await detail.getByRole('button', { name: 'Share this parcel' }).click();
   const sheet = page.getByRole('dialog', { name: /^Share “New sneakers/ });
   await expect(sheet.getByText('The link is made when you share or copy it.')).toBeVisible();
-  await expect(sheet.getByText('The same page anyone gets from Peek’s front door. Your alerts, notes and account stay yours.')).toBeVisible();
-  await expect(sheet.getByText('Off, others see “DHL parcel”')).toBeVisible();
+  // Before there is a link, the sheet shows what it will show: the status and the number's end, without the name.
+  const preview = sheet.getByRole('group', { name: 'What they’ll see' });
+  await expect(preview).toContainText('Ready for pickup');
+  await expect(preview.locator('.peeks-preview__number')).toHaveText('••• 99');
+  await expect(preview).not.toContainText('New sneakers');
   await expect(sheet.getByRole('button', { name: 'Stop sharing' })).toHaveCount(0);
   await sheet.getByRole('switch', { name: 'Show its name' }).check();
+  await expect(preview).toContainText('New sneakers');
   await sheet.getByRole('button', { name: 'Copy' }).click();
   await expect(sheet.getByText('Link copied')).toBeVisible();
   const link = await copied(page);
@@ -376,7 +386,7 @@ test('fits a phone at 320 px, in German and in the dark: the sheets, a gift and 
 
   await actions(page).getByRole('button', { name: 'Teilen', exact: true }).click();
   const share = page.getByRole('dialog', { name: 'Dieses Paket teilen' });
-  await share.getByRole('switch', { name: 'Es ist ein Geschenk' }).check();
+  await share.getByRole('switch', { name: 'Als Geschenk verpacken' }).check();
   await expect(share.getByRole('textbox', { name: 'Von' })).toBeVisible();
   expect(await fits(page)).toBe(true);
   // Nothing in the sheet is wider than the sheet.
@@ -412,7 +422,7 @@ test('the sheets keep still under reduced motion', async ({ page }) => {
   const running = () => page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === 'running'
     && Number(animation.effect?.getComputedTiming().duration) > 1).length);
   const sheet = await openShare(page);
-  await sheet.getByRole('switch', { name: 'Show the tracking number' }).check();
+  await sheet.getByRole('switch', { name: 'Show the full number' }).check();
   expect(await running()).toBe(0);
   await page.keyboard.press('Escape');
   await expect(sheet).toHaveCount(0);

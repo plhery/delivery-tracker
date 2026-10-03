@@ -115,7 +115,7 @@ test('shares the link by copying it where there is no share sheet, and the name 
   expect(await copied(page)).toBe(page.url());
   expect(page.url()).not.toContain('surprise');
   // The name travels only once it is switched on, and then after the #.
-  await sheet.getByRole('switch', { name: 'Show what’s inside' }).check();
+  await sheet.getByRole('switch', { name: 'Show its name' }).check();
   await sheet.getByRole('button', { name: 'Copy' }).click();
   await expect.poll(() => copied(page)).toBe(`${page.url()}#n=A%20surprise`);
 });

@@ -25,11 +25,14 @@ const clipboard = () => {
 
 /** The sheet over a page that takes its answers, as the parcel page does. */
 function OwnerSheet({ initial = owned(), name = 'New sneakers' as string | null, worksUntil = null as string | null, onAccount = undefined as (() => void) | undefined,
-  onNameIt = () => undefined, onClose = () => undefined, onChanged = (() => undefined) as (view: ParcelLinkView) => void }) {
+  onClose = () => undefined, onChanged = (() => undefined) as (view: ParcelLinkView) => void }) {
   const [view, setView] = useState(initial);
   return <LinkShareSheet linkId={LINK_ID} ownerKey={OWNER_KEY} view={view} name={name} worksUntil={worksUntil} onAccount={onAccount}
-    onChanged={(next) => { onChanged(next); setView(next); }} onNameIt={onNameIt} onClose={onClose} />;
+    onChanged={(next) => { onChanged(next); setView(next); }} onClose={onClose} />;
 }
+/** The small card that shows what the link shows. Pip's label repeats the number, so the card's own line is asked for. */
+const preview = (caption = 'What they’ll see') => within(screen.getByRole('group', { name: caption }));
+const previewNumber = () => document.querySelector('.peeks-preview__number');
 
 beforeEach(() => {
   mocks.track.mockReset();
@@ -46,19 +49,31 @@ afterEach(() => {
 });
 
 describe('the share sheet of a looked-up parcel', () => {
-  it('shows the link with a way to copy it, three real switches with their hints, and the promise', async () => {
+  it('shows what the other person will see, three real switches of one line each, and the link with a way to copy it', async () => {
     const user = userEvent.setup();
     const copied = clipboard();
     render(<OwnerSheet />);
     const sheet = screen.getByRole('dialog', { name: 'Share this parcel' });
     expect(sheet).toHaveAttribute('aria-modal', 'true');
-    expect(within(sheet).getByLabelText('Parcel link')).toHaveTextContent(`localhost/p/${LINK_ID}`);
-    const number = toggle('Show the tracking number');
-    expect(number).not.toBeChecked();
-    expect(number).toHaveAccessibleDescription('Off, it reads ••• 99');
-    expect(toggle('Show what’s inside')).toHaveAccessibleDescription('“New sneakers” stays on this device unless you share it');
-    expect(toggle('It’s a gift')).toHaveAccessibleDescription('Hide the sender and what’s inside until it’s delivered');
-    expect(screen.getByText('Anyone with the link sees the journey, never a pickup code or the recipient’s name. Stop sharing and the link goes blank.')).toBeVisible();
+    // The card the other person gets, small: the carrier, the status and the masked number, without the name.
+    expect(preview().getByLabelText('DHL')).toBeVisible();
+    expect(preview().getByText('In transit')).toBeVisible();
+    expect(previewNumber()).toHaveTextContent(/^••• 99$/);
+    expect(preview().queryByText('New sneakers')).toBeNull();
+    expect(sheet.querySelector('.peeks-preview svg.parcel-illustration')).toHaveAttribute('aria-hidden', 'true');
+    // The card says what the switches change: none of them carries a sentence, and no promise follows them.
+    expect(screen.getAllByRole('switch').map((option) => document.getElementById(option.getAttribute('aria-labelledby')!)!.textContent))
+      .toEqual(['Show the full number', 'Show its name', 'Wrap as a gift']);
+    expect(toggle('Show the full number')).not.toBeChecked();
+    expect(toggle('Show the full number')).not.toHaveAccessibleDescription();
+    expect(toggle('Show its name')).toHaveAccessibleDescription('New sneakers');
+    expect(toggle('Wrap as a gift')).not.toHaveAccessibleDescription();
+    expect(sheet.querySelector('.peeks__promise')).toBeNull();
+    // The link stands under the switches, above the way to share it.
+    const link = within(sheet).getByLabelText('Parcel link');
+    expect(link).toHaveTextContent(`localhost/p/${LINK_ID}`);
+    expect(toggle('Wrap as a gift').compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(link.compareDocumentPosition(screen.getByRole('button', { name: 'Share…' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole('textbox')).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Copy' }));
@@ -74,42 +89,44 @@ describe('the share sheet of a looked-up parcel', () => {
     const changed = vi.fn();
     const user = userEvent.setup();
     render(<OwnerSheet onChanged={changed} />);
-    await user.click(toggle('Show the tracking number'));
+    await user.click(toggle('Show the full number'));
     // The switch moves before the answer, and waits for it before moving again.
-    expect(toggle('Show the tracking number')).toBeChecked();
-    expect(toggle('Show the tracking number')).toHaveAttribute('aria-busy', 'true');
+    expect(toggle('Show the full number')).toBeChecked();
+    expect(toggle('Show the full number')).toHaveAttribute('aria-busy', 'true');
     expect(mocks.update).toHaveBeenCalledExactlyOnceWith(LINK_ID, OWNER_KEY, { showNumber: true });
-    await user.click(toggle('Show the tracking number'));
+    await user.click(toggle('Show the full number'));
     expect(mocks.update).toHaveBeenCalledTimes(1);
     answer(owned({ showNumber: true }));
-    await waitFor(() => expect(toggle('Show the tracking number')).not.toHaveAttribute('aria-busy'));
+    // The card shows the whole number at once.
+    expect(previewNumber()).toHaveTextContent(/^1234567899$/);
+    await waitFor(() => expect(toggle('Show the full number')).not.toHaveAttribute('aria-busy'));
     // The owner's answer says what viewers read: nothing is noted on the device.
-    expect(toggle('Show the tracking number')).toBeChecked();
+    expect(toggle('Show the full number')).toBeChecked();
     expect(changed).toHaveBeenCalledWith(owned({ showNumber: true }));
     expect(linkNote(LINK_ID).share).toBeUndefined();
     expect(mocks.track).toHaveBeenCalledWith('parcel-link-share-change', 'success');
 
-    await user.click(toggle('Show the tracking number'));
+    await user.click(toggle('Show the full number'));
     expect(mocks.update).toHaveBeenLastCalledWith(LINK_ID, OWNER_KEY, { showNumber: false });
-    await waitFor(() => expect(toggle('Show the tracking number')).not.toBeChecked());
+    await waitFor(() => expect(toggle('Show the full number')).not.toBeChecked());
   });
 
   it('opens with the number switch as the server last stored it', () => {
     render(<OwnerSheet initial={owned({ showNumber: true })} />);
-    expect(toggle('Show the tracking number')).toBeChecked();
+    expect(toggle('Show the full number')).toBeChecked();
   });
 
   it('puts a switch back and says so when it cannot be saved', async () => {
     mocks.update.mockRejectedValueOnce(new ParcelLinkError('server')).mockRejectedValueOnce(new ParcelLinkError('offline'));
     const user = userEvent.setup();
     render(<OwnerSheet />);
-    await user.click(toggle('It’s a gift'));
+    await user.click(toggle('Wrap as a gift'));
     expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t save that. Check your connection and try again.');
-    expect(toggle('It’s a gift')).not.toBeChecked();
+    expect(toggle('Wrap as a gift')).not.toBeChecked();
     expect(mocks.track).toHaveBeenCalledWith('parcel-link-share-change', 'error');
-    await user.click(toggle('Show the tracking number'));
+    await user.click(toggle('Show the full number'));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/connection/i));
-    expect(toggle('Show the tracking number')).not.toBeChecked();
+    expect(toggle('Show the full number')).not.toBeChecked();
     expect(linkNote(LINK_ID).share).toBeUndefined();
   });
 
@@ -117,31 +134,25 @@ describe('the share sheet of a looked-up parcel', () => {
     const user = userEvent.setup();
     const copied = clipboard();
     render(<OwnerSheet />);
-    await user.click(toggle('Show what’s inside'));
-    expect(toggle('Show what’s inside')).toBeChecked();
+    await user.click(toggle('Show its name'));
+    expect(toggle('Show its name')).toBeChecked();
+    expect(preview().getByText('New sneakers')).toBeVisible();
     expect(screen.getByLabelText('Parcel link')).toHaveTextContent(`localhost/p/${LINK_ID}#n=New%20sneakers`);
     await user.click(screen.getByRole('button', { name: 'Copy' }));
     expect(copied).toHaveBeenCalledWith(`${ADDRESS}#n=New%20sneakers`);
     expect(linkNote(LINK_ID).share).toMatchObject({ name: true });
     expect(mocks.update).not.toHaveBeenCalled();
-    await user.click(toggle('Show what’s inside'));
+    await user.click(toggle('Show its name'));
     expect(screen.getByLabelText('Parcel link')).toHaveTextContent(new RegExp(`${LINK_ID}$`));
   });
 
-  it('cannot share what is inside a parcel without a name, and leads to naming it', async () => {
-    const onNameIt = vi.fn();
-    const onClose = vi.fn();
+  it('offers no name to show for a parcel without one', () => {
     noteLink(LINK_ID, { share: { name: true, note: '', from: '' } });
-    const user = userEvent.setup();
-    render(<OwnerSheet name={null} onNameIt={onNameIt} onClose={onClose} />);
-    const inside = toggle('Show what’s inside');
-    expect(inside).toBeDisabled();
-    expect(inside).not.toBeChecked();
-    expect(inside).toHaveAccessibleDescription('Name the parcel first, then you can share what’s inside.');
+    render(<OwnerSheet name={null} />);
+    expect(screen.getAllByRole('switch')).toHaveLength(2);
+    expect(screen.queryByRole('switch', { name: 'Show its name' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Name it' })).toBeNull();
     expect(screen.getByLabelText('Parcel link')).toHaveTextContent(new RegExp(`${LINK_ID}$`));
-    await user.click(screen.getByRole('button', { name: 'Name it' }));
-    expect(onClose).toHaveBeenCalledTimes(1);
-    expect(onNameIt).toHaveBeenCalledTimes(1);
   });
 
   it('wraps the parcel as a gift, with an optional note and who it is from in the link’s # part', async () => {
@@ -149,13 +160,17 @@ describe('the share sheet of a looked-up parcel', () => {
     Object.defineProperty(navigator, 'share', { configurable: true, value: share });
     const user = userEvent.setup();
     render(<OwnerSheet />);
-    await user.click(toggle('It’s a gift'));
+    await user.click(toggle('Wrap as a gift'));
     expect(mocks.update).toHaveBeenCalledExactlyOnceWith(LINK_ID, OWNER_KEY, { gift: true });
     const note = await screen.findByRole('textbox', { name: 'A note, shown once it’s delivered' });
-    expect(note).toHaveAccessibleDescription('The note travels inside the link. Peek never stores it.');
+    expect(note).toHaveAccessibleDescription('Kept in the link, never on Peek’s servers.');
+    // The card is the wrapped parcel now: when it arrives, and nothing about what it is or its number.
+    expect(preview('What they’ll see until it’s delivered').getByText('Something’s on its way to you')).toBeVisible();
+    expect(previewNumber()).toBeNull();
+    expect(document.querySelector('.peeks-preview')).toHaveAttribute('data-gift', 'true');
     await user.type(note, 'Happy birthday, Alex!');
     await user.type(screen.getByRole('textbox', { name: 'From' }), 'Sam');
-    await user.click(toggle('Show what’s inside'));
+    await user.click(toggle('Show its name'));
     expect(linkNote(LINK_ID).share).toEqual({ name: true, note: 'Happy birthday, Alex!', from: 'Sam' });
     await user.click(screen.getByRole('button', { name: 'Share…' }));
     expect(share).toHaveBeenCalledWith({ url: `${ADDRESS}#n=New%20sneakers&g=Happy%20birthday%2C%20Alex!&f=Sam` });
@@ -163,9 +178,11 @@ describe('the share sheet of a looked-up parcel', () => {
     expect(mocks.update).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(mocks.update.mock.calls)).not.toMatch(/birthday|Sam|sneakers/);
     // No longer a gift: the note stays on the device, and out of the link.
-    await user.click(toggle('It’s a gift'));
+    await user.click(toggle('Wrap as a gift'));
     await waitFor(() => expect(screen.queryByRole('textbox')).toBeNull());
     expect(screen.getByLabelText('Parcel link')).toHaveTextContent(new RegExp(`${LINK_ID}#n=New%20sneakers$`));
+    expect(preview().getByText('New sneakers')).toBeVisible();
+    expect(previewNumber()).toHaveTextContent('••• 99');
   });
 
   it('shares through the system’s sheet, copies where there is none, and says when neither works', async () => {
@@ -222,19 +239,47 @@ describe('the share sheet of a looked-up parcel', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('This parcel has been forgotten');
   });
 
-  it('says how long the link works, and leads a visitor to the account that keeps it working', async () => {
+  it('says until when the link works once there is a day, and leads a visitor to the account that keeps it', async () => {
     const onAccount = vi.fn();
     const onClose = vi.fn();
     const user = userEvent.setup();
     const { rerender } = render(<OwnerSheet />);
-    // On its way, the day is not known yet; nobody signed in is offered an account.
-    expect(screen.getByText('The link works until 30 days after delivery.')).toBeVisible();
-    expect(screen.queryByRole('button', { name: /Create an account/ })).toBeNull();
+    // On its way there is no day yet: the sheet's foot only stops the sharing.
+    expect(screen.queryByText(/Works until/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Stop sharing' })).toBeVisible();
+    // Nobody signed in is offered an account.
+    rerender(<OwnerSheet worksUntil="30 dec" />);
+    expect(screen.getByText('Works until 30 dec')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Keep it longer' })).toBeNull();
     rerender(<OwnerSheet worksUntil="30 dec" onAccount={onAccount} onClose={onClose} />);
-    expect(screen.getByText('The link works until 30 dec.')).toBeVisible();
-    await user.click(screen.getByRole('button', { name: 'Create an account and it works for as long as you share it' }));
+    await user.click(screen.getByRole('button', { name: 'Keep it longer' }));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onAccount).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the open box and the whole number of a parcel that arrived, and a gift as it is once opened', () => {
+    const arrived = testView({ stages: ['in_transit', 'delivered'] });
+    const { unmount } = render(<OwnerSheet initial={{ ...arrived, link: { ...arrived.link, gift: false, shared: true, showNumber: true } }} />);
+    expect(preview().getByText('Delivered')).toBeVisible();
+    expect(previewNumber()).toHaveTextContent('1234567899');
+    expect(document.querySelector('.peeks-preview__pip')).toHaveClass('peeks-preview__pip--open');
+    unmount();
+    // A gift that arrived is no longer wrapped: it says that it is here, and what is inside when the link carries the name.
+    noteLink(LINK_ID, { share: { name: true, note: '', from: '' } });
+    render(<OwnerSheet initial={{ ...arrived, link: { ...arrived.link, gift: true, shared: true } }} />);
+    expect(preview().getByText('It’s here')).toBeVisible();
+    expect(preview().getByText('Inside: New sneakers')).toBeVisible();
+    expect(previewNumber()).toHaveTextContent('••• 99');
+  });
+
+  it('keeps the card neutral for a number no carrier knows yet', () => {
+    const unknown = testView({ parcel: { carrier: 'unknown', syncStatus: 'waiting' }, stages: ['pending'] });
+    const { unmount } = render(<OwnerSheet />);
+    expect(document.querySelector('.peeks-preview')).toHaveAttribute('style');
+    unmount();
+    render(<OwnerSheet initial={{ ...unknown, link: { ...unknown.link, gift: false, shared: true } }} name={null} />);
+    expect(document.querySelector('.peeks-preview')).not.toHaveAttribute('style');
+    expect(preview().getByText('Carrier not found yet')).toBeVisible();
   });
 
   it('closes on Escape and with its close button', async () => {
@@ -269,13 +314,17 @@ describe('the share sheet of an account’s parcel', () => {
     expect(screen.getByRole('dialog', { name: 'Share “New sneakers”' })).toBeVisible();
     expect(await screen.findByText('The link is made when you share or copy it.')).toBeVisible();
     expect(client.current).toHaveBeenCalledExactlyOnceWith('package-1');
-    expect(toggle('Show its name')).toHaveAccessibleDescription('Off, others see “DHL parcel”');
-    expect(screen.getByText('The same page anyone gets from Peek’s front door. Your alerts, notes and account stay yours.')).toBeVisible();
+    expect(toggle('Show its name')).toHaveAccessibleDescription('New sneakers');
+    // Before there is a link, the card shows what it will show.
+    expect(preview().getByText('In transit')).toBeVisible();
+    expect(previewNumber()).toHaveTextContent(/^••• 99$/);
     expect(screen.queryByRole('button', { name: 'Stop sharing' })).toBeNull();
 
-    await user.click(toggle('Show the tracking number'));
+    await user.click(toggle('Show the full number'));
     await user.click(toggle('Show its name'));
-    expect(toggle('Show the tracking number')).toBeChecked();
+    expect(toggle('Show the full number')).toBeChecked();
+    expect(previewNumber()).toHaveTextContent('1234567899');
+    expect(preview().getByText('New sneakers')).toBeVisible();
     expect(client.share).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'Copy' }));
@@ -295,12 +344,12 @@ describe('the share sheet of an account’s parcel', () => {
     const user = userEvent.setup();
     render(<AccountShareSheet parcel={parcel} client={client} onClose={() => undefined} />);
     expect(await screen.findByLabelText('Parcel link')).toHaveTextContent(`${LINK_ID}#n=New%20sneakers&g=Happy%20birthday!&f=Sam`);
-    expect(toggle('Show the tracking number')).toBeChecked();
-    expect(toggle('It’s a gift')).toBeChecked();
+    expect(toggle('Show the full number')).toBeChecked();
+    expect(toggle('Wrap as a gift')).toBeChecked();
     expect(screen.getByRole('textbox', { name: 'From' })).toHaveValue('Sam');
-    await user.click(toggle('Show the tracking number'));
+    await user.click(toggle('Show the full number'));
     expect(client.share).toHaveBeenCalledExactlyOnceWith(parcel, { showNumber: false, gift: true });
-    await waitFor(() => expect(toggle('Show the tracking number')).not.toBeChecked());
+    await waitFor(() => expect(toggle('Show the full number')).not.toBeChecked());
   });
 
   it('stops for good and says that sharing again makes a new link', async () => {
@@ -338,23 +387,22 @@ describe('the share sheet of an account’s parcel', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/connection/i);
     expect(screen.getByRole('button', { name: 'Stop sharing' })).toBeVisible();
     client.share.mockRejectedValueOnce(new ParcelLinkError('server'));
-    await user.click(toggle('It’s a gift'));
+    await user.click(toggle('Wrap as a gift'));
     expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t save that.');
-    expect(toggle('It’s a gift')).not.toBeChecked();
+    expect(toggle('Wrap as a gift')).not.toBeChecked();
   });
 
   it('says nothing about how long the link works: a link from an account works for as long as it is shared', async () => {
     render(<AccountShareSheet parcel={parcel} client={account()} onClose={() => undefined} />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Share…' })).toBeEnabled());
-    expect(screen.queryByText(/The link works until/)).toBeNull();
+    expect(screen.queryByText(/Works until/)).toBeNull();
   });
 
-  it('cannot show the name of a parcel without one', async () => {
+  it('offers no name to show for a parcel without one', async () => {
     render(<AccountShareSheet parcel={{ ...parcel, label: ' ' }} client={account()} onClose={() => undefined} />);
     expect(screen.getByRole('dialog', { name: 'Share this parcel' })).toBeVisible();
     await screen.findByText('The link is made when you share or copy it.');
-    expect(toggle('Show its name')).toBeDisabled();
-    expect(toggle('Show its name')).toHaveAccessibleDescription('This parcel has no name yet.');
-    expect(screen.queryByRole('button', { name: 'Name it' })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Show its name' })).toBeNull();
+    expect(screen.getAllByRole('switch')).toHaveLength(2);
   });
 });

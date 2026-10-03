@@ -979,6 +979,8 @@ struct UnwrappingParcel: View, Animatable {
     var senderName: String? = nil
     /// Wrapped as a gift: a lilac ribbon tied in a bow on its lid, and a gift on the card inside.
     var ribbon = false
+    /// Standing on the ground, with a soft shadow under it. Off where it is cut to its box, as a sticker is.
+    var grounded = true
     @EnvironmentObject private var localizer: Localizer
 
     var animatableData: Double {
@@ -993,11 +995,13 @@ struct UnwrappingParcel: View, Animatable {
             let breath = reduceMotion ? 0 : sin(open * .pi)
             let anticipation = reduceMotion ? 0 : max(0, 1 - abs(open - 0.12) / 0.12)
             ZStack {
-                Ellipse()
-                    .fill(.black.opacity(pressed ? 0.14 : 0.08 + Double(lift) * 0.004))
-                    .frame(width: pressed ? 188 : 180 + lift * 3, height: pressed ? 13 : 20)
-                    .blur(radius: 9)
-                    .position(x: 151 - tilt.x * 7, y: 286 - tilt.y * 3)
+                if grounded {
+                    Ellipse()
+                        .fill(.black.opacity(pressed ? 0.14 : 0.08 + Double(lift) * 0.004))
+                        .frame(width: pressed ? 188 : 180 + lift * 3, height: pressed ? 13 : 20)
+                        .blur(radius: 9)
+                        .position(x: 151 - tilt.x * 7, y: 286 - tilt.y * 3)
+                }
 
                 ZStack {
                     polygon([(55, 142), (150, 95), (245, 142), (150, 190)])

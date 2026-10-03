@@ -229,7 +229,6 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   // Forgetting and changing what the link shows are the owner's alone: they need the key this device holds.
   const key = owner ? recentFor(linkId)?.key ?? null : null;
   const [sharing, setSharing] = useState(false);
-  const [renaming, setRenaming] = useState(0);
   async function share() {
     // The owner chooses what the link shows; anyone else passes on the plain link.
     if (key) {
@@ -394,7 +393,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
         {owner && link.shared === false && <p className="peekp-shared"><Glyph name="info" />{t('share.stopped.owner')}</p>}
         {!carrierKnown && <p className="peekp-keeppage">{t('link.unknown.keep')}</p>}
         {signedIn && !followed && link.canKeep && <AddToDeliveries busy={adding || pendingId === linkId} error={addError && t(addError)} onAdd={() => void add()} />}
-        {!afterwards && <Actions name={name} ping={ping} renaming={renaming}
+        {!afterwards && <Actions name={name} ping={ping}
           onHave={key && delivered && link.kind === 'lookup' ? () => setForgetting('arrived') : undefined}
           onCalendar={!owner && slot ? addToCalendar : undefined}
           onShare={owner ? () => void share() : undefined}
@@ -434,8 +433,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
     {keepSheet && session.signInWith && <KeepSheet linkId={linkId} carrier={displayed} title={name ?? number ?? t('common.parcel')} summary={summary}
       methods={session.signInWith} onClose={() => setKeepSheet(false)} />}
     {sharing && key && <LinkShareSheet linkId={linkId} ownerKey={key} view={view} name={name} onChanged={adopt}
-      worksUntil={final ? forgetOn : null} onAccount={visitor ? signInToKeep : undefined}
-      onNameIt={() => setRenaming((count) => count + 1)} onClose={() => setSharing(false)} />}
+      worksUntil={final ? forgetOn : null} onAccount={visitor ? signInToKeep : undefined} onClose={() => setSharing(false)} />}
     {alerting && <AlertsSheet linkId={linkId} ownerKey={key} alerts={link.alerts} initialPreset={early ? 'all' : 'important'}
       calendar={calendarWindow} onCalendar={calendarFile}
       onSignIn={session.account === 'visitor' && !sample ? signInToKeep : undefined} onClose={() => setAlerting(false)} />}

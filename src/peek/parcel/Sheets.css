@@ -22,9 +22,46 @@
 .peeks-link__pending { flex: 1; min-width: 0; color: var(--ink-soft); font-size: 12.5px; line-height: 1.4; }
 .peeks-link__copy { display: inline-flex; align-items: center; justify-content: center; gap: 9px; flex: 0 0 auto; min-height: 44px; padding: 10px 14px; border-radius: 14px; background: var(--control); font-size: 13px; font-weight: 550; }
 .peeks-link__copy svg { width: 17px; height: 17px; }
-.peeks-link__works { display: flex; align-items: flex-start; gap: 7px; margin: 10px 4px 0; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
-.peeks-link__works svg { width: 14px; height: 14px; flex: 0 0 auto; margin-top: 2px; stroke-width: 1.5; }
-.peeks-link__works button { display: inline; padding: 0; background: none; color: var(--ink); font-size: inherit; font-weight: 600; line-height: inherit; text-align: start; text-decoration: underline; text-underline-offset: 3px; }
+.peeks-share .peeks-link { margin-top: 12px; }
+.peeks-share .peeks__actions { margin-top: 10px; }
+/* Under the button: how long the link works, once there is a day, and the way to stop sharing. */
+.peeks__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 12px; min-height: 44px; margin: 6px 2px -10px; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+.peeks__foot p { margin: 0; }
+.peeks__foot button { min-height: 44px; padding: 0; background: none; font-size: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.peeks__foot p button { color: var(--ink); font-weight: 600; }
+.peeks__stop { margin-inline-start: auto; color: var(--ink-soft); }
+
+/* What the link shows, as a small card: the switches under it change it. */
+.peeks-preview__caption { margin: 0 2px 8px; color: var(--ink-soft); font-size: 12px; }
+.peeks-preview {
+  --tone: light-dark(var(--carrier-ink-light, #657060), var(--carrier-ink-dark, #afb9a9));
+  --tone-surface: light-dark(var(--carrier-surface-light, #eceee7), var(--carrier-surface-dark, #2e342d));
+  --carrier-brand: light-dark(var(--carrier-brand-light, #20251e), var(--carrier-brand-dark, #f5f6f2));
+  display: flex; align-items: center; gap: 12px; overflow: hidden; padding: 14px 16px; border-radius: 18px; background: var(--tone-surface);
+}
+/* A gift is lilac for whoever gets it, whatever carries it. */
+.peeks-preview[data-gift] { --tone: var(--lilac); --tone-surface: var(--lilac-soft); }
+.peeks-preview__text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.peeks-preview .carrier-mark, .peeks-preview__nocarrier { margin-bottom: 6px; }
+.peeks-preview .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; overflow: visible; }
+.peeks-preview__nocarrier { color: var(--ink-soft); font-size: 12px; font-weight: 650; }
+.peeks-preview__name { font-size: 12.5px; font-weight: 600; overflow-wrap: anywhere; }
+.peeks-preview strong { font-size: 19px; font-weight: 650; letter-spacing: -.5px; line-height: 1.2; overflow-wrap: anywhere; }
+.peeks-preview__detail { color: var(--tone); font-size: 12.5px; font-weight: 500; }
+.peeks-preview__number { margin-top: 4px; font: 400 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+/* Pip, as on the page: its label while it travels, the open box once it has arrived, a ribbon for a gift. */
+.peeks-preview__pip { flex: 0 0 auto; width: 84px; margin: -10px -4px -10px 0; }
+/* He keeps still beside the switches: only his eyes blink. */
+.peeks-preview__pip .parcel-illustration__shadow, .peeks-preview__pip .parcel-illustration__body { animation: none; }
+.peeks-preview__pip .parcel-illustration__shadow { opacity: 0; }
+.peeks-preview__pip--open .parcel-illustration__flap { transform: scaleY(var(--fold-scale)) skewX(var(--fold-skew)); opacity: 1; }
+.peeks-preview__pip--open .parcel-illustration__tape, .peeks-preview__pip--open .parcel-illustration__ribbon { opacity: 0; }
+.peeks-preview__pip--open .parcel-illustration__delivery-card { opacity: 1; transform: translateY(-69px) rotate(-5deg); }
+.peeks-preview__pip--open .parcel-illustration__check { stroke-dashoffset: 0; }
+.peeks-preview__pip--open .parcel-illustration__eye { opacity: 0; animation: none; }
+.peeks-preview__pip--open .parcel-illustration__happy-eye { opacity: 1; }
+/* The ribbon runs where Pip smiles: until the box opens, the eyes say it all. */
+.peeks-preview__pip:not(.peeks-preview__pip--open) .parcel-illustration__pip:has(~ .parcel-illustration__ribbon) > path:last-child { opacity: 0; }
 
 /* What the link shows: real switches. */
 .peeks-switches { display: grid; gap: 7px; margin-top: 14px; }
@@ -37,16 +74,22 @@
 .peeks-switch__text { display: grid; gap: 2px; flex: 1; min-width: 0; }
 .peeks-switch__text strong { font-size: 13px; font-weight: 600; }
 .peeks-switch__text small { color: var(--ink-soft); font-size: 11.5px; line-height: 1.4; overflow-wrap: anywhere; }
+.peeks-switch__value { flex: 0 1 auto; min-width: 0; max-width: 45%; overflow: hidden; color: var(--ink-soft); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .peeks-switch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .peeks-switch__track { position: relative; display: block; flex-shrink: 0; width: 44px; height: 26px; border: 1px solid var(--line); border-radius: 13px; background: var(--control); transition: background .18s, border-color .18s; }
 .peeks-switch__track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 22%); transition: translate .2s var(--spring); }
 .peeks-switch input:checked + .peeks-switch__track { border-color: var(--green); background: var(--green); }
 .peeks-switch input:checked + .peeks-switch__track::after { translate: 18px 0; }
 .peeks-switch input:focus-visible + .peeks-switch__track { outline: 2px solid var(--ink); outline-offset: 2px; }
-.peeks-switch__nudge { display: block; min-height: 36px; margin: -8px 14px 6px 44px; padding: 0; background: none; font-size: 12.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+/* One line each, in one card: the share sheet's preview says what they change. */
+.peeks-switches--joined { gap: 0; margin-top: 12px; border-radius: 14px; background: var(--paper); }
+.peeks-switches--joined .peeks-switch { border-radius: 0; background: none; }
+.peeks-switches--joined .peeks-switch + .peeks-switch { border-top: 1px solid var(--line); }
+.peeks-switches--joined .peeks-switch > label { min-height: 50px; padding-block: 9px; }
+.peeks-switches--joined .peeks-switch__text strong { font-size: 13.5px; }
 
 /* A gift's note and who it is from. */
-.peeks-gift { display: grid; gap: 6px; padding: 12px 14px 14px; border-radius: 14px; background: var(--paper); }
+.peeks-gift { display: grid; gap: 6px; margin-top: 8px; padding: 12px 14px 14px; border-radius: 14px; background: var(--paper); }
 .peeks-gift label { color: var(--ink-soft); font-size: 11.5px; }
 .peeks-gift textarea, .peeks-gift input { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--canvas); font-size: 16px; line-height: 1.4; resize: vertical; }
 .peeks-gift textarea:focus, .peeks-gift input:focus { outline: none; border-color: var(--ochre); box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 20%, transparent); }
@@ -86,7 +129,8 @@
   .peeks-link { padding-left: 12px; }
   .peeks-link__copy { padding-inline: 10px; }
   .peeks-option, .peeks-switch > label { gap: 10px; padding-inline: 12px; }
-  .peeks-switch__nudge { margin-left: 40px; }
+  .peeks-preview { padding-inline: 14px; }
+  .peeks-preview__pip { width: 72px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .peeks-switch__track, .peeks-switch__track::after { transition: none; }

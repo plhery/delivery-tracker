@@ -147,7 +147,7 @@ describe('the parcel page of a link’s owner', () => {
     open(view());
     await user.click(await screen.findByRole('button', { name: 'Share' }));
     const sheet = screen.getByRole('dialog', { name: 'Share this parcel' });
-    await user.click(within(sheet).getByRole('switch', { name: 'It’s a gift' }));
+    await user.click(within(sheet).getByRole('switch', { name: 'Wrap as a gift' }));
     expect(mocks.update).toHaveBeenCalledExactlyOnceWith(LINK_ID, OWNER_KEY, { gift: true });
     // The owner keeps the usual page, marked as a gift, and the device keeps the answer.
     expect(await screen.findByText('Gift')).toBeVisible();
@@ -165,26 +165,28 @@ describe('the parcel page of a link’s owner', () => {
     expect(screen.getByRole('dialog', { name: 'Share this parcel' })).toBeVisible();
   });
 
-  it('says in the share sheet how long the link works, and takes a visitor from there to the sign-in', async () => {
+  it('says in the share sheet until when the link works once the parcel is delivered, and takes a visitor from there to the sign-in', async () => {
     const signIn = vi.fn();
     const user = userEvent.setup();
     const moving = open(view(), { session: { account: 'visitor', signIn } });
     await user.click(await actions().findByRole('button', { name: 'Share' }));
-    expect(within(screen.getByRole('dialog')).getByText('The link works until 30 days after delivery.')).toBeVisible();
+    // On its way there is no day to name yet, and the card shows the parcel as a recipient gets it.
+    expect(within(screen.getByRole('dialog')).queryByText(/Works until/)).toBeNull();
+    expect(within(screen.getByRole('group', { name: 'What they’ll see' })).getByText('In transit')).toBeVisible();
     moving.unmount();
     const delivered = open(view({ events: arrived }), { session: { account: 'visitor', signIn } });
     await user.click(await actions().findByRole('button', { name: 'Share' }));
     const sheet = within(screen.getByRole('dialog', { name: 'Share this parcel' }));
-    expect(sheet.getByText('The link works until 30 dec.')).toBeVisible();
-    await user.click(sheet.getByRole('button', { name: 'Create an account and it works for as long as you share it' }));
+    expect(sheet.getByText(/^Works until 30 dec/)).toBeVisible();
+    await user.click(sheet.getByRole('button', { name: 'Keep it longer' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID);
     delivered.unmount();
     // Someone signed in adds the parcel from the page: the sheet only says the day.
     open(view({ events: arrived }), { session: signedIn });
     await user.click(await actions().findByRole('button', { name: 'Share' }));
-    expect(within(screen.getByRole('dialog')).getByText('The link works until 30 dec.')).toBeVisible();
-    expect(within(screen.getByRole('dialog')).queryByRole('button', { name: /Create an account/ })).toBeNull();
+    expect(within(screen.getByRole('dialog')).getByText('Works until 30 dec')).toBeVisible();
+    expect(within(screen.getByRole('dialog')).queryByRole('button', { name: 'Keep it longer' })).toBeNull();
   });
 
   it('hands the keyboard back to the button that opened a sheet, in a browser that leaves a clicked button unfocused', async () => {
@@ -205,17 +207,21 @@ describe('the parcel page of a link’s owner', () => {
     expect(ping).toHaveFocus();
   });
 
-  it('leads from the share sheet to naming a parcel that has no name', async () => {
+  it('offers to show the name in the share sheet once the parcel has one', async () => {
     const user = userEvent.setup();
     open(view());
     await user.click(await screen.findByRole('button', { name: 'Share' }));
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Name it' }));
-    expect(screen.queryByRole('dialog')).toBeNull();
-    const field = screen.getByRole('textbox', { name: 'Parcel name' });
-    await user.type(field, 'New sneakers{Enter}');
+    // Without a name there is nothing to show: the sheet has two switches.
+    expect(within(screen.getByRole('dialog')).getAllByRole('switch')).toHaveLength(2);
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }));
+    await user.click(actions().getByRole('button', { name: 'Name it' }));
+    await user.type(screen.getByRole('textbox', { name: 'Parcel name' }), 'New sneakers{Enter}');
     expect(recentFor(LINK_ID)!.name).toBe('New sneakers');
     await user.click(actions().getByRole('button', { name: 'Share' }));
-    expect(screen.getByRole('switch', { name: 'Show what’s inside' })).toBeEnabled();
+    const name = screen.getByRole('switch', { name: 'Show its name' });
+    expect(name).toHaveAccessibleDescription('New sneakers');
+    await user.click(name);
+    expect(within(screen.getByRole('group', { name: 'What they’ll see' })).getByText('New sneakers')).toBeVisible();
   });
 
   it('words the way to the alerts by where the parcel is, and drops it once the journey is over', async () => {

@@ -1,9 +1,10 @@
 import SwiftUI
 import UIKit
 
-/// Sharing one of the account's parcels from its detail: the parcel's link, what the link
-/// shows, and the way to stop. The name, a gift's note and who it is from are added to the
-/// link after its `#`: they reach the recipient and no server.
+/// Sharing one of the account's parcels from its detail: what the link shows, as the other
+/// person will see it, the switches that change it, the link, and the way to stop. The name, a
+/// gift's note and who it is from are added to the link after its `#`: they reach the recipient
+/// and no server. The link stands under the switches, so what is copied carries what was chosen.
 struct ParcelShareSheet: View {
     let parcel: Parcel
     /// The demo's links are made up on this device: the sheet says so.
@@ -12,7 +13,6 @@ struct ParcelShareSheet: View {
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.dismiss) private var dismiss
     @StateObject private var model: ParcelShareModel
-    @ObservedObject private var catalog = CarrierCatalog.shared
     @State private var handingOut: HandedAddress?
     @State private var copied = false
     /// The sheet is as tall as what it shows, and opens fully to write a gift's note.
@@ -109,27 +109,15 @@ struct ParcelShareSheet: View {
     }
 
     @ViewBuilder private var sharing: some View {
-        linkRow
-        VStack(spacing: 7) {
-            switchRow(symbol: "receipt", title: localizer.text("share.number.title"),
-                      hint: localizer.text("share.number.hint", ["number": ParcelNumberHint(hiding: parcel.trackingNumber).masked]),
-                      isOn: binding(.showNumber), disabled: model.loading)
-            switchRow(symbol: "pencil", title: localizer.text("share.name.title"),
-                      hint: model.name == nil ? localizer.text("share.name.unnamed") : localizer.text("share.name.hint", ["name": fallbackName]),
-                      isOn: Binding { model.name != nil && model.words.name } set: { model.words.name = $0 },
-                      disabled: model.loading || model.name == nil)
-            switchRow(symbol: "gift", title: localizer.text("share.gift.title"), hint: localizer.text("share.gift.hint"),
-                      isOn: binding(.gift), disabled: model.loading)
+        VStack(spacing: 12) {
+            SharePreviewCard(parcel: parcel, name: model.carried.name, showNumber: model.shown.showNumber, gift: model.shown.gift)
+            options
             if model.shown.gift { giftWords }
+            linkRow
         }
-        Text(localizer.text("share.promise.account"))
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 2)
         if demo { line(localizer.text("alerts.demo"), symbol: "info.circle") }
         if let failure = model.failureKey { warning(localizer.text(failure)) }
-        VStack(spacing: 4) {
+        VStack(spacing: 2) {
             primaryButton(localizer.text("share.action"), symbol: "square.and.arrow.up") {
                 Task {
                     guard let url = await model.addressToHandOut() else { return }
@@ -141,15 +129,38 @@ struct ParcelShareSheet: View {
             if model.link != nil {
                 Button { Task { await model.stop() } } label: {
                     Text(localizer.text("share.stop"))
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .font(.footnote)
+                        .underline()
+                        .frame(minHeight: 44)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
                 .disabled(model.working)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.horizontal, 2)
             }
         }
+    }
+
+    /// What the link shows beyond the journey: one line each, in one card. The card above them
+    /// shows what they change. A parcel without a name has no name to show.
+    private var options: some View {
+        VStack(spacing: 0) {
+            switchRow(symbol: "receipt", title: localizer.text("share.number.title"), isOn: binding(.showNumber))
+            if let name = model.name {
+                hairline
+                switchRow(symbol: "pencil", title: localizer.text("share.name.title"), value: name,
+                          isOn: Binding { model.words.name } set: { model.words.name = $0 })
+            }
+            hairline
+            switchRow(symbol: "gift", title: localizer.text("share.gift.title"), isOn: binding(.gift))
+        }
+        .background(Brand.paper, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private var hairline: some View {
+        Rectangle().fill(Brand.separator.opacity(0.5)).frame(height: 1)
     }
 
     /// Sharing was stopped: the link shows nothing, and sharing again makes a new one.
@@ -202,27 +213,34 @@ struct ParcelShareSheet: View {
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Brand.separator.opacity(0.6)))
     }
 
-    private func switchRow(symbol: String, title: String, hint: String, isOn: Binding<Bool>, disabled: Bool) -> some View {
+    private func switchRow(symbol: String, title: String, value: String? = nil, isOn: Binding<Bool>) -> some View {
         Toggle(isOn: isOn) {
-            HStack(spacing: 12) {
+            HStack(spacing: 0) {
                 Image(systemName: symbol)
                     .font(.system(size: 16))
                     .foregroundStyle(.secondary)
                     .frame(width: 22)
+                    .padding(.trailing, 12)
                     .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.subheadline.weight(.semibold))
-                    Text(hint).font(.caption).foregroundStyle(.secondary)
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
+                if let value {
+                    Spacer(minLength: 10)
+                    Text(value)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                 }
-                .fixedSize(horizontal: false, vertical: true)
             }
         }
         .tint(ExperimentalPalette.delivered)
-        .disabled(disabled)
+        .disabled(model.loading)
         .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .frame(minHeight: 60)
-        .background(Brand.paper, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(.vertical, 9)
+        .frame(minHeight: 50)
     }
 
     /// A gift's note and who it is from. They travel in the link and show once it is delivered.
@@ -307,11 +325,6 @@ struct ParcelShareSheet: View {
 
     // MARK: - Actions
 
-    /// What others read in place of the name: "DHL parcel".
-    private var fallbackName: String {
-        localizer.text("share.name.fallback", ["carrier": catalog.info(for: parcel.displayedCarrier, language: localizer.language).displayName])
-    }
-
     private func binding(_ field: ParcelShareModel.Field) -> Binding<Bool> {
         Binding {
             field == .gift ? model.shown.gift : model.shown.showNumber
@@ -330,6 +343,99 @@ struct ParcelShareSheet: View {
             copied = true
             try? await Task.sleep(for: .seconds(2))
             copied = false
+        }
+    }
+}
+
+/// What the link shows, as a small card: the switches under it change it, so none of them
+/// needs a sentence. A gift on its way is the wrapped parcel, with no number and no name.
+private struct SharePreviewCard: View {
+    let parcel: Parcel
+    /// The name the link carries, when it carries one.
+    let name: String?
+    let showNumber: Bool
+    let gift: Bool
+
+    @EnvironmentObject private var localizer: Localizer
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ObservedObject private var catalog = CarrierCatalog.shared
+
+    private var delivered: Bool { parcel.currentStage == .delivered }
+    private var wrapped: Bool { gift && !delivered }
+
+    var body: some View {
+        let identity = CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
+        VStack(alignment: .leading, spacing: 8) {
+            Text(localizer.text(wrapped ? "share.preview.wrapped" : "share.preview.title"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 2)
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    CarrierFleetMark(identity: identity).padding(.bottom, 4)
+                    if let name, !wrapped {
+                        Text(gift ? localizer.text("share.gift.inside") + " " + name : name)
+                            .font(.footnote.weight(.semibold))
+                    }
+                    Text(headline).font(.title3.weight(.semibold))
+                    if let detail {
+                        Text(detail)
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(gift ? ExperimentalPalette.lilac : identity.ink)
+                    }
+                    if !wrapped {
+                        Text(number)
+                            .font(.system(.caption, design: .monospaced))
+                            .padding(.top, 3)
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                if !typeSize.isAccessibilitySize { figure }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(gift ? ExperimentalPalette.lilacSurface : identity.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var headline: String {
+        wrapped ? localizer.text("share.gift.headline") : gift ? localizer.text("share.gift.here") : localizer.parcelStatus(parcel)
+    }
+
+    private var detail: String? {
+        gift ? localizer.giftDetail(parcel, opened: delivered) ?? (delivered ? localizer.sharedParcelDetail(parcel) : nil)
+            : localizer.sharedParcelDetail(parcel)
+    }
+
+    /// The number as the link shows it: whole, or its end alone.
+    private var number: String {
+        showNumber ? CarrierCatalog.format(parcel.trackingNumber, carrier: parcel.carrier) : ParcelNumberHint(hiding: parcel.trackingNumber).masked
+    }
+
+    /// The part of Pip's frame that holds the closed box, and the part its open flaps and card reach into.
+    private static let closedBox = CGRect(x: 48, y: 88, width: 204, height: 196)
+    private static let openBox = CGRect(x: 10, y: 28, width: 280, height: 256)
+    private static let boxWidth: CGFloat = 78
+
+    /// Pip, as on the page: the kraft parcel while it travels, the open box once it has arrived, a ribbon for a gift.
+    @ViewBuilder private var figure: some View {
+        if gift || delivered {
+            // Drawn at the sticker's scale and cut to the box, without the shadow under it.
+            let scale = Self.boxWidth / Self.closedBox.width
+            let crop = delivered ? Self.openBox : Self.closedBox
+            UnwrappingParcel(open: delivered ? 1 : 0, ribbon: gift, grounded: false)
+                .frame(width: PipGeometry.frame.width * scale, height: PipGeometry.frame.height * scale)
+                .offset(x: -crop.minX * scale, y: -crop.minY * scale)
+                .frame(width: crop.width * scale, height: crop.height * scale, alignment: .topLeading)
+                .clipped()
+                .padding(.vertical, delivered ? -8 : 0)
+                .accessibilityHidden(true)
+        } else {
+            SmallPip().frame(width: Self.boxWidth)
         }
     }
 }
@@ -357,13 +463,15 @@ private struct LinkActivitySheet: UIViewControllerRepresentable {
 #if DEBUG
 /// Opens the share sheet of a demo parcel at launch, to look at it in the simulator:
 /// `-sdt.debug.parcelShare new` (no link yet), `link` (shared, number shown), `gift` (a gift
-/// with its note) or `stopped`. Start the demo with `-sdt.native.experience.v1 demo`.
+/// with its note), `stopped` or `delivered` (a parcel that has arrived, its name shown). Start
+/// the demo with `-sdt.native.experience.v1 demo`.
 enum ParcelSharePreview {
     static var variant: String? { UserDefaults.standard.string(forKey: "sdt.debug.parcelShare") }
 
     /// The demo parcel the sheet opens for.
     static func parcel(in parcels: [Parcel]) -> Parcel? {
-        guard variant != nil else { return nil }
+        guard let variant else { return nil }
+        if variant == "delivered", let arrived = parcels.first(where: { $0.currentStage == .delivered }) { return arrived }
         return parcels.first { $0.carrier == .dhl && $0.isActive } ?? parcels.first
     }
 
@@ -380,6 +488,9 @@ enum ParcelSharePreview {
         case "gift":
             _ = shares.share(parcel.id, showNumber: false, gift: true)
             notes.remember(ParcelShareWords(name: true, note: "Happy birthday, Alex! I hope these keep up with you on the trails.", from: "Sam"), for: parcel.id)
+        case "delivered":
+            _ = shares.share(parcel.id, showNumber: false, gift: false)
+            notes.remember(ParcelShareWords(name: true, note: "", from: ""), for: parcel.id)
         default:
             break
         }

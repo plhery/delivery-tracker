@@ -33,7 +33,8 @@ describe('sharing a parcel from the deliveries', () => {
     await user.click(screen.getByRole('button', { name: 'Share this parcel' }));
     const sheet = screen.getByRole('dialog', { name: 'Share “New sneakers”' });
     expect(await within(sheet).findByText('The link is made when you share or copy it.')).toBeVisible();
-    expect(within(sheet).getByText('The same page anyone gets from Peek’s front door. Your alerts, notes and account stay yours.')).toBeVisible();
+    // The sheet shows the parcel as the other person will get it.
+    expect(within(sheet).getByRole('group', { name: 'What they’ll see' })).toBeVisible();
     // Opening only asked whether the parcel is shared.
     expect(fetch.mock.calls.map(([path, init]) => [path, init?.method ?? 'GET'])).toEqual([['/api/packages/package-1/share', 'GET']]);
 

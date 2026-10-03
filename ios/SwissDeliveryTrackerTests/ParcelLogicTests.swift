@@ -959,6 +959,30 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertNil(localizer.parcelCompletionDate(makeParcel(id: id, events: [event(id, .delivered, "invalid")]), now: now))
     }
 
+    @MainActor
+    func testALinksCardSaysWhenAParcelArrivesAndAGiftNoMoreThanThat() {
+        let localizer = Localizer()
+        localizer.language = .en
+        let id = UUID()
+        let now = Date()
+        let today = DateFormatter()
+        today.dateFormat = "yyyy-MM-dd"
+
+        // On its way: the estimate is a line of its own, and a gift only says when it arrives.
+        var moving = makeParcel(id: id, events: [event(id, .outForDelivery, DateParser.isoString(now))])
+        XCTAssertNil(localizer.sharedParcelDetail(moving))
+        XCTAssertNil(localizer.giftDetail(moving, opened: false))
+        moving.expectedDelivery = today.string(from: now)
+        XCTAssertEqual(localizer.sharedParcelDetail(moving), "Today")
+        XCTAssertEqual(localizer.giftDetail(moving, opened: false), "Arrives today")
+
+        // Arrived: the day on the usual card, the day and the time for a gift that is opened.
+        let arrived = makeParcel(id: id, events: [event(id, .delivered, DateParser.isoString(now))])
+        XCTAssertEqual(localizer.sharedParcelDetail(arrived), "Today")
+        XCTAssertEqual(localizer.giftDetail(arrived, opened: true), "Delivered today at \(localizer.clockTime(now))")
+        XCTAssertNil(localizer.giftDetail(moving, opened: true))
+    }
+
     func testPassportNewStampsUseExplicitScansAndLocalCompletionDates() throws {
         func shipment(_ scans: [(TrackingStage, String, String?)]) -> Parcel {
             let id = UUID()

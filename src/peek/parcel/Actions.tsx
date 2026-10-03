@@ -20,7 +20,7 @@ export interface PingAction {
  * to a calendar, share its link, and give it a name that stays on this
  * device. Once it has arrived, "I have it" takes the place of the alerts.
  */
-export function Actions({ name, ping, onHave, onCalendar, onShare, onRename, renaming, compactName = false }: {
+export function Actions({ name, ping, onHave, onCalendar, onShare, onRename, compactName = false }: {
   name: string | null;
   /** Absent once the journey is over. */
   ping?: PingAction;
@@ -30,8 +30,6 @@ export function Actions({ name, ping, onHave, onCalendar, onShare, onRename, ren
   onCalendar?: () => void;
   onShare?: () => void;
   onRename?: (name: string | null) => void;
-  /** Counts the times something else asked for the name form, as the share sheet does for a parcel without a name. */
-  renaming?: number;
   /** The name action is its pencil alone, where the row has more to say. */
   compactName?: boolean;
 }) {
@@ -45,13 +43,6 @@ export function Actions({ name, ping, onHave, onCalendar, onShare, onRename, ren
     if (editing) edited.current = true;
     else if (edited.current) nameButton.current?.focus({ preventScroll: true });
   }, [editing]);
-  const [asked, setAsked] = useState(renaming);
-  if (renaming !== asked) {
-    setAsked(renaming);
-    setDraft(name ?? '');
-    setEditing(true);
-  }
-
   function edit() {
     setDraft(name ?? '');
     setEditing(true);

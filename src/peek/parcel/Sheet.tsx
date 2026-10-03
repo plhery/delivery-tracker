@@ -37,34 +37,36 @@ export function Sheet({ title, intro, className = '', onClose, children }: {
 }
 
 /**
- * A real switch with its label and hint: the name is the title, the hint
- * describes it, and the state is announced as on or off.
+ * A real switch with its label: the name is the title, and the state is
+ * announced as on or off. A `hint` under the title or a `value` beside the
+ * switch describes it.
  */
-export function SwitchRow({ icon, title, hint, checked, disabled = false, busy = false, onChange, children }: {
+export function SwitchRow({ icon, title, hint, value, checked, disabled = false, busy = false, onChange }: {
   icon: ReactNode;
   title: string;
-  hint: string;
+  hint?: string;
+  /** What the switch is about, such as the name it shows. */
+  value?: string;
   checked: boolean;
   disabled?: boolean;
   /** A change is being saved: the switch shows the new state and ignores another change until it is. */
   busy?: boolean;
   onChange: (checked: boolean) => void;
-  /** What a switch that cannot be used offers instead. */
-  children?: ReactNode;
 }) {
   const id = useId();
+  const described = [hint && `${id}-hint`, value && `${id}-value`].filter(Boolean).join(' ') || undefined;
   return <div className="peeks-switch" data-disabled={disabled || undefined}>
     <label htmlFor={id}>
       <span className="peeks-switch__icon" aria-hidden="true">{icon}</span>
       <span className="peeks-switch__text">
         <strong id={`${id}-title`}>{title}</strong>
-        <small id={`${id}-hint`}>{hint}</small>
+        {hint && <small id={`${id}-hint`}>{hint}</small>}
       </span>
+      {value && <span className="peeks-switch__value" id={`${id}-value`}>{value}</span>}
       <input id={id} type="checkbox" role="switch" checked={checked} disabled={disabled} aria-busy={busy || undefined}
-        aria-labelledby={`${id}-title`} aria-describedby={`${id}-hint`}
+        aria-labelledby={`${id}-title`} aria-describedby={described}
         onChange={(event) => { if (!busy) onChange(event.target.checked); }} />
       <span className="peeks-switch__track" aria-hidden="true" />
     </label>
-    {children}
   </div>;
 }

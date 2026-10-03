@@ -423,11 +423,24 @@ private struct SharedParcelCard: View {
         }
     }
 
-    /// Where it waits and when it is expected, or the day it arrived. It is a line of its own, so it starts with a capital.
-    private var detail: String? {
-        let line = [parcel.pickupPlace, localizer.parcelCompletionDate(parcel) ?? localizer.parcelDeliveryEstimate(parcel)]
+    private var detail: String? { localizer.sharedParcelDetail(parcel) }
+}
+
+extension Localizer {
+    /// Where a shared parcel waits and when it is expected, or the day it arrived. It is a line of its own, so it starts with a capital.
+    func sharedParcelDetail(_ parcel: Parcel) -> String? {
+        let line = [parcel.pickupPlace, parcelCompletionDate(parcel) ?? parcelDeliveryEstimate(parcel)]
             .compactMap { $0 }.joined(separator: " · ")
-        return (line.prefix(1).uppercased(with: localizer.language.locale) + line.dropFirst()).nonEmpty
+        return (line.prefix(1).uppercased(with: language.locale) + line.dropFirst()).nonEmpty
+    }
+
+    /// "Arrives today, 13:00–17:00" while a gift is on its way; "Delivered today at 14:12" once it is there.
+    func giftDetail(_ parcel: Parcel, opened: Bool) -> String? {
+        if opened {
+            guard let event = parcel.currentEvent, event.stage == .delivered, let date = DateParser.date(event.occurredAt) else { return nil }
+            return text("share.gift.delivered", ["date": deliveryDate(date), "time": clockTime(date)])
+        }
+        return parcelDeliveryEstimate(parcel).map { text("share.gift.arrives", ["date": $0]) }
     }
 }
 
@@ -538,14 +551,7 @@ private struct GiftParcelCard: View {
         }
     }
 
-    /// "Arrives today, 13:00–17:00" while it is on its way; "Delivered today at 14:12" once it is there.
-    private var detail: String? {
-        if opened {
-            guard let event = parcel.currentEvent, event.stage == .delivered, let date = DateParser.date(event.occurredAt) else { return nil }
-            return localizer.text("share.gift.delivered", ["date": localizer.deliveryDate(date), "time": localizer.clockTime(date)])
-        }
-        return localizer.parcelDeliveryEstimate(parcel).map { localizer.text("share.gift.arrives", ["date": $0]) }
-    }
+    private var detail: String? { localizer.giftDetail(parcel, opened: opened) }
 }
 
 /// Under a gift on its way: why the sheet says so little.
