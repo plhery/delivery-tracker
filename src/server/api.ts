@@ -72,6 +72,12 @@ interface ApiRouteOptions {
    * id, an owner key). Error reports for the route leave the request out.
    */
   capability?: boolean;
+  /**
+   * The route takes a body it does not read, in whatever form its sender
+   * chose: a mail app posts a form to an email's unsubscribe address. What
+   * guards such a route is the capability in its address, not the body's type.
+   */
+  anyBody?: boolean;
 }
 
 type ApiHandler<Parameters extends RouteParameters> = (
@@ -267,7 +273,7 @@ export function apiRoute<Parameters extends RouteParameters = RouteParameters>(
 
       if (!authenticated && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
         if (fromAnotherSite(request)) throw new HttpError(403, 'Requests from other sites are not accepted');
-        if (bodyIsNotJson(request)) throw new HttpError(415, 'Send the request as application/json');
+        if (!options.anyBody && bodyIsNotJson(request)) throw new HttpError(415, 'Send the request as application/json');
       }
 
       if (!authenticated && options.publicRateLimit) {

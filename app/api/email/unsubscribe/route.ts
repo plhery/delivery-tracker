@@ -39,7 +39,7 @@ export const POST = apiRoute(async (context) => {
   const stored = userId === null ? null : await requireService(context).setDeliveryEmail(userId, enabled);
   if (stored === null) throw new HttpError(400, INVALID_LINK);
   return json({ emailOnDelivery: stored });
-}, { authenticated: false, serviceRequired: true, capability: true, publicRateLimit: RATE_LIMIT });
+}, { authenticated: false, serviceRequired: true, capability: true, anyBody: true, publicRateLimit: RATE_LIMIT });
 
 /**
  * Someone opened the header's address in a browser. Nothing is switched: mail
