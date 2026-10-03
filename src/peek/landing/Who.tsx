@@ -17,10 +17,7 @@ const FACTS: readonly { icon: ReactNode; title: MessageKey; body: MessageKey }[]
 export function Who() {
   const { t } = useI18n();
   return <section className="landing-who" aria-labelledby="landing-who-title">
-    <div className="landing-who__intro">
-      <h2 id="landing-who-title">{t('landing.who.title')}</h2>
-      <p>{t('landing.who.body')}</p>
-    </div>
+    <h2 id="landing-who-title">{t('landing.who.title')}</h2>
     <ul className="landing-who__facts">
       {FACTS.map(({ icon, title, body }) => <li key={title}>
         <span className="landing-who__icon">{icon}</span>
