@@ -314,17 +314,20 @@ test('alerts: a browser without notifications is told so, and offered the calend
   await expect(sheet.getByText('Alerts on all your devices')).toBeVisible();
 });
 
-test('alerts: an iPhone outside its Home Screen app gets the three steps, not a button that cannot work', async ({ browser, page }) => {
+test('alerts: an iPhone outside its Home Screen app gets the steps there, not a button that cannot work', async ({ browser, page }) => {
   await track(page, 'DEMOGLS20260009');
   await expect(status(page)).toHaveText('In transit');
   const { context, page: phone } = await anotherBrowser(browser, {
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1',
   });
   await show(page, phone, page.url());
   await phone.getByRole('button', { name: 'Ping me too' }).click();
   const sheet = phone.getByRole('dialog', { name: 'Alerts on iPhone' });
-  await expect(sheet.getByText('Safari only sends notifications from sites on your Home Screen. It takes three taps.')).toBeVisible();
-  await expect(sheet.getByRole('listitem')).toHaveText(['1Tap Share in Safari’s toolbar', '2Choose Add to Home Screen', '3Open Peek from there and tap Ping me']);
+  await expect(sheet.getByText('Safari only sends notifications from sites on your Home Screen.')).toBeVisible();
+  // Safari 27 keeps Share in the page menu of its address bar, which the first step draws.
+  await expect(sheet.getByRole('listitem')).toHaveText([
+    /^1Tap Page Menu in Safari’s address bar/, '2Tap Share', '3Tap View More, then Add to Home Screen', '4Open Peek from your Home Screen and tap Ping me',
+  ]);
   await expect(sheet.getByRole('button', { name: 'Turn on' })).toHaveCount(0);
   await expect(sheet.getByRole('button', { name: 'Sign in for alerts on all your devices' })).toBeVisible();
   expect(await fits(phone)).toBe(true);

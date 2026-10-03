@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { HomeScreenSteps } from '../../components/HomeScreenSteps';
 import { Icon } from '../../components/Icon';
 import { useI18n, type MessageKey } from '../../i18n';
 import { trackAction } from '../../lib/analytics';
@@ -137,14 +138,10 @@ export function AlertsSheet({ linkId, ownerKey, alerts, initialPreset, calendar,
 
   if (support === 'install') {
     return <Sheet title={t('alerts.iphone.title')} intro={t('alerts.iphone.body')} className="peeks-alerts" onClose={onClose}>{(dismiss) => <>
-      <ol className="peeks-steps">
-        <li><span>1</span><span>{t('alerts.iphone.share')}</span><Icon name="share" /></li>
-        <li><span>2</span><span>{t('alerts.iphone.add')}</span><Icon name="plus" /></li>
-        <li><span>3</span><span>{t('alerts.iphone.open')}</span><Icon name="bell" /></li>
-      </ol>
+      <HomeScreenSteps then="ping" cards />
       {feedback}
       <div className="peeks__actions">
-        {calendar && <button type="button" className="button button--secondary" onClick={addToCalendar}><Glyph name="calendar" /><span>{t('alerts.calendar.action')}</span></button>}
+        {calendar && <button type="button" className="button button--secondary" onClick={addToCalendar}><Glyph name="calendar" /><span>{t('alerts.calendar.or')}</span></button>}
         {onSignIn && <button type="button" className="button button--secondary" onClick={() => { dismiss(); onSignIn(); }}><Icon name="account" /><span>{t('alerts.iphone.signIn')}</span></button>}
       </div>
     </>}</Sheet>;

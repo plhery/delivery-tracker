@@ -114,13 +114,6 @@
 .peeks-presets button { flex: 1; min-width: 0; min-height: 44px; padding: 8px 6px; border-radius: 13px; background: transparent; color: var(--ink-soft); font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; }
 .peeks-presets button[aria-pressed=true] { background: var(--paper); color: var(--ink); box-shadow: 0 3px 15px rgb(25 35 20 / 4%); }
 
-/* Alerts on iPhone: three taps. */
-.peeks-steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.peeks-steps li { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 14px; border-radius: 14px; background: var(--paper); font-size: 13.5px; }
-.peeks-steps li > span:first-child { display: grid; place-items: center; flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; background: var(--yellow); color: var(--on-yellow); font-size: 13px; font-weight: 700; }
-.peeks-steps li > span:nth-child(2) { flex: 1; min-width: 0; }
-.peeks-steps svg { flex: 0 0 auto; width: 18px; height: 18px; color: var(--ink-soft); }
-
 /* The way into the share sheet from a parcel of the deliveries. */
 .detail--postcard .detail__share-button { display: grid; place-items: center; width: 44px; height: 44px; background: transparent; color: var(--tone); opacity: .75; }
 .detail--postcard .detail__share-button svg { width: 18px; height: 18px; stroke-width: 1.2; }

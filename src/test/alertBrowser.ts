@@ -7,6 +7,8 @@ export const TEST_PUSH_ENDPOINT = 'https://push.example.test/send/abc';
 /** A VAPID public key's shape, made of nothing. */
 export const TEST_PUSH_KEY = `B${'A'.repeat(86)}`;
 export const IPHONE_SAFARI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
+/** Safari 27, whose bar keeps Share inside its page menu. */
+export const IPHONE_SAFARI_27 = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1';
 
 /**
  * A browser's notifications and push as a test sees them: what it allows,

@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { IPHONE_SAFARI, restoreAlertBrowser, stubAlertBrowser, TEST_PUSH_ENDPOINT, TEST_PUSH_KEY } from '../../test/alertBrowser';
+import { IPHONE_SAFARI, IPHONE_SAFARI_27, restoreAlertBrowser, stubAlertBrowser, TEST_PUSH_ENDPOINT, TEST_PUSH_KEY } from '../../test/alertBrowser';
 import { LINK_ID, OWNER_KEY } from '../../test/parcelLinks';
 import { forgetAllLinkNotes, linkNote, noteLink } from '../deviceNotes';
 import { ParcelLinkError, type ParcelAlerts } from '../links';
@@ -239,21 +239,35 @@ describe('the Ping me sheet', () => {
     expect(screen.getByText('An email when it’s delivered')).toBeVisible();
   });
 
-  it('shows an iPhone outside its Home Screen app the three steps instead of a button that cannot work', async () => {
+  it('shows an iPhone outside its Home Screen app the steps there instead of a button that cannot work', async () => {
     const { requestPermission } = stubAlertBrowser({ userAgent: IPHONE_SAFARI });
     const user = userEvent.setup();
     const { onCalendar, onSignIn } = open();
     const sheet = screen.getByRole('dialog', { name: 'Alerts on iPhone' });
-    expect(within(sheet).getByText('Safari only sends notifications from sites on your Home Screen. It takes three taps.')).toBeVisible();
+    expect(within(sheet).getByText('Safari only sends notifications from sites on your Home Screen.')).toBeVisible();
     expect(within(sheet).getAllByRole('listitem').map((step) => step.textContent))
-      .toEqual(['1Tap Share in Safari’s toolbar', '2Choose Add to Home Screen', '3Open Peek from there and tap Ping me']);
+      .toEqual(['1Open your browser’s Share menu', '2Choose Add to Home Screen', '3Open Peek from your Home Screen and tap Ping me']);
     expect(screen.queryByRole('button', { name: 'Turn on' })).toBeNull();
     expect(screen.queryByRole('radio')).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Add to calendar' }));
+    await user.click(screen.getByRole('button', { name: 'Or add to calendar' }));
     expect(onCalendar).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole('button', { name: 'Sign in for alerts on all your devices' }));
     expect(onSignIn).toHaveBeenCalledTimes(1);
     expect(requestPermission).not.toHaveBeenCalled();
+  });
+
+  it('starts Safari 27 from the page menu of its address bar, drawn with the site’s address', () => {
+    stubAlertBrowser({ userAgent: IPHONE_SAFARI_27 });
+    open();
+    const steps = within(screen.getByRole('dialog', { name: 'Alerts on iPhone' })).getAllByRole('listitem');
+    expect(steps.map((step) => step.textContent)).toEqual([
+      `1Tap Page Menu in Safari’s address bar${window.location.hostname}`,
+      '2Tap Share',
+      '3Tap View More, then Add to Home Screen',
+      '4Open Peek from your Home Screen and tap Ping me',
+    ]);
+    // The drawing repeats what the sentence says, so it is kept from screen readers.
+    expect(within(steps[0]).getByText(window.location.hostname).closest('[aria-hidden="true"]')).not.toBeNull();
   });
 
   it('in the demo says that nothing is sent, before and after turning on', async () => {

@@ -1,0 +1,37 @@
+/* The way to the Home Screen: numbered steps that show Safari's own controls. */
+.home-steps { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; color: var(--ink); font-size: 13px; line-height: 1.45; }
+.home-steps li { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 8px 10px; }
+.home-steps__number { display: grid; place-items: center; flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; background: var(--yellow); color: var(--on-yellow); font-size: 12px; font-weight: 700; }
+.home-steps__text { flex: 1; min-width: 0; padding-top: 2.5px; }
+
+/* A control as Safari shows it: its glyph, then its name. */
+.home-steps__control { font-weight: 650; white-space: nowrap; }
+.home-steps__control svg { width: 16px; height: 16px; margin-right: 4px; vertical-align: -3px; stroke-width: 1.9; }
+.home-steps__control--bare svg { margin-right: 0; }
+
+/* Safari's bar in small: everything pale but the button to tap. */
+.home-steps__bar { display: flex; align-items: center; gap: 6px; flex: 1 0 100%; padding-left: 34px; color: color-mix(in srgb, var(--ink-soft) 62%, var(--paper)); }
+.home-steps__bar > span { display: flex; align-items: center; height: 32px; border: 1px solid var(--line); border-radius: 16px; background: var(--canvas); }
+.home-steps__bar > span:not(:nth-child(2)) { justify-content: center; flex: 0 0 32px; }
+.home-steps__bar > span:nth-child(2) { flex: 1; gap: 9px; min-width: 0; max-width: 200px; padding: 0 9px 0 4px; font-size: 11.5px; letter-spacing: -.1px; }
+.home-steps__bar > span:nth-child(2) > span:nth-child(2) { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-steps__bar svg { flex: 0 0 auto; width: 15px; height: 15px; stroke-width: 1.8; }
+.home-steps__target { position: relative; display: grid; place-items: center; flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; background: var(--yellow); color: var(--on-yellow); }
+.home-steps__target svg { stroke-width: 2.1; }
+.home-steps__target::after { content: ''; position: absolute; inset: -5px; border: 2px solid var(--yellow); border-radius: 50%; animation: home-steps-ring 1.8s var(--ease-out) infinite; }
+@keyframes home-steps-ring { from { transform: scale(.8); opacity: .7; } to { transform: scale(1.35); opacity: 0; } }
+
+/* Peek as the Home Screen shows it. */
+.home-steps__app { flex: 0 0 auto; border-radius: 7px; box-shadow: 0 1px 4px rgb(0 0 0 / 12%); }
+
+/* On a sheet, each step has its own card. */
+.home-steps--cards { gap: 8px; font-size: 13.5px; }
+.home-steps--cards li { gap: 10px 12px; padding: 14px; border-radius: 14px; background: var(--paper); }
+.home-steps--cards .home-steps__number { flex-basis: 28px; width: 28px; height: 28px; font-size: 13px; }
+.home-steps--cards .home-steps__text { padding-top: 4px; }
+.home-steps--cards .home-steps__bar { padding-left: 40px; }
+.home-steps--cards .home-steps__app { margin-top: 1px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-steps__target::after { animation: none; transform: scale(1.08); opacity: .5; }
+}
