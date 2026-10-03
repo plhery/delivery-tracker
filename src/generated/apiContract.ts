@@ -10,7 +10,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "swiss-post"
     },
-    "canaryUrl": "https://service.post.ch/",
     "trackingUrlTemplate": "https://service.post.ch/ekp-web/ui/entry/search/{trackingNumber}",
     "linkRules": [
       {
@@ -51,7 +50,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "swiss-post-cargo"
     },
-    "canaryUrl": "https://apv.swisspost-cargo.com/public/trackandtrace",
     "trackingUrlTemplate": "https://apv.swisspost-cargo.com/public/trackandtrace/{trackingNumber}",
     "linkRules": [
       {
@@ -79,7 +77,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "planzer",
       "upstreamName": "Planzer"
     },
-    "canaryUrl": "https://tracking.app.planzer.ch/",
     "trackingUrlTemplate": "https://tracking.app.planzer.ch/delivery/info?deliveryNumber={trackingNumber}",
     "linkRules": [
       {
@@ -130,7 +127,6 @@ export const CARRIER_CAPABILITIES = {
         }
       ]
     },
-    "canaryUrl": "https://tracking.app.planzer.ch/",
     "trackingUrlTemplate": "https://tracking.app.planzer.ch/delivery/info?deliveryNumber={trackingNumber}",
     "linkRules": [
       {
@@ -176,7 +172,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "aliexpress",
       "upstreamName": "AliExpress"
     },
-    "canaryUrl": "https://global.cainiao.com/",
     "trackingUrlTemplate": "https://global.cainiao.com/detail.htm?mailNoList={trackingNumber}",
     "linkRules": [
       {
@@ -206,7 +201,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "sunyou"
     },
-    "canaryUrl": "https://sypost.net/",
     "trackingUrlTemplate": "https://sypost.net/search?orderNo={trackingNumber}",
     "linkRules": [
       {
@@ -245,7 +239,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "hermes"
     },
-    "canaryUrl": "https://myhes.de/",
     "linkRules": [],
     "detectionRules": [],
     "trackingUrlTemplate": "https://myhes.de/",
@@ -266,7 +259,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "spring-gds"
     },
-    "canaryUrl": "https://postnl.post/",
     "trackingUrlTemplate": "https://postnl.post/track?barcodes={trackingNumber}",
     "linkRules": [
       {
@@ -323,7 +315,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "postlogistics",
       "recognitionRank": 26
     },
-    "canaryUrl": "https://tracking.postlogistics.ch/public/trackandtrace",
     "linkRules": [
       {
         "domains": [
@@ -367,7 +358,6 @@ export const CARRIER_CAPABILITIES = {
         }
       ]
     },
-    "canaryUrl": "https://customeriberia.dachser.com/customerarea/",
     "linkRules": [
       {
         "domains": [
@@ -398,7 +388,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "dhl"
     },
-    "canaryUrl": "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html",
     "trackingUrlTemplate": "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html?piececode={trackingNumber}",
     "linkRules": [
       {
@@ -454,7 +443,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "dhl-ecommerce"
     },
-    "canaryUrl": "https://www.dhl.com/ch-en/home/tracking.html",
     "trackingUrlTemplate": "https://www.dhl.com/ch-en/home/tracking.html?tracking-id={trackingNumber}&submit=1",
     "linkRules": [
       {
@@ -509,7 +497,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "ups"
     },
-    "canaryUrl": "https://www.ups.com/assets/resources/webcontent/en_US/terms_service.pdf",
     "trackingUrlTemplate": "https://www.ups.com/track?tracknum={trackingNumber}",
     "linkRules": [
       {
@@ -615,7 +602,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "amazon-shipping"
     },
-    "canaryUrl": "https://track.amazon.fr/",
     "trackingUrlTemplate": "https://track.amazon.fr/tracking/{trackingNumber}",
     "linkRules": [],
     "detectionRules": [],
@@ -669,7 +655,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "fedex"
     },
-    "canaryUrl": "https://www.fedex.com/fedextrack/",
     "trackingUrlTemplate": "https://www.fedex.com/fedextrack/?trknbr={trackingNumber}",
     "linkRules": [
       {
@@ -717,7 +702,6 @@ export const CARRIER_CAPABILITIES = {
       ],
       "recognitionRank": 60
     },
-    "canaryUrl": "https://gls-group.eu/EU/en/parcel-tracking",
     "trackingUrlTemplate": "https://gls-group.eu/EU/en/parcel-tracking?match={trackingNumber}",
     "linkRules": [
       {
@@ -781,7 +765,6 @@ export const CARRIER_CAPABILITIES = {
       ],
       "recognitionRank": 70
     },
-    "canaryUrl": "https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming",
     "trackingUrlTemplate": "https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber={trackingNumber}",
     "linkRules": [
       {
@@ -824,7 +807,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "dpd-fr"
     },
-    "canaryUrl": "https://trace.dpd.fr/fr/trace",
     "trackingUrlTemplate": "https://trace.dpd.fr/fr/trace/{trackingNumber}",
     "linkRules": [
       {
@@ -880,7 +862,6 @@ export const CARRIER_CAPABILITIES = {
         }
       ]
     },
-    "canaryUrl": "https://www.mondialrelay.fr/suivi-de-colis/",
     "trackingUrlTemplate": "https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition={trackingNumber}",
     "linkRules": [
       {
@@ -924,7 +905,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "relais-colis",
       "recognitionRank": 25
     },
-    "canaryUrl": "https://www.relaiscolis.com/colis/suivre",
     "linkRules": [
       {
         "domains": [
@@ -966,7 +946,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "la-poste",
       "recognitionRank": 80
     },
-    "canaryUrl": "https://www.laposte.fr/outils/suivre-vos-envois",
     "trackingUrlTemplate": "https://www.laposte.fr/outils/suivre-vos-envois?code={trackingNumber}",
     "linkRules": [
       {
@@ -1012,7 +991,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "la-poste",
       "recognitionRank": 45
     },
-    "canaryUrl": "https://www.chronopost.fr/tracking-no-cms/suivi-page",
     "trackingUrlTemplate": "https://www.chronopost.fr/tracking-no-cms/suivi-page?langue=fr&listeNumerosLT={trackingNumber}",
     "linkRules": [
       {
@@ -1059,7 +1037,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "gls-fr"
     },
-    "canaryUrl": "https://moncolis.gls-france.com/fr/",
     "trackingUrlTemplate": "https://moncolis.gls-france.com/fr/{trackingNumber}",
     "linkRules": [
       {
@@ -1118,7 +1095,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "colis-prive",
       "recognitionRank": 30
     },
-    "canaryUrl": "https://colisprive.com/moncolis/pages/DetailColis.aspx",
     "trackingUrlTemplate": "https://colisprive.com/moncolis/pages/DetailColis.aspx?numColis={trackingNumber}&lang=fr",
     "linkRules": [
       {
@@ -1157,7 +1133,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "geodis"
     },
-    "canaryUrl": "https://espace-client.geodis.com/services/destinataires/",
     "trackingUrlTemplate": "https://espace-client.geodis.com/services/destinataires/#/fr/suivi/{trackingNumber}",
     "linkRules": [
       {
@@ -1190,7 +1165,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "colisweb"
     },
-    "canaryUrl": "https://www.colisweb.com/suivi-livraison",
     "trackingUrlTemplate": "https://www.colisweb.com/suivi-livraison?value={trackingNumber}",
     "linkRules": [
       {
@@ -1217,7 +1191,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "c-chez-vous"
     },
-    "canaryUrl": "https://www.cchezvous.fr/suivi-colis",
     "trackingUrlTemplate": "https://www.cchezvous.fr/suivi-colis/{trackingNumber}",
     "linkRules": [
       {
@@ -1263,7 +1236,6 @@ export const CARRIER_CAPABILITIES = {
         }
       ]
     },
-    "canaryUrl": "https://myportal.heppner-group.com/tracking",
     "linkRules": [],
     "detectionRules": [
       {
@@ -1290,7 +1262,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "ciblex",
       "recognitionRank": 20
     },
-    "canaryUrl": "https://secure.extranet.ciblex.fr/extranet/client/corps.php",
     "trackingUrlTemplate": "https://secure.extranet.ciblex.fr/extranet/client/corps.php?module=colis&colis={trackingNumber}",
     "linkRules": [
       {
@@ -1342,7 +1313,6 @@ export const CARRIER_CAPABILITIES = {
         }
       ]
     },
-    "canaryUrl": "https://mydeliveries.paack.app/tracking",
     "trackingUrlTemplate": "https://mydeliveries.paack.app/tracking?tracking_number={trackingNumber}",
     "linkRules": [
       {
@@ -1374,7 +1344,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "asendia"
     },
-    "canaryUrl": "https://a1.asendiausa.com/tracking/",
     "trackingUrlTemplate": "https://track.asendia.com/track/{trackingNumber}",
     "linkRules": [
       {
@@ -1430,7 +1399,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
     "detectionRules": []
   },
@@ -1443,7 +1411,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "india-post"
     },
-    "canaryUrl": "https://myspeedpost.com/track",
     "trackingUrlTemplate": "https://myspeedpost.com/track?n={trackingNumber}&sync=true",
     "linkRules": [
       {
@@ -1507,7 +1474,6 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "hermes"
       }
     ],
-    "canaryUrl": "https://www.myhermes.de/empfangen/sendungsverfolgung/",
     "aliases": [
       "myHermes",
       "Hermes Germany GmbH"
@@ -1575,7 +1541,6 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "gls"
       }
     ],
-    "canaryUrl": "https://gls-group.eu/EU/en/parcel-tracking",
     "aliases": [
       "General Logistics Systems",
       "GLS Group"
@@ -1596,7 +1561,6 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.laposte.fr/outils/suivre-vos-envois?code={trackingNumber}",
     "linkRules": [],
     "detectionRules": [],
-    "canaryUrl": "https://www.laposte.fr/outils/suivre-vos-envois",
     "aliases": [
       "Delivengo Easy"
     ],
@@ -1631,8 +1595,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ],
-    "canaryUrl": "https://parcelsapp.com/en"
+    ]
   },
   "unknown": {
     "displayName": "Unknown carrier",
@@ -1673,8 +1636,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [],
     "trackingSiteName": "17TRACK",
-    "trackingUrlTemplate": "https://t.17track.net/en#nums={trackingNumber}",
-    "canaryUrl": "https://parcelsapp.com/en"
+    "trackingUrlTemplate": "https://t.17track.net/en#nums={trackingNumber}"
   },
   "royal-mail": {
     "displayName": "Royal Mail",
@@ -1685,7 +1647,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://www.royalmail.com/track-your-item",
     "linkRules": [
       {
         "domains": [
@@ -1717,7 +1678,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://www.royalmail.com/track-your-item",
     "linkRules": [
       {
         "domains": [
@@ -1750,7 +1710,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "evri",
       "upstreamName": "Evri International"
     },
-    "canaryUrl": "https://globaleco.app/track/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -1776,7 +1735,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "inpost",
       "recognitionRank": 38
     },
-    "canaryUrl": "https://inposteasy.com/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -1818,7 +1776,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -1842,7 +1799,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "bpost",
       "recognitionRank": 37
     },
-    "canaryUrl": "https://track.bpost.cloud/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -1874,7 +1830,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "austrian-post",
       "recognitionRank": 39
     },
-    "canaryUrl": "https://www.post.at/en/s/track-and-trace-search",
     "linkRules": [],
     "detectionRules": [
       {
@@ -1901,7 +1856,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "postnord"
     },
-    "canaryUrl": "https://tracking.postnord.com/en/",
     "linkRules": [
       {
         "domains": [
@@ -1945,7 +1899,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "posti"
     },
-    "canaryUrl": "https://www.posti.fi/en/tracking",
     "linkRules": [
       {
         "domains": [
@@ -1970,7 +1923,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "correos-express",
       "recognitionRank": 36
     },
-    "canaryUrl": "https://s.correosexpress.com/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -1994,7 +1946,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "seur",
       "recognitionRank": 43
     },
-    "canaryUrl": "https://www.seur.com/miseur/mis-envios",
     "linkRules": [
       {
         "domains": [
@@ -2036,7 +1987,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "mrw"
     },
-    "canaryUrl": "https://www.mrw.es/seguimiento/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -2064,7 +2014,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "nacex",
       "recognitionRank": 41
     },
-    "canaryUrl": "https://www.nacex.es/irSeguimiento.do",
     "linkRules": [
       {
         "domains": [
@@ -2099,7 +2048,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "ctt"
     },
-    "canaryUrl": "https://www.ctt.pt/",
     "linkRules": [
       {
         "domains": [
@@ -2136,7 +2084,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "ctt-express",
       "recognitionRank": 35
     },
-    "canaryUrl": "https://shipping-tracking.production.cloud2.cttexpress.com/",
     "linkRules": [
       {
         "domains": [
@@ -2168,7 +2115,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "poste-italiane"
     },
-    "canaryUrl": "https://www.poste.it/",
     "linkRules": [
       {
         "domains": [
@@ -2211,7 +2157,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "brt",
       "recognitionRank": 42
     },
-    "canaryUrl": "https://services.brt.it/en/tracking",
     "linkRules": [
       {
         "domains": [
@@ -2243,7 +2188,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "ecoscooting"
     },
-    "canaryUrl": "https://ecoscooting.com/tracking/1",
     "linkRules": [
       {
         "domains": [
@@ -2278,7 +2222,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "tipsa",
       "recognitionRank": 24
     },
-    "canaryUrl": "https://dinapaqweb.tipsa-dinapaq.com/dinapaqweb/detalle_envio.php",
     "linkRules": [
       {
         "domains": [
@@ -2317,7 +2260,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "ukrposhta"
     },
-    "canaryUrl": "https://track.ukrposhta.ua/en/",
     "linkRules": [
       {
         "domains": [
@@ -2343,7 +2285,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "usps"
     },
-    "canaryUrl": "https://www.usps.com/",
     "linkRules": [
       {
         "domains": [
@@ -2383,7 +2324,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "canada-post",
       "recognitionRank": 15
     },
-    "canaryUrl": "https://www.canadapost-postescanada.ca/track-reperage/en/home",
     "linkRules": [
       {
         "domains": [
@@ -2415,7 +2355,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "purolator"
     },
-    "canaryUrl": "https://www.purolator.com/en/shipping/tracker",
     "linkRules": [
       {
         "domains": [
@@ -2453,7 +2392,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "canpar",
       "recognitionRank": 34
     },
-    "canaryUrl": "https://www.canpar.com/en/tracking/track.htm",
     "linkRules": [
       {
         "domains": [
@@ -2485,7 +2423,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "ontrac"
     },
-    "canaryUrl": "https://www.ontrac.com/tracking/",
     "linkRules": [
       {
         "domains": [
@@ -2528,7 +2465,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [
       {
         "domains": [
@@ -2562,7 +2498,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "uniuni",
       "recognitionRank": 33
     },
-    "canaryUrl": "https://www.uniuni.com/tracking/",
     "linkRules": [
       {
         "domains": [
@@ -2606,7 +2541,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "landmark-global"
     },
-    "canaryUrl": "https://track.landmarkglobal.com/",
     "linkRules": [
       {
         "domains": [
@@ -2636,7 +2570,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [
       {
         "domains": [
@@ -2671,7 +2604,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [
       {
         "domains": [
@@ -2706,7 +2638,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "gofo"
     },
-    "canaryUrl": "https://www.gofo.com/us/track",
     "linkRules": [
       {
         "domains": [
@@ -2746,7 +2677,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "estafeta"
     },
-    "canaryUrl": "https://cs.estafeta.com/",
     "linkRules": [
       {
         "domains": [
@@ -2786,7 +2716,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "correios-br"
     },
-    "canaryUrl": "https://rastreamento.correios.com.br/app/index.php",
     "linkRules": [
       {
         "domains": [
@@ -2818,7 +2747,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "correos-chile"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -2845,7 +2773,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "yunexpress"
     },
-    "canaryUrl": "https://www.yuntrack.com/",
     "linkRules": [
       {
         "domains": [
@@ -2884,7 +2811,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "four-px"
     },
-    "canaryUrl": "https://track.4px.com/",
     "linkRules": [
       {
         "domains": [
@@ -2914,7 +2840,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "blue-dart"
     },
-    "canaryUrl": "https://www.bluedart.com/trackdartresultthirdparty",
     "linkRules": [
       {
         "domains": [
@@ -2945,7 +2870,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "delhivery"
     },
-    "canaryUrl": "https://www.delhivery.com/tracking",
     "linkRules": [],
     "detectionRules": [
       {
@@ -2968,7 +2892,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "nz-post",
       "recognitionRank": 32
     },
-    "canaryUrl": "https://www.nzpost.co.nz/tools/tracking",
     "linkRules": [
       {
         "domains": [
@@ -3004,7 +2927,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "singapore-post"
     },
-    "canaryUrl": "https://www.singpost.com/track-items",
     "linkRules": [
       {
         "domains": [
@@ -3037,7 +2959,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "japan-post"
     },
-    "canaryUrl": "https://trackings.post.japanpost.jp/services/srv/search",
     "linkRules": [
       {
         "domains": [
@@ -3070,7 +2991,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "sf-express"
     },
-    "canaryUrl": "https://htm.sf-express.com/tw/en/dynamic_function/waybill/",
     "linkRules": [
       {
         "domains": [
@@ -3111,7 +3031,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -3133,7 +3052,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "yunda"
     },
-    "canaryUrl": "https://web.yundaex.com/infoInquiry",
     "linkRules": [
       {
         "domains": [
@@ -3164,7 +3082,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "yto"
     },
-    "canaryUrl": "https://www.yto.net.cn/ytoExpress/waybill/search",
     "linkRules": [
       {
         "domains": [
@@ -3200,7 +3117,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -3222,7 +3138,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -3244,7 +3159,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "yamato"
     },
-    "canaryUrl": "https://toi.kuronekoyamato.co.jp/cgi-bin/tneko",
     "linkRules": [
       {
         "domains": [
@@ -3277,7 +3191,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "korea-post"
     },
-    "canaryUrl": "https://trace.epost.go.kr/xtts/tt/epost/ems/ems_eng.jsp",
     "linkRules": [
       {
         "domains": [
@@ -3321,7 +3234,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -3344,7 +3256,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "dtdc"
     },
-    "canaryUrl": "https://web.mydtdc.in/",
     "linkRules": [
       {
         "domains": [
@@ -3383,7 +3294,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "australia-post"
     },
-    "canaryUrl": "https://auspost.com.au/mypost/track/",
     "linkRules": [
       {
         "domains": [
@@ -3415,7 +3325,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -3438,7 +3347,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "pos-malaysia"
     },
-    "canaryUrl": "https://tracking.pos.com.my/",
     "linkRules": [
       {
         "domains": [
@@ -3477,7 +3385,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "ninja-van",
       "recognitionRank": 28
     },
-    "canaryUrl": "https://www.ninjavan.co/en-my/tracking",
     "linkRules": [
       {
         "domains": [
@@ -3517,7 +3424,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -3540,7 +3446,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "packeta"
     },
-    "canaryUrl": "https://tracking.packeta.com/",
     "linkRules": [
       {
         "domains": [
@@ -3589,7 +3494,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "poczta-polska",
       "recognitionRank": 31
     },
-    "canaryUrl": "https://emonitoring.poczta-polska.pl/",
     "linkRules": [
       {
         "domains": [
@@ -3624,7 +3528,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "bring-posten"
     },
-    "canaryUrl": "https://sporing.bring.no/sporing/",
     "linkRules": [
       {
         "domains": [
@@ -3671,7 +3574,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "aramex"
     },
-    "canaryUrl": "https://www.aramex.com/us/en/track/shipments",
     "linkRules": [
       {
         "domains": [
@@ -3706,7 +3608,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "tnt",
       "recognitionRank": 44
     },
-    "canaryUrl": "https://www.tnt.fr/public/suivi_colis/recherche/index.do",
     "linkRules": [],
     "detectionRules": [
       {
@@ -3729,7 +3630,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "correos-spain"
     },
-    "canaryUrl": "https://www.correos.es/",
     "linkRules": [
       {
         "domains": [
@@ -3774,7 +3674,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "yanwen"
     },
-    "canaryUrl": "https://track.yw56.com.cn/en/index",
     "linkRules": [
       {
         "domains": [
@@ -3811,7 +3710,6 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "the-courier-guy",
       "recognitionRank": 29
     },
-    "canaryUrl": "https://portal.thecourierguy.co.za/track",
     "linkRules": [
       {
         "domains": [
@@ -3844,7 +3742,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "universal"
     },
-    "canaryUrl": "https://t.17track.net/",
     "linkRules": [
       {
         "domains": [
@@ -3892,7 +3789,6 @@ export const CARRIER_CAPABILITIES = {
       "mode": "automatic",
       "adapter": "ems"
     },
-    "canaryUrl": "https://items.ems.post/",
     "trackingUrlTemplate": "https://items.ems.post/api/publicTracking/track?language=EN&itemId={trackingNumber}",
     "linkRules": [
       {

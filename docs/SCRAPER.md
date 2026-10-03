@@ -21,9 +21,10 @@ delegates to `trackCarrier`; the app's router chooses providers and saves their 
 Commercial universal providers are explicitly enabled by the app.
 
 The scraper validates its own catalog. The app contract generator projects the catalog
-onto the client API, excluding retrieval-only refresh and clock metadata. The scraper's
-stage vocabulary must agree with the contract. Brand palettes, decals and truck geometry
-live in `src/brand`; `scripts/generate-brand.mjs` feeds both web and native resources.
+onto the client API, excluding what only retrieval uses: refresh pacing, clocks and the
+page the scraper's canary probes. The scraper's stage vocabulary must agree with the
+contract. Brand palettes, decals and truck geometry live in `src/brand`;
+`scripts/generate-brand.mjs` feeds both web and native resources.
 
 ## Tests
 

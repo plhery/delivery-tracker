@@ -26,13 +26,16 @@ const publishedCarrierIds = schemas.CarrierId.enum;
 
 // The scraper validates its catalog. The app publishes client-facing capabilities.
 const contractKeyOrder = ['displayName', 'displayNames', 'aliases', 'countries', 'color',
-  'selectable', 'timezone', 'tracking', 'canaryUrl', 'trackingUrlTemplate',
+  'selectable', 'timezone', 'tracking', 'trackingUrlTemplate',
   'trackingSiteName', 'linkRules', 'detectionRules'];
 
+/** Leaves out what only the scraper uses: the page its canary probes, refresh pacing and clocks. */
 function contractEntry(carrier) {
   const tracking = Object.fromEntries(Object.entries(carrier.tracking)
     .filter(([key]) => !['refresh', 'localClocks'].includes(key)));
-  return { ...carrier, tracking };
+  const entry = { ...carrier, tracking };
+  delete entry.canaryUrl;
+  return entry;
 }
 
 function orderedContractEntry(entry, current) {
