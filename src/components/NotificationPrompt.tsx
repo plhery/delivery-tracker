@@ -8,6 +8,7 @@ import {
   subscribeToNotificationInvitation,
 } from '../lib/notificationInvitation';
 import { enablePushNotifications, inspectPushState, type PushState } from '../lib/pushNotifications';
+import { HomeScreenSteps } from './HomeScreenSteps';
 import { Icon } from './Icon';
 import './NotificationPrompt.css';
 
@@ -103,13 +104,8 @@ export function NotificationPrompt({ apiAuth, eligible }: { apiAuth: ApiAuth; el
         <Icon name="close" />
       </button>
       <h2 id="notification-prompt-title">{t(help ? 'notifications.prompt.installTitle' : 'notifications.prompt.title')}</h2>
-      {help ? (
-        <ol>
-          <li>{t('notifications.prompt.installShare')}</li>
-          <li>{t('notifications.prompt.installAdd')}</li>
-          <li>{t('notifications.prompt.installOpen')}</li>
-        </ol>
-      ) : <p>{t(install ? 'notifications.prompt.installDescription' : 'notifications.prompt.description')}</p>}
+      {help ? <HomeScreenSteps then="notifications" />
+        : <p>{t(install ? 'notifications.prompt.installDescription' : 'notifications.prompt.description')}</p>}
       {failed && <p className="notification-prompt__error" role="alert">{t('notifications.error.enable')}</p>}
       <div className="notification-prompt__actions">
         <button className="button button--primary" type="button" disabled={busy} aria-busy={busy} onClick={help ? dismiss : install ? () => setHelp(true) : () => void enable()}>

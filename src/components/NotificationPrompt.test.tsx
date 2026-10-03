@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dismissNotificationInvitation, notificationInvitationDismissed } from '../lib/notificationInvitation';
 import { enablePushNotifications, inspectPushState, type PushState } from '../lib/pushNotifications';
+import { IPHONE_SAFARI_27 } from '../test/alertBrowser';
 import { NotificationPrompt } from './NotificationPrompt';
 
 vi.mock('../lib/pushNotifications', () => ({
@@ -130,11 +131,25 @@ describe('NotificationPrompt', () => {
     const user = userEvent.setup();
     render(<NotificationPrompt apiAuth={apiAuth} eligible />);
     await user.click(await screen.findByRole('button', { name: 'Show me how' }));
-    expect(screen.getByRole('list')).toHaveTextContent('Share menu');
-    expect(screen.getByRole('list')).toHaveTextContent('Add to Home Screen');
+    expect(screen.getAllByRole('listitem').map((step) => step.textContent))
+      .toEqual(['1Open your browser’s Share menu', '2Choose Add to Home Screen', '3Open Peek from your Home Screen and turn on notifications']);
     expect(enablePushNotifications).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Got it' }));
     expect(screen.queryByRole('region')).not.toBeInTheDocument();
+  });
+
+  it('starts Safari 27 from the page menu of its address bar', async () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(IPHONE_SAFARI_27);
+    vi.mocked(inspectPushState).mockResolvedValue({ kind: 'install' });
+    const user = userEvent.setup();
+    render(<NotificationPrompt apiAuth={apiAuth} eligible />);
+    await user.click(await screen.findByRole('button', { name: 'Show me how' }));
+    expect(screen.getAllByRole('listitem').map((step) => step.textContent)).toEqual([
+      `1Tap Page Menu in Safari’s address bar${window.location.hostname}`,
+      '2Tap Share',
+      '3Tap View More, then Add to Home Screen',
+      '4Open Peek from your Home Screen and turn on notifications',
+    ]);
   });
 
   it('rechecks permission on returning to the page and ignores stale results', async () => {
