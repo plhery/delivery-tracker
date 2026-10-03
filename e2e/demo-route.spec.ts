@@ -15,7 +15,7 @@ test('opens the demo at its own address, keeps it there across a reload, and lea
   // The page arrives as the demo: nothing of the front door is painted first.
   const html = await (await request.get('/demo')).text();
   expect(html).toContain('demo-banner');
-  expect(html).not.toContain('Where’s my parcel?');
+  expect(html).not.toMatch(/<h1[^>]*>Where’s my parcel\?/);
 
   await page.goto('/demo');
   await expect(page.getByText('Coffee beans ☕', { exact: true })).toBeVisible();

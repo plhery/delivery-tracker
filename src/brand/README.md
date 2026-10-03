@@ -6,8 +6,12 @@
 `PeekMark` draws it on the web; `PeekMarkArtwork.swift` holds the same shapes for the iPhone
 app, its widget and its Share extension, so edit both together. `npm run icons` draws the
 icon files in `public/icons`, the iOS app icon and the link preview `public/og.png` (from
-`public/og.svg`); run it after editing the mark or the preview, then set the `?v=` of the
-preview link in `app/page.tsx` to the value the metadata test reports.
+`public/og.svg`); run it after editing the mark or the preview, then set the `?v=` in
+`src/lib/peekPicture.ts` to the value the metadata test reports.
+
+`public/og.svg` is drawn by hand: it holds its own copy of the mark, of Pip and of the
+five trucks it shows, so redraw them there when they change. Every page shares this
+picture unless it draws its own, as a shared parcel, the sample and an invitation do.
 
 The eyes belong to the mark alone: the name beside it is set in plain type, and Pip, the
 parcel with a face, is a separate drawing.

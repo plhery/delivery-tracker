@@ -12,7 +12,8 @@ const STORY = 'DEMOGLS20260001';
 /** The sample as told so far, in the demo's English. It lasts as long as the page. */
 let told: ParcelWithEvents | null = null;
 
-function begin(now: number): ParcelWithEvents {
+/** The sample where its story begins. The server draws its link preview from the same parcel. */
+export function sampleParcel(now: number): ParcelWithEvents {
   const samples = seedParcels(now);
   const story = samples.find((parcel) => parcel.trackingNumber === STORY) ?? samples[0];
   return { ...story, id: SAMPLE_LINK_ID, events: story.events.map((event) => ({ ...event, parcelId: SAMPLE_LINK_ID })) };
@@ -48,7 +49,7 @@ export function restartSample(): void {
  */
 export async function readSampleLink({ advance = false, signal, locale = 'en' }: ParcelLinkReadOptions = {}, now = Date.now()): Promise<ParcelLinkView> {
   signal?.throwIfAborted();
-  told ??= begin(now);
+  told ??= sampleParcel(now);
   if (advance) told = advanced(told, now);
   const parcel = { ...told, lastSyncedAt: new Date(now).toISOString() };
   const say = await wording(locale);

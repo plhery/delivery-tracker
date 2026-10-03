@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { peekPicture } from '../src/lib/peekPicture';
 import { emailConfigured } from '../src/server/email/config';
 import { requestMovedOrigin, requestOrigin } from '../src/server/requestOrigin';
 import { requestLanguage } from '../src/server/requestLocale';
@@ -12,7 +13,7 @@ const description =
 
 export async function generateMetadata(): Promise<Metadata> {
   const origin = await requestOrigin();
-  const image = new URL('/og.png?v=dfc8f714', origin).href;
+  const picture = peekPicture(origin);
   return {
     metadataBase: origin,
     title,
@@ -24,18 +25,13 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: 'Peek',
       title,
       description,
-      images: [{
-        url: image,
-        width: 1_200,
-        height: 630,
-        alt: 'Peek, the universal parcel tracker: a kraft parcel with a friendly face.',
-      }],
+      images: [picture],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [image],
+      images: [picture.url],
     },
   };
 }

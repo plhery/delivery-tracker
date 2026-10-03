@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as image } from '../../app/api/public/parcels/[linkId]/image/route';
 import { generateMetadata } from '../../app/p/[id]/page';
+import { generateMetadata as sampleMetadata } from '../../app/sample/page';
 import { STAGES, SYNC_STATUSES } from '../generated/apiContract';
 import { carrierInfo, type CarrierInfo } from '../lib/carriers';
 import { SUPPORTED_LOCALES } from '../lib/locale';
@@ -149,6 +150,21 @@ describe('parcelLinkPreview', () => {
     expect(reported).toHaveBeenLastCalledWith(expect.anything(), { component: 'parcel-links', operation: 'link-preview' });
   });
 
+  it('tells the sample parcel without the database, with the note that nothing in it is real', async () => {
+    const found = vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel');
+    const preview = await parcelLinkPreview('sample', new Headers({ 'x-real-ip': '198.51.100.26' }), 'en', NOW);
+    expect(preview).toEqual({
+      title: 'Peek — Sample parcel · nothing here is real',
+      description: 'Paste a tracking number, a carrier link or a whole shipping email. No account needed.',
+      headline: 'In transit',
+      detail: 'Expected: Sun 4 oct',
+      carrier: expect.objectContaining({ id: 'gls-de' }),
+      steps: 4,
+      note: 'Sample parcel · nothing here is real',
+    });
+    expect(found).not.toHaveBeenCalled();
+  });
+
   it('gives one client sixty previews a minute across pages and images', async () => {
     const found = vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel').mockResolvedValue(stored());
     const headers = new Headers({ 'x-real-ip': '198.51.100.24' });
@@ -217,6 +233,40 @@ describe('the parcel page’s metadata', () => {
     expect(JSON.stringify(malformed)).not.toMatch(/<script|%3Cscript/i);
     expect(found).toHaveBeenCalledTimes(1);
   });
+
+  it('keeps the sample’s preview to the sample’s own page', async () => {
+    request.headers.set('x-real-ip', '198.51.100.33');
+    const metadata = await generateMetadata({ params: Promise.resolve({ id: 'sample' }) });
+    expect(metadata.title).toBe('Peek — Universal Parcel Tracker');
+    expect(metadata.openGraph).toMatchObject({ url: 'https://peek.example.test/', images: [{ url: 'https://peek.example.test/api/public/parcels/unavailable/image?lang=en' }] });
+  });
+});
+
+describe('the sample page’s metadata', () => {
+  it('previews a parcel noted as made up, in the request’s language and open to search engines', async () => {
+    request.headers.set('accept-language', 'fr-CH,fr;q=0.9');
+    request.headers.set('x-real-ip', '198.51.100.34');
+    const metadata = await sampleMetadata();
+    const title = 'Peek — Colis d’exemple · rien ici n’est réel';
+    const picture = 'https://peek.example.test/api/public/parcels/sample/image?lang=fr';
+    expect(metadata).toMatchObject({
+      title,
+      alternates: { canonical: 'https://peek.example.test/sample' },
+      openGraph: {
+        title, url: 'https://peek.example.test/sample', siteName: 'Peek',
+        images: [{ url: picture, width: 1200, height: 630, type: 'image/png', alt: title }],
+      },
+      twitter: { card: 'summary_large_image', images: [{ url: picture }] },
+    });
+    expect(metadata.robots).toBeUndefined();
+    expect(metadata.referrer).toBeUndefined();
+  });
+
+  it('leaves a client over its allowance Peek’s own preview', async () => {
+    request.headers.set('x-real-ip', '198.51.100.35');
+    for (let count = 0; count < 60; count += 1) expect(await sampleMetadata()).toHaveProperty('openGraph');
+    expect(await sampleMetadata()).toEqual({});
+  });
 });
 
 describe('the link preview image', () => {
@@ -254,6 +304,24 @@ describe('the link preview image', () => {
     }), { params: Promise.resolve({ linkId }) });
     expect(served.status).toBe(200);
     expect(await size(served)).toEqual([1200, 630]);
+  });
+
+  it('writes the sample’s note on its picture, in every language, without the database or the web', async () => {
+    const asked = refuseTheWeb();
+    const found = vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel');
+    const bytes = async (response: Response) => Buffer.from(await response.arrayBuffer());
+    expect((await bytes(parcelLinkSocialImage(preview({ note: 'Sample parcel · nothing here is real' }), null))).equals(await bytes(parcelLinkSocialImage(preview(), null)))).toBe(false);
+    for (const [index, locale] of SUPPORTED_LOCALES.entries()) {
+      const note = translateMessage(locale, 'sample.note', undefined, messagesFor(locale));
+      expect(writable(note, GEIST), locale).toBe(note);
+      const response = await image(new Request(`https://peek.example.test/api/public/parcels/sample/image?lang=${locale}`, {
+        headers: { host: 'peek.example.test', 'x-real-ip': `198.51.100.${70 + index}` },
+      }), { params: Promise.resolve({ linkId: 'sample' }) });
+      expect(response.status).toBe(200);
+      expect(await size(response)).toEqual([1200, 630]);
+    }
+    expect(asked).not.toHaveBeenCalled();
+    expect(found).not.toHaveBeenCalled();
   });
 
   it('never asks the web for a font or an emoji, whatever the carrier, the estimate and the host are called', async () => {

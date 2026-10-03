@@ -9,9 +9,10 @@ vi.mock('next/headers', () => ({
   })),
 }));
 
-import { metadata as layoutMetadata } from '../app/layout';
+import { generateMetadata as layoutMetadata } from '../app/layout';
 import manifest from '../app/manifest';
 import { generateMetadata } from '../app/page';
+import mark from './brand/mark.json';
 
 const TITLE = 'Peek — Universal Parcel Tracker';
 const DESCRIPTION =
@@ -21,8 +22,8 @@ const LANDING_DESCRIPTION =
   'Paste a tracking number, a carrier link or a shipping email and see where your parcel is. 3,500+ carriers, checked every 10 minutes. Open source, no account needed.';
 
 describe('public product metadata', () => {
-  it('names the site and the installed PWA Peek, with what it does where the name stands alone', () => {
-    expect(layoutMetadata).toMatchObject({
+  it('names the site and the installed PWA Peek, with what it does where the name stands alone', async () => {
+    expect(await layoutMetadata()).toMatchObject({
       applicationName: 'Peek',
       title: TITLE,
       description: DESCRIPTION,
@@ -35,8 +36,8 @@ describe('public product metadata', () => {
     });
   });
 
-  it('draws the browser tab with the mark on its rounded tile and the Home Screen with the full-bleed icon', () => {
-    expect(layoutMetadata.icons).toEqual({
+  it('draws the browser tab with the mark on its rounded tile and the Home Screen with the full-bleed icon', async () => {
+    expect((await layoutMetadata()).icons).toEqual({
       icon: { url: '/icons/favicon.svg', type: 'image/svg+xml' },
       apple: '/icons/apple-touch-icon.png',
     });
@@ -65,5 +66,28 @@ describe('public product metadata', () => {
     const { twitter } = await generateMetadata();
     const digest = createHash('sha256').update(readFileSync('public/og.png')).digest('hex').slice(0, 8);
     expect(twitter?.images).toEqual([`https://delivery.example.test/og.png?v=${digest}`]);
+  });
+
+  it('gives a page that draws no preview of its own Peek’s picture, under the page’s own title', async () => {
+    const { metadataBase, openGraph, twitter } = await layoutMetadata();
+    const { twitter: landing } = await generateMetadata();
+    expect(metadataBase).toEqual(new URL('https://delivery.example.test/'));
+    expect(openGraph).toEqual({
+      type: 'website',
+      siteName: 'Peek',
+      images: [{ url: (landing?.images as string[])[0], width: 1_200, height: 630, alt: expect.stringContaining('Where’s my parcel?') }],
+    });
+    // Without a title or a description here, each page's own are shared.
+    expect(twitter).toEqual({ card: 'summary_large_image', images: landing?.images });
+  });
+
+  it('signs the preview picture with the mark as it is drawn everywhere else', () => {
+    const picture = readFileSync('public/og.svg', 'utf8');
+    const { size, tile, shapes } = mark;
+    expect(picture).toContain(`viewBox="0 0 ${size} ${size}"`);
+    expect(picture).toContain(`<rect width="${size}" height="${size}" rx="${tile.radius}" fill="${tile.fill}"/>`);
+    for (const { tag, ...attributes } of shapes) {
+      expect(picture).toContain(`<${tag} ${Object.entries(attributes).map(([name, value]) => `${name}="${value}"`).join(' ')}/>`);
+    }
   });
 });

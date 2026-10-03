@@ -90,7 +90,7 @@ describe('legacyHostRedirect', () => {
     '/favicon.ico', '/privacy.css', '/theme.css',
     '/sw.js', '/push-sw.js', '/manifest.webmanifest',
     '/.well-known/apple-app-site-association', '/.well-known/assetlinks.json',
-    '/auth-emails/magic-link.html', '/og.png', '/og.png?v=dfc8f714', '/og.svg',
+    '/auth-emails/magic-link.html', '/og.png', '/og.png?v=73229339', '/og.svg',
     '/share-target', '/share-target/draft',
   ])('leaves %s on the host it was asked from', (path) => {
     expect(redirect(path)).toBeNull();

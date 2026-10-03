@@ -4,9 +4,11 @@ import '../src/styles.css';
 import { authConfigFromEnvironment } from '../src/auth/authConfig';
 import { APPEARANCE_BOOTSTRAP } from '../src/lib/appearanceConfig';
 import { ENTRY_HINT_BOOTSTRAP } from '../src/lib/entryHintConfig';
+import { peekPicture } from '../src/lib/peekPicture';
 import { requestLocale } from '../src/server/requestLocale';
+import { requestOrigin } from '../src/server/requestOrigin';
 
-export const metadata: Metadata = {
+const site: Metadata = {
   applicationName: 'Peek',
   title: 'Peek — Universal Parcel Tracker',
   description:
@@ -22,6 +24,18 @@ export const metadata: Metadata = {
     title: 'Peek',
   },
 };
+
+/** A page that draws no preview of its own shares Peek's picture, under its own title and description. */
+export async function generateMetadata(): Promise<Metadata> {
+  const origin = await requestOrigin();
+  const picture = peekPicture(origin);
+  return {
+    ...site,
+    metadataBase: origin,
+    openGraph: { type: 'website', siteName: 'Peek', images: [picture] },
+    twitter: { card: 'summary_large_image', images: [picture.url] },
+  };
+}
 
 export const viewport: Viewport = {
   width: 'device-width',

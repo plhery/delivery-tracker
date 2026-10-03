@@ -129,6 +129,7 @@ export function parcelLinkSocialImage(preview: ParcelLinkPreview, host: string |
   const headline = written(preview.headline);
   if (!headline) return genericSocialImage();
   const detail = written(preview.detail);
+  const note = written(preview.note ?? null);
   const name = written(carrier && (WORDMARKS[carrierBrandFamily(carrier.id)] ?? carrier.name));
   const site = written(host);
   const palette = carrier ? carrierBrand(carrier.color, CARRIER_PALETTES[carrier.id]) : null;
@@ -153,6 +154,10 @@ export function parcelLinkSocialImage(preview: ParcelLinkPreview, host: string |
         </div>
       </div>
       <div style={{ display: 'flex', position: 'absolute', right: 70, top: 90 }}><Pip carrier={carrier} palette={palette} width={420} ribbon={gift} /></div>
+      {note && <div style={{
+        display: 'flex', alignItems: 'center', position: 'absolute', right: 76, top: 70, height: 52, padding: '0 22px', borderRadius: 26,
+        background: mix(surface, '#ffffff', .7), fontSize: 24, color: tone, whiteSpace: 'nowrap', ...bold(.5, tone),
+      }}>{note}</div>}
       <div style={{ display: 'flex', alignItems: 'center', position: 'absolute', left: 84, bottom: 44, fontSize: 26, color: tone }}>
         <Mark size={38} />
         <span style={{ marginLeft: 9, fontSize: 28, color: INK, ...bold(1.1, INK) }}>Peek</span>
