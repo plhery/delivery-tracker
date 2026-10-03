@@ -223,9 +223,55 @@ begin
   ) then
     raise exception 'non-user roles can change an owned package carrier';
   end if;
+  -- The delivery email's ledger and its worker functions are the server's alone.
+  if has_table_privilege('authenticated', 'public.delivery_emails', 'SELECT')
+      or has_table_privilege('authenticated', 'public.delivery_emails', 'INSERT')
+      or has_table_privilege('authenticated', 'public.delivery_emails', 'UPDATE')
+      or has_table_privilege('authenticated', 'public.delivery_emails', 'DELETE')
+      or has_table_privilege('anon', 'public.delivery_emails', 'SELECT')
+      or has_function_privilege('authenticated', 'public.claim_delivery_emails(integer,integer,integer)', 'EXECUTE')
+      or has_function_privilege('anon', 'public.claim_delivery_emails(integer,integer,integer)', 'EXECUTE')
+      or has_function_privilege('authenticated', 'public.finish_delivery_email(uuid,text,text)', 'EXECUTE')
+      or has_function_privilege('anon', 'public.finish_delivery_email(uuid,text,text)', 'EXECUTE')
+      or has_function_privilege('authenticated', 'public.set_delivery_email(uuid,boolean)', 'EXECUTE')
+      or has_function_privilege('anon', 'public.set_delivery_email(uuid,boolean)', 'EXECUTE') then
+    raise exception 'public database roles can access the delivery email ledger';
+  end if;
+  if not has_table_privilege('service_role', 'public.delivery_emails', 'SELECT')
+      or not has_function_privilege('service_role', 'public.claim_delivery_emails(integer,integer,integer)', 'EXECUTE')
+      or not has_function_privilege('service_role', 'public.finish_delivery_email(uuid,text,text)', 'EXECUTE')
+      or not has_function_privilege('service_role', 'public.set_delivery_email(uuid,boolean)', 'EXECUTE') then
+    raise exception 'the service role cannot send delivery emails';
+  end if;
+  if not (select relrowsecurity from pg_class where oid = 'public.delivery_emails'::regclass)
+      or exists (
+        select 1 from pg_policies where schemaname = 'public' and tablename = 'delivery_emails'
+      ) then
+    raise exception 'the delivery email ledger is readable through row level security';
+  end if;
+  if has_function_privilege('anon', 'public.set_owned_notification_preferences(text[],time,time,text,boolean)', 'EXECUTE')
+      or has_function_privilege('anon', 'public.set_owned_package_email_muted(uuid,boolean)', 'EXECUTE')
+      or has_function_privilege('anon', 'public.owned_delivery_emails()', 'EXECUTE') then
+    raise exception 'anonymous callers can execute the delivery email RPCs of an account';
+  end if;
+  -- One function saves preferences: PostgREST must not have to choose between two.
+  if (
+    select count(*) from pg_proc
+    where pronamespace = 'public'::regnamespace and proname = 'set_owned_notification_preferences'
+  ) <> 1 then
+    raise exception 'notification preferences are saved by more than one function';
+  end if;
   if not has_function_privilege(
     'authenticated',
-    'public.set_owned_notification_preferences(text[],time,time,text)',
+    'public.set_owned_notification_preferences(text[],time,time,text,boolean)',
+    'EXECUTE'
+  ) or not has_function_privilege(
+    'authenticated',
+    'public.set_owned_package_email_muted(uuid,boolean)',
+    'EXECUTE'
+  ) or not has_function_privilege(
+    'authenticated',
+    'public.owned_delivery_emails()',
     'EXECUTE'
   ) or not has_function_privilege(
     'authenticated',
@@ -698,6 +744,51 @@ begin
     raise exception 'owner notification preferences were not stored';
   end if;
 
+  -- The delivery email is not chosen until asked for. A server from before it
+  -- sends four arguments by name, as PostgREST calls them: they keep the choice.
+  if exists (
+    select 1 from public.notification_preferences
+    where user_id = '10000000-0000-0000-0000-000000000001'
+      and (email_on_delivery is not null or email_enabled_at is not null)
+  ) then
+    raise exception 'saving preferences chose the delivery email';
+  end if;
+  perform public.set_owned_notification_preferences(
+    p_enabled_stages => array['customs', 'out_for_delivery', 'delivered'],
+    p_quiet_hours_start => '22:00',
+    p_quiet_hours_end => '08:00',
+    p_timezone => 'Europe/Zurich',
+    p_email_on_delivery => true
+  );
+  perform public.set_owned_notification_preferences(
+    p_enabled_stages => array['customs', 'delivered'],
+    p_quiet_hours_start => null,
+    p_quiet_hours_end => null,
+    p_timezone => 'Europe/Zurich'
+  );
+  if not exists (
+    select 1 from public.notification_preferences
+    where user_id = '10000000-0000-0000-0000-000000000001'
+      and enabled_stages = array['customs', 'delivered']
+      and quiet_hours_start is null
+      and email_on_delivery
+      and email_enabled_at is not null
+  ) then
+    raise exception 'a four-argument save did not keep the delivery email choice';
+  end if;
+  perform public.set_owned_notification_preferences(
+    array['customs', 'out_for_delivery', 'delivered'], '22:00', '08:00', 'Europe/Zurich', false
+  );
+  if not exists (
+    select 1 from public.notification_preferences
+    where user_id = '10000000-0000-0000-0000-000000000001'
+      and enabled_stages = array['customs', 'out_for_delivery', 'delivered']
+      and quiet_hours_start = '22:00'
+      and email_on_delivery is false
+  ) then
+    raise exception 'the delivery email could not be switched off';
+  end if;
+
   if not public.set_owned_package_notifications_muted(
     (select id from public.packages where tracking_number = 'CROSSTENANT9'),
     true
@@ -710,6 +801,24 @@ begin
       and notifications_muted
   ) then
     raise exception 'package notification mute was not stored';
+  end if;
+
+  if not public.set_owned_package_email_muted(
+    (select id from public.packages where tracking_number = 'CROSSTENANT9'),
+    true
+  ) then
+    raise exception 'owner could not leave a package out of the delivery email';
+  end if;
+  if not exists (
+    select 1 from public.packages
+    where tracking_number = 'CROSSTENANT9'
+      and email_muted
+  ) or exists (
+    select 1 from public.packages
+    where tracking_number <> 'CROSSTENANT9'
+      and email_muted
+  ) then
+    raise exception 'package email mute was not stored for that package alone';
   end if;
 
   begin
@@ -806,6 +915,15 @@ begin
     true
   ) then
     raise exception 'second user muted a first-user package through the RPC';
+  end if;
+  if public.set_owned_package_email_muted(
+    '40000000-0000-0000-0000-000000000004',
+    true
+  ) then
+    raise exception 'second user changed the delivery email of a first-user package through the RPC';
+  end if;
+  if exists (select 1 from public.owned_delivery_emails()) then
+    raise exception 'an account without delivery emails was shown some';
   end if;
   if public.change_owned_package_carrier(
     '40000000-0000-0000-0000-000000000004',
