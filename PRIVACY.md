@@ -94,13 +94,12 @@ switch, for one parcel in that parcel's alerts, or with the link in every
 email, which works without signing in and takes effect at once. That link
 carries a token that tells the service which account it belongs to.
 
-Resend receives your email address and the content of each email. It sends
-from the European Union and keeps messages and delivery logs in the United
-States for 30 days. The transfer relies on the EU–US Data Privacy Framework and
-on standard contractual clauses, with their Swiss additions, in Resend's data
-processing agreement. Amazon Web Services sends the messages on Resend's
-behalf; Resend publishes its other sub-processors at
-[resend.com/legal/subprocessors](https://resend.com/legal/subprocessors).
+Resend receives your email address and the content of each email, and keeps
+messages and delivery logs in the United States for 30 days. The transfer
+relies on the EU–US Data Privacy Framework and on standard contractual clauses,
+with their Swiss additions, in Resend's data processing agreement. Resend
+publishes the companies that work on its behalf, such as Amazon Web Services,
+at [resend.com/legal/subprocessors](https://resend.com/legal/subprocessors).
 
 ## Usage analytics
 
