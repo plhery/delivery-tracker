@@ -14,8 +14,17 @@ export interface DeliveryEmailInput {
   journeyUrl: string;
   /** The page that turns the account's delivery email off, with its token. */
   offUrl: string;
+  /**
+   * What the delivered scan knows of its time, read from the carrier's own
+   * data as the push queue reads it: `timed` a clock time, `date` only a day,
+   * `none` when the app noticed the delivery and the carrier gave no time.
+   * Left out, the content works it out from the scan as well as it can.
+   */
+  deliveredTime?: DeliveredTime;
   now: Date;
 }
+
+export type DeliveredTime = 'timed' | 'date' | 'none';
 
 export interface DeliveryEmailContent {
   subject: string;
