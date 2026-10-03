@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Generated from PRIVACY.md by scripts/generate-privacy.mjs. Do not edit. -->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -15,299 +16,62 @@
       <p class="eyebrow">Peek · Universal Parcel Tracker</p>
       <h1>Privacy notice</h1>
       <p class="effective">Effective 3 October 2026</p>
-
-      <p>
-        Peek processes information to authenticate you, follow parcel
-        deliveries, power the optional Friends circle and diagnose failures. It does not sell personal data,
-        serve ads, or use advertising analytics. It uses optional, self-hosted usage analytics.
-      </p>
-
-      <h2>What is processed</h2>
+      <p>Peek follows parcels, on the web and in its iPhone app. This notice says what the official service at peektracker.com processes to do that. Peek does not sell personal data, serve advertising, or use advertising analytics.</p>
+      <h2>Data the service processes</h2>
       <ul>
-        <li>
-          Your email address, account ID, session metadata, authentication
-          events, and basic profile data when you choose Google sign-in.
-        </li>
-        <li>
-          Parcel labels, tracking numbers, carriers, status, tracking history,
-          operational scan locations, sender or business names, pickup-point
-          details, parcel weight and dimensions where the carrier provides them,
-          supplied delivery postcodes, and combined tracking credentials that
-          can contain a delivery postcode.
-        </li>
-        <li>Optional Planzer shared and Dachser Customer Iberia capability links.</li>
-        <li>
-          Push endpoints, encryption keys, browser user agent, native APNs device
-          and Live Activity tokens, device settings, delivery acknowledgements
-          and errors when you enable notifications or Live Activities.
-        </li>
-        <li>
-          Network metadata processed by the hosting, proxy, authentication, and
-          email infrastructure, such as IP address, timestamp, and user agent.
-        </li>
-        <li>
-          Diagnostic logs and Sentry error reports include tracking numbers,
-          synchronization outcomes and error details. Sentry may retain original
-          request/response headers, URLs and bounded body excerpts, including
-          personal data and session or authentication information present in
-          those diagnostics. No field-based redaction is applied to these reports.
-        </li>
-        <li>
-          Whether you asked for an email when a parcel is delivered and when you
-          turned it on, the parcels you muted for it, and a record of each of
-          these emails: the parcel, when it was sent and whether sending worked.
-        </li>
+        <li>Your email address, account ID, session metadata, authentication security events, the language your apps use, and basic Google profile data when you choose Google sign-in.</li>
+        <li>Parcel labels, tracking numbers, carrier selection, tracking history, status, timestamps, the operational location a carrier attaches to each scan — the city, region, country, and the postcode or name of the depot, parcel shop or locker that performed the scan — plus sender or business names, pickup-point details, parcel weight and dimensions where the carrier provides them.</li>
+        <li>What some carriers need besides the number, when you supply it: a delivery postcode, a private tracking link, or a reference that itself contains the postcode.</li>
+        <li>Web Push subscription endpoints, encryption keys, browser user agent, native iPhone APNs device token, optional device name and locale, a random local installation identifier, ActivityKit push-to-start and per-activity update tokens, delivery acknowledgements, and delivery errors when you enable the corresponding notification or Live Activity setting.</li>
+        <li>Whether you asked for an email when a parcel is delivered and when you turned it on, the parcels you muted for it, and a record of each of these emails: the parcel, when it was sent and whether sending worked.</li>
+        <li>The links you make to share a parcel or to follow one without an account, and what each link shows.</li>
+        <li>A nickname, sharing choices, invitations and connections when you turn on Friends.</li>
+        <li>Technical request data processed by the hosting, reverse-proxy, Auth, and mail infrastructure, such as IP address, timestamp, and user agent.</li>
+        <li>Server diagnostic logs and Sentry error reports include parcel tracking numbers, carrier, synchronization outcomes, and error details to diagnose tracking failures. Sentry may retain original request/response headers, URLs and bounded body excerpts, including personal data and session or authentication information present in those diagnostics. The application does not apply field-based redaction to these error reports.</li>
       </ul>
-
-      <h2>How it is used</h2>
-      <p>
-        Supabase provides authentication and database access. Google provides
-        social sign-in. Resend delivers the service's emails, as described under
-        “Emails”. Cloudflare and the container host may process network
-        metadata. The selected carrier receives its tracking number or
-        carrier-specific tracking credential so Peek can
-        retrieve updates. Fallback providers (Ship24, ParcelsApp and 17TRACK,
-        plus Postal Ninja when enabled) receive the tracking number when used.
-        ParcelsApp additionally receives the stored delivery postcode when one
-        is supplied. DPD Switzerland may also receive the parcel's
-        supplied postcode for recipient verification. Mondial Relay requires
-        the five-digit recipient postcode to retrieve shipment events. Colis
-        Privé receives a combined credential made from its 12-character
-        shipment number and the five-digit delivery postcode. Planzer receives
-        a shared-link capability when you provide one. Dachser receives its
-        supplied capability link; sender, recipient, address, contact, and
-        document fields in Dachser's response are discarded. Web Push endpoints
-        receive encrypted notifications you requested. Apple processes native
-        notifications and Live Activity updates through APNs; these can contain
-        parcel labels, carrier, status, location and estimated delivery text,
-        but the app does not include tracking numbers in those Apple payloads.
-      </p>
-      <p>
-        The service places scan locations on its map itself, with
-        <a href="https://www.geonames.org">GeoNames</a> place data (CC BY 4.0)
-        and sorting-centre locations from
-        <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>
-        contributors (ODbL), kept on its own servers; no mapping service receives them.
-      </p>
-      <p>
-        When you tap Directions or Show on map for a pickup point, Apple Maps or
-        Google Maps receives that pickup point's name and address, and nothing
-        else about the parcel.
-      </p>
-
+      <h2>Why and where data is processed</h2>
+      <p>The service uses this data to authenticate you, store your delivery box, fetch carrier updates, synchronize devices, send requested notifications, prevent abuse, diagnose failures, and honor export or deletion requests. Following your parcels, with what you switch on, is the service you ask for. Abuse limits, diagnostics and usage analytics rest on a legitimate interest in keeping Peek safe and working. The delivery email rests on your consent.</p>
+      <p>The app, its database and sign-in (self-hosted Supabase), its logs and its analytics run on a server rented from netcup GmbH, in Germany. Requests reach it through Cloudflare, which relays them and sees network metadata such as your IP address. Google provides Google sign-in. Resend delivers the service's emails, as described under &quot;Emails&quot;.</p>
+      <p>To get a parcel's history, the service sends its tracking number to the carrier. When needed, it also asks other carriers the number could belong to, a carrier that takes the parcel over on its way, and universal tracking services such as ParcelsApp, Ship24, 17TRACK and the Universal Postal Union. The carriers and services it can ask are listed in the open-source <a href="https://github.com/plhery/universal-parcel-scraper">Universal Parcel Scraper</a>. A postcode or private link you supply goes to the carrier it is for; ParcelsApp also receives the postcode. Dachser's link shows more than the journey: the service discards its sender, recipient, address, contact and document fields.</p>
+      <p>Browser push services receive encrypted Web Push messages; Apple processes native notification and Live Activity payloads through APNs. Those Apple payloads can contain a parcel label, carrier, status, location, and expected delivery text, but Peek does not put the tracking number in them.</p>
+      <p>Error reports go to Sentry (Functional Software, Inc.), which stores them in the United States for up to 90 days. Sentry is certified under the EU–US and Swiss–US Data Privacy Frameworks, and its data processing addendum includes standard contractual clauses.</p>
+      <p>Outside Switzerland and the European Union, data therefore goes to the United States (Cloudflare, Google, Apple, Sentry, Resend and your browser's push service) and to the countries of the carriers and tracking services asked about a parcel.</p>
+      <p>The service places scan locations on its map itself, with <a href="https://www.geonames.org">GeoNames</a> place data (CC BY 4.0) and sorting-centre locations from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (ODbL), kept on its own servers; no mapping service receives them. When you tap Directions or Show on map for a pickup point, Apple Maps or Google Maps receives that pickup point's name and address, and nothing else about the parcel.</p>
       <h2>Emails</h2>
-      <p>
-        Peek sends two kinds of email, both through Resend (Resend, Inc., United
-        States): the sign-in code you ask for and, only if you turn it on, one
-        email when a parcel is delivered.
-      </p>
-      <p>
-        The delivery email is off until you turn it on under Settings › Delivery
-        updates, or accept the offer shown once after a delivery. It goes to the
-        address you sign in with and contains the name you gave the parcel, the
-        carrier, the delivery time and a picture of the journey with its towns.
-        It never contains the tracking number. It has no tracking pixel, no
-        tracked links and no remote images. Peek sends one per parcel and
-        nothing else: no newsletter and no promotion.
-      </p>
-      <p>
-        These emails rest on your consent. Turn them off at any time with the
-        same switch, for one parcel in that parcel's alerts, or with the link in
-        every email, which works without signing in and takes effect at once.
-        That link carries a token that tells the service which account it
-        belongs to.
-      </p>
-      <p>
-        Resend receives your email address and the content of each email, and
-        keeps messages and delivery logs in the United States for 30 days. The
-        transfer relies on the EU–US Data Privacy Framework and on standard
-        contractual clauses, with their Swiss additions, in Resend's data
-        processing agreement. Resend publishes the companies that work on its
-        behalf, such as Amazon Web Services, at
-        <a href="https://resend.com/legal/subprocessors">resend.com/legal/subprocessors</a>.
-      </p>
-
+      <p>Peek sends two kinds of email, both through Resend (Resend, Inc., United States): the sign-in code you ask for and, only if you turn it on, one email when a parcel is delivered.</p>
+      <p>The delivery email is off until you turn it on under Settings › Delivery updates, or accept the offer shown once after a delivery. It goes to the address you sign in with and contains the name you gave the parcel, the carrier, the delivery time and a picture of the journey with its towns. It never contains the tracking number. It has no tracking pixel, no tracked links and no remote images. Peek sends one per parcel and nothing else: no newsletter and no promotion.</p>
+      <p>These emails rest on your consent. Turn them off at any time with the same switch, for one parcel in that parcel's alerts, or with the link in every email, which works without signing in and takes effect at once. That link carries a token that tells the service which account it belongs to.</p>
+      <p>Resend receives your email address and the content of each email, and keeps messages and delivery logs in the United States for 30 days. The transfer relies on the EU–US Data Privacy Framework and on standard contractual clauses, with their Swiss additions, in Resend's data processing agreement. Resend publishes the companies that work on its behalf, such as Amazon Web Services, at <a href="https://resend.com/legal/subprocessors">resend.com/legal/subprocessors</a>.</p>
       <h2>Usage analytics</h2>
-      <p>The official public website and connected iPhone app send screen views and
-        named feature actions, including success or failure, to our self-hosted
-        Umami at u.plhery.com. Events include platform, demo/account/anonymous mode,
-        language and basic browser/device information. Umami processes IP address
-        and user agent to derive approximate location and rotating visitor/session
-        identifiers. This helps us improve features and find failing actions.</p>
-      <p>We do not send account IDs, emails, parcel contents, labels, tracking
-        numbers, delivery postcodes, invitation codes, search text, full URLs,
-        referrers or error messages. No analytics cookies or persistent analytics
-        device identifiers are created, and events are not linked to your account.</p>
-      <p>Turn off <strong>Usage analytics</strong> in Account on each device to stop
-        collection. The website also honors Do Not Track, Global Privacy Control
-        and Umami's local opt-out. Opting out discards queued events. Historical
-        analytics remain until operational cleanup; they cannot be selected by
-        account for export or deletion because no account identifier is sent.
-        Local demo builds, simulators and unconfigured self-hosted instances do not collect.</p>
-
+      <p>The official public web service and connected iPhone app send screen views and named feature actions (including success/failure) to our self-hosted Umami at <code>u.plhery.com</code>. This helps us understand which features work and where actions fail. Events include the platform, demo/account/anonymous mode, language, and basic browser/device information. Umami processes IP address and user agent to derive approximate location and rotating visitor/session identifiers. We do not send account IDs, email addresses, parcel labels, tracking numbers, delivery postcodes, invitation codes, search text, full URLs, referrers, or error messages. No analytics cookies or persistent analytics device identifiers are created. Events are not linked to your Peek account.</p>
+      <p>The website sends nothing when your browser asks not to be tracked (Do Not Track or Global Privacy Control) or when Umami's local opt-out is set. The iPhone app has no setting for it. Historical analytics remain until operational cleanup and cannot be selected by account when you export or delete it because we do not send an account identifier. Local demo builds, simulators, and unconfigured self-hosted deployments do not collect.</p>
       <h2>Following a parcel without an account</h2>
-      <p>
-        You can follow one parcel without signing in. The service then stores
-        its tracking number, the carrier, a postcode or tracking link if the
-        carrier needs one, the tracking history, and a link to the parcel. No
-        account, email address or name is stored. A name you give the parcel
-        stays in your browser and in the part of a link after <code>#</code>,
-        which browsers do not send to the service.
-      </p>
-      <p>
-        Your device keeps a key that shows it made the lookup; the service
-        stores only a hash of that key. Anyone who has the link can see the
-        parcel's status and history, with the tracking number masked to its
-        last characters. Only the device holding the key sees the full number,
-        can forget the parcel, and can keep it after signing in.
-        The postcode or tracking link you entered is never shown through a link.
-      </p>
-      <p>
-        Your browser keeps a list of the parcels you followed or opened this
-        way: each link, its key if this device made the lookup, the name you
-        gave it and the last tracking history it showed, so the parcel is still
-        there offline. The list stays on the device until the parcel is
-        forgotten or kept in an account.
-      </p>
-      <p>
-        To limit abuse, the service counts lookups, and numbers it asked
-        carriers about, per day under a keyed hash of the network address and
-        the date. The address itself is not stored, and the counters are
-        deleted after seven days. The same number looked up by several people,
-        with the same carrier and details, is stored once; each lookup has its
-        own link.
-      </p>
-      <p>
-        A lookup is forgotten 30 days after the parcel is delivered or
-        returned, or 90 days after its last news (a scan, or the link being
-        opened), or at once when you ask from the device that made it. The
-        parcel's data goes with its last link. If you sign in and keep the
-        parcel, it becomes part of your account. Diagnostic logs and Sentry
-        reports can retain its tracking number as described above.
-      </p>
-
+      <p>You can follow a parcel without signing in. The service then stores its tracking number, the carrier, a postcode or tracking link if the carrier needs one, the tracking history, and a link to the parcel. No account, email address or name is stored. A name you give the parcel stays in your browser and in the part of a link after <code>#</code>, which browsers do not send to the service.</p>
+      <p>Your device keeps a key that shows it made the lookup; the service stores only a hash of that key. Anyone who has the link can see the parcel's status and history, with the tracking number masked to its last characters. Only the device holding the key sees the full number, can forget the parcel, and can keep it after signing in. The postcode or tracking link you entered is never shown through a link.</p>
+      <p>Your browser keeps a list of the parcels you followed or opened this way: each link, its key if this device made the lookup, the name you gave it and the last tracking history it showed, so the parcel is still there offline. The list stays on the device until the parcel is forgotten or kept in an account.</p>
+      <p>To limit abuse, the service counts lookups, and numbers it asked carriers about, per day under a keyed hash of the network address and the date. The address itself is not stored, and the counters are deleted after seven days.</p>
+      <p>The same number looked up by several people, with the same carrier and details, is stored once; each lookup has its own link.</p>
+      <p>A lookup is forgotten 30 days after the parcel is delivered or returned, or 90 days after its last news (a scan, or the link being opened), or at once when you ask from the device that made it. The parcel's data goes with its last link. If you sign in and keep the parcel, it becomes part of your account. Diagnostic logs and Sentry reports can retain its tracking number as described above.</p>
       <h2>Sharing a parcel and alerts for a link</h2>
-      <p>
-        You can share a parcel through its link, with or without an account.
-        Anyone who has the link sees the parcel's status and history. They
-        never see a pickup code, a postcode, the recipient's name or the name
-        you gave the parcel, and the tracking number stays masked unless you
-        choose to show it.
-      </p>
-      <p>
-        You can mark the link as a gift. Until the parcel is delivered, its
-        viewers then see no sender, weight, size or pickup point, the number
-        stays masked, and the scans made in the country the parcel comes from
-        read "Left the sender" with that country and no town.
-      </p>
-      <p>
-        You can stop sharing at any time. The link then only says that the
-        parcel is not shared anymore. A stopped link from an account is deleted
-        30 days later; deleting the parcel or the account deletes its links at
-        once.
-      </p>
-      <p>
-        The name of a parcel, a gift note and who a gift is from are never sent
-        to the service. They travel in the part of the link after
-        <code>#</code> and stay in the browsers of the people who have the link.
-        The browser you share from remembers what you chose to send along,
-        until the parcel is forgotten on that device. A gift's page shows its
-        recipient none of it before the parcel is delivered.
-      </p>
-      <p>
-        Anyone who has a link can turn on notifications in their browser for
-        that one parcel, without an account. The service then stores that
-        browser's Web Push endpoint and encryption keys, its language, which
-        updates to announce, and whether the device that made the lookup turned
-        the alert on. This is deleted when the parcel is delivered or returned,
-        when the browser turns the alert off or its push subscription ends,
-        when the link is forgotten, and, for everyone but the device that made
-        the lookup, when sharing is stopped. The notifications carry the
-        parcel's status and never its number or name; a gift's do not say where
-        it is before it arrives.
-      </p>
-      <p>
-        Your browser is asked for notifications, and creates its push
-        subscription, only when you choose "Turn on". Adding a delivery to your
-        calendar makes a calendar file in the browser; nothing is sent for it.
-      </p>
-
+      <p>You can share a parcel through its link, with or without an account. Anyone who has the link sees the parcel's status and history. They never see a pickup code, a postcode, the recipient's name or the name you gave the parcel, and the tracking number stays masked unless you choose to show it. An app that previews the link, a chat app for instance, gets the parcel's status, carrier and estimate, never the number, a name or a place.</p>
+      <p>You can mark the link as a gift. Until the parcel is delivered, its viewers then see no sender, weight, size or pickup point, the number stays masked, and the scans made in the country the parcel comes from read &quot;Left the sender&quot; with that country and no town.</p>
+      <p>You can stop sharing at any time. The link then only says that the parcel is not shared anymore. A stopped link from an account is deleted 30 days later; deleting the parcel or the account deletes its links at once.</p>
+      <p>The name of a parcel, a gift note and who a gift is from are never sent to the service. They travel in the part of the link after <code>#</code> and stay in the browsers of the people who have the link. The browser you share from remembers what you chose to send along, until the parcel is forgotten on that device. A gift's page shows its recipient none of it before the parcel is delivered.</p>
+      <p>Anyone who has a link can turn on notifications in their browser for that one parcel, without an account. The service then stores that browser's Web Push endpoint and encryption keys, its language, which updates to announce, and whether the device that made the lookup turned the alert on. This is deleted when the parcel is delivered or returned, when the browser turns the alert off or its push subscription ends, when the link is forgotten, and, for everyone but the device that made the lookup, when sharing is stopped. The notifications carry the parcel's status and never its number or name; a gift's do not say where it is before it arrives.</p>
+      <p>Your browser is asked for notifications, and creates its push subscription, only when you choose &quot;Turn on&quot;. Adding a delivery to your calendar makes a calendar file in the browser; nothing is sent for it.</p>
       <h2>Friends is optional</h2>
-      <p>
-        Friends uses a nickname you choose, separate from your sign-in profile.
-        There is no public directory or contact upload. Only people you connect
-        with through a single-use invitation can see your friend card. Invitations
-        expire after seven days. Current invitation keys are stored in an
-        access-restricted table and removed when accepted or revoked. Anyone
-        holding a link can preview your nickname and choose to accept after
-        signing in; the link is an invitation credential. Older invitation
-        formats use a separately hashed acceptance token.
-      </p>
-      <p>
-        You choose whether to share your delivered-parcel count, average journey
-        rounded up to whole days, and earned Passport stamps. A separate setting,
-        off by default, can show that a parcel arrived during the current week.
-        Friends never receive parcel contents, labels, tracking numbers, carriers,
-        locations, exact delivery times, or information about active shipments.
-        Your email, Google name and photo are not part of your friend card.
-      </p>
-      <p>
-        Preview your card before saving. Changes apply to the next refresh, at
-        most a minute while Friends is open. Friend cards are not saved for offline
-        use. Removing a connection revokes access on both sides; turning off
-        Friends deletes your friend profile, connections and invitations. Anyone
-        who has already seen a card could still have kept a screenshot or copy.
-      </p>
-
-      <h2>Retention and your controls</h2>
-      <p>
-        Parcel data remains until you delete the account. Archiving hides a
-        parcel from the active list but retains its history. Infrastructure
-        backups and security logs may remain for their operator's limited
-        retention period. Diagnostic logs and Sentry reports can retain tracking
-        numbers after parcel or account deletion until their configured retention
-        expires. Browser notification registrations and delivery records may
-        remain until account deletion or operational cleanup. The record of a
-        delivery email goes with the account; Resend deletes its own copy after
-        30 days.
-      </p>
-      <p>
-        Use <strong>Download my data</strong> in the account menu for a JSON
-        export, including your Friends profile and connections. Use <strong>Delete account</strong> to permanently remove your
-        Auth user, parcels, events, push subscriptions, Friends profile, connections and invitations. Signing out clears
-        account-scoped local state, including the offline parcel snapshot; browser
-        controls can clear the remaining PWA cache and notification permission.
-        A language chosen in the app is kept in a first-party cookie that
-        contains only the language code, so pages open in that language.
-      </p>
-
+      <p>Friends uses a nickname you choose, separate from your sign-in profile. There is no public directory or contact upload. Only people you connect with through a single-use invitation can see your friend card. Invitations expire after seven days. Current invitation keys are stored in an access-restricted table and removed when accepted or revoked. Anyone holding a link can preview your nickname and choose to accept after signing in; the link is an invitation credential. Older invitation formats use a separately hashed acceptance token.</p>
+      <p>You choose whether to share your delivered-parcel count, average journey rounded up to whole days, and earned Passport stamps. A separate setting, off by default, can show that a parcel arrived during the current week. Friends never receive parcel contents, labels, tracking numbers, carriers, locations, exact delivery times, or information about active shipments. Your email, Google name and photo are not part of your friend card.</p>
+      <p>Preview your card before saving. Changes apply to the next refresh, at most a minute while Friends is open. Friend cards are not saved for offline use. Removing a connection revokes access on both sides; turning off Friends deletes your friend profile, connections and invitations. Anyone who has already seen a card could still have kept a screenshot or copy.</p>
+      <h2>Retention and control</h2>
+      <p>Parcel data remains until you delete the parcel or the account. Archiving a parcel only hides it from the active list and retains its history. Turning off Live Activities or signing out removes that installation's ActivityKit tokens; disabled browser endpoints, ordinary native device registrations, and delivery acknowledgements may remain until account deletion or operational cleanup. Infrastructure backups and security logs may persist for the limited retention configured by their operator. The service's own logs are kept for 30 days and Sentry reports for up to 90 days; both can retain a tracking number after its parcel or account is deleted. The record of a delivery email goes with the account; Resend deletes its own copy after 30 days.</p>
+      <p>Use <strong>Download my data</strong> in the account menu for a machine-readable export, including your Friends profile and connections. Use <strong>Delete account</strong> to permanently delete the Auth user and, with it, your parcels, tracking events, shared links, browser subscriptions, native device registrations, delivery acknowledgements, delivery email records, and your Friends profile, connections and invitations. Deletion cannot remove data already sent to a carrier or data a processor must retain for security or legal obligations.</p>
+      <p>The browser stores the Supabase session, application preferences, an offline application shell, and an account-scoped offline parcel snapshot. A language chosen in the app is also kept in a first-party cookie, so pages open in that language; it contains only the language code. The iPhone app stores its session in Keychain and a protected account-scoped parcel snapshot; it requests a current APNs token from Apple instead of persisting that token locally. It stores a random installation identifier and the independent Home Screen widget and Live Activity preferences on the device. Either snapshot can include tracking history, a private tracking link, a supplied delivery postcode, and a reference that contains the delivery postcode. Signing out clears account-scoped local state and ends Live Activities. Browser or operating-system controls can clear app data, Live Activities, and notification permissions.</p>
       <h2>Security and contact</h2>
-      <p>
-        The service uses HTTPS, short-lived access tokens, rotating refresh
-        tokens, Postgres row-level security, account rate limits, and server-only
-        secrets. No internet service can guarantee absolute security.
-      </p>
-      <p>
-        Peek is a personal, non-commercial project run by its author
-        (<a href="https://github.com/plhery">plhery</a> on GitHub). For a
-        question or a request about your data, such as a copy, a correction or
-        its deletion, write to
-        <a href="mailto:hello@peektracker.com">hello@peektracker.com</a>. You
-        can also complain to your data protection authority.
-      </p>
-      <p>
-        Report a security concern through GitHub's
-        <a href="https://github.com/plhery/delivery-tracker/security/advisories/new"
-          >private vulnerability reporting</a
-        >. Never put a real tracking number or combined tracking credential,
-        delivery postcode, sign-in code, token, Planzer shared link, or Dachser
-        detail link in a public issue.
-      </p>
-
-      <p class="forks">
-        This notice covers the official Peek service for parcel tracking. Third-party forks
-        are operated independently and must publish their own notice.
-      </p>
+      <p>The service uses HTTPS, short-lived access tokens, rotating refresh tokens, Postgres row-level security, rate limits, and server-only secret keys. No internet service can promise absolute security.</p>
+      <p>Peek is a personal, non-commercial project run by Paul-Louis Hery, in Switzerland (<a href="https://github.com/plhery">plhery</a> on GitHub). To get a copy of your data, have it corrected or deleted, or object to how it is used, write to <a href="mailto:hello@peektracker.com">hello@peektracker.com</a>. You can also complain to your data protection authority.</p>
+      <p>For a security concern, use GitHub's <a href="https://github.com/plhery/delivery-tracker/security/advisories/new">private vulnerability report</a>. Do not include a real tracking number, delivery postcode, sign-in code, access token or private tracking link in a public issue.</p>
+      <p class="forks">This notice covers the official Peek service. A fork is run by someone else, who must publish their own notice.</p>
     </main>
   </body>
 </html>

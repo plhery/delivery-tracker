@@ -40,6 +40,8 @@ The browser tests use the fictional demo data at desktop and mobile sizes.
 - **API changes** start in `contracts/openapi.json`; regenerate the types from it.
 - **Carriers**: edit the carrier's folder, never the generated contract. See
   [adding a carrier](https://github.com/plhery/universal-parcel-scraper/blob/main/README.md).
+- **Privacy notice**: edit `PRIVACY.md`, then run `npm run privacy`. It writes
+  `public/privacy.html`, the page both apps open.
 - Keep commits small enough to review on their own.
 
 By contributing, you agree that your contribution is licensed under the

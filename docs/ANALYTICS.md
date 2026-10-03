@@ -68,9 +68,9 @@ postcodes, invitation codes, errors, search
 terms, query strings or referrers. A parcel page is the `parcel-link` screen, whatever its address; the sample parcel's is in `demo` mode. Umami still
 sees the IP, user agent, basic device data and language.
 
-The **Usage analytics** switch in Account turns collection off and clears the queue. The
-web also honours DNT, GPC and `umami.disabled=1`. Retention is described in the public
-privacy notice.
+The web sends nothing under DNT, GPC or `umami.disabled=1`. Both clients also read a
+stored preference (`sdt.analytics.enabled`) that turns collection off; no screen sets
+it. Retention is described in the public privacy notice.
 
 To check a deployment, open the app, change a harmless setting, and confirm the page view
 and event in Umami. iPhone changes need a new app build.
