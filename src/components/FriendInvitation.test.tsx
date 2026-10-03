@@ -102,14 +102,14 @@ it('shows the profile preview and saves explicit sharing choices before joining'
   const setup = within(screen.getByRole('dialog', { name: 'Turn on Friends' }));
   expect(setup.getByRole('region', { name: 'Profile preview:' })).toBeVisible();
   expect(setup.getByRole('switch', { name: 'Stats & stamps' })).toBeChecked();
-  expect(setup.getByRole('switch', { name: 'Arrivals this week' })).toBeChecked();
+  expect(setup.getByRole('switch', { name: 'Arrivals this week' })).not.toBeChecked();
   expect(client.action).not.toHaveBeenCalled();
   await user.type(screen.getByRole('textbox', { name: 'Nickname' }), 'Alex');
   await user.click(screen.getByRole('switch', { name: 'Arrivals this week' }));
   await user.click(screen.getByRole('button', { name: 'Turn on Friends & accept' }));
   await waitFor(() => expect(client.action).toHaveBeenCalledTimes(2));
   expect(vi.mocked(client.action).mock.calls.map(([action]) => action)).toEqual([
-    { action: 'save_profile', nickname: 'Alex', shareStats: true, shareArrival: false }, { action: 'accept_invite', code },
+    { action: 'save_profile', nickname: 'Alex', shareStats: true, shareArrival: true }, { action: 'accept_invite', code },
   ]);
   expect(await screen.findByText('Invitation closed')).toBeVisible();
 });

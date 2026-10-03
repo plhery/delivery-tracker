@@ -141,7 +141,7 @@ export function FriendProfileForm({ profile, parcels, busy, onSave, submitKey }:
   const { t } = useI18n();
   const [name, setName] = useState(profile?.nickname ?? '');
   const [stats, setStats] = useState(profile?.shareStats ?? true);
-  const [arrival, setArrival] = useState(profile?.shareArrival ?? true);
+  const [arrival, setArrival] = useState(profile?.shareArrival ?? false);
   const previewId = useId();
   const value = { nickname: name.trim(), shareStats: stats, shareArrival: arrival };
   return <form className="friends-profile" onSubmit={(event) => { event.preventDefault(); if (value.nickname) void onSave(value); }}>

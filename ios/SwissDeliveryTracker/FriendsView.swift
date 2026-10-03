@@ -281,7 +281,7 @@ struct FriendsProfileForm: View {
         self.profile = profile; self.busy = busy; self.submitKey = submitKey; self.save = save
         _name = State(initialValue: profile?.nickname ?? "")
         _stats = State(initialValue: profile?.shareStats ?? true)
-        _arrival = State(initialValue: profile?.shareArrival ?? true)
+        _arrival = State(initialValue: profile?.shareArrival ?? false)
     }
     private var value: FriendProfile { FriendProfile(nickname: name.trimmingCharacters(in: .whitespacesAndNewlines), shareStats: stats, shareArrival: arrival) }
     private var invitesAttention: Bool { profile == nil && !busy && !reduceMotion && scenePhase == .active }

@@ -6,11 +6,12 @@ discovery, contact import, follower counts, leaderboards or delivery feed.
 ## What is shared
 
 Joining is opt-in. The user picks a nickname and sees a live preview of exactly what
-friends will see. Two switches (both on by default for a new profile) control:
+friends will see. Two switches control:
 
-- **Passport stats**: delivered count, average journey (rounded up to whole days) and
-  earned Passport stamps.
-- **"A parcel arrived this week"**: a coarse signal with no parcel or exact time.
+- **Passport stats**, on for a new profile: delivered count, average journey (rounded up
+  to whole days) and earned Passport stamps.
+- **"A parcel arrived this week"**, off for a new profile: a coarse signal with no parcel
+  or exact time.
 
 Nothing else crosses the boundary: no parcel names or contents, tracking numbers, carriers,
 locations, emails, photos, active shipments or ids.

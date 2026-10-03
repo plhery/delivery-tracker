@@ -60,17 +60,17 @@ describe('Friends', () => {
     expect(screen.getByRole('switch', { name: 'Stats & stamps' })).not.toBeChecked();
     expect(screen.getByRole('switch', { name: 'Arrivals this week' })).toBeChecked();
   });
-  it('starts with a quiet introduction and enables both sharing options for a new profile', async () => {
+  it('starts with a quiet introduction, sharing stats and not arrivals for a new profile', async () => {
     const client = realClient();
     vi.mocked(client.load).mockResolvedValue({ profile: null, ownCard: null, friends: [] });
     vi.mocked(client.action).mockResolvedValue({ snapshot: { ...enrolled(), friends: [] } });
     const user = userEvent.setup(); render(<Friends client={client} parcels={[]} demo={false} />);
     await user.click(await screen.findByRole('button', { name: 'Create profile' }));
     expect(screen.getByRole('switch', { name: 'Stats & stamps' })).toBeChecked();
-    expect(screen.getByRole('switch', { name: 'Arrivals this week' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Arrivals this week' })).not.toBeChecked();
     const sheet = screen.getByRole('dialog'); expect(within(sheet).getByRole('button', { name: 'Create profile' })).toBeDisabled();
     await user.type(within(sheet).getByRole('textbox'), 'Alex'); await user.click(within(sheet).getByRole('button', { name: 'Create profile' }));
-    expect(client.action).toHaveBeenCalledWith({ action: 'save_profile', nickname: 'Alex', shareStats: true, shareArrival: true }, []);
+    expect(client.action).toHaveBeenCalledWith({ action: 'save_profile', nickname: 'Alex', shareStats: true, shareArrival: false }, []);
     expect(await screen.findByText('Add your first friend')).toBeVisible();
   });
   it('keeps demo invitations local and offers sign-in', async () => {
