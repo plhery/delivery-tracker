@@ -8,13 +8,12 @@ import { prometheusStepRecorder } from './metrics';
 import { initObservability, logOperationalEvent, reportRoutingEvent } from './observability';
 
 /**
- * The host's telemetry sinks for the carrier package's `StepRecorder`.
+ * The host's telemetry sinks for the scraper's `StepRecorder`.
  *
- * Metric and log names stay identical to the previous `measureScrape` helper
- * so the Sentry "Scraper Health" dashboard keeps working: a step is a
- * `phase`, a lookup is `phase:total`, and a recovery step also counts a
- * fallback and records a `transport_fallback` breadcrumb before the
- * result is known.
+ * Metric and log names are the ones the Sentry "Scraper Health" dashboard
+ * reads: a step is a `phase`, a lookup is `phase:total`, and a recovery step
+ * also counts a fallback and records a `transport_fallback` breadcrumb before
+ * the result is known.
  */
 
 function metric(operation: () => void): void {

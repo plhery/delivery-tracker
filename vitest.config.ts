@@ -11,7 +11,6 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.{ts,tsx}'],
-    exclude: ['src/**/*.live.test.ts'],
     environment: 'jsdom',
     environmentOptions: {
       jsdom: { url: 'http://localhost/' },

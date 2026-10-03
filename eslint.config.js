@@ -22,7 +22,7 @@ const config = [
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
-          group: ['@carriers/*', '**/packages/carriers/**', 'universal-parcel-scraper/*', '!universal-parcel-scraper/node', '!universal-parcel-scraper/places', '!universal-parcel-scraper/data/*'],
+          group: ['universal-parcel-scraper/*', '!universal-parcel-scraper/node', '!universal-parcel-scraper/places', '!universal-parcel-scraper/data/*'],
           message: 'Use a published Universal Parcel Scraper entry point.',
         }],
       }],

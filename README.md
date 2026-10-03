@@ -82,7 +82,8 @@ in the background.
 
 Tracking comes from [Universal Parcel Scraper](https://github.com/plhery/universal-parcel-scraper),
 used in-process as an exact npm dependency. Carrier adapters, detection, provider coverage
-and live tests live in that repository.
+and live tests live in that repository. A carrier that tracks wrongly or is missing is
+[reported there](https://github.com/plhery/universal-parcel-scraper/issues/new/choose).
 
 ## iPhone
 
@@ -145,7 +146,8 @@ See [Contributing](CONTRIBUTING.md) for the full validation workflow.
 | | |
 | --- | --- |
 | [Architecture](docs/ARCHITECTURE.md) | Components, trust boundaries, data lifecycle |
-| [Carriers](https://github.com/plhery/universal-parcel-scraper/blob/main/README.md) | Carrier package, adding a carrier, tests |
+| [Carriers](https://github.com/plhery/universal-parcel-scraper/blob/main/README.md) | Carrier catalog, adapters, coverage, adding a carrier |
+| [Scraper package](docs/SCRAPER.md) | What the app imports from the scraper, updating it |
 | [Routing](docs/ROUTING.md) | How a refresh picks a carrier adapter or fallback provider |
 | [Deployment](docs/DEPLOYMENT.md) | Self-hosting, upgrades, operations |
 | [Authentication](docs/AUTHENTICATION.md) | Google, Apple and email sign-in |

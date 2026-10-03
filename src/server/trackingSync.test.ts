@@ -8,7 +8,7 @@ import { STORED_EVENT_IDENTITIES, type SupabaseServiceClient } from './supabase'
 import { AdapterRegistry, type AdapterEnvironment } from 'universal-parcel-scraper/node';
 import type { StepRecorder } from 'universal-parcel-scraper/node';
 import type { UniversalTracker } from 'universal-parcel-scraper/node';
-import { eventTimestamp } from './eventTime';
+import { eventTimestamp } from 'universal-parcel-scraper';
 import {
   CarrierTrackingAdapter,
   buildEvents,

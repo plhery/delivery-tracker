@@ -7,7 +7,7 @@ import { detectCarrierMatch, normalizeTrackingNumber } from '../lib/carriers';
 import { createAdapterRegistry } from './adapterRegistry';
 import { checkAmazonShipping } from './amazonShippingEligibility';
 import { HttpError } from './api';
-import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from './carrierRecognition';
+import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from 'universal-parcel-scraper';
 import { recordDetection } from './metrics';
 import { logOperationalEvent } from './observability';
 import type { JsonObject } from './types';

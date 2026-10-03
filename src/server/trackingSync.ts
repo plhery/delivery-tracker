@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { DateTime } from 'luxon';
 import { STAGES } from '../generated/apiContract';
 import { normalizeCarrierResult, type CarrierResult } from 'universal-parcel-scraper';
-import { deliveryHandoff, hasDirectHandoffAdapter, type DeliveryHandoff } from './carrierHandoff';
+import { deliveryHandoff, hasDirectHandoffAdapter, type DeliveryHandoff } from 'universal-parcel-scraper';
 import {
   AUTOMATIC_CARRIER_IDS,
   supportsSwissPostHandoff,
@@ -40,7 +40,7 @@ import type { UniversalSource } from 'universal-parcel-scraper';
 import { RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 import { upuHistory } from './upuHistory';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
-import { eventTimestamp, latestResultTime, resultTimezone } from './eventTime';
+import { eventTimestamp, latestResultTime, resultTimezone } from 'universal-parcel-scraper';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 /** One-off parcels have no owner: a scheduled run checks this many of them, all together. */

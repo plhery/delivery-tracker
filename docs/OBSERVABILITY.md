@@ -90,8 +90,9 @@ where reviewed_at is null and carrier = 'CARRIER_ID'
 order by count desc, last_seen desc;
 ```
 
-For each row: map the code or wording in the carrier's `status.ts` (or add a generic
-classifier rule), add a fixture, run the carrier's tests, then mark it:
+For each row, in the scraper: map the code or wording in the carrier's `status.ts` (or add
+a generic classifier rule), add a fixture and run the carrier's tests. Once the app uses
+that release, mark it:
 
 ```sql
 update public.tracking_status_observations
@@ -216,9 +217,9 @@ Request IDs and excerpts don't affect grouping.
 ## Metrics
 
 The host [step recorder](../src/server/stepRecorder.ts) turns each adapter step into
-metrics. Steps are declared per carrier in `carrier.json` (`direct`, `retry`, `trawl`,
-`browser`…). `phase:total` is one runner invocation, not the whole refresh. Filter by one
-phase when counting attempts; summing phases double-counts.
+metrics. Steps are declared per carrier in the scraper's `carrier.json` (`direct`, `retry`,
+`trawl`, `browser`…). `phase:total` is one runner invocation, not the whole refresh. Filter
+by one phase when counting attempts; summing phases double-counts.
 
 **Sentry metrics**, which work with tracing off:
 - `tracking.scrape.duration` (ms) and `tracking.scrape.attempts`, tagged `carrier`,

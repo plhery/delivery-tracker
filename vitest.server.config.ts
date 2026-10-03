@@ -9,7 +9,6 @@ export default defineConfig({
   },
   test: {
     include: ['src/server/**/*.test.ts'],
-    exclude: ['src/server/**/*.live.test.ts', '**/node_modules/**'],
     environment: 'node',
     testTimeout: 10_000,
     coverage: {
@@ -21,19 +20,11 @@ export default defineConfig({
         'src/server/**/*.test.ts',
         'src/server/types.ts',
       ],
-      // This separately gates the newly ported backend at its measured
-      // baseline. Raise these floors as adapter and route coverage expands.
       thresholds: {
-        statements: 39,
-        branches: 34,
-        functions: 39,
-        lines: 42,
-        'src/server/{api,auth,boundedFetch,carrierResult,rateLimit,runtime,trackingSync,validation}.ts': {
-          statements: 71,
-          branches: 61,
-          functions: 79,
-          lines: 74,
-        },
+        statements: 85,
+        branches: 80,
+        functions: 85,
+        lines: 85,
       },
     },
   },

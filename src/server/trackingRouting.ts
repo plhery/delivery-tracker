@@ -13,9 +13,9 @@ import { brandCarrierIds, carrierBrand, carrierIdFromName } from 'universal-parc
 import { errorType, reportRoutingEvent } from './observability';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from 'universal-parcel-scraper';
 import { captureDirectLocalHistory, directHistoryNumber, directLocalHistory, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
-import { latestResultTime } from './eventTime';
+import { latestResultTime } from 'universal-parcel-scraper';
 import type { Recognition } from 'universal-parcel-scraper/node';
-import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from './carrierRecognition';
+import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from 'universal-parcel-scraper';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;

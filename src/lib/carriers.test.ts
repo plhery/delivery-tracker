@@ -25,9 +25,9 @@ import { DEFAULT_CARRIER_COLOR } from './carrierBrand';
  * (104 total, alphabetical), each covering every known number for that
  * carrier. One carrier may assert many numbers inside its `it`.
  *
- * Numbers mirror the per-carrier `numbers.json` corpus under
- * `Universal Parcel Scraper` (see `the scraper corpus`); each keeps
- * its source URL and evidence role in a comment. "REPORTED REAL" means publicly reported, not independently
+ * Numbers mirror the per-carrier `numbers.json` corpus in Universal Parcel
+ * Scraper (see its CORPUS.md); each keeps its source URL and evidence role in
+ * a comment. "REPORTED REAL" means publicly reported, not independently
  * live-verified. OSS/official/merchant examples are fixtures, never asserted-real
  * shipments. Quarantined and full-barcode records must NOT become positive oracles.
  *

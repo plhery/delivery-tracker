@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Carrier problem or missing carrier
+    url: https://github.com/plhery/universal-parcel-scraper/issues/new/choose
+    about: Wrong status, missing history or an unsupported carrier belongs to Universal Parcel Scraper.
   - name: Security vulnerability
     url: https://github.com/plhery/delivery-tracker/security/advisories/new
     about: Report security issues privately; never include secrets in a public issue.

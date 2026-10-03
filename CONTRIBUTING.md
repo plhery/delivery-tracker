@@ -3,10 +3,9 @@
 Thanks for helping. Keep changes focused and explain the user problem they solve.
 
 **Keep private shipment data out** of code, tests, screenshots, issue logs and commit
-messages. Use synthetic values in fixtures. Published tracking numbers may go in the
-[corpus](https://github.com/plhery/universal-parcel-scraper/blob/main/CORPUS.md) with their source. Real numbers for live tests belong
-outside the repo, or in the git-ignored `private.numbers.json` or `.private/`. Sanitize
-captures and diagnostic exports before sharing them.
+messages. Use synthetic values in fixtures, and sanitize captures and diagnostic exports
+before sharing them. Published tracking numbers and live carrier tests belong to the
+scraper; see its [corpus](https://github.com/plhery/universal-parcel-scraper/blob/main/CORPUS.md).
 
 ## Setup
 
@@ -38,8 +37,10 @@ The browser tests use the fictional demo data at desktop and mobile sizes.
 - **Database changes** are new, append-only migrations, with assertions in
   `supabase/tests/assertions.sql`.
 - **API changes** start in `contracts/openapi.json`; regenerate the types from it.
-- **Carriers**: edit the carrier's folder, never the generated contract. See
-  [adding a carrier](https://github.com/plhery/universal-parcel-scraper/blob/main/README.md).
+- **Carriers** live in [Universal Parcel Scraper](https://github.com/plhery/universal-parcel-scraper):
+  fix an adapter or [add a carrier](https://github.com/plhery/universal-parcel-scraper/blob/main/CONTRIBUTING.md)
+  there, then [update the dependency](docs/SCRAPER.md) here. Never edit the generated
+  carrier catalog in the contract by hand.
 - **Privacy notice**: edit `PRIVACY.md`, then run `npm run privacy`. It writes
   `public/privacy.html`, the page both apps open.
 - Keep commits small enough to review on their own.

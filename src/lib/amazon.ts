@@ -1,5 +1,5 @@
 /**
- * Amazon number recognition and portal links live in the carrier package; the
+ * Amazon number recognition and portal links live in the scraper; the
  * user-facing messages below belong to the application.
  */
 export {
