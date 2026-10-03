@@ -3934,6 +3934,7 @@ export interface ApiAccountExportResponse {
 };
   "packages": Array<ApiPackageRow>;
   "friends"?: ApiFriendsExport;
+  "deliveryEmails"?: ApiDeliveryEmailsExport;
 }
 
 export interface ApiDeleteAccountRequest {
@@ -4218,6 +4219,16 @@ export interface ApiDeliveryEmailSwitchResponse {
   "emailOnDelivery": boolean;
 }
 
+export interface ApiSentDeliveryEmail {
+  "packageId": string | null;
+  "sentAt": string;
+}
+
+export interface ApiDeliveryEmailsExport {
+  "enabled": boolean | null;
+  "sent": Array<ApiSentDeliveryEmail>;
+}
+
 export interface ApiPushSubscriptionKeys {
   "p256dh": string;
   "auth": string;
@@ -4316,6 +4327,8 @@ export interface ApiSyncSummary {
   "notifications_sent"?: number;
   "notification_errors"?: number;
   "subscriptions_expired"?: number;
+  "emails_sent"?: number;
+  "email_errors"?: number;
 }
 
 export interface ApiHealthResponse {

@@ -20,6 +20,7 @@ struct AccountExportResponse: Codable, Equatable, Hashable, Sendable {
     var account: AccountExportAccount
     var packages: [Parcel]
     var friends: FriendsExport? = nil
+    var deliveryEmails: DeliveryEmailsExport? = nil
 }
 
 struct DeleteAccountRequest: Codable, Equatable, Hashable, Sendable {
@@ -483,6 +484,21 @@ struct DeliveryEmailSwitchResponse: Codable, Equatable, Hashable, Sendable {
     var emailOnDelivery: Bool
 }
 
+struct SentDeliveryEmail: Codable, Equatable, Hashable, Sendable {
+    var packageID: UUID? = nil
+    var sentAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case packageID = "packageId"
+        case sentAt
+    }
+}
+
+struct DeliveryEmailsExport: Codable, Equatable, Hashable, Sendable {
+    var enabled: Bool? = nil
+    var sent: [SentDeliveryEmail]
+}
+
 struct PushSubscriptionKeys: Codable, Equatable, Hashable, Sendable {
     var p256dh: String
     var auth: String
@@ -649,6 +665,8 @@ struct SyncSummary: Codable, Equatable, Hashable, Sendable {
     var notificationsSent: Int? = nil
     var notificationErrors: Int? = nil
     var subscriptionsExpired: Int? = nil
+    var emailsSent: Int? = nil
+    var emailErrors: Int? = nil
 }
 
 struct HealthResponse: Codable, Equatable, Hashable, Sendable {

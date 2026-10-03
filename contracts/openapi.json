@@ -4554,6 +4554,9 @@
           "400": {
             "$ref": "#/components/responses/ApiError"
           },
+          "409": {
+            "description": "emailOnDelivery was true, and this server cannot email this account. Nothing was saved."
+          },
           "502": {
             "$ref": "#/components/responses/ApiError"
           }
@@ -4561,10 +4564,35 @@
       }
     },
     "/api/email/unsubscribe": {
+      "get": {
+        "operationId": "openDeliveryEmailSwitch",
+        "summary": "Continue to the page that asks before switching the delivery email",
+        "description": "Where someone lands who opens the address of an email's List-Unsubscribe header in a browser. Nothing is switched.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "t",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{20,200}$"
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "To /email/off, with the token after #"
+          },
+          "429": {
+            "description": "Too many requests"
+          }
+        }
+      },
       "post": {
         "operationId": "switchDeliveryEmail",
         "summary": "Turn the delivery email off (or back on) from an email, without signing in",
-        "description": "Mail providers post here from an email's List-Unsubscribe header, with the token in the query and a form body they choose. The page an email links to posts JSON.",
+        "description": "Mail providers post here from an email's List-Unsubscribe header, with the token in the query and a form body they choose, which is not read: the email is turned off. The page an email links to posts JSON.",
         "security": [],
         "parameters": [
           {
@@ -5789,6 +5817,9 @@
           },
           "friends": {
             "$ref": "#/components/schemas/FriendsExport"
+          },
+          "deliveryEmails": {
+            "$ref": "#/components/schemas/DeliveryEmailsExport"
           }
         }
       },
@@ -6643,6 +6674,52 @@
           }
         }
       },
+      "SentDeliveryEmail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "packageId",
+          "sentAt"
+        ],
+        "properties": {
+          "packageId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "The parcel the email told about. null once that parcel is deleted."
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeliveryEmailsExport": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "The account's choice about the delivery email, and the emails it was sent.",
+        "required": [
+          "enabled",
+          "sent"
+        ],
+        "properties": {
+          "enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "null when the account never chose."
+          },
+          "sent": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SentDeliveryEmail"
+            }
+          }
+        }
+      },
       "PushSubscriptionKeys": {
         "type": "object",
         "additionalProperties": false,
@@ -7037,6 +7114,14 @@
           },
           "subscriptions_expired": {
             "type": "integer"
+          },
+          "emails_sent": {
+            "type": "integer",
+            "description": "Delivery emails the job sent."
+          },
+          "email_errors": {
+            "type": "integer",
+            "description": "Delivery emails the job could not send."
           }
         }
       },
