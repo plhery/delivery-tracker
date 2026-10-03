@@ -55,7 +55,7 @@
 .peekp-pip--hero { width: min(230px, 70%); margin: -6px auto -24px; }
 .peekp-pip .parcel-illustration__shadow { opacity: 0; animation: none; }
 .peekp-pip--open .parcel-illustration__body { animation: parcel-unseal .96s var(--ease-out) both; }
-.peekp-pip--open .parcel-illustration__flap { transform: scaleY(var(--fold-scale)) skewX(var(--fold-skew)); opacity: 1; }
+.peekp-pip--open .parcel-illustration__flap { --fold: 1; opacity: 1; }
 .peekp-pip--open .parcel-illustration__tape { opacity: 0; transform: translate(-6px, -19px) rotate(-8deg); }
 .peekp-pip--open .parcel-illustration__delivery-card { opacity: 1; transform: translateY(-69px) rotate(-5deg); }
 .peekp-pip--open .parcel-illustration__check { stroke-dashoffset: 0; }

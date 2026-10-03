@@ -187,7 +187,7 @@ html[data-entry=device] .door > :not(.door-header), html[data-entry=device] .doo
 /* Tapped, the box opens as it does at sign-in: he presses, the flaps fold back, the card rises out. */
 .door-pip--opening .parcel-illustration__body { animation: parcel-unseal .96s var(--ease-out) both; }
 .door-pip--opening .parcel-illustration__shadow { animation: none; }
-.door-pip--opening .parcel-illustration__flap { transform: scaleY(var(--fold-scale)) skewX(var(--fold-skew)); opacity: 1; }
+.door-pip--opening .parcel-illustration__flap { --fold: 1; opacity: 1; }
 .door-pip--opening .parcel-illustration__tape { opacity: 0; transform: translate(-6px, -19px) rotate(-8deg); }
 .door-pip--opening .parcel-illustration__delivery-card { opacity: 1; transform: translateY(-69px) rotate(-5deg); }
 .door-pip--opening .parcel-illustration__check { stroke-dashoffset: 0; }

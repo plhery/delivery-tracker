@@ -81,13 +81,13 @@ function pipSvg({ tone, surface }: Tint): string {
     + `<path d="${PARCEL.left}" fill="${paper}" opacity=".07"/>`
     + `<path d="${PARCEL.hairlines}" stroke="${tone}" stroke-opacity=".25" stroke-width=".8"/>`
     + `<path d="${PARCEL.edges}" stroke="${paper}" stroke-width="1" opacity=".4"/>`
-    + flap('frontRight', toward(.5)) + flap('frontLeft', toward(.36))
-    // The open front flaps hang over the left side, so the face is drawn after them.
+    // The face is on the side, under the front flaps: the left one is a brim over his eyes.
     + `<g transform="${PARCEL.facePlane}">`
     + `<path d="M14.25 37.5Q26.25 21 38.25 37.5M57.75 37.5Q69.75 21 81.75 37.5" stroke="${deep}" stroke-width="4.5" stroke-linecap="round"/>`
     + [25.25, 68.75].map((x) => `<ellipse cx="${x}" cy="55.5" rx="9.75" ry="4.8" fill="${blush}" opacity=".55"/>`).join('')
     + `<path d="M33.75 53.25Q48 78 62.25 53.25Z" fill="${deep}" stroke="${deep}" stroke-width="2.7" stroke-linejoin="round"/>`
     + `<path d="M41.1 66Q48 61.5 54.9 66Q48 71.4 41.1 66Z" fill="${blush}"/></g>`
+    + flap('frontRight', toward(.5)) + flap('frontLeft', toward(.36))
     + PARCEL.glints.map(({ x, y, size }, index) => `<path d="${PARCEL.glint}" transform="translate(${x} ${y}) scale(${size / 2})" fill="${glints[index]}"/>`).join('')
     + '</svg>';
 }

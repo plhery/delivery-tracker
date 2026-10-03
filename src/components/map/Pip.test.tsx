@@ -18,8 +18,9 @@ describe('Pip', () => {
   it('folds the flaps open on their hinges, as the design draws them', () => {
     expect(flapPoints(PARCEL.flaps.backLeft, true)).toBe('55,142 150,95 112,48 17,95');
     expect(flapPoints(PARCEL.flaps.backRight, true)).toBe('150,95 245,142 270,88 174.24,41.32');
-    expect(flapPoints(PARCEL.flaps.frontRight, true)).toBe('245,142 150,190 186,231 279.89,182.7');
-    expect(flapPoints(PARCEL.flaps.frontLeft, true)).toBe('55,142 150,190 121,234 26.8,185.79');
+    // The front flaps rest just above level, clear of the sides.
+    expect(flapPoints(PARCEL.flaps.frontRight, true)).toBe('245,142 150,190 193,189 287.06,141.26');
+    expect(flapPoints(PARCEL.flaps.frontLeft, true)).toBe('55,142 150,190 107,189 12.94,141.26');
     expect(flapPoints(PARCEL.flaps.frontLeft, false)).toBe('55,142 150,190 197.5,166 102.5,118.5');
   });
 
@@ -73,9 +74,36 @@ describe('the kraft parcel', () => {
     expect(face.querySelectorAll('.parcel-illustration__eye')).toHaveLength(2);
     expect(face.querySelectorAll('.parcel-illustration__happy-eye')).toHaveLength(2);
     expect(face.querySelector('path:not([class])')).toHaveAttribute('d', 'M42 51Q48 58 54 51');
-    // The open front flaps hang over the left side, so the face comes after them.
-    const flaps = container.querySelectorAll('.parcel-illustration__flap');
-    expect(flaps[flaps.length - 1].compareDocumentPosition(face) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The face is on the side: after the rear flaps, and under the front ones, which swing over it on their way open.
+    const flaps = container.querySelectorAll<SVGGElement>('.parcel-illustration__flap');
+    const front = container.querySelectorAll<SVGGElement>('.parcel-illustration__flap--swing');
+    expect([flaps.length, front.length]).toEqual([4, 2]);
+    expect(flaps[1].compareDocumentPosition(face) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(face.compareDocumentPosition(front[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // A front flap turns 154 degrees on its hinge, through upright: as tall there as it is deep when closed, or a little more.
+    for (const flap of front) {
+      expect(flap.style.getPropertyValue('--fold-turn')).toBe('154deg');
+      expect(Number(flap.style.getPropertyValue('--fold-rise'))).toBeGreaterThan(1);
+      expect(flap.style.getPropertyValue('--fold-scale')).toBe('');
+    }
+    expect(flaps[0].style.getPropertyValue('--fold-scale')).toBe('-0.970652');
+  });
+
+  it('rests the open front flap above Pip’s happy eyes, like a brim', () => {
+    const brim = flapPoints(PARCEL.flaps.frontLeft, true).split(' ').map((point) => point.split(',').map(Number) as [number, number]);
+    // The eyes of the kraft parcel, then of the ink Pip, as curves in the plane of the left side.
+    const eyes = [[24.5, 39, 32.5, 28, 40.5, 39], [55.5, 39, 63.5, 28, 71.5, 39], [14.25, 37.5, 26.25, 21, 38.25, 37.5], [57.75, 37.5, 69.75, 21, 81.75, 37.5]];
+    for (const [x0, y0, cx, cy, x1, y1] of eyes) for (let t = 0; t <= 1; t += .125) {
+      const x = (1 - t) ** 2 * x0 + 2 * t * (1 - t) * cx + t ** 2 * x1;
+      const y = (1 - t) ** 2 * y0 + 2 * t * (1 - t) * cy + t ** 2 * y1;
+      // Clear of the widest stroke, with room to spare.
+      expect(outlineDistance([55 + x, 142 + .505263 * x + y], brim)).toBeGreaterThan(6);
+    }
+    render(<InkPip mood="joy" side={1} />);
+    const polygons = [...document.querySelectorAll('polygon')];
+    const face = document.querySelector(`g[transform="${PARCEL.facePlane}"]`)!;
+    expect(polygons[1].compareDocumentPosition(face) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(face.compareDocumentPosition(polygons[2]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('draws larger features on a small parcel', () => {

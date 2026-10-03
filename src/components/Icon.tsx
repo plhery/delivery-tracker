@@ -60,6 +60,8 @@ export type PaperPoint = readonly [number, number];
 export interface PaperFlap {
   points: readonly [PaperPoint, PaperPoint, PaperPoint, PaperPoint];
   openedCorner: PaperPoint;
+  /** A flap that swings up through upright to open, rather than folding straight over: how far it turns on its hinge, in degrees. */
+  swing?: number;
 }
 
 /** The box in its 300 × 310 frame, shared by the kraft parcel and by Pip on the card maps. */
@@ -88,8 +90,9 @@ export const PARCEL = {
   flaps: {
     backLeft: { points: [[55, 142], [150, 95], [190, 143], [95, 190]], openedCorner: [112, 48] },
     backRight: { points: [[150, 95], [245, 142], [197.5, 166], [102.5, 118.5]], openedCorner: [270, 88] },
-    frontRight: { points: [[245, 142], [150, 190], [110, 142], [205, 95]], openedCorner: [186, 231] },
-    frontLeft: { points: [[55, 142], [150, 190], [197.5, 166], [102.5, 118.5]], openedCorner: [121, 234] },
+    // The front flaps rest just above level, clear of the sides: the left one is a brim over Pip's eyes.
+    frontRight: { points: [[245, 142], [150, 190], [102.5, 166], [197.5, 118.5]], openedCorner: [193, 189], swing: 154 },
+    frontLeft: { points: [[55, 142], [150, 190], [197.5, 166], [102.5, 118.5]], openedCorner: [107, 189], swing: 154 },
   },
 } as const satisfies Record<string, unknown> & { flaps: Record<string, PaperFlap> };
 
@@ -97,7 +100,7 @@ export const PARCEL = {
 const coordinate = (value: number) => Number(value.toFixed(6));
 
 /** A hinge stays fixed while the paper folds through it, just like the native parcel. */
-function flapFold({ points, openedCorner }: PaperFlap) {
+function flapFold({ points, openedCorner, swing }: PaperFlap) {
   const [origin, hinge, corner] = points;
   const angle = Math.atan2(hinge[1] - origin[1], hinge[0] - origin[0]);
   const local = ([x, y]: PaperPoint): PaperPoint => [
@@ -105,7 +108,19 @@ function flapFold({ points, openedCorner }: PaperFlap) {
     (y - origin[1]) * Math.cos(angle) - (x - origin[0]) * Math.sin(angle),
   ];
   const from = local(corner), to = local(openedCorner);
-  return { origin, angle, local, scale: to[1] / from[1], slant: (to[0] - from[0]) / from[1] };
+  return { origin, angle, local, scale: to[1] / from[1], slant: (to[0] - from[0]) / from[1], arc: swing === undefined ? null : flapArc(local(hinge)[0], from, to, swing) };
+}
+
+/**
+ * A swinging flap's corner turns about the hinge's end: at a turn of `a` it stands at `cos(a)` of where it lies
+ * closed plus `sin(a)` of where it would stand upright. These are that arc's measures, in the hinge's frame and
+ * as shares of the closed flap's depth, for the style sheet to turn the flap with.
+ */
+function flapArc(hingeLength: number, from: PaperPoint, to: PaperPoint, swing: number) {
+  const turn = swing * Math.PI / 180;
+  const closed = [from[0] - hingeLength, from[1]], opened = [to[0] - hingeLength, to[1]];
+  const upright = closed.map((value, axis) => (opened[axis] - Math.cos(turn) * value) / Math.sin(turn));
+  return { run: closed[0] / closed[1], lean: upright[0] / closed[1], rise: upright[1] / closed[1] };
 }
 
 /** Where a flap's corners rest, closed on the box or folded open on its hinge. */
@@ -120,14 +135,19 @@ export function flapPoints(flap: PaperFlap, open: boolean): string {
   }).join(' ');
 }
 
-function ParcelFlap({ flap, tone, rear = false, hidden = false }: { flap: PaperFlap; tone: string; rear?: boolean; hidden?: boolean }) {
-  const { origin, angle, local, scale, slant } = flapFold(flap);
-  const fold = {
+export function ParcelFlap({ flap, tone, rear = false, hidden = false }: { flap: PaperFlap; tone: string; rear?: boolean; hidden?: boolean }) {
+  const { origin, angle, local, scale, slant, arc } = flapFold(flap);
+  const fold: Record<string, string | number> = arc ? {
+    '--fold-turn': `${flap.swing}deg`,
+    '--fold-run': coordinate(arc.run),
+    '--fold-lean': coordinate(arc.lean),
+    '--fold-rise': coordinate(arc.rise),
+  } : {
     '--fold-scale': coordinate(scale),
     '--fold-skew': `${coordinate(Math.atan(slant) * 180 / Math.PI)}deg`,
-  } as CSSProperties;
+  };
   return <g transform={`translate(${origin.join(' ')}) rotate(${coordinate(angle * 180 / Math.PI)})`}>
-    <g className={`parcel-illustration__flap${rear ? ' parcel-illustration__flap--rear' : ''}${hidden ? ' parcel-illustration__flap--hidden' : ''}`} style={fold}>
+    <g className={`parcel-illustration__flap${arc ? ' parcel-illustration__flap--swing' : ''}${rear ? ' parcel-illustration__flap--rear' : ''}${hidden ? ' parcel-illustration__flap--hidden' : ''}`} style={fold as CSSProperties}>
       <polygon points={flap.points.map((point) => local(point).map(coordinate).join(',')).join(' ')} fill={tone} stroke="#987450" strokeOpacity=".24" strokeWidth=".7" />
     </g>
   </g>;
@@ -225,10 +245,10 @@ export function ParcelIllustration({ className = '', label, ribbon = false }: {
           <path d="M0-7V7m-6-10 12 6M-6 3 6-3" stroke="#7C6787" strokeWidth="2" strokeLinecap="round" />
         </g>
       </>}
+      {/* The face is on the side, under the front flaps: the left one swings over the eyes on its way open. */}
+      <PipFace />
       <ParcelFlap flap={PARCEL.flaps.frontRight} tone="#D1AE85" hidden />
       <ParcelFlap flap={PARCEL.flaps.frontLeft} tone="#DDBD96" />
-      {/* The open front flaps hang over the left side, so the face is drawn after them. */}
-      <PipFace />
       <g className="parcel-illustration__tape"><path d={PARCEL.tape} fill="#EBDDCA" /><path d={PARCEL.seam} stroke="#AF9474" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" /></g>
       {/* The ribbon runs over the lid and down both sides, between Pip's eyes. */}
       {ribbon && <g className="parcel-illustration__ribbon">

@@ -1097,22 +1097,15 @@ struct UnwrappingParcel: View, Animatable {
                         .rotationEffect(.degrees(-27))
                         .position(x: 183, y: 234)
 
-                    flap(
-                        closed: [(245, 142), (150, 190), (110, 142), (205, 95)],
-                        opened: [(245, 142), (150, 190), (186, 231), (281, 183)],
-                        color: Color(hex: "#D1AE85"), progress: phase(0.2, 0.8)
-                    )
-                    .opacity(open)
-                    flap(
-                        closed: [(55, 142), (150, 190), (197.5, 166), (102.5, 118.5)],
-                        opened: [(55, 142), (150, 190), (121, 234), (26, 186)],
-                        color: Color(hex: "#DDBD96"), progress: phase(0.2, 0.8)
-                    )
-
-                    // Pip's face. The open front flaps hang over the left side, so it is drawn after them,
-                    // and its eyes turn into happy arcs as the box opens.
+                    // Pip's face, on the left side: its eyes turn into happy arcs as the box opens.
                     // A ribbon runs where Pip smiles: until the box opens, the eyes say it all.
                     KraftPipFace(happy: phase(0.2, 0.3), smile: ribbon ? phase(0.2, 0.3) : 1)
+
+                    // The front flaps swing up through upright and out over the face, go a little too far,
+                    // and settle just above level: the left one is a brim over the eyes.
+                    flap(PipGeometry.frontRight.points(at: PipGeometry.settle(phase(0.2, 0.8))), color: Color(hex: "#D1AE85"))
+                        .opacity(open)
+                    flap(PipGeometry.frontLeft.points(at: PipGeometry.settle(phase(0.2, 0.8))), color: Color(hex: "#DDBD96"))
 
                     // The tape tears out of sight as the flaps open.
                     polygon([(96, 122), (109, 115), (204, 163), (191, 170)])
@@ -1150,12 +1143,15 @@ struct UnwrappingParcel: View, Animatable {
     }
 
     private func flap(closed: [(Double, Double)], opened: [(Double, Double)], color: Color, progress: Double) -> some View {
-        let points = zip(closed, opened).map { from, to in
-            (from.0 + (to.0 - from.0) * progress, from.1 + (to.1 - from.1) * progress)
-        }
-        return polygon(points)
+        flap(zip(closed, opened).map { from, to in
+            CGPoint(x: from.0 + (to.0 - from.0) * progress, y: from.1 + (to.1 - from.1) * progress)
+        }, color: color)
+    }
+
+    private func flap(_ points: [CGPoint], color: Color) -> some View {
+        PipGeometry.polygon(points)
             .fill(color)
-            .overlay(polygon(points).stroke(Color(hex: "#987450").opacity(0.24), lineWidth: 0.7))
+            .overlay(PipGeometry.polygon(points).stroke(Color(hex: "#987450").opacity(0.24), lineWidth: 0.7))
     }
 
     private func polygon(_ points: [(Double, Double)]) -> Path {

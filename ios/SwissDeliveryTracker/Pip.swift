@@ -72,15 +72,47 @@ enum PipGeometry {
     struct Flap {
         let closed: [CGPoint]
         let opened: [CGPoint]
+        /// A flap that swings up through upright to open, rather than folding straight over:
+        /// how far it turns on its hinge, in degrees.
+        var swing: CGFloat? = nil
+
+        /// The flap part of the way open: 0 closed, 1 open, and a little more while it goes too far.
+        func points(at progress: CGFloat) -> [CGPoint] {
+            guard let swing else {
+                return zip(closed, opened).map { from, to in
+                    CGPoint(x: from.x + (to.x - from.x) * progress, y: from.y + (to.y - from.y) * progress)
+                }
+            }
+            // Each corner turns about its end of the hinge: at a turn of `a` it stands at cos(a) of where
+            // it lies closed, plus sin(a) of where it would stand upright.
+            let full = swing * .pi / 180
+            let turn = full * max(0, progress)
+            let hinge = [closed[0], closed[1], closed[1], closed[0]]
+            return closed.indices.map { index in
+                let from = CGPoint(x: closed[index].x - hinge[index].x, y: closed[index].y - hinge[index].y)
+                let to = CGPoint(x: opened[index].x - hinge[index].x, y: opened[index].y - hinge[index].y)
+                let upright = CGPoint(x: (to.x - cos(full) * from.x) / sin(full), y: (to.y - cos(full) * from.y) / sin(full))
+                return CGPoint(x: hinge[index].x + cos(turn) * from.x + sin(turn) * upright.x,
+                               y: hinge[index].y + cos(turn) * from.y + sin(turn) * upright.y)
+            }
+        }
     }
     static let backLeft = Flap(closed: points([(55, 142), (150, 95), (190, 143), (95, 190)]),
                                opened: points([(55, 142), (150, 95), (112, 48), (17, 95)]))
     static let backRight = Flap(closed: points([(150, 95), (245, 142), (197.5, 166), (102.5, 118.5)]),
                                 opened: points([(150, 95), (245, 142), (270, 88), (174.24, 41.32)]))
-    static let frontRight = Flap(closed: points([(245, 142), (150, 190), (110, 142), (205, 95)]),
-                                 opened: points([(245, 142), (150, 190), (186, 231), (279.89, 182.7)]))
+    // The front flaps rest just above level, clear of the sides: the left one is a brim over Pip's eyes.
+    static let frontRight = Flap(closed: points([(245, 142), (150, 190), (102.5, 166), (197.5, 118.5)]),
+                                 opened: points([(245, 142), (150, 190), (193, 189), (287.06, 141.26)]), swing: 154)
     static let frontLeft = Flap(closed: points([(55, 142), (150, 190), (197.5, 166), (102.5, 118.5)]),
-                                opened: points([(55, 142), (150, 190), (121, 234), (26.8, 185.79)]))
+                                opened: points([(55, 142), (150, 190), (107, 189), (12.94, 141.26)]), swing: 154)
+
+    /// A flap thrown open goes a little too far, then settles: its share of the turn, over the time it is given.
+    /// That time is a stretch of the box's opening, which is eased already, so the swing is spread wide over it.
+    static func settle(_ progress: CGFloat) -> CGFloat {
+        let swing = { (time: CGFloat) in 1 - exp(-5 * time) * cos(5.6 * time) }
+        return swing(min(1, max(0, progress))) / swing(1)
+    }
 
     /// The glints around an open box: where, and how wide.
     static let glints: [(center: CGPoint, size: CGFloat)] = [
@@ -117,14 +149,14 @@ enum PipGeometry {
     private static func points(_ pairs: [(Double, Double)]) -> [CGPoint] { pairs.map { CGPoint(x: $0.0, y: $0.1) } }
 
     private static let box = points([(55, 142), (150, 95), (245, 142), (245, 229), (150, 277), (55, 229)])
-    private static let openBox = points([(17, 95), (91, 45), (151, 24), (216, 46), (274, 92), (280, 183), (245, 229), (150, 277), (55, 229), (27, 186)])
+    private static let openBox = points([(17, 95), (91, 45), (151, 24), (216, 46), (274, 92), (288, 141), (245, 229), (150, 277), (55, 229), (12, 141)])
     private static let speedLines = CGRect(x: 0, y: 166, width: 44, height: 60)
 
     /// The frame's box that holds Pip: the box itself, its open flaps, or the speed lines trailing away from the dot.
     static func extents(_ mood: PipMood, side: Int) -> CGRect {
         switch mood {
         // The open flaps reach a little further than the box they are hinged on.
-        case .joy: CGRect(x: 17, y: 24, width: 263, height: 264)
+        case .joy: CGRect(x: 12, y: 24, width: 276, height: 264)
         case .eager: CGRect(x: side < 0 ? 52 : 0, y: 92 - eagerLift, width: 248, height: 196 + eagerLift)
         case .look, .wait, .worry: CGRect(x: 52, y: 92, width: 196, height: 196)
         }
@@ -216,24 +248,28 @@ struct PipPalette {
 
 /// Draws Pip in his 300 × 310 frame: scale the context to the size wanted first.
 enum PipArtwork {
-    /// The box: closed with its tape, or with all four flaps folded open. The face goes on between `box` and `lid`,
-    /// because the open front flaps hang over the left side.
+    private static func flap(_ context: GraphicsContext, _ palette: PipPalette, _ paper: PipGeometry.Flap, _ color: Color, open: Bool) {
+        let path = PipGeometry.polygon(open ? paper.opened : paper.closed)
+        context.fill(path, with: .color(color))
+        context.stroke(path, with: .color(palette.hairline.opacity(0.24)), lineWidth: 0.7)
+    }
+
+    /// The box up to its sides: closed, or with its rear flaps folded open. The face goes on next, then `frontFlaps`.
     static func box(_ context: GraphicsContext, _ palette: PipPalette, open: Bool) {
-        let flap = { (paper: PipGeometry.Flap, color: Color) in
-            let path = PipGeometry.polygon(open ? paper.opened : paper.closed)
-            context.fill(path, with: .color(color))
-            context.stroke(path, with: .color(palette.hairline.opacity(0.24)), lineWidth: 0.7)
-        }
         context.fill(PipGeometry.polygon(PipGeometry.inside), with: .color(palette.inside))
-        if open { flap(PipGeometry.backLeft, palette.backLeft) }
-        flap(PipGeometry.backRight, palette.backRight)
+        if open { flap(context, palette, PipGeometry.backLeft, palette.backLeft, open: open) }
+        flap(context, palette, PipGeometry.backRight, palette.backRight, open: open)
         context.fill(PipGeometry.polygon(PipGeometry.leftSide), with: .color(palette.left))
         context.fill(PipGeometry.polygon(PipGeometry.rightSide), with: .color(palette.right))
         context.fill(PipGeometry.polygon(PipGeometry.leftSide), with: .color(palette.highlight.opacity(0.07)))
         context.stroke(PipGeometry.hairlines, with: .color(palette.hairline.opacity(0.25)), lineWidth: 0.8)
         context.stroke(PipGeometry.edges, with: .color(palette.highlight.opacity(0.4)), lineWidth: 1)
-        if open { flap(PipGeometry.frontRight, palette.frontRight) }
-        flap(PipGeometry.frontLeft, palette.frontLeft)
+    }
+
+    /// The front flaps, over the face: closed on the lid, or open just above level, the left one a brim over the eyes.
+    static func frontFlaps(_ context: GraphicsContext, _ palette: PipPalette, open: Bool) {
+        if open { flap(context, palette, PipGeometry.frontRight, palette.frontRight, open: open) }
+        flap(context, palette, PipGeometry.frontLeft, palette.frontLeft, open: open)
     }
 
     /// The tape and its dashed seam, across a closed box.
@@ -271,6 +307,7 @@ enum PipArtwork {
         var face = body
         face.concatenate(PipGeometry.facePlane)
         inkFace(face, palette, mood: mood, side: side, below: below)
+        frontFlaps(body, palette, open: open)
         if open {
             for (index, glint) in PipGeometry.glints.enumerated() {
                 let twinkle = time.map { Self.twinkle(index, at: $0) } ?? (opacity: 1, scale: 1, degrees: 0)
@@ -290,6 +327,7 @@ enum PipArtwork {
     static func sticker(_ context: GraphicsContext) {
         box(context, .kraft, open: false)
         kraftFace(context, k: 1.3, happy: 0)
+        frontFlaps(context, .kraft, open: false)
         tape(context, .kraft)
     }
 

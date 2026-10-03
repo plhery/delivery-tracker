@@ -89,10 +89,10 @@ export function InkPip({ mood, side, below = false }: {
         <path d={PARCEL.left} style={tone('paper')} opacity=".07" />
         <path d={PARCEL.hairlines} style={line} strokeOpacity=".25" strokeWidth=".8" />
         <path d={PARCEL.edges} style={{ stroke: 'var(--pip-paper)' }} strokeWidth="1" opacity=".4" />
+        {/* The face is on the side, under the front flaps: open, the left one is a brim over his eyes. */}
+        <Face mood={mood} side={side} below={below} />
         {open && <Flap name="frontRight" open fill="front-right" />}
         <Flap name="frontLeft" open={open} fill="front-left" />
-        {/* The open front flaps hang over the left side, so the face is drawn after them. */}
-        <Face mood={mood} side={side} below={below} />
         {!open && <>
           <path d={PARCEL.tape} style={tone('tape')} />
           <path d={PARCEL.seam} style={{ stroke: 'var(--pip-seam)' }} strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" />

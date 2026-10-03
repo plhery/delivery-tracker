@@ -416,8 +416,16 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .parcel-illustration { display: block; width: 100%; overflow: visible; }
 .parcel-illustration__body { transform-origin: 150px 210px; animation: parcel-idle 5.4s ease-in-out infinite; }
 .parcel-illustration__shadow { transform-origin: 150px 286px; animation: parcel-shadow 5.4s ease-in-out infinite; }
-.parcel-illustration__flap { transform-origin: 0 0; transform: scaleY(1) skewX(0deg); transition: transform .72s var(--spring) .17s, opacity .3s .1s; }
+/* How far a flap has turned on its hinge, from 0 closed to 1 open: registered as a number, so that it can move. */
+@property --fold { syntax: "<number>"; inherits: false; initial-value: 0; }
+.parcel-illustration__flap { transform-origin: 0 0; transform: scaleY(calc(1 + (var(--fold-scale) - 1) * var(--fold))) skewX(calc(var(--fold-skew) * var(--fold))); transition: --fold .72s var(--spring) .17s, opacity .3s .1s; }
 .parcel-illustration__flap--rear { transition-duration: .62s, .3s; transition-delay: .07s, .05s; }
+/* A front flap swings up through upright, a little too far, and settles just above level. */
+.parcel-illustration__flap--swing {
+  --turn: calc(max(var(--fold), 0) * var(--fold-turn));
+  transform: matrix(1, 0, calc((cos(var(--turn)) - 1) * var(--fold-run) + sin(var(--turn)) * var(--fold-lean)), calc(cos(var(--turn)) + sin(var(--turn)) * var(--fold-rise)), 0, 0);
+  transition: --fold .95s linear(0, .207 2.5%, .412 5%, .598 7.5%, .757 10%, .884 12.5%, .979 15%, 1.084 20%, 1.108 25%, 1.09 30%, 1.057 35%, 1.027 40%, 1.006 45%, .995 50%, .992 60%, .997 70%, 1) .17s, opacity .3s .1s;
+}
 .parcel-illustration__flap--hidden { opacity: 0; }
 .parcel-illustration__tape { transform-origin: 103px 119px; transition: opacity .22s .05s, transform .4s var(--ease-out); }
 .parcel-illustration__delivery-card { opacity: 0; transform: translateY(22px) rotate(-11deg); transform-origin: 151px 174px; transition: transform .86s var(--spring) .25s, opacity .25s .23s; }
@@ -454,7 +462,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .arrival--opening .arrival__tilt, .arrival--sign-in .arrival__tilt { transform: none; transition: transform .35s var(--ease-out); }
 .arrival--opening .arrival__ground, .arrival--sign-in .arrival__ground { animation: none; opacity: .06; scale: .87; transition: opacity .7s, scale .7s; }
 .arrival--opening .parcel-illustration__shadow, .arrival--sign-in .parcel-illustration__shadow { animation: none; }
-.arrival--opening .parcel-illustration__flap, .arrival--sign-in .parcel-illustration__flap { transform: scaleY(var(--fold-scale)) skewX(var(--fold-skew)); opacity: 1; }
+.arrival--opening .parcel-illustration__flap, .arrival--sign-in .parcel-illustration__flap { --fold: 1; opacity: 1; }
 .arrival--opening .parcel-illustration__tape, .arrival--sign-in .parcel-illustration__tape { opacity: 0; transform: translate(-6px, -19px) rotate(-8deg); }
 .arrival--opening .parcel-illustration__delivery-card, .arrival--sign-in .parcel-illustration__delivery-card { opacity: 1; transform: translateY(-69px) rotate(-5deg); }
 .arrival--opening .parcel-illustration__check, .arrival--sign-in .parcel-illustration__check { stroke-dashoffset: 0; }

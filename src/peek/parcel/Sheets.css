@@ -54,7 +54,7 @@
 /* He keeps still beside the switches: only his eyes blink. */
 .peeks-preview__pip .parcel-illustration__shadow, .peeks-preview__pip .parcel-illustration__body { animation: none; }
 .peeks-preview__pip .parcel-illustration__shadow { opacity: 0; }
-.peeks-preview__pip--open .parcel-illustration__flap { transform: scaleY(var(--fold-scale)) skewX(var(--fold-skew)); opacity: 1; }
+.peeks-preview__pip--open .parcel-illustration__flap { --fold: 1; opacity: 1; }
 .peeks-preview__pip--open .parcel-illustration__tape, .peeks-preview__pip--open .parcel-illustration__ribbon { opacity: 0; }
 .peeks-preview__pip--open .parcel-illustration__delivery-card { opacity: 1; transform: translateY(-69px) rotate(-5deg); }
 .peeks-preview__pip--open .parcel-illustration__check { stroke-dashoffset: 0; }

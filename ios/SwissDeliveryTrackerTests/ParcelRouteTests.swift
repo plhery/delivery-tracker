@@ -312,6 +312,31 @@ final class ParcelRouteTests: XCTestCase {
         XCTAssertEqual(PipArtwork.motion(.eager, at: 0).b, PipArtwork.motion(.eager, at: 1.1).b, accuracy: 0.001)
     }
 
+    func testOpenFrontFlapsSwingThroughUprightAndRestAboveTheEyes() {
+        for flap in [PipGeometry.frontLeft, PipGeometry.frontRight] {
+            XCTAssertEqual(flap.points(at: 0), flap.closed)
+            for (point, rest) in zip(flap.points(at: 1), flap.opened) {
+                XCTAssertEqual(point.x, rest.x, accuracy: 0.001)
+                XCTAssertEqual(point.y, rest.y, accuracy: 0.001)
+            }
+            // A quarter turn stands the flap upright on the front corner, about as tall as it is deep.
+            let upright = flap.points(at: 90 / 154)[2]
+            XCTAssertEqual(upright.x, 150, accuracy: 1.5)
+            XCTAssertEqual(upright.y, 190 - 52, accuracy: 1.5)
+        }
+        // The rear flaps still fold straight over.
+        XCTAssertEqual(PipGeometry.backLeft.points(at: 0.5)[2], CGPoint(x: 151, y: 95.5))
+        // The left flap is a brim: the happy eyes of the kraft parcel and of the ink Pip stay clear of it.
+        for top in [CGPoint(x: 32.5, y: 33.5), CGPoint(x: 63.5, y: 33.5), CGPoint(x: 26.25, y: 29.25), CGPoint(x: 69.75, y: 29.25)] {
+            XCTAssertGreaterThan(PipGeometry.distance(from: top.applying(PipGeometry.facePlane), to: PipGeometry.frontLeft.opened), 6)
+        }
+        // Thrown open, a flap goes a little too far before it settles.
+        XCTAssertEqual(PipGeometry.settle(0), 0)
+        XCTAssertEqual(PipGeometry.settle(1), 1)
+        XCTAssertGreaterThan(PipGeometry.settle(0.43), 1.05)
+        XCTAssertEqual(PipGeometry.settle(0.9), 1, accuracy: 0.01)
+    }
+
     func testPipBlinksAtTheEndOfEachPeriodAndIsLeftAloneBetween() {
         let period = PipBlink.period
         for time in [0, 1, 0.93 * period, period, period + 2] {

@@ -31,13 +31,13 @@ export const PIP_SPOT_BELOW: readonly [number, number] = [0, 1.08];
 type Extents = { left: number; top: number; right: number; bottom: number };
 type Outline = readonly (readonly [number, number])[];
 const BOX: Outline = [[55, 142], [150, 95], [245, 142], [245, 229], [150, 277], [55, 229]];
-const OPEN_BOX: Outline = [[17, 95], [91, 45], [151, 24], [216, 46], [274, 92], [280, 183], [245, 229], [150, 277], [55, 229], [27, 186]];
+const OPEN_BOX: Outline = [[17, 95], [91, 45], [151, 24], [216, 46], [274, 92], [288, 141], [245, 229], [150, 277], [55, 229], [12, 141]];
 const SPEED_LINES: Extents = { left: 0, top: 166, right: 44, bottom: 226 };
 
 /** The frame's box that holds Pip: the box itself, its open flaps, or the speed lines trailing away from the dot. */
 export function pipExtents(mood: PipMood, side: PipSide): Extents {
   // The open flaps reach a little further than the box they are hinged on.
-  if (mood === 'joy') return { left: 17, top: 24, right: 280, bottom: 288 };
+  if (mood === 'joy') return { left: 12, top: 24, right: 288, bottom: 288 };
   if (mood === 'eager') return { left: side < 0 ? 52 : 0, top: 92 - EAGER_LIFT, right: side < 0 ? PIP_FRAME.width : 248, bottom: 288 };
   return { left: 52, top: 92, right: 248, bottom: 288 };
 }

@@ -76,7 +76,7 @@
 :root .invitation-parcel-card > span { flex: 1; min-width: 0; color: var(--tone); font-size: 11px; }:root .invitation-parcel-card strong { display: block; font-size: 16px; margin-top: 2px; overflow-wrap: anywhere; }
 :root .invitation-parcel { width: 158px; height: 150px; padding: 0; flex-shrink: 0; background: transparent; border-radius: 12px; }:root .invitation-parcel > span { display: block; width: 158px; margin-top: -7px; }:root .invitation-parcel svg { width: 100%; height: auto; stroke: none; }
 :root .invitation-parcel .parcel-illustration__body, :root .invitation-parcel .parcel-illustration__shadow { animation: none; }
-:root .invitation-parcel.opening .parcel-illustration__flap { transform: scaleY(var(--fold-scale)) skewX(var(--fold-skew)); opacity: 1; }
+:root .invitation-parcel.opening .parcel-illustration__flap { --fold: 1; opacity: 1; }
 :root .invitation-parcel.opening .parcel-illustration__tape { opacity: 0; transform: translate(-11px,-27px) rotate(-14deg); }
 :root .invitation-parcel.opening .parcel-illustration__delivery-card { opacity: 1; transform: translateY(-74px) rotate(-4deg); }
 :root .invitation-parcel.opening .parcel-illustration__eye { opacity: 0; }:root .invitation-parcel.opening .parcel-illustration__happy-eye { opacity: 1; }
