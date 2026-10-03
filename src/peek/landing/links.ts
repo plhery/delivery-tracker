@@ -1,8 +1,7 @@
 import type { MouseEvent } from 'react';
 import { DEMO_PATH } from '../../lib/experience';
 
-/** Where the code lives. */
-export const SOURCE_URL = 'https://github.com/plhery/delivery-tracker';
+export { SOURCE_URL } from '../../lib/source';
 
 /** Who makes Peek, on X. */
 export const AUTHOR_URL = 'https://x.com/plhery';
