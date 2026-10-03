@@ -51,6 +51,9 @@ are virtual names, never real URLs.
 - **Friends**: profile save, invitation create/revoke/accept/share, remove, disable.
 - **Settings**: language, appearance, notifications, widgets, Live Activities, export,
   account deletion, app opens.
+- **Delivery email**: switched on or off in Settings, the one-time offer accepted or
+  declined, the example opened, and the email's opt-out page used. That page counts
+  nothing until its button is pressed.
 
 API actions report one final `outcome`: `success`, `error`, or `accepted` for a queued
 (HTTP 202) request. `accepted` means the work was queued, not that carriers answered.
@@ -59,8 +62,9 @@ Demo actions never count as account API successes.
 
 ## Privacy
 
-Never sent: emails, account or parcel ids, parcel link ids or owner keys, labels and names,
-gift notes, push addresses, tracking numbers, postcodes, invitation codes, errors, search
+Never sent: emails, account or parcel ids, parcel link ids or owner keys, the token of an
+email's opt-out link, labels and names, gift notes, push addresses, tracking numbers,
+postcodes, invitation codes, errors, search
 terms, query strings or referrers. A parcel page is the `parcel-link` screen, whatever its address; the sample parcel's is in `demo` mode. Umami still
 sees the IP, user agent, basic device data and language.
 

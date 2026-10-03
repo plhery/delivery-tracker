@@ -1,0 +1,8 @@
+/* The page a delivery email's opt-out link opens: the lockup, one question and one button. */
+.email-off .auth-card { display: grid; justify-items: center; width: 100%; }
+.email-off .auth-card__eyebrow { margin: 0 0 28px; }
+.email-off .auth-card h1 { margin-bottom: 16px; line-height: 1.15; overflow-wrap: anywhere; }
+.email-off .sheet__error { margin-bottom: 16px; }
+.email-off .button { min-width: min(100%, 220px); }
+.email-off .button[aria-disabled=true] { opacity: .48; cursor: default; }
+.email-off__open { display: inline-flex; align-items: center; min-height: 44px; margin-top: 8px; color: var(--ink-soft); font-size: 13px; }
