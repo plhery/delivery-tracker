@@ -987,12 +987,14 @@
   "email.delivered.cardAlt": "Trasa Twojej przesyłki na mapie.",
   "email.delivered.button": "Zobacz jej trasę",
   "email.delivered.footer": "Dostajesz ten e-mail, bo opcja „{{setting}}” jest włączona. {{off}} albo tylko dla tej przesyłki w {{alerts}}.",
-  "email.delivered.footerOff": "Wyłącz ją jednym kliknięciem",
+  "email.delivered.footerOff": "Wyłącz ją tutaj",
   "email.delivered.footerAlerts": "jej powiadomieniach",
   "email.delivered.textJourney": "Zobacz jej trasę: {{url}}",
   "email.delivered.textOff": "Wyłącz te e-maile: {{url}}",
   "landing.more.email.title": "E-mail po dostarczeniu",
   "landing.more.email.body": "Jeden krótki e-mail na przesyłkę, na adres, którym się logujesz. Tylko jeśli go włączysz.",
   "alerts.email.title": "E-mail po dostarczeniu",
-  "alerts.email.body": "Zaloguj się, a Peek napisze na adres, którym się logujesz."
+  "alerts.email.body": "Zaloguj się, a Peek napisze na adres, którym się logujesz.",
+  "email.off.askTitle": "Wyłączyć e-maile o dostarczeniu?",
+  "email.off.askBody": "Peek przestanie pisać, gdy przesyłka zostanie dostarczona. Powiadomienia zostają bez zmian."
 }

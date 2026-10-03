@@ -987,12 +987,14 @@
   "email.delivered.cardAlt": "Your parcel’s journey on a map.",
   "email.delivered.button": "See its journey",
   "email.delivered.footer": "You get this because “{{setting}}” is on. {{off}}, or for this parcel only in {{alerts}}.",
-  "email.delivered.footerOff": "Turn it off in one click",
+  "email.delivered.footerOff": "Turn it off here",
   "email.delivered.footerAlerts": "its alerts",
   "email.delivered.textJourney": "See its journey: {{url}}",
   "email.delivered.textOff": "Turn these emails off: {{url}}",
   "landing.more.email.title": "An email when it’s delivered",
   "landing.more.email.body": "One short email per parcel, to the address you sign in with. Only if you turn it on.",
   "alerts.email.title": "An email when it’s delivered",
-  "alerts.email.body": "Sign in, and Peek writes to the address you sign in with."
+  "alerts.email.body": "Sign in, and Peek writes to the address you sign in with.",
+  "email.off.askTitle": "Turn off delivery emails?",
+  "email.off.askBody": "Peek will stop emailing you when a parcel is delivered. Your notifications stay as they are."
 }

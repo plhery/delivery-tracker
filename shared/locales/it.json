@@ -987,12 +987,14 @@
   "email.delivered.cardAlt": "Il viaggio del tuo pacco su una mappa.",
   "email.delivered.button": "Vedi il suo viaggio",
   "email.delivered.footer": "Ricevi questa e-mail perché «{{setting}}» è attivo. {{off}}, oppure solo per questo pacco nei {{alerts}}.",
-  "email.delivered.footerOff": "Disattivala con un clic",
+  "email.delivered.footerOff": "Disattivala qui",
   "email.delivered.footerAlerts": "suoi avvisi",
   "email.delivered.textJourney": "Vedi il suo viaggio: {{url}}",
   "email.delivered.textOff": "Disattiva queste e-mail: {{url}}",
   "landing.more.email.title": "Un’e-mail alla consegna",
   "landing.more.email.body": "Una breve e-mail per pacco, all’indirizzo con cui accedi. Solo se la attivi.",
   "alerts.email.title": "Un’e-mail alla consegna",
-  "alerts.email.body": "Accedi e Peek scrive all’indirizzo con cui accedi."
+  "alerts.email.body": "Accedi e Peek scrive all’indirizzo con cui accedi.",
+  "email.off.askTitle": "Disattivare le e-mail di consegna?",
+  "email.off.askBody": "Peek non ti scriverà più quando un pacco viene consegnato. Le notifiche non cambiano."
 }

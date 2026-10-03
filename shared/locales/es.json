@@ -987,12 +987,14 @@
   "email.delivered.cardAlt": "El trayecto de tu paquete en un mapa.",
   "email.delivered.button": "Ver su trayecto",
   "email.delivered.footer": "Recibes este correo porque «{{setting}}» está activado. {{off}}, o solo para este paquete en {{alerts}}.",
-  "email.delivered.footerOff": "Desactívalo con un clic",
+  "email.delivered.footerOff": "Desactívalo aquí",
   "email.delivered.footerAlerts": "sus avisos",
   "email.delivered.textJourney": "Ver su trayecto: {{url}}",
   "email.delivered.textOff": "Desactivar estos correos: {{url}}",
   "landing.more.email.title": "Un correo al entregarse",
   "landing.more.email.body": "Un correo breve por paquete, a la dirección con la que inicias sesión. Solo si lo activas.",
   "alerts.email.title": "Un correo al entregarse",
-  "alerts.email.body": "Inicia sesión y Peek escribe a la dirección con la que inicias sesión."
+  "alerts.email.body": "Inicia sesión y Peek escribe a la dirección con la que inicias sesión.",
+  "email.off.askTitle": "¿Desactivar los correos de entrega?",
+  "email.off.askBody": "Peek dejará de escribirte cuando se entregue un paquete. Tus notificaciones no cambian."
 }

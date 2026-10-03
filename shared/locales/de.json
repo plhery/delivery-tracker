@@ -987,12 +987,14 @@
   "email.delivered.cardAlt": "Die Reise deines Pakets auf einer Karte.",
   "email.delivered.button": "Reise ansehen",
   "email.delivered.footer": "Du bekommst diese E-Mail, weil „{{setting}}“ eingeschaltet ist. {{off}}, oder nur für dieses Paket in {{alerts}}.",
-  "email.delivered.footerOff": "Mit einem Klick ausschalten",
+  "email.delivered.footerOff": "Hier ausschalten",
   "email.delivered.footerAlerts": "seinen Meldungen",
   "email.delivered.textJourney": "Reise ansehen: {{url}}",
   "email.delivered.textOff": "Diese E-Mails ausschalten: {{url}}",
   "landing.more.email.title": "Eine E-Mail bei Zustellung",
   "landing.more.email.body": "Eine kurze E-Mail pro Paket, an die Adresse, mit der du dich anmeldest. Nur, wenn du sie einschaltest.",
   "alerts.email.title": "Eine E-Mail bei Zustellung",
-  "alerts.email.body": "Melde dich an, und Peek schreibt an die Adresse, mit der du dich anmeldest."
+  "alerts.email.body": "Melde dich an, und Peek schreibt an die Adresse, mit der du dich anmeldest.",
+  "email.off.askTitle": "Zustell-E-Mails ausschalten?",
+  "email.off.askBody": "Peek schreibt dir dann nicht mehr, wenn ein Paket zugestellt wird. Deine Benachrichtigungen bleiben, wie sie sind."
 }

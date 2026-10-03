@@ -987,12 +987,14 @@
   "email.delivered.cardAlt": "O percurso do teu envio num mapa.",
   "email.delivered.button": "Ver o percurso",
   "email.delivered.footer": "Recebes este e-mail porque «{{setting}}» está ativado. {{off}}, ou só para este envio nos {{alerts}}.",
-  "email.delivered.footerOff": "Desativa-o com um clique",
+  "email.delivered.footerOff": "Desativa-o aqui",
   "email.delivered.footerAlerts": "seus alertas",
   "email.delivered.textJourney": "Ver o percurso: {{url}}",
   "email.delivered.textOff": "Desativar estes e-mails: {{url}}",
   "landing.more.email.title": "Um e-mail na entrega",
   "landing.more.email.body": "Um e-mail curto por envio, para o endereço com que inicias sessão. Só se o ativares.",
   "alerts.email.title": "Um e-mail na entrega",
-  "alerts.email.body": "Inicia sessão e o Peek escreve para o endereço com que inicias sessão."
+  "alerts.email.body": "Inicia sessão e o Peek escreve para o endereço com que inicias sessão.",
+  "email.off.askTitle": "Desativar os e-mails de entrega?",
+  "email.off.askBody": "O Peek deixa de te escrever quando um envio for entregue. As tuas notificações não mudam."
 }

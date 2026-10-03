@@ -987,12 +987,14 @@
   "email.delivered.cardAlt": "Le trajet de ton colis sur une carte.",
   "email.delivered.button": "Voir son trajet",
   "email.delivered.footer": "Tu reçois cet e-mail parce que « {{setting}} » est activé. {{off}}, ou seulement pour ce colis dans {{alerts}}.",
-  "email.delivered.footerOff": "Désactive-le en un clic",
+  "email.delivered.footerOff": "Désactive-le ici",
   "email.delivered.footerAlerts": "ses alertes",
   "email.delivered.textJourney": "Voir son trajet : {{url}}",
   "email.delivered.textOff": "Désactiver ces e-mails : {{url}}",
   "landing.more.email.title": "Un e-mail à la livraison",
   "landing.more.email.body": "Un court e-mail par colis, à l’adresse avec laquelle tu te connectes. Seulement si tu l’actives.",
   "alerts.email.title": "Un e-mail à la livraison",
-  "alerts.email.body": "Connecte-toi, et Peek écrit à l’adresse avec laquelle tu te connectes."
+  "alerts.email.body": "Connecte-toi, et Peek écrit à l’adresse avec laquelle tu te connectes.",
+  "email.off.askTitle": "Désactiver les e-mails de livraison ?",
+  "email.off.askBody": "Peek ne t’écrira plus quand un colis est livré. Tes notifications ne changent pas."
 }
