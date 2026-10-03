@@ -53,7 +53,12 @@ export function noticeBlocks(markdown) {
   return blocks;
 }
 
-/** The page the apps open: the notice inside the site's own frame. */
+/**
+ * The page the apps open: the notice inside the site's own frame. Cloudflare swaps an
+ * address in a page for a script that writes it back, which the site's content policy
+ * refuses, so a reader would see no address. The `email_off` comments tell it to leave
+ * the notice as written.
+ */
 export function privacyPage(markdown, appearanceScript) {
   const indented = noticeBlocks(markdown).map((block) => block.split('\n').map((line) => `      ${line}`).join('\n'));
   return `<!doctype html>
@@ -73,7 +78,9 @@ export function privacyPage(markdown, appearanceScript) {
       <a class="back" href="/">← Back to Peek</a>
       <p class="eyebrow">Peek · Universal Parcel Tracker</p>
       <h1>Privacy notice</h1>
+      <!--email_off-->
 ${indented.join('\n')}
+      <!--/email_off-->
     </main>
   </body>
 </html>

@@ -35,7 +35,8 @@ test('the page frames the notice and carries the appearance script as given', ()
   const page = privacyPage('# Title\n\nOne paragraph.', 'appearance()');
   assert.match(page, /^<!doctype html>\n<!-- Generated from PRIVACY\.md/);
   assert.match(page, /<script>appearance\(\)<\/script>/);
-  assert.match(page, /<h1>Privacy notice<\/h1>\n {6}<p>One paragraph\.<\/p>\n {4}<\/main>/);
+  // Cloudflare leaves an address alone between these comments.
+  assert.match(page, /<h1>Privacy notice<\/h1>\n {6}<!--email_off-->\n {6}<p>One paragraph\.<\/p>\n {6}<!--\/email_off-->\n {4}<\/main>/);
 });
 
 test('Markdown the page cannot show is refused', () => {

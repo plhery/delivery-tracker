@@ -273,7 +273,7 @@ internet service can promise absolute security.
 Peek is a personal, non-commercial project run by Paul-Louis Hery, in
 Switzerland ([plhery](https://github.com/plhery) on GitHub). To get a copy of
 your data, have it corrected or deleted, or object to how it is used, write to
-[hello@peektracker.com](mailto:hello@peektracker.com). You can also complain to
+[privacy@peektracker.com](mailto:privacy@peektracker.com). You can also complain to
 your data protection authority.
 
 For a security concern, use GitHub's
