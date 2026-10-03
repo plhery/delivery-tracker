@@ -50,6 +50,10 @@ import { useRefreshAnimation } from '../lib/useRefreshAnimation';
 import type { ApiAuth } from '../lib/apiClient';
 import { createAccountShare, demoAccountShare } from '../peek/links';
 import { AccountShareSheet } from '../peek/parcel/ShareSheet';
+import { useDeliveryEmail, useNotificationPreferences } from '../store/notificationPreferences';
+import { EmailOffer } from './EmailOffer';
+import { presetTitleKey } from './NotificationControl';
+import { ParcelAlertsSheet } from './ParcelAlertsSheet';
 import './Refresh.css';
 
 export function ParcelDetail({
@@ -58,6 +62,7 @@ export function ParcelDetail({
   onRename,
   onChangeCarrier,
   onSetNotificationsMuted,
+  onSetEmailMuted,
   onRefresh,
   onRestore,
   onArchive,
@@ -66,10 +71,13 @@ export function ParcelDetail({
   openingOrigin,
   usedCarriers,
   apiAuth,
+  accountEmail,
 }: {
   parcel: ParcelWithEvents;
   /** The signed-in account, which can share the parcel through a link. Without one, only a build without an API can: its links stay in the browser. */
   apiAuth?: ApiAuth;
+  /** The address the account signs in with, where its delivery email goes. */
+  accountEmail?: string;
   /** The carriers of the latest parcels, offered first when changing the carrier. */
   usedCarriers?: readonly CarrierId[];
   openingOrigin?: CardOrigin | null;
@@ -81,6 +89,11 @@ export function ParcelDetail({
     input: ParcelCarrierInput,
   ) => Promise<unknown>;
   onSetNotificationsMuted: (
+    parcel: ParcelWithEvents,
+    muted: boolean,
+  ) => Promise<unknown>;
+  /** Turns the delivery email off or back on for this parcel; only an account has it. */
+  onSetEmailMuted?: (
     parcel: ParcelWithEvents,
     muted: boolean,
   ) => Promise<unknown>;
@@ -138,6 +151,12 @@ export function ParcelDetail({
   const [savingNotifications, setSavingNotifications] = useState(false);
   const [notificationsAnimated, setNotificationsAnimated] = useState(false);
   const [notificationError, setNotificationError] = useState<string | null>(null);
+  const delivered = current?.stage === 'delivered';
+  // While the account's delivery email is on, a parcel still on its way has two alerts: the bell opens them.
+  const preferences = useNotificationPreferences(apiAuth);
+  const deliveryEmail = useDeliveryEmail(apiAuth, accountEmail);
+  const twoAlerts = deliveryEmail?.choice === true && !!onSetEmailMuted && !delivered && current?.stage !== 'returned';
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const shareClient = useMemo(() => apiAuth ? createAccountShare(apiAuth) : demoAccountShare, [apiAuth]);
   const canShare = !!shareClient && !parcel.archivedAt;
   const [sharing, setSharing] = useState(false);
@@ -417,8 +436,15 @@ export function ParcelDetail({
           </button>}
           <button type="button" className="detail__notification" disabled={savingNotifications}
             data-animated={notificationsAnimated || undefined}
-            aria-label={parcel.notificationsMuted ? t('detail.unmute') : t('detail.mute')}
-            aria-pressed={!!parcel.notificationsMuted} onClick={() => void toggleNotifications()}>
+            {...(twoAlerts ? {
+              // The bell reads as off only when both alerts are off for this parcel.
+              'aria-label': t('email.parcel.open'), 'aria-haspopup': 'dialog',
+              'data-muted': (parcel.notificationsMuted && parcel.emailMuted) || undefined,
+              onClick: () => setAlertsOpen(true),
+            } : {
+              'aria-label': parcel.notificationsMuted ? t('detail.unmute') : t('detail.mute'),
+              'aria-pressed': !!parcel.notificationsMuted, onClick: () => void toggleNotifications(),
+            })}>
             <svg aria-hidden="true" viewBox="0 0 24 24">
               <g className="parcel-bell__body">
                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
@@ -502,6 +528,7 @@ export function ParcelDetail({
         <div className="detail__progress"><ProgressTrack stage={current?.stage ?? null} /></div>
       </section>
       {waitingAt && <PickupPointCard point={waitingAt} />}
+      {delivered && apiAuth && accountEmail && <EmailOffer apiAuth={apiAuth} email={accountEmail} />}
       <section className="detail__information">
         {(pickupFact || parcel.receiverName || parcel.dimensionsText || (Number.isFinite(parcel.weightKg) && parcel.weightKg! > 0)) && (
           <dl className="detail__shipment-facts">
@@ -642,6 +669,15 @@ export function ParcelDetail({
       )}
 
       {sharing && shareClient && <AccountShareSheet parcel={parcel} client={shareClient} onClose={() => setSharing(false)} />}
+
+      {alertsOpen && deliveryEmail && preferences && onSetEmailMuted && <ParcelAlertsSheet
+        parcel={parcel}
+        email={deliveryEmail.address}
+        preset={t(presetTitleKey(preferences.enabledStages))}
+        onSetNotificationsMuted={(muted) => onSetNotificationsMuted(parcel, muted)}
+        onSetEmailMuted={(muted) => onSetEmailMuted(parcel, muted)}
+        onClose={() => setAlertsOpen(false)}
+      />}
     </div>
     </div>,
     document.body,

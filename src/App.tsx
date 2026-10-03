@@ -48,6 +48,7 @@ import {
   type SharedParcelInput,
 } from './lib/shareTarget';
 import { currentStage, isDelivered } from './lib/stages';
+import { loadNotificationPreferences } from './store/notificationPreferences';
 import { useParcels } from './store/ParcelsContext';
 import { onKeepOutcome, type KeepOutcome } from './peek/pending';
 import type { CarrierId, ParcelWithEvents } from './types';
@@ -102,6 +103,7 @@ export default function App({
     renameParcel,
     changeParcelCarrier,
     setParcelNotificationsMuted,
+    setParcelEmailMuted,
     removeParcel,
     restoreParcel,
     deleteParcel,
@@ -144,6 +146,12 @@ export default function App({
   }, [query]);
 
   const friendsClient = useMemo(() => createFriendsClient(mode === 'demo', apiAuth), [mode, apiAuth]);
+
+  // An account's notification preferences are read once per sign-in: a parcel's alerts
+  // and the email offer show them without asking again. Settings reads them when it opens.
+  useEffect(() => {
+    if (mode === 'api' && apiAuth) void loadNotificationPreferences(apiAuth, { once: true }).catch(() => undefined);
+  }, [mode, apiAuth]);
 
   useEffect(() => {
     let active = true;
@@ -692,8 +700,10 @@ export default function App({
           onChangeCarrier={(p, input) => changeParcelCarrier(p.id, input)}
           usedCarriers={usedCarriers}
           apiAuth={apiAuth}
+          accountEmail={mode === 'api' ? accountEmail : undefined}
           onSetNotificationsMuted={(p, muted) =>
             setParcelNotificationsMuted(p.id, muted)}
+          onSetEmailMuted={mode === 'api' ? (p, muted) => setParcelEmailMuted(p.id, muted) : undefined}
           onRefresh={(p) => refreshParcel(p.id)}
           onRestore={(p) => handleRestore(p)}
           onArchive={(p) => handleArchive(p)}
