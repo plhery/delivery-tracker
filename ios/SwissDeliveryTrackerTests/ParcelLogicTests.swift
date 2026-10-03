@@ -1406,10 +1406,10 @@ final class SessionIsolationTests: XCTestCase {
     private func offline() {
         SessionTestURLProtocol.handler = { _, complete in complete(.failure(URLError(.notConnectedToInternet))) }
     }
-    @MainActor private func authorize(_ session: SessionStore, id: UUID = UUID(), expired: Bool = false) async throws {
-        let value = AuthSession(accessToken: "token-" + id.uuidString, tokenType: "bearer", expiresIn: 3600, expiresAt: Int(Date().timeIntervalSince1970) + (expired ? -120 : 3600), refreshToken: "refresh", user: AuthUser(id: id, email: "test@example.com", isAnonymous: false))
+    @MainActor private func authorize(_ session: SessionStore, id: UUID = UUID(), expired: Bool = false, email: String = "test@example.com") async throws {
+        let value = AuthSession(accessToken: "token-" + id.uuidString, tokenType: "bearer", expiresIn: 3600, expiresAt: Int(Date().timeIntervalSince1970) + (expired ? -120 : 3600), refreshToken: "refresh", user: AuthUser(id: id, email: email, isAnonymous: false))
         respond(try JSONEncoder.deliveryTracker.encode(value))
-        try await session.verifyCode(email: "test@example.com", code: "123456")
+        try await session.verifyCode(email: email, code: "123456")
     }
     @MainActor private func store(_ session: SessionStore, _ transport: URLSession) -> ParcelStore {
         let store = ParcelStore(configuration: configuration, session: session, localizer: Localizer(), transport: transport)
@@ -1868,6 +1868,240 @@ extension SessionIsolationTests {
         handoff.id = UUID()
         handoff.carrierData = CarrierData(originalPackageID: checked.id)
         XCTAssertFalse(Parcel.trackingChanged(from: [checked], to: [handoff]))
+    }
+}
+
+/// What the requests of a test carried, in the order they were made.
+private final class RequestLog: @unchecked Sendable {
+    var requests: [(method: String, path: String, body: [String: Any])] = []
+
+    func record(_ request: URLRequest) {
+        var data = request.httpBody ?? Data()
+        if let stream = request.httpBodyStream {
+            stream.open()
+            defer { stream.close() }
+            var bytes = [UInt8](repeating: 0, count: 1024)
+            while stream.hasBytesAvailable {
+                let count = stream.read(&bytes, maxLength: bytes.count)
+                if count <= 0 { break }
+                data.append(contentsOf: bytes.prefix(count))
+            }
+        }
+        let body = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+        requests.append((request.httpMethod ?? "", request.url?.path ?? "", body))
+    }
+}
+
+extension SessionIsolationTests {
+    private func respond(_ data: Data, status: Int = 200, recording log: RequestLog) {
+        SessionTestURLProtocol.handler = { request, complete in
+            log.record(request)
+            complete(.success((status, data)))
+        }
+    }
+
+    /// An account the server can email, which has never chosen.
+    private var emailPreferences: NotificationPreferences {
+        NotificationPreferences(
+            enabledStages: NotificationPreset.important.stages, quietHoursStart: "22:00", quietHoursEnd: "07:00",
+            timezone: "Pacific/Auckland", emailOnDelivery: nil, emailAvailable: true
+        )
+    }
+
+    /// A parcel as the server answers it, with its two mutes.
+    private func row(_ parcel: Parcel, muted: Bool, emailMuted: Bool) -> Data {
+        Data("""
+        {"id":"\(parcel.id.uuidString)","tracking_number":"\(parcel.trackingNumber)","label":"\(parcel.label)",
+         "carrier":"\(parcel.carrier.rawValue)","created_at":"\(parcel.createdAt)","sync_status":"ok",
+         "notifications_muted":\(muted),"email_muted":\(emailMuted),"tracking_events":[]}
+        """.utf8)
+    }
+
+    @MainActor func testEmailSwitchSendsTheSavedPreferencesAndShowsTheServersAnswer() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session, email: "alex@example.com")
+        let store = store(session, transport)
+        XCTAssertNil(store.deliveryEmail)
+        let saved = emailPreferences
+        respond(try JSONEncoder.deliveryTracker.encode(saved))
+        await store.loadNotificationPreferences()
+        let offered = try XCTUnwrap(store.deliveryEmail)
+        XCTAssertEqual(offered.address, "alex@example.com")
+        XCTAssertNil(offered.choice)
+
+        var answer = saved
+        answer.emailOnDelivery = true
+        let log = RequestLog()
+        respond(try JSONEncoder.deliveryTracker.encode(answer), recording: log)
+        try await store.setEmailOnDelivery(true)
+        XCTAssertEqual(log.requests.map(\.method), ["PATCH"])
+        XCTAssertEqual(log.requests.first?.path, "/api/push/preferences")
+        let sent = try XCTUnwrap(log.requests.first?.body)
+        // What was last saved goes back with the choice; what only the server knows stays out.
+        XCTAssertEqual(Set(sent.keys), ["enabledStages", "quietHoursStart", "quietHoursEnd", "timezone", "emailOnDelivery"])
+        XCTAssertEqual(sent["emailOnDelivery"] as? Bool, true)
+        XCTAssertEqual(sent["enabledStages"] as? [String], saved.enabledStages.map(\.rawValue))
+        XCTAssertEqual(sent["quietHoursStart"] as? String, "22:00")
+        XCTAssertEqual(sent["timezone"] as? String, TimeZone.current.identifier)
+        XCTAssertEqual(store.deliveryEmail?.isOn, true)
+
+        // Saving a preset afterwards carries the choice along unchanged.
+        var draft = NotificationPreferencesDraft(preferences: store.notificationPreferences)
+        draft.preset = .deliveryDay
+        var presetAnswer = draft.preferences(timezone: "Europe/Zurich")
+        presetAnswer.emailAvailable = true
+        respond(try JSONEncoder.deliveryTracker.encode(presetAnswer), recording: log)
+        try await store.saveNotificationPreferences(draft.preferences(timezone: "Europe/Zurich"))
+        let preset = try XCTUnwrap(log.requests.last?.body)
+        XCTAssertEqual(Set(preset.keys), ["enabledStages", "timezone", "emailOnDelivery"])
+        XCTAssertEqual(preset["emailOnDelivery"] as? Bool, true)
+        XCTAssertEqual(store.notificationPreferences?.enabledStages, NotificationPreset.deliveryDay.stages)
+        XCTAssertEqual(store.deliveryEmail?.isOn, true)
+
+        // A refusal leaves what was saved.
+        respond(Data("{\"error\":\"This account cannot be emailed\"}".utf8), status: 409)
+        do { try await store.setEmailOnDelivery(false); XCTFail("Expected the refusal") } catch {}
+        XCTAssertEqual(store.deliveryEmail?.isOn, true)
+
+        // The state is the server's answer, whatever was asked.
+        presetAnswer.emailOnDelivery = false
+        respond(try JSONEncoder.deliveryTracker.encode(presetAnswer))
+        try await store.setEmailOnDelivery(true)
+        XCTAssertEqual(try XCTUnwrap(store.deliveryEmail).choice, false)
+
+        // Once the server cannot email the account, there is nothing to switch.
+        presetAnswer.emailAvailable = false
+        respond(try JSONEncoder.deliveryTracker.encode(presetAnswer))
+        await store.loadNotificationPreferences()
+        XCTAssertNil(store.deliveryEmail)
+        let silent = RequestLog()
+        respond(Data("{}".utf8), recording: silent)
+        try await store.setEmailOnDelivery(true)
+        XCTAssertTrue(silent.requests.isEmpty)
+    }
+
+    @MainActor func testAReadThatBeganBeforeTheEmailWasSwitchedCannotUndoIt() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session, email: "alex@example.com")
+        let store = store(session, transport)
+        let saved = emailPreferences
+        let stale = try JSONEncoder.deliveryTracker.encode(saved)
+        respond(stale)
+        await store.loadNotificationPreferences()
+        var answer = saved
+        answer.emailOnDelivery = true
+        let answered = try JSONEncoder.deliveryTracker.encode(answer)
+        let started = expectation(description: "Read started")
+        nonisolated(unsafe) var completeRead: ((Result<(Int, Data), Error>) -> Void)?
+        SessionTestURLProtocol.handler = { request, callback in
+            if request.httpMethod == "GET" {
+                completeRead = callback
+                started.fulfill()
+            } else { callback(.success((200, answered))) }
+        }
+        let reading = Task { await store.loadNotificationPreferences() }
+        await fulfillment(of: [started], timeout: 2)
+        try await store.setEmailOnDelivery(true)
+        completeRead?(.success((200, stale)))
+        await reading.value
+        XCTAssertEqual(store.deliveryEmail?.isOn, true)
+    }
+
+    @MainActor func testReturningToTheAppReadsTheEmailChoiceAgain() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session, email: "alex@example.com")
+        let store = store(session, transport)
+        var saved = emailPreferences
+        saved.emailOnDelivery = true
+        respond(try JSONEncoder.deliveryTracker.encode(saved))
+        await store.loadNotificationPreferences()
+        XCTAssertEqual(store.deliveryEmail?.isOn, true)
+
+        // Meanwhile the email was switched off from a link in an email.
+        saved.emailOnDelivery = false
+        let switchedOff = try JSONEncoder.deliveryTracker.encode(saved)
+        let list = try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: []))
+        let log = RequestLog()
+        SessionTestURLProtocol.handler = { request, complete in
+            log.record(request)
+            complete(.success((200, request.url?.path == "/api/push/preferences" ? switchedOff : list)))
+        }
+        let read = expectation(description: "Choice read again")
+        let observation = store.$notificationPreferences.dropFirst().sink { if $0?.emailOnDelivery == false { read.fulfill() } }
+        defer { observation.cancel() }
+        // The launch loads the preferences itself: only a return reads them again.
+        store.setActive(true)
+        store.setActive(false)
+        store.setActive(true)
+        await fulfillment(of: [read], timeout: 5)
+        XCTAssertEqual(try XCTUnwrap(store.deliveryEmail).choice, false)
+        XCTAssertEqual(log.requests.filter { $0.path == "/api/push/preferences" }.map(\.method), ["GET"])
+    }
+
+    @MainActor func testAParcelsAlertsAreSavedOneFieldAtATimeAndKeptForAnOfflineLaunch() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session, email: "alex@example.com")
+        let store = store(session, transport)
+        let parcel = parcel()
+        respond(try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: [parcel])))
+        await store.load()
+        XCTAssertNil(store.parcels.first?.emailMuted)
+
+        let log = RequestLog()
+        respond(row(parcel, muted: false, emailMuted: true), recording: log)
+        try await store.setEmailMuted(parcel, muted: true)
+        XCTAssertEqual(log.requests.map(\.method), ["PATCH"])
+        XCTAssertEqual(log.requests.first?.path, "/api/packages/\(parcel.id.uuidString)/notifications")
+        XCTAssertEqual(log.requests.first?.body as NSDictionary?, ["emailMuted": true])
+        XCTAssertEqual(store.parcels.first?.emailMuted, true)
+        XCTAssertEqual(store.parcels.first?.notificationsMuted, false)
+
+        respond(row(parcel, muted: true, emailMuted: true), recording: log)
+        try await store.setMuted(parcel, muted: true)
+        XCTAssertEqual(log.requests.last?.body as NSDictionary?, ["muted": true])
+        XCTAssertEqual(store.parcels.first?.allAlertsMuted, true)
+
+        // A refusal leaves the parcel as it was.
+        respond(Data("{\"error\":\"Alerts unavailable\"}".utf8), status: 502)
+        do { try await store.setEmailMuted(parcel, muted: false); XCTFail("Expected the refusal") } catch {}
+        XCTAssertEqual(store.parcels.first?.emailMuted, true)
+
+        offline()
+        let relaunchedStore = self.store(session, transport)
+        await relaunchedStore.load()
+        XCTAssertEqual(relaunchedStore.parcels.first?.emailMuted, true)
+        XCTAssertEqual(relaunchedStore.parcels.first?.notificationsMuted, true)
+    }
+
+    @MainActor func testDemoHasNoDeliveryEmail() async throws {
+        let suite = "demo-email-store-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, defaults: defaults, persistence: MemorySessionPersistence(), transport: transport)
+        session.enterDemo()
+        let store = store(session, transport)
+        let silent = RequestLog()
+        respond(try JSONEncoder.deliveryTracker.encode(emailPreferences), recording: silent)
+        await store.loadNotificationPreferences()
+        XCTAssertNotNil(store.notificationPreferences)
+        XCTAssertNil(store.deliveryEmail)
+        try await store.setEmailOnDelivery(true)
+        XCTAssertNil(store.notificationPreferences?.emailOnDelivery)
+        XCTAssertTrue(silent.requests.isEmpty)
     }
 }
 

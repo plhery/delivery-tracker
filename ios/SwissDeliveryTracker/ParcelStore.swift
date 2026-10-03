@@ -85,6 +85,8 @@ final class ParcelStore: ObservableObject {
     private var mutationRevision = 0
     private var loadSequence = 0
     private var nativePushGeneration = 0
+    /// Counts saved preferences: the answer to a read that began before a save is older than it.
+    private var notificationPreferenceSaves = 0
     private var deliveryLiveActivityGeneration = 0
     private var deliveryLiveActivitySystemDisabled = false
     private var deliveryLiveActivityRegistrationRemovalPending = false
@@ -248,6 +250,7 @@ final class ParcelStore: ObservableObject {
     }
 
     func setActive(_ active: Bool) {
+        let returning = active && !isActive
         isActive = active
         if active { liveActivityRevocations.retry() }
         if active && session.isAuthenticated {
@@ -257,6 +260,9 @@ final class ParcelStore: ObservableObject {
                 await refreshNotificationState()
                 await load(showSpinner: false)
             }
+            // The launch loads the preferences itself. A return reads them again: the email
+            // can be switched off outside the app, from a link in an email.
+            if returning && !isDemo { Task { await refreshNotificationPreferences() } }
         }
     }
 
@@ -430,6 +436,16 @@ final class ParcelStore: ObservableObject {
         let updated = isDemo
             ? try demo.setMuted(id: parcel.id, muted: muted)
             : try await api.setMuted(id: parcel.id, muted: muted)
+        try session.checkGeneration(generation)
+        upsert(updated)
+    }
+
+    /// Switches the delivery email off, or back on, for this parcel only.
+    func setEmailMuted(_ parcel: Parcel, muted: Bool) async throws {
+        let generation = session.generation
+        let updated = isDemo
+            ? try demo.setEmailMuted(id: parcel.id, muted: muted)
+            : try await api.setEmailMuted(id: parcel.id, muted: muted)
         try session.checkGeneration(generation)
         upsert(updated)
     }
@@ -743,10 +759,14 @@ final class ParcelStore: ObservableObject {
     }
 
     func loadNotificationPreferences() async {
+        let saves = notificationPreferenceSaves
         do {
-            notificationPreferences = isDemo
+            let loaded = isDemo
                 ? demo.notificationPreferences
                 : try await api.notificationPreferences()
+            // A save was answered meanwhile: its answer is the newer one.
+            guard saves == notificationPreferenceSaves else { return }
+            notificationPreferences = loaded
             notificationError = nil
         } catch {
             notificationError = localizer.errorMessage(error)
@@ -754,10 +774,36 @@ final class ParcelStore: ObservableObject {
     }
 
     func saveNotificationPreferences(_ value: NotificationPreferences) async throws {
-        notificationPreferences = isDemo
+        let saved = isDemo
             ? demo.saveNotificationPreferences(value)
             : try await api.saveNotificationPreferences(value)
+        notificationPreferenceSaves += 1
+        notificationPreferences = saved
         notificationError = nil
+    }
+
+    /// The account's delivery email, when the server can write to the address it signs in with.
+    var deliveryEmail: DeliveryEmail? {
+        DeliveryEmail(isDemo: isDemo, preferences: notificationPreferences, address: session.user?.email)
+    }
+
+    /// Switches the account's delivery email at once and apart from the preset: the
+    /// preferences go back as they were last saved, with the new choice and this
+    /// device's time zone, and the server's answer becomes the state.
+    func setEmailOnDelivery(_ enabled: Bool) async throws {
+        // Nothing to switch in the demo, or while the server cannot email the account.
+        guard deliveryEmail != nil, var value = notificationPreferences else { return }
+        value.emailOnDelivery = enabled
+        value.timezone = TimeZone.current.identifier
+        try await saveNotificationPreferences(value)
+    }
+
+    /// Reads the preferences again without a word when that fails: what is loaded stays.
+    private func refreshNotificationPreferences() async {
+        let saves = notificationPreferenceSaves
+        guard let loaded = try? await api.notificationPreferences(),
+              saves == notificationPreferenceSaves, loaded != notificationPreferences else { return }
+        notificationPreferences = loaded
     }
 
     func forwardNativePushToken(_ token: String, language: AppLanguage) async {
@@ -1473,6 +1519,10 @@ final class DemoRepository {
 
     func setMuted(id: UUID, muted: Bool) throws -> Parcel {
         try update(id: id) { $0.notificationsMuted = muted }
+    }
+
+    func setEmailMuted(id: UUID, muted: Bool) throws -> Parcel {
+        try update(id: id) { $0.emailMuted = muted }
     }
 
     func archive(id: UUID) throws {

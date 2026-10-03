@@ -37,9 +37,13 @@ enum NotificationPreset: String, CaseIterable, Identifiable {
 
 struct NotificationPreferencesDraft: Equatable {
     var preset: NotificationPreset
+    /// The account's email choice rides along as it was saved: the email switch
+    /// saves on its own, so saving a preset never changes it.
+    var emailOnDelivery: Bool?
 
     init(preferences: NotificationPreferences? = nil) {
         preset = preferences.map { NotificationPreset.matching($0.enabledStages) } ?? .all
+        emailOnDelivery = preferences?.emailOnDelivery
     }
 
     func preferences(timezone: String) -> NotificationPreferences {
@@ -47,8 +51,62 @@ struct NotificationPreferencesDraft: Equatable {
             enabledStages: preset.stages,
             quietHoursStart: nil,
             quietHoursEnd: nil,
-            timezone: timezone
+            timezone: timezone,
+            emailOnDelivery: emailOnDelivery
         )
+    }
+}
+
+/// The account's delivery email: one short email when a parcel is delivered, to the
+/// address it signs in with. There is none in the demo, or unless the server says it
+/// can write to the account, and nothing about email shows then.
+struct DeliveryEmail: Equatable {
+    let address: String
+    /// True when on, false when off or declined, nil while the account has never chosen.
+    let choice: Bool?
+
+    init?(isDemo: Bool, preferences: NotificationPreferences?, address: String?) {
+        guard !isDemo, let preferences, preferences.emailAvailable == true,
+              let address = address?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty else { return nil }
+        self.address = address
+        choice = preferences.emailOnDelivery
+    }
+
+    var isOn: Bool { choice == true }
+
+    /// While the email is on and the parcel is still on its way, the parcel's bell opens
+    /// its alerts. Otherwise one tap mutes or unmutes its notifications.
+    func bellOpensAlerts(for parcel: Parcel) -> Bool {
+        isOn && parcel.currentStage?.isFinal != true
+    }
+
+    /// Offered once, on a delivered parcel, while the account has never chosen.
+    func isOffered(on parcel: Parcel) -> Bool {
+        choice == nil && parcel.isDelivered
+    }
+
+    /// What "See an example" opens: the example email in the app's language. Nil when the
+    /// site is not a web address, which the in-app browser cannot open.
+    static func exampleURL(site: URL, language: AppLanguage) -> URL? {
+        guard let scheme = site.scheme?.lowercased(), scheme == "https" || scheme == "http", site.host != nil else { return nil }
+        return site.appending(path: "email/example").appending(queryItems: [URLQueryItem(name: "lang", value: language.rawValue)])
+    }
+}
+
+extension Parcel {
+    /// Parcels saved or served before the email existed carry no mute for it.
+    var isEmailMuted: Bool { emailMuted == true }
+
+    /// The bell of a parcel whose alerts open in a sheet is struck through only when
+    /// both its notifications and its email are off.
+    var allAlertsMuted: Bool { notificationsMuted && isEmailMuted }
+}
+
+extension Localizer {
+    /// Where the account's defaults are, as the alerts sheet and the offer name it:
+    /// "Settings › Delivery updates".
+    var deliveryUpdatesPlace: String {
+        "\(text("settings.title")) › \(text("settings.deliveryUpdates"))"
     }
 }
 

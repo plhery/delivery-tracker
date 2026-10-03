@@ -162,6 +162,161 @@ final class NotificationLogicTests: XCTestCase {
         }
     }
 
+    func testSavingPresetKeepsTheEmailChoice() {
+        for choice in [true, false, nil] as [Bool?] {
+            let saved = preferences(email: choice)
+            var draft = NotificationPreferencesDraft(preferences: saved)
+            XCTAssertEqual(draft.preset, .important)
+            draft.preset = .deliveryDay
+            let next = draft.preferences(timezone: saved.timezone)
+            XCTAssertEqual(next.enabledStages, NotificationPreset.deliveryDay.stages)
+            XCTAssertEqual(next.emailOnDelivery, choice)
+            // Whether the server can email the account is not the app's to send.
+            XCTAssertNil(next.emailAvailable)
+        }
+        XCTAssertNil(NotificationPreferencesDraft().preferences(timezone: "Europe/Zurich").emailOnDelivery)
+    }
+
+    func testRequestsLeaveOutWhatTheyDoNotChange() throws {
+        func object<T: Encodable>(_ value: T) throws -> [String: Any] {
+            try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder.deliveryTracker.encode(value)) as? [String: Any])
+        }
+        let notifications = try object(PackageNotificationRequest(muted: true))
+        XCTAssertEqual(Set(notifications.keys), ["muted"])
+        XCTAssertEqual(notifications["muted"] as? Bool, true)
+        let email = try object(PackageNotificationRequest(emailMuted: false))
+        XCTAssertEqual(Set(email.keys), ["emailMuted"])
+        XCTAssertEqual(email["emailMuted"] as? Bool, false)
+
+        // An account that never chose sends no choice, as a released app does.
+        let unchosen = try object(NotificationPreferencesDraft(preferences: preferences(email: nil)).preferences(timezone: "Europe/Zurich"))
+        XCTAssertEqual(Set(unchosen.keys), ["enabledStages", "timezone"])
+        let declined = try object(NotificationPreferencesDraft(preferences: preferences(email: false)).preferences(timezone: "Europe/Zurich"))
+        XCTAssertEqual(Set(declined.keys), ["enabledStages", "timezone", "emailOnDelivery"])
+        XCTAssertEqual(declined["emailOnDelivery"] as? Bool, false)
+    }
+
+    func testNothingAboutEmailShowsInTheDemoOrUntilTheServerCanWriteToTheAccount() {
+        let address = "alex@example.com"
+        let email = DeliveryEmail(isDemo: false, preferences: preferences(email: true), address: " \(address)\n")
+        XCTAssertEqual(email?.address, address)
+        XCTAssertEqual(email?.isOn, true)
+        XCTAssertNil(DeliveryEmail(isDemo: true, preferences: preferences(email: true), address: address))
+        XCTAssertNil(DeliveryEmail(isDemo: false, preferences: nil, address: address))
+        XCTAssertNil(DeliveryEmail(isDemo: false, preferences: preferences(email: true, available: false), address: address))
+        // A server from before the email says nothing about it.
+        XCTAssertNil(DeliveryEmail(isDemo: false, preferences: preferences(email: nil, available: nil), address: address))
+        XCTAssertNil(DeliveryEmail(isDemo: false, preferences: preferences(email: true), address: nil))
+        XCTAssertNil(DeliveryEmail(isDemo: false, preferences: preferences(email: true), address: "  "))
+    }
+
+    func testBellOpensAlertsOnlyWhileTheEmailIsOnAndTheParcelIsOnItsWay() throws {
+        let on = try email(true), off = try email(false), unchosen = try email(nil)
+        for stage in TrackingStage.allCases {
+            let parcel = parcel(stage)
+            XCTAssertEqual(on.bellOpensAlerts(for: parcel), stage != .delivered && stage != .returned, stage.rawValue)
+            XCTAssertFalse(off.bellOpensAlerts(for: parcel), stage.rawValue)
+            XCTAssertFalse(unchosen.bellOpensAlerts(for: parcel), stage.rawValue)
+        }
+        // A parcel no carrier has announced yet is still on its way.
+        XCTAssertTrue(on.bellOpensAlerts(for: parcel(nil)))
+    }
+
+    func testEmailIsOfferedOnlyOnADeliveredParcelWhileTheAccountHasNeverChosen() throws {
+        let on = try email(true), off = try email(false), unchosen = try email(nil)
+        for stage in TrackingStage.allCases {
+            let parcel = parcel(stage)
+            XCTAssertEqual(unchosen.isOffered(on: parcel), stage == .delivered, stage.rawValue)
+            XCTAssertFalse(on.isOffered(on: parcel), stage.rawValue)
+            XCTAssertFalse(off.isOffered(on: parcel), stage.rawValue)
+        }
+        XCTAssertFalse(unchosen.isOffered(on: parcel(nil)))
+    }
+
+    func testBellOfAParcelWithAlertsIsStruckThroughOnlyWhenBothAreOff() {
+        var parcel = parcel(.inTransit)
+        XCTAssertFalse(parcel.allAlertsMuted)
+        parcel.notificationsMuted = true
+        // No email mute from the server or a saved list counts as not muted.
+        XCTAssertNil(parcel.emailMuted)
+        XCTAssertFalse(parcel.allAlertsMuted)
+        parcel.emailMuted = false
+        XCTAssertFalse(parcel.allAlertsMuted)
+        parcel.emailMuted = true
+        XCTAssertTrue(parcel.allAlertsMuted)
+        parcel.notificationsMuted = false
+        XCTAssertFalse(parcel.allAlertsMuted)
+    }
+
+    func testExampleEmailOpensOnTheSiteInTheAppLanguage() throws {
+        let site = try XCTUnwrap(URL(string: "https://peek.example"))
+        XCTAssertEqual(DeliveryEmail.exampleURL(site: site, language: .de)?.absoluteString, "https://peek.example/email/example?lang=de")
+        XCTAssertEqual(DeliveryEmail.exampleURL(site: try XCTUnwrap(URL(string: "http://localhost:3000/")), language: .en)?.absoluteString,
+                       "http://localhost:3000/email/example?lang=en")
+        // The in-app browser opens web addresses only.
+        for other in ["peek.example", "file:///private/example", "swissdeliverytracker://p/example"] {
+            XCTAssertNil(DeliveryEmail.exampleURL(site: try XCTUnwrap(URL(string: other)), language: .en), other)
+        }
+    }
+
+    func testParcelsSavedBeforeTheEmailKeepDecoding() throws {
+        var parcel = parcel(.inTransit)
+        let saved = try JSONEncoder.deliveryTracker.encode([parcel])
+        XCTAssertFalse(String(decoding: saved, as: UTF8.self).contains("emailMuted"))
+        let restored = try XCTUnwrap(JSONDecoder.deliveryTracker.decode([Parcel].self, from: saved).first)
+        XCTAssertNil(restored.emailMuted)
+        XCTAssertFalse(restored.isEmailMuted)
+        XCTAssertEqual(restored, parcel)
+
+        parcel.emailMuted = true
+        let muted = try JSONDecoder.deliveryTracker.decode([Parcel].self, from: JSONEncoder.deliveryTracker.encode([parcel]))
+        XCTAssertEqual(muted.first?.emailMuted, true)
+
+        let row = """
+        {"id":"\(parcel.id.uuidString)","tracking_number":"1Z999AA10123456784","label":"Test parcel","carrier":"ups",
+         "created_at":"2026-08-01T10:00:00Z","sync_status":"ok","notifications_muted":false,"email_muted":true}
+        """
+        XCTAssertTrue(try JSONDecoder.deliveryTracker.decode(Parcel.self, from: Data(row.utf8)).isEmailMuted)
+    }
+
+    func testDemoParcelsKeepDecodingWithAnEmailMute() throws {
+        let suite = "demo-email-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let repo = DemoRepository(defaults: defaults, language: { .en })
+        let parcels = repo.list()
+        XCTAssertTrue(parcels.allSatisfy { $0.emailMuted == nil })
+        let first = try XCTUnwrap(parcels.first)
+        XCTAssertEqual(try repo.setEmailMuted(id: first.id, muted: true).emailMuted, true)
+        let reopened = DemoRepository(defaults: defaults, language: { .en }).list()
+        XCTAssertEqual(reopened.count, parcels.count)
+        XCTAssertEqual(reopened.first { $0.id == first.id }?.emailMuted, true)
+        // The demo's preferences say nothing about email, so nothing about it shows there.
+        XCTAssertNil(repo.notificationPreferences.emailAvailable)
+        XCTAssertNil(repo.notificationPreferences.emailOnDelivery)
+    }
+
+    private func preferences(email: Bool?, available: Bool? = true) -> NotificationPreferences {
+        NotificationPreferences(
+            enabledStages: NotificationPreset.important.stages, timezone: "Europe/Zurich",
+            emailOnDelivery: email, emailAvailable: available
+        )
+    }
+
+    private func email(_ choice: Bool?) throws -> DeliveryEmail {
+        try XCTUnwrap(DeliveryEmail(isDemo: false, preferences: preferences(email: choice), address: "alex@example.com"))
+    }
+
+    /// A made-up parcel whose latest scan is at the given stage, or with no scan at all.
+    private func parcel(_ stage: TrackingStage?, label: String = "Test parcel") -> Parcel {
+        let id = UUID()
+        let events = stage.map { [TrackingEvent(id: UUID(), packageID: id, stage: $0, description: "Update", occurredAt: "2026-09-06T10:00:00Z")] } ?? []
+        return Parcel(
+            id: id, trackingNumber: "1Z999AA10123456784", label: label, carrier: .ups,
+            createdAt: "2026-08-01T10:00:00Z", syncStatus: .ok, notificationsMuted: false, trackingEvents: events
+        )
+    }
+
     private func invitation(
         isAuthenticated: Bool = true,
         isDemo: Bool = false,

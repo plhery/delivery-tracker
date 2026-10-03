@@ -161,6 +161,15 @@ final class DeliveryAPIClient {
         )
     }
 
+    /// The parcel's delivery email alone: its notifications stay as they are.
+    func setEmailMuted(id: UUID, muted: Bool) async throws -> Parcel {
+        try await request(
+            "/api/packages/\(id.uuidString)/notifications",
+            method: "PATCH",
+            body: PackageNotificationRequest(emailMuted: muted)
+        )
+    }
+
     func archive(id: UUID) async throws {
         let _: OKResponse = try await request("/api/packages/\(id.uuidString)", method: "DELETE")
     }
@@ -230,7 +239,10 @@ final class DeliveryAPIClient {
     }
 
     func saveNotificationPreferences(_ value: NotificationPreferences) async throws -> NotificationPreferences {
-        try await request("/api/push/preferences", method: "PATCH", body: value)
+        var sent = value
+        // Whether the server can email the account is the server's to say.
+        sent.emailAvailable = nil
+        return try await request("/api/push/preferences", method: "PATCH", body: sent)
     }
 
     func registerNativePushToken(
