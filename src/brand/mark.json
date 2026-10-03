@@ -1,50 +1,12 @@
 {
   "size": 512,
   "tile": { "fill": "#f3cf48", "radius": 116 },
-  "drawings": {
-    "glyph": {
-      "clipped": true,
-      "shapes": [
-        { "tag": "path", "d": "M60 150 452 70 452 330 60 330Z", "fill": "#2b241b" },
-        { "tag": "ellipse", "cx": 176, "cy": 300, "rx": 84, "ry": 89.9, "fill": "#fffaf0" },
-        { "tag": "circle", "cx": 204.6, "cy": 308.4, "r": 43.7, "fill": "#171714" },
-        { "tag": "circle", "cx": 189.4, "cy": 291.6, "r": 13.4, "fill": "#ffffff" },
-        { "tag": "ellipse", "cx": 336, "cy": 290, "rx": 84, "ry": 89.9, "fill": "#fffaf0" },
-        { "tag": "circle", "cx": 364.6, "cy": 298.4, "r": 43.7, "fill": "#171714" },
-        { "tag": "circle", "cx": 349.4, "cy": 281.6, "r": 13.4, "fill": "#ffffff" },
-        { "tag": "rect", "x": 40, "y": 330, "width": 432, "height": 182, "fill": "#fffaf0" },
-        { "tag": "polygon", "points": "29.0,94.5 447.2,13.2 462.5,91.8 44.3,173.1", "fill": "#f1e9e0" }
-      ]
-    },
-    "simple": {
-      "shapes": [
-        { "tag": "polygon", "points": "92,180 420,95 420,310 92,310", "fill": "#2b241b" },
-        { "tag": "ellipse", "cx": 196, "cy": 268, "rx": 66, "ry": 70.6, "fill": "#fffaf0" },
-        { "tag": "circle", "cx": 218.4, "cy": 274.6, "r": 34.3, "fill": "#171714" },
-        { "tag": "circle", "cx": 206.6, "cy": 261.4, "r": 10.6, "fill": "#ffffff" },
-        { "tag": "ellipse", "cx": 316, "cy": 262, "rx": 66, "ry": 70.6, "fill": "#fffaf0" },
-        { "tag": "circle", "cx": 338.4, "cy": 268.6, "r": 34.3, "fill": "#171714" },
-        { "tag": "circle", "cx": 326.6, "cy": 255.4, "r": 10.6, "fill": "#ffffff" },
-        { "tag": "rect", "x": 72, "y": 300, "width": 368, "height": 150, "rx": 36, "fill": "#fffaf0" },
-        { "tag": "polygon", "points": "59.4,128.3 378.9,12.1 403.5,79.7 84.0,196.0", "fill": "#f1e9e0", "stroke": "#f1e9e0", "stroke-width": 40, "stroke-linejoin": "round" }
-      ]
-    },
-    "full": {
-      "shapes": [
-        { "tag": "polygon", "points": "92,180 420,95 420,310 92,310", "fill": "#2b241b" },
-        { "tag": "ellipse", "cx": 196, "cy": 268, "rx": 58, "ry": 62.1, "fill": "#fffaf0" },
-        { "tag": "circle", "cx": 215.7, "cy": 273.8, "r": 30.2, "fill": "#171714" },
-        { "tag": "circle", "cx": 205.3, "cy": 262.2, "r": 9.3, "fill": "#ffffff" },
-        { "tag": "ellipse", "cx": 316, "cy": 262, "rx": 58, "ry": 62.1, "fill": "#fffaf0" },
-        { "tag": "circle", "cx": 335.7, "cy": 267.8, "r": 30.2, "fill": "#171714" },
-        { "tag": "circle", "cx": 325.3, "cy": 256.2, "r": 9.3, "fill": "#ffffff" },
-        { "tag": "rect", "x": 72, "y": 300, "width": 368, "height": 150, "rx": 36, "fill": "#fffaf0" },
-        { "tag": "rect", "x": 236, "y": 300, "width": 40, "height": 150, "fill": "#ece3d6" },
-        { "tag": "rect", "part": "label", "x": 286, "y": 362, "width": 104, "height": 54, "rx": 10, "fill": "#171714" },
-        { "tag": "path", "part": "label", "d": "M304 381h60M304 398h38", "stroke": "#f3cf48", "stroke-width": 9, "stroke-linecap": "round" },
-        { "tag": "polygon", "points": "61.8,127.5 385.1,22.5 407.4,90.9 84.0,196.0", "fill": "#f1e9e0", "stroke": "#f1e9e0", "stroke-width": 40, "stroke-linejoin": "round" },
-        { "tag": "polygon", "points": "206.3,80.6 244.4,68.2 266.6,136.7 228.6,149.0", "fill": "#e0d5c8" }
-      ]
-    }
-  }
+  "shapes": [
+    { "tag": "ellipse", "cx": 190, "cy": 262, "rx": 70, "ry": 77, "fill": "#fffaf0" },
+    { "tag": "ellipse", "cx": 322, "cy": 262, "rx": 70, "ry": 77, "fill": "#fffaf0" },
+    { "tag": "circle", "cx": 219.4, "cy": 269, "r": 35, "fill": "#171714" },
+    { "tag": "circle", "cx": 207.5, "cy": 255, "r": 10.5, "fill": "#ffffff" },
+    { "tag": "circle", "cx": 351.4, "cy": 269, "r": 35, "fill": "#171714" },
+    { "tag": "circle", "cx": 339.5, "cy": 255, "r": 10.5, "fill": "#ffffff" }
+  ]
 }

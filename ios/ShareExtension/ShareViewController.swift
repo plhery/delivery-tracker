@@ -20,7 +20,7 @@ final class ShareViewController: UIViewController {
     private func configureInterface() {
         let markSize: CGFloat = 76
         let mark = UIImageView(image: UIGraphicsImageRenderer(size: CGSize(width: markSize, height: markSize)).image { renderer in
-            PeekMarkArtwork.draw(PeekMarkVariant(size: markSize), in: renderer.cgContext, size: markSize)
+            PeekMarkArtwork.draw(in: renderer.cgContext, size: markSize)
         })
         mark.translatesAutoresizingMaskIntoConstraints = false
 

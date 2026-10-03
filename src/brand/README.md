@@ -2,11 +2,15 @@
 
 ## The mark
 
-`mark.json` holds the app's mark, the peeking parcel, in the three drawings it takes as
-it shrinks. `PeekMark` picks the drawing for a size. `npm run icons` draws the icon files in
-`public/icons`, the iOS app icon and the link preview `public/og.png` (from `public/og.svg`);
-run it after editing the mark or the preview, then set the `?v=` of the preview link in
-`app/page.tsx` to the value the metadata test reports.
+`mark.json` holds the app's mark: two eyes on a yellow tile, one drawing for every size.
+`PeekMark` draws it on the web; `PeekMarkArtwork.swift` holds the same shapes for the iPhone
+app, its widget and its Share extension, so edit both together. `npm run icons` draws the
+icon files in `public/icons`, the iOS app icon and the link preview `public/og.png` (from
+`public/og.svg`); run it after editing the mark or the preview, then set the `?v=` of the
+preview link in `app/page.tsx` to the value the metadata test reports.
+
+The eyes belong to the mark alone: the name beside it is set in plain type, and Pip, the
+parcel with a face, is a separate drawing.
 
 ## Carriers
 

@@ -8,35 +8,38 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const mark = JSON.parse(readFileSync(join(root, 'src/brand/mark.json'), 'utf8'));
-const { size, tile } = mark;
+const { size, tile, shapes } = mark;
 
-// `part` names what a shape belongs to; it is not an SVG attribute.
 const element = ({ tag, ...attributes }) =>
-  `<${tag} ${Object.entries(attributes).filter(([name]) => name !== 'part').map(([name, value]) => `${name}="${value}"`).join(' ')}/>`;
+  `<${tag} ${Object.entries(attributes).map(([name, value]) => `${name}="${value}"`).join(' ')}/>`;
 
 /**
- * One drawing of the mark as an SVG document. A rounded tile is the mark as the app shows it;
- * `bleed` fills the square instead, for icons the system masks itself, and `scale` shrinks the
- * drawing about the centre of that square.
+ * The mark as an SVG document. A rounded tile is the mark as the app shows it; `bleed` fills
+ * the square instead, for icons the system masks itself, and `scale` shrinks the drawing about
+ * the centre of that square.
  */
-function markSvg(name, { bleed = false, scale = 1 } = {}) {
-  const { shapes, clipped } = mark.drawings[name === 'label' ? 'full' : name];
-  const drawn = shapes.filter((shape) => name === 'label' || !shape.part).map(element);
-  const square = `<rect width="${size}" height="${size}" fill="${tile.fill}"/>`;
-  const rounded = `<rect width="${size}" height="${size}" rx="${tile.radius}"`;
+function markSvg({ bleed = false, scale = 1 } = {}) {
+  const drawn = shapes.map(element);
   const lines = bleed
-    ? [square, `<g transform="translate(${size / 2} ${size / 2}) scale(${scale}) translate(${-size / 2} ${-size / 2})">`, ...drawn.map((line) => `  ${line}`), '</g>']
-    : clipped
-      ? [`<clipPath id="tile">${rounded}/></clipPath>`, '<g clip-path="url(#tile)">', ...[square, ...drawn].map((line) => `  ${line}`), '</g>']
-      : [`${rounded} fill="${tile.fill}"/>`, ...drawn];
+    ? [`<rect width="${size}" height="${size}" fill="${tile.fill}"/>`, `<g transform="translate(${size / 2} ${size / 2}) scale(${scale}) translate(${-size / 2} ${-size / 2})">`, ...drawn.map((line) => `  ${line}`), '</g>']
+    : [`<rect width="${size}" height="${size}" rx="${tile.radius}" fill="${tile.fill}"/>`, ...drawn];
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">\n${lines.map((line) => `  ${line}\n`).join('')}</svg>\n`;
 }
 
-// A launcher may crop a maskable icon to a centred circle of 40% radius. The lid's far corner,
-// with its rounded stroke, is the point of the drawing furthest from the centre.
+/** How far an ellipse or a circle, the only shapes the mark is drawn in, reaches from the centre of the square. */
+function reach({ tag, cx, cy, rx, ry, r }) {
+  if (tag !== 'ellipse' && tag !== 'circle') throw new Error(`The reach of a ${tag} is not measured`);
+  return Math.max(...Array.from({ length: 360 }, (_, degree) => {
+    const angle = degree * Math.PI / 180;
+    return Math.hypot(cx + (rx ?? r) * Math.cos(angle) - size / 2, cy + (ry ?? r) * Math.sin(angle) - size / 2);
+  }));
+}
+
+// A launcher may crop a maskable icon to a centred circle of 40% radius. The eyes stay inside
+// that circle, so the drawing keeps its size; one that reached past it would shrink to fit.
 const safeRadius = size * 0.4;
-const farthest = Math.hypot(385.1 - size / 2, 22.5 - size / 2) + 20;
-const maskableScale = Math.floor(100 * safeRadius / farthest) / 100;
+const farthest = Math.max(...shapes.map(reach));
+const maskableScale = Math.min(1, Math.floor(100 * safeRadius / farthest) / 100);
 
 const render = (svg, width, options = {}) => new Resvg(svg, { fitTo: { mode: 'width', value: width }, ...options }).render().asPng();
 /** Icons the system masks have no transparency at all: the App Store rejects an alpha channel. */
@@ -47,13 +50,13 @@ async function write(file, contents) {
   console.log(`wrote ${file}`);
 }
 
-await write('public/icons/icon.svg', markSvg('label'));
-await write('public/icons/favicon.svg', markSvg('glyph'));
-await write('public/icons/icon-192.png', render(markSvg('label'), 192));
-await write('public/icons/icon-512.png', render(markSvg('label'), 512));
-await write('public/icons/icon-maskable-512.png', opaque(render(markSvg('label', { bleed: true, scale: maskableScale }), 512)));
-await write('public/icons/apple-touch-icon.png', opaque(render(markSvg('label', { bleed: true }), 180)));
-await write('ios/SwissDeliveryTracker/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png', opaque(render(markSvg('label', { bleed: true }), 1024)));
+await write('public/icons/icon.svg', markSvg());
+await write('public/icons/favicon.svg', markSvg());
+await write('public/icons/icon-192.png', render(markSvg(), 192));
+await write('public/icons/icon-512.png', render(markSvg(), 512));
+await write('public/icons/icon-maskable-512.png', opaque(render(markSvg({ bleed: true, scale: maskableScale }), 512)));
+await write('public/icons/apple-touch-icon.png', opaque(render(markSvg({ bleed: true }), 180)));
+await write('ios/SwissDeliveryTracker/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png', opaque(render(markSvg({ bleed: true }), 1024)));
 
 // The preview's text is set in the typeface the invitation card uses, so it renders the same everywhere.
 await write('public/og.png', render(readFileSync(join(root, 'public/og.svg'), 'utf8'), 1200, {

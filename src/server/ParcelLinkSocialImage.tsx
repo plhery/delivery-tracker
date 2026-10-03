@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createElement } from 'react';
 import { CARRIER_PALETTES, CARRIER_TRUCK, carrierBrand, carrierBrandFamily, carrierDecal, mix, type CarrierPalette, type TruckDecalShape } from '../brand';
 import mark from '../brand/mark.json';
 import type { CarrierInfo } from '../lib/carriers';
@@ -52,18 +53,11 @@ function Truck({ carrier, palette, width }: { carrier: CarrierInfo; palette: Car
   </svg>;
 }
 
-type MarkShape = { tag: string; part?: string } & Record<string, string | number | undefined>;
-const MARK_SHAPES: MarkShape[] = mark.drawings.simple.shapes;
-
-/** The peeking parcel on its yellow tile. */
+/** Peek's mark: two eyes on a yellow tile. */
 function Mark({ size }: { size: number }) {
   return <svg width={size} height={size} viewBox={`0 0 ${mark.size} ${mark.size}`}>
     <rect width={mark.size} height={mark.size} rx={mark.tile.radius} fill={mark.tile.fill} />
-    {MARK_SHAPES.map(({ tag, part, ...attributes }, index) => {
-      void part;
-      const Tag = tag as 'path';
-      return <Tag key={index} {...Object.fromEntries(Object.entries(attributes).map(([name, value]) => [name.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase()), value]))} />;
-    })}
+    {mark.shapes.map(({ tag, ...attributes }, index) => createElement(tag, { key: index, ...attributes }))}
   </svg>;
 }
 

@@ -13,7 +13,6 @@ export const metadata: Metadata = {
     'Private parcel tracking, with alerts and history synced across your devices.',
   manifest: '/manifest.webmanifest',
   icons: {
-    // A tab draws the icon at 16 px, where only the eyes and the lid still read.
     icon: { url: '/icons/favicon.svg', type: 'image/svg+xml' },
     apple: '/icons/apple-touch-icon.png',
   },

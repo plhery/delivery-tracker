@@ -2,52 +2,80 @@ import { render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { I18nProvider } from '../i18n';
-import { PeekLockup, PeekMark, peekMarkDrawing } from './PeekMark';
+import { PeekLockup, PeekMark } from './PeekMark';
 
-const shapes = (root: ParentNode) => [...root.querySelectorAll('rect, polygon, ellipse, circle, path')]
-  .map((shape) => [shape.tagName, ...[...shape.attributes].filter(({ name }) => !name.startsWith('data-')).map(({ name, value }) => `${name}=${value}`).sort()]);
+/** Every element of a drawing in paint order, as its tag and its attributes. */
+const shapes = (root: ParentNode) => [...root.querySelectorAll('svg *')]
+  .map((shape) => [shape.tagName, ...[...shape.attributes].map(({ name, value }) => `${name}=${value}`).sort()]);
 const mark = (size: number) => render(<PeekMark size={size} />).container.querySelector('svg')!;
 const file = (name: string) => new DOMParser().parseFromString(readFileSync(`public/icons/${name}`, 'utf8'), 'image/svg+xml');
+const number = (shape: Element, name: string) => Number(shape.getAttribute(name));
+/** Whether a circle lies wholly inside an ellipse or another circle, judged on its outline degree by degree. */
+const inside = (circle: Element, outer: Element) => Array.from({ length: 360 }, (_, degree) => degree * Math.PI / 180).every((angle) => Math.hypot(
+  (number(circle, 'cx') + number(circle, 'r') * Math.cos(angle) - number(outer, 'cx')) / number(outer, outer.tagName === 'ellipse' ? 'rx' : 'r'),
+  (number(circle, 'cy') + number(circle, 'r') * Math.sin(angle) - number(outer, 'cy')) / number(outer, outer.tagName === 'ellipse' ? 'ry' : 'r'),
+) < 1);
 
 describe('the mark', () => {
-  it('loses detail as it shrinks', () => {
-    expect([16, 23, 24, 28, 30, 40, 41, 64, 127, 128, 512].map(peekMarkDrawing)).toEqual(
-      ['glyph', 'glyph', 'simple', 'simple', 'simple', 'simple', 'full', 'full', 'full', 'label', 'label'],
-    );
+  it('is two eyes on a rounded yellow tile, painted back to front: the tile, both whites, then each eye’s pupil and catchlight', () => {
+    const svg = mark(64);
+    expect(svg).toHaveAttribute('viewBox', '0 0 512 512');
+    expect(shapes(svg)).toEqual([
+      ['rect', 'fill=#f3cf48', 'height=512', 'rx=116', 'width=512'],
+      ['ellipse', 'cx=190', 'cy=262', 'fill=#fffaf0', 'rx=70', 'ry=77'],
+      ['ellipse', 'cx=322', 'cy=262', 'fill=#fffaf0', 'rx=70', 'ry=77'],
+      ['circle', 'cx=219.4', 'cy=269', 'fill=#171714', 'r=35'],
+      ['circle', 'cx=207.5', 'cy=255', 'fill=#ffffff', 'r=10.5'],
+      ['circle', 'cx=351.4', 'cy=269', 'fill=#171714', 'r=35'],
+      ['circle', 'cx=339.5', 'cy=255', 'fill=#ffffff', 'r=10.5'],
+    ]);
   });
 
-  it('keeps only the eyes over the rim and the lid under 24 px, clipped to its own tile', () => {
-    const first = mark(16), second = mark(20);
-    expect(first).toHaveAttribute('data-drawing', 'glyph');
-    expect(first.querySelectorAll('ellipse')).toHaveLength(2);
-    const clip = first.querySelector('clipPath')!;
-    expect(first.querySelector('g')).toHaveAttribute('clip-path', `url(#${clip.id})`);
-    expect(second.querySelector('clipPath')!.id).not.toBe(clip.id);
+  it('gives each of its two eyes a pupil inside the white and a catchlight inside the pupil, the right eye a copy of the left', () => {
+    const svg = mark(64);
+    const whites = [...svg.querySelectorAll('ellipse')], circles = [...svg.querySelectorAll('circle')];
+    expect(whites).toHaveLength(2);
+    expect(circles).toHaveLength(4);
+    // The whites overlap, so both lie under the pupils: neither covers the other eye's pupil.
+    expect(number(whites[0], 'cx') + number(whites[0], 'rx')).toBeGreaterThan(number(whites[1], 'cx') - number(whites[1], 'rx'));
+    expect(whites[1].nextElementSibling).toBe(circles[0]);
+    const [left, right] = whites.map((white, eye) => {
+      const [pupil, catchlight] = circles.slice(eye * 2);
+      expect(inside(pupil, white)).toBe(true);
+      expect(inside(catchlight, pupil)).toBe(true);
+      expect(number(catchlight, 'r')).toBeLessThan(number(pupil, 'r'));
+      return [white, pupil, catchlight];
+    });
+    left.forEach((shape, index) => {
+      expect(number(right[index], 'cx') - number(shape, 'cx')).toBeCloseTo(132);
+      for (const name of ['cy', 'rx', 'ry', 'r', 'fill']) expect(right[index].getAttribute(name)).toBe(shape.getAttribute(name));
+    });
+    // The pair stands in the middle of the tile's width.
+    expect((number(left[0], 'cx') + number(right[0], 'cx')) / 2).toBe(256);
   });
 
-  it('draws bigger eyes and no tape from 24 to 40 px', () => {
-    const simple = mark(28);
-    expect(simple).toHaveAttribute('data-drawing', 'simple');
-    expect(simple.querySelector('ellipse')).toHaveAttribute('rx', '66');
-    expect(simple.querySelector('clipPath')).toBeNull();
-    expect(simple.querySelectorAll('polygon')).toHaveLength(2);
+  it('is the same drawing at every size', () => {
+    const drawing = mark(64).innerHTML;
+    for (const size of [16, 28, 30, 64, 512]) {
+      const svg = mark(size);
+      expect(svg.innerHTML).toBe(drawing);
+      expect(svg).toHaveStyle({ width: `${size}px`, height: `${size}px` });
+      // Only its inline size tells one from another.
+      expect([...svg.attributes].map(({ name }) => name).sort()).toEqual(['aria-hidden', 'class', 'style', 'viewBox']);
+    }
   });
 
-  it('adds the tape above 40 px and the label from 128 px', () => {
-    const full = mark(64), labelled = mark(128);
-    expect(full.querySelector('ellipse')).toHaveAttribute('rx', '58');
-    expect(full.querySelectorAll('polygon')).toHaveLength(3);
-    expect(full.querySelector('[data-part="label"]')).toBeNull();
-    expect(labelled.querySelectorAll('[data-part="label"]')).toHaveLength(2);
-    expect(shapes(labelled).filter((shape) => !shapes(full).some((other) => other.join() === shape.join()))).toHaveLength(2);
-  });
-
-  it('is decorative, with its own size and stroke inside a link or a button', () => {
-    const svg = mark(30);
-    expect(svg).toHaveAttribute('aria-hidden', 'true');
-    expect(svg).toHaveClass('peek-mark');
-    expect(svg).toHaveStyle({ width: '30px', height: '30px' });
-    expect(svg.querySelector('polygon[stroke]')).toHaveAttribute('stroke-linejoin', 'round');
+  it('is decorative, with its own size and no stroke inside a link or a button', () => {
+    const { container } = render(<><button type="button"><PeekMark size={30} /></button><a href="https://peek.example.test/"><PeekMark size={18} className="brand" /></a></>);
+    const [inButton, inLink] = container.querySelectorAll('svg');
+    expect(inButton).toHaveAttribute('aria-hidden', 'true');
+    expect(inButton).toHaveAttribute('class', 'peek-mark');
+    expect(inButton).toHaveStyle({ width: '30px', height: '30px' });
+    expect(inLink).toHaveAttribute('aria-hidden', 'true');
+    expect(inLink).toHaveAttribute('class', 'peek-mark brand');
+    expect(inLink).toHaveStyle({ width: '18px', height: '18px' });
+    // Its class turns off the stroke a link or a button gives its line icons, and no shape asks for one of its own.
+    expect(container.querySelector('[stroke], [stroke-width]')).toBeNull();
   });
 
   it('is the drawing in the icon files', () => {

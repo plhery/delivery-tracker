@@ -35,7 +35,7 @@ describe('public product metadata', () => {
     });
   });
 
-  it('draws the browser tab with the glyph and the Home Screen with the full icon', () => {
+  it('draws the browser tab with the mark on its rounded tile and the Home Screen with the full-bleed icon', () => {
     expect(layoutMetadata.icons).toEqual({
       icon: { url: '/icons/favicon.svg', type: 'image/svg+xml' },
       apple: '/icons/apple-touch-icon.png',
