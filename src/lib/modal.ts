@@ -1,5 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, type RefObject, type MouseEvent } from 'react';
-import { bindCardDialog, type CardDialog, type CardOrigin } from './cardTransition';
+import { useEffect, useRef, type RefObject, type MouseEvent } from 'react';
 
 /** Safari leaves clicked buttons unfocused; preserve the actual modal launcher. */
 export function focusClickedButton(event: MouseEvent<HTMLElement>) {
@@ -75,7 +74,7 @@ export function useModalDialog<T extends HTMLElement>(
     if (!open || !dialog.current) return;
 
     const modal = dialog.current;
-    const background = document.querySelector<HTMLElement>('.app')
+    const background = document.querySelector<HTMLElement>('.app, .door')
       ?? document.getElementById('root');
     const returnFocus = document.activeElement instanceof HTMLElement
       ? document.activeElement
@@ -106,6 +105,8 @@ export function useModalDialog<T extends HTMLElement>(
       if (active instanceof HTMLDialogElement && typeof active.showModal === 'function') return;
       // Let Passport bubbles consume Escape before dismissing their parent sheet.
       if (typeof HTMLElement.prototype.showPopover === 'function' && modal.querySelector(':popover-open')) return;
+      // A field that cancels its own edit on Escape keeps the key: what lies around it stays open.
+      if (event.key === 'Escape' && event.target instanceof Element && event.target.closest('[data-escape="own"]')) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         if (active instanceof HTMLDialogElement) active.dispatchEvent(new Event('cancel', { cancelable: true }));
@@ -194,53 +195,6 @@ export function useSheetDialog<T extends HTMLElement>(
     void animation.finished.catch(() => undefined).then(() => {
       if (alive.current) finish.current();
     });
-  }
-  return [dialog, dismiss] as const;
-}
-
-/** What ties a page to the card it opens from. */
-export interface CardDialogLink {
-  /** The tapped card; without one the page arrives on its own. */
-  origin?: CardOrigin | null;
-  /** The card closing returns to, wherever it is by then. */
-  findCard: () => HTMLElement | null;
-  /** The part of the page that looks like the card and takes its place. */
-  anchor?: RefObject<HTMLElement | null>;
-  /** A sticky header that covers the anchor once the page has scrolled. */
-  header?: RefObject<HTMLElement | null>;
-  /** Whether pulling the page down may close it now. */
-  canPull?: () => boolean;
-}
-
-/** A modal page that grows out of a card and goes back into it; on a phone, pulling it down closes it. */
-export function useCardDialog<T extends HTMLElement>(
-  onClose: () => void,
-  initialFocus: RefObject<HTMLElement | null> | undefined,
-  link: CardDialogLink,
-): readonly [RefObject<T | null>, () => void] {
-  const latest = useRef({ onClose, link });
-  useEffect(() => { latest.current = { onClose, link }; });
-  const bound = useRef<CardDialog | null>(null);
-  const dialog = useModalDialog<T>(true, dismiss, initialFocus);
-  useLayoutEffect(() => {
-    if (!dialog.current) return;
-    const { origin } = latest.current.link;
-    const card = bound.current = bindCardDialog(dialog.current, {
-      origin,
-      card: () => (origin?.card.isConnected ? origin.card : null) ?? latest.current.link.findCard(),
-      anchor: () => latest.current.link.anchor?.current ?? null,
-      header: () => latest.current.link.header?.current ?? null,
-      canPull: () => latest.current.link.canPull?.() ?? true,
-      onClosed: () => latest.current.onClose(),
-    });
-    return () => {
-      card.release();
-      bound.current = null;
-    };
-  }, [dialog]);
-  function dismiss() {
-    if (bound.current) bound.current.close();
-    else latest.current.onClose();
   }
   return [dialog, dismiss] as const;
 }

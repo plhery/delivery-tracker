@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { allowCopying, copied, track } from './peek';
+import { allowCopying, copied, fits, track } from './peek';
 
 // The demo build keeps lookups in the browser; every number here is fictional.
 const errors = new WeakMap<Page, string[]>();
@@ -12,16 +12,16 @@ test.afterEach(async ({ page }) => { expect(errors.get(page)).toEqual([]); });
 
 const frontDoor = (page: Page) => page.getByRole('heading', { name: 'Where’s my parcel?' });
 const status = (page: Page) => page.getByRole('heading', { level: 1 });
-const fits = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 
 test('follows one parcel without an account: a number typed at the door gets its own page, which a reload keeps', async ({ page }) => {
   const sent: string[] = [];
   page.on('request', (request) => sent.push(`${request.method()} ${request.url()} ${request.postData() ?? ''}`));
   await track(page, '1ZDEMO202600000009');
   // The page opens with the lookup's answer, then the first check lands and the status is the headline.
-  await expect(page.locator('main')).toHaveAttribute('data-entrance', 'reveal');
-  await expect(page.getByLabel('UPS', { exact: true })).toBeVisible();
-  await expect(page.getByText('1ZDEMO202600000009', { exact: true }).first()).toBeVisible();
+  await expect(page.locator('.peekp-main')).toHaveAttribute('data-entrance', 'reveal');
+  // The page lies over the door, which lists the parcel too.
+  await expect(page.locator('.peekp').getByLabel('UPS', { exact: true })).toBeVisible();
+  await expect(page.locator('.peekp').getByText('1ZDEMO202600000009', { exact: true }).first()).toBeVisible();
   await expect(status(page)).toHaveText('In transit');
   await expect(page).toHaveTitle(/^In transit · /);
   // The reveal ends by offering the parcel's own link.
@@ -58,10 +58,12 @@ test('goes back to the front door, lists the parcel on this device, and forward 
   await expect(frontDoor(page)).toBeVisible();
   await recent.click();
   await expect(page).toHaveURL(address);
-  // The name leads back to the door, and so does "Track another parcel".
+  // The name leads back to the door, and so does "Track another parcel": the page closes, to the door's own step
+  // in the history.
   await page.locator('.peekp-home').click();
   await expect(frontDoor(page)).toBeVisible();
-  await page.goBack();
+  await expect(page).toHaveURL(/\/$/);
+  await page.goForward();
   await page.getByRole('button', { name: 'Track another parcel' }).click();
   await expect(frontDoor(page)).toBeVisible();
 });
@@ -182,7 +184,7 @@ test('fits a phone at 320 px, in German and in the dark', async ({ page }) => {
   expect(await fits(page)).toBe(true);
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Jetzt vergessen' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.locator('dialog[open]')).toBeVisible();
   expect(await fits(page)).toBe(true);
   await page.getByRole('button', { name: 'Abbrechen' }).click();
   await page.getByRole('button', { name: /Jetzt prüfen$/ }).click();

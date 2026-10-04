@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { fits } from './peek';
 
 // The sample parcel is told by the browser: every number here is fictional.
 const errors = new WeakMap<Page, string[]>();
@@ -13,7 +14,6 @@ const frontDoor = (page: Page) => page.getByRole('heading', { level: 1, name: 'W
 const status = (page: Page) => page.getByRole('heading', { level: 1 });
 const note = (page: Page) => page.getByText('Sample parcel', { exact: true });
 const path = (page: Page) => new URL(page.url()).pathname;
-const fits = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 
 test('shows one parcel as a pasted number would, says it is a sample, and keeps nothing of it', async ({ page }) => {
   const sent: string[] = [];

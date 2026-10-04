@@ -49,11 +49,13 @@ export interface TrackedParcel {
  * field shows what it takes until someone touches it, and Pip opens a sample
  * parcel. Below, three more sections answer what a visitor asks next.
  */
-export function FrontDoor({ onTracked, onSample, onSignIn }: {
+export function FrontDoor({ onTracked, onSample, onSignIn, covered = false }: {
   onTracked: (tracked: TrackedParcel) => void;
-  /** Pip's box is open: the sample parcel takes the door's place. */
+  /** Pip's box is open: the sample parcel shows over the door. */
   onSample: (sample: ParcelLinkView) => void;
   onSignIn: () => void;
+  /** A parcel's page lies over the door, which waits under it as it was left. */
+  covered?: boolean;
 }) {
   const { t, locale } = useI18n();
   const { account, email, openDeliveries } = usePeekSession();
@@ -84,16 +86,20 @@ export function FrontDoor({ onTracked, onSample, onSignIn }: {
   const sample = useRef<Promise<ParcelLinkView> | null>(null);
   const touch = useCallback(() => setTouched(true), []);
   const written = Boolean(state.text.trim());
-  const beat = useSampleLoop(SAMPLE_COUNT, ready && firstVisit && !touched && !written && !unboxing && !still && live);
+  const beat = useSampleLoop(SAMPLE_COUNT, ready && firstVisit && !touched && !written && !unboxing && !still && live && !covered);
 
-  // While a saved sign-in is still being looked for, nobody may be looking at the door.
-  useEffect(() => { if (account !== 'checking') trackScreen('front-door', account === 'signed-in' ? 'account' : 'anonymous'); }, [account]);
-
-  // The tab asks the page's question, in the reader's language. Whatever follows the landing is the app again.
+  // While a saved sign-in is still being looked for, or a parcel's page lies over the door, nobody is looking at it.
   useEffect(() => {
+    if (account !== 'checking' && !covered) trackScreen('front-door', account === 'signed-in' ? 'account' : 'anonymous');
+  }, [account, covered]);
+
+  // The tab asks the page's question, in the reader's language. Whatever follows the landing is the app again;
+  // a page over the door names the tab itself.
+  useEffect(() => {
+    if (covered) return;
     document.title = `${t('app.title')} — ${t('peek.title')} ${t('app.tagline')}`;
     return () => { document.title = `${t('app.title')} — ${t('app.tagline')}`; };
-  }, [t]);
+  }, [t, covered]);
 
   // The field is the browser's own until the page is live: what was typed meanwhile is read once.
   useEffect(() => {
@@ -271,10 +277,10 @@ export function FrontDoor({ onTracked, onSample, onSignIn }: {
           </form>
           <p className="sr-only" role="status">{opening ? t('door.opening') : ''}</p>
           {pip && <HeroPip label={named ? { carrier, number } : undefined} sample={firstVisit && !written} happy={beat.phase === 'found'}
-            hop={answered} onOpening={() => { setUnboxing(true); sample.current = startSample(locale); }}
+            hop={answered} named={!covered} onOpening={() => { setUnboxing(true); sample.current = startSample(locale); }}
             onOpen={() => void sample.current?.then(onSample)} />}
           {opening && <div className="door-skeleton" aria-hidden="true"><span /><span /><span /></div>}
-          {screens && <screens.DeviceParcels onSignIn={onSignIn} onForgotten={() => field.current?.focus()} />}
+          {screens && <screens.DeviceParcels onSignIn={onSignIn} onForgotten={() => field.current?.focus()} covered={covered} />}
         </div>
         <CarrierRibbon />
       </section>

@@ -43,3 +43,10 @@ export async function allowCopying(page: Page) {
 
 /** What the page copied last. */
 export const copied = (page: Page) => page.evaluate(() => navigator.clipboard.readText());
+
+/**
+ * Nothing reaches past the screen's edge: neither the document nor a parcel's page lying over the door, which
+ * scrolls on its own.
+ */
+export const fits = (page: Page) => page.evaluate(() => [document.documentElement, document.querySelector('.peekp-over')]
+  .every((surface) => !surface || surface.scrollWidth <= surface.clientWidth));

@@ -2,8 +2,11 @@ import { act, renderHook } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  closeParcelLink,
+  forgetParcelLinkOpener,
   leaveParcelLink,
   openLanding,
+  parcelLinkOpener,
   useLandingRoute,
   linkNameFromHash,
   linkNameFromLocation,
@@ -114,6 +117,39 @@ describe('the parcel page’s address', () => {
     act(() => leaveParcelLink('/?parcel=p1'));
     expect(location.pathname + location.search).toBe('/?parcel=p1');
     expect(result.current).toBeNull();
+  });
+
+  it('knows how far behind a page the door stands, and what the page was opened with', async () => {
+    const { result } = renderHook(() => useParcelLinkRoute());
+    const moved = () => new Promise<void>((resolve) => window.addEventListener('popstate', () => resolve(), { once: true }));
+    const entries = history.length;
+    const card = document.createElement('a');
+    act(() => openParcelLink(LINK_ID, { from: card }));
+    expect(history.state).toEqual({ peekDoorSteps: 1 });
+    expect(parcelLinkOpener(LINK_ID)).toBe(card);
+    expect(parcelLinkOpener(OTHER_LINK_ID)).toBeNull();
+    // One page opened from another is one step further from the door, and has no card of its own.
+    act(() => openParcelLink(OTHER_LINK_ID));
+    expect(history.state).toEqual({ peekDoorSteps: 2 });
+    expect(parcelLinkOpener(LINK_ID)).toBeNull();
+    // Closing goes back to the door's own step: nothing is added to the history.
+    const waiting = moved();
+    act(() => closeParcelLink());
+    await act(() => waiting);
+    expect(result.current).toBeNull();
+    expect(location.pathname).toBe('/');
+    expect(history.length).toBe(entries + 2);
+
+    // A page at its own address has no door behind it: its pages have none either, and closing leads to one.
+    history.replaceState(null, '', `/p/${LINK_ID}`);
+    act(() => openParcelLink(OTHER_LINK_ID, { from: card }));
+    expect(history.state).toBeNull();
+    act(() => closeParcelLink());
+    expect(location.pathname).toBe('/');
+    expect(result.current).toBeNull();
+    expect(parcelLinkOpener(OTHER_LINK_ID)).toBe(card);
+    forgetParcelLinkOpener();
+    expect(parcelLinkOpener(OTHER_LINK_ID)).toBeNull();
   });
 
   it('opens with the address already in place, keeping its name', () => {

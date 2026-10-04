@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
-import { allowCopying, copied, track } from './peek';
+import { allowCopying, copied, fits, track } from './peek';
 
 // The demo build keeps parcel links in the browser: every number here is fictional, and a
 // second browser reads a link as a viewer once it is handed the first one's demo links.
@@ -14,7 +14,6 @@ test.beforeEach(async ({ page }) => { watch(page); });
 test.afterEach(async ({ page }) => { expect(errors.get(page)).toEqual([]); });
 
 const status = (page: Page) => page.getByRole('heading', { level: 1 });
-const fits = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 const actions = (page: Page) => page.locator('.peekp-actions');
 
 /** Gives another browser the demo's links as the owner's browser has them now, and shows it `address`. */

@@ -1,6 +1,8 @@
 import { springAt, springSettleTime, type Spring } from './spring';
 
 const PHONE = '(max-width: 760px)';
+/** Marks the part of an anchor that the card shows too, such as its map: it stays while the words around it change. */
+const PICTURE = 'data-card-picture';
 const STILL = '(prefers-reduced-motion: reduce)';
 const matches = (query: string) => Boolean(window.matchMedia?.(query).matches);
 
@@ -30,7 +32,7 @@ function cardBox(card: HTMLElement | null | undefined): Box | null {
 
 /** Capture the actual tapped card, never a stale position from browser history. */
 export function captureCardOrigin(card?: HTMLElement): CardOrigin | null {
-  if (!card || !matches(PHONE) || matches(STILL)) return null;
+  if (!card || matches(STILL)) return null;
   const box = cardBox(card);
   return box && { card, ...box };
 }
@@ -159,12 +161,20 @@ function fly(
   };
 }
 
+/** The parts of the page its flight knows. */
+interface Parts {
+  anchor?: HTMLElement | null;
+  header?: HTMLElement | null;
+  /** The part whose words change between card and page, where that is not the anchor itself. */
+  worded?: HTMLElement | null;
+}
+
 /**
  * The page drawn in its card's place. `anchor` is the part of the page that looks like the card:
  * it lands on the card, and nothing else shows. A page scrolled too far for its anchor to fill
  * the card shrinks into the card whole, as it stands.
  */
-function poseOnCard(page: HTMLElement, current: Pose, card: Box, anchor?: HTMLElement | null, header?: HTMLElement | null): { pose: Pose; words: HTMLElement[] } {
+function poseOnCard(page: HTMLElement, current: Pose, card: Box, { anchor, header, worded }: Parts): { pose: Pose; words: HTMLElement[] } {
   const bounds = page.getBoundingClientRect();
   const zoom = current.scale;
   const width = page.offsetWidth;
@@ -181,8 +191,8 @@ function poseOnCard(page: HTMLElement, current: Pose, card: Box, anchor?: HTMLEl
         left: (inner.left - bounds.left) / zoom, top: (top - bounds.top) / zoom, width: inner.width / zoom,
         radius: top > inner.top ? 0 : Number.parseFloat(getComputedStyle(anchor).borderTopLeftRadius) || 0,
       };
-      // The anchor's picture, which assistive technology skips, carries on from the card's; its words change.
-      words = Array.from(anchor.children).filter((part): part is HTMLElement => part instanceof HTMLElement && part.getAttribute('aria-hidden') !== 'true');
+      // The anchor's picture carries on from the card's; its words change.
+      words = Array.from((worded ?? anchor).children).filter((part): part is HTMLElement => part instanceof HTMLElement && !part.hasAttribute(PICTURE));
     }
   }
   const scale = card.width / frame.width;
@@ -218,8 +228,8 @@ export interface CardDialog {
 }
 
 /**
- * A page that opens out of a card and returns to it, on a phone. Pulling it down from its top
- * carries it with the finger: let go far or fast enough and it closes.
+ * A page that opens out of a card and returns to it. Under a finger, pulling it down from its
+ * top carries it along: let go far or fast enough and it closes.
  */
 export function bindCardDialog(page: HTMLElement, options: {
   origin?: CardOrigin | null;
@@ -227,6 +237,7 @@ export function bindCardDialog(page: HTMLElement, options: {
   card: () => HTMLElement | null;
   anchor?: () => HTMLElement | null;
   header?: () => HTMLElement | null;
+  worded?: () => HTMLElement | null;
   canPull: () => boolean;
   onClosed: () => void;
 }): CardDialog {
@@ -239,6 +250,7 @@ export function bindCardDialog(page: HTMLElement, options: {
   let touch: { id: number; x: number; y: number; claimed: boolean; left: number; top: number; height: number; pull: number; dim: string; samples: { time: number; x: number; y: number }[] } | null = null;
   let suppressClickUntil = 0;
 
+  const parts = (): Parts => ({ anchor: options.anchor?.(), header: options.header?.(), worded: options.worded?.() });
   const now = () => flight ? flight.at(elapsed(flight)) : pose;
   const speedNow = () => {
     if (!flight) return { x: 0, y: 0 };
@@ -268,8 +280,8 @@ export function bindCardDialog(page: HTMLElement, options: {
 
   function open() {
     const origin = options.origin;
-    if (!origin || !page.animate || !matches(PHONE) || matches(STILL) || !page.offsetWidth) return;
-    const start = poseOnCard(page, REST, origin, options.anchor?.(), options.header?.());
+    if (!origin || !page.animate || matches(STILL) || !page.offsetWidth) return;
+    const start = poseOnCard(page, REST, origin, parts());
     const opening = flight = fly(page, start.words, start.pose, REST, { id: 'parcel-card-expand', spring: OPEN, look: arriving });
     // A turned phone or a keyboard changes what the page grows into.
     const still = window.matchMedia(STILL);
@@ -301,12 +313,12 @@ export function bindCardDialog(page: HTMLElement, options: {
     const closed = () => { if (alive) options.onClosed(); };
     if (!page.animate || matches(STILL)) { closed(); return; }
     const from = now();
-    const box = matches(PHONE) ? cardBox(options.card()) : null;
+    const box = cardBox(options.card());
     let leaving: Animation;
     if (box) {
       // Without its flight the page is drawn as `pose` says, which is what gets measured.
       land();
-      const end = poseOnCard(page, pose, box, options.anchor?.(), options.header?.());
+      const end = poseOnCard(page, pose, box, parts());
       // A page caught on its way in leaves with no more than it had shown.
       const look = (travel: number) => {
         const { opacity, words } = landing(travel);
@@ -348,7 +360,7 @@ export function bindCardDialog(page: HTMLElement, options: {
   const touchStart = (event: TouchEvent) => {
     if (touch?.claimed) { touchEnd(event, true); return; }
     touch = null;
-    if (event.touches.length !== 1 || closing || !options.canPull() || !matches(PHONE)) return;
+    if (event.touches.length !== 1 || closing || !options.canPull()) return;
     if (page.scrollTop > 0 || page.hasAttribute('inert') || !arrived()) return;
     const target = event.target instanceof Element ? event.target : null;
     if (!target || target.closest('input, textarea, select, [contenteditable], dialog')) return;

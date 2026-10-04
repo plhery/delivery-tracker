@@ -16,6 +16,8 @@ type ViewTransitions = { startViewTransition?: (update: () => void) => unknown }
  * `/p/<id>`, the front door anywhere else. It owns the hand-over between the
  * two: when a lookup answers, the address becomes the parcel's own and the
  * page opens with that answer. The sample parcel is handed over the same way.
+ * A page opened from the door lies over it: the door waits underneath, and
+ * the page closes back into the card it came from.
  */
 export function PeekRoot({ session, serverLinkId = null }: {
   session: PeekSession;
@@ -38,10 +40,16 @@ export function PeekRoot({ session, serverLinkId = null }: {
   const [revealed, setRevealed] = useState<{ id: string; view: ParcelLinkView } | null>(null);
   // The reveal belongs to one arrival: coming back to the page later opens it like any link.
   if (revealed && revealed.id !== linkId) setRevealed(null);
+  // Once the door has shown it stays, under any page opened afterwards. A parcel's own address opens without it.
+  const [door, setDoor] = useState(linkId === null);
+  if (linkId === null && !door) setDoor(true);
+  // A lookup or the sample is done with once its page shows: the door starts over underneath.
+  const [visit, setVisit] = useState(0);
 
   const reveal = useCallback((id: string, view: ParcelLinkView) => {
     const show = () => {
       setRevealed({ id, view });
+      setVisit((count) => count + 1);
       openParcelLink(id);
     };
     // The address and the answer change in one render, so the page mounts with its answer.
@@ -70,11 +78,11 @@ export function PeekRoot({ session, serverLinkId = null }: {
   const onSignIn = useCallback(() => signIn(), [signIn]);
   const answer = revealed?.id === linkId ? revealed.view : undefined;
 
+  const Page = linkId && screens ? screens.ParcelPage : null;
   return <PeekSessionProvider value={session}>
     {/* An address that became a parcel's before its page's code arrived keeps the door until it does. */}
-    {linkId && screens
-      ? <screens.ParcelPage key={linkId} linkId={linkId} entrance={answer ? 'reveal' : 'direct'} initial={answer} />
-      : <FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />}
+    {(door || !Page) && <FrontDoor key={visit} onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} covered={Boolean(Page)} />}
+    {Page && linkId && <Page key={linkId} linkId={linkId} entrance={answer ? 'reveal' : 'direct'} initial={answer} over={door} />}
     {/* A word that outlives the page it was said on, such as a parcel forgotten. */}
     <NoticeToast />
   </PeekSessionProvider>;

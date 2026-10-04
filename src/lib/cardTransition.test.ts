@@ -114,17 +114,16 @@ afterEach(() => {
 });
 
 describe('captureCardOrigin', () => {
-  it('remembers a card on a phone, and nothing on a wide screen, with reduced motion or out of sight', () => {
+  it('remembers a card on any screen, and nothing with reduced motion or out of sight', () => {
     const { card } = setup({ withCard: false });
     expect(captureCardOrigin(card)).toMatchObject({ card, left: 20, top: 428, width: 350, height: 102, radius: 16 });
+    media['(max-width: 760px)'] = false;
+    expect(captureCardOrigin(card)).toMatchObject({ card, left: 20, top: 428 });
     expect(captureCardOrigin()).toBeNull();
     place(card, () => ({ ...CARD, top: 900 }));
     expect(captureCardOrigin(card)).toBeNull();
     place(card, () => CARD);
     media['(prefers-reduced-motion: reduce)'] = true;
-    expect(captureCardOrigin(card)).toBeNull();
-    media['(prefers-reduced-motion: reduce)'] = false;
-    media['(max-width: 760px)'] = false;
     expect(captureCardOrigin(card)).toBeNull();
   });
 });
@@ -156,14 +155,50 @@ describe('a page that opens out of its card', () => {
     expect(words.frames.at(-1)!.opacity).toBe(1);
   });
 
-  it('arrives on its own without a card, on a wide screen and with reduced motion', () => {
-    setup({ withCard: false });
-    expect(animations).toEqual([]);
-    media['(max-width: 760px)'] = false;
+  it('arrives on its own without a card, and with reduced motion', () => {
     const { card } = setup({ withCard: false });
+    expect(animations).toEqual([]);
     bound!.release();
+    media['(prefers-reduced-motion: reduce)'] = true;
     bound = bindCardDialog(document.getElementById('page')!, { origin: { card, ...CARD, radius: 16 }, card: () => card, canPull: () => true, onClosed: vi.fn() });
     expect(animations).toEqual([]);
+  });
+
+  it('opens a wide screen’s panel out of its card too, wherever the panel stands', () => {
+    media['(max-width: 760px)'] = false;
+    const { page } = setup();
+    bound!.release();
+    animations = [];
+    // A panel in the middle of the screen, with a card beside it.
+    place(page, () => ({ ...PAGE, left: 400 }), page);
+    place(document.getElementById('hero')!, () => ({ ...HERO, left: 400 + HERO.left }));
+    bound = bindCardDialog(page, {
+      origin: captureCardOrigin(document.getElementById('card')!), card: () => document.getElementById('card'),
+      anchor: () => document.getElementById('hero'), canPull: () => true, onClosed: vi.fn(),
+    });
+    const first = named('parcel-card-expand')[0].frames[0];
+    const [, x, y, scale] = /translate\(([-\d.]+)px, ([-\d.]+)px\) scale\(([\d.]+)\)/.exec(String(first.transform))!.map(Number);
+    // The hero's corner stands on the card's: the panel's own place on the screen is taken into account.
+    expect(400 + x + HERO.left * scale).toBeCloseTo(CARD.left, 0);
+    expect(y + HERO.top * scale).toBeCloseTo(CARD.top, 0);
+  });
+
+  it('keeps the picture the card shows too, and changes the words of the part it is told', () => {
+    const { page } = setup({ withCard: false });
+    const hero = document.getElementById('hero')!;
+    hero.insertAdjacentHTML('afterbegin', '<div id="picture" data-card-picture></div>');
+    bound!.release();
+    bound = bindCardDialog(page, { origin: captureCardOrigin(document.getElementById('card')!), card: () => null, anchor: () => hero, canPull: () => true, onClosed: vi.fn() });
+    expect(named('parcel-card-expand-words').map((animation) => (animation.target as HTMLElement).id)).toEqual(['inside']);
+    bound.release();
+    animations = [];
+    // The whole page can be what lands on the card while only one part of it changes its words.
+    hero.insertAdjacentHTML('beforeend', '<div id="inner"><span id="word"></span></div>');
+    bound = bindCardDialog(page, {
+      origin: captureCardOrigin(document.getElementById('card')!), card: () => null, anchor: () => hero, worded: () => document.getElementById('inner'),
+      canPull: () => true, onClosed: vi.fn(),
+    });
+    expect(named('parcel-card-expand-words').map((animation) => (animation.target as HTMLElement).id)).toEqual(['word']);
   });
 });
 
@@ -337,7 +372,7 @@ describe('pulling the page down', () => {
     expect(named('detail-pull-settle')).toHaveLength(1);
   });
 
-  it('leaves the touch alone when the page is scrolled, busy, pulled sideways or upwards, or in a field', () => {
+  it('leaves the touch alone when the page is scrolled, busy, pulled sideways or upwards, or in a field, on any screen', () => {
     const scrolled = setup({ scrolled: 40, withCard: false });
     expect(pull(scrolled.page, [[0, 60]])[0].defaultPrevented).toBe(false);
     bound!.release();
@@ -351,10 +386,12 @@ describe('pulling the page down', () => {
     page.setAttribute('inert', '');
     expect(pull(page, [[0, 60]])[0].defaultPrevented).toBe(false);
     page.removeAttribute('inert');
-    media['(max-width: 760px)'] = false;
-    expect(pull(page, [[0, 60]])[0].defaultPrevented).toBe(false);
     expect(page.style.transform).toBe('');
     expect(animations).toEqual([]);
+    // A wide screen under a finger is pulled like a phone.
+    media['(max-width: 760px)'] = false;
+    expect(pull(page, [[0, 60]], false)[0].defaultPrevented).toBe(true);
+    touch(page, 'touchcancel', undefined, { after: 16 });
   });
 
   it('ends the pull when a second finger lands or the browser takes the touch back', () => {

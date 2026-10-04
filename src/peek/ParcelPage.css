@@ -5,6 +5,10 @@
   --carrier-brand: light-dark(var(--carrier-brand-light, #20251e), var(--carrier-brand-dark, #f5f6f2));
   min-height: 100dvh; padding-bottom: max(28px, env(safe-area-inset-bottom));
 }
+/* A page opened from the front door lies over it and scrolls on its own; it moves and scales from its top left corner
+   when it leaves or returns to its card. */
+.sheet-backdrop.peekp-backdrop { display: block; padding: 0; z-index: 40; }
+.peekp-over { position: fixed; inset: 0; height: 100dvh; overflow-y: auto; overscroll-behavior: contain; background: var(--canvas); transform-origin: 0 0; outline: none; }
 .peekp-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 64px; padding: max(10px, env(safe-area-inset-top)) 16px 6px 20px; }
 .peekp-home { min-height: 44px; padding: 0; border-radius: 12px; background: transparent; }
 .peekp-header .peek-lockup__tagline { display: none; }
@@ -120,6 +124,8 @@
   position: absolute; inset: 0; animation: peekp-fade .5s var(--ease-out) both;
 }
 .peekp-map .peekp-map__canvas * { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* A page that opens out of its card carries the card's picture on: the map is there from the start. */
+.peekp-over--from-card .peekp-map .peekp-map__canvas { animation: none; }
 .peekp-map__open { position: absolute; inset: 0; width: 100%; padding: 0; border-radius: inherit; background: none; cursor: pointer; }
 .peekp-map__open:disabled { cursor: default; }
 .peekp-map__open:focus-visible { outline-offset: -5px; }

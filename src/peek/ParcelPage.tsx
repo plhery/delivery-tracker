@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon, ParcelIllustration } from '../components/Icon';
 import { ParcelMapSheet, useParcelRoute } from '../components/ParcelMap';
 // The journal and the pickup card keep their styles with the deliveries' detail.
@@ -12,6 +13,8 @@ import { trackAction, trackScreen } from '../lib/analytics';
 import { carrierBrand } from '../lib/carrierBrand';
 import { activeTrackingCarrierId, carrierInfo, displayedCarrierId, formatTrackingNumber, tracksAutomatically } from '../lib/carriers';
 import { LANDING_PATH } from '../lib/experience';
+import { captureCardOrigin } from '../lib/cardTransition';
+import { useCardDialog } from '../lib/cardDialog';
 import { focusClickedButton } from '../lib/modal';
 import { parcelDeliveryEstimate, parcelHasCarrierUpdate, parcelIsUnannounced } from '../lib/parcelStatus';
 import { pickupPoint } from '../lib/pickupPoint';
@@ -52,7 +55,7 @@ import {
 import { announceNotice, Toast } from './parcel/Toast';
 import { announceKeepOutcome, onKeepOutcome, usePendingKeep, type KeepOutcome } from './pending';
 import { recentFor, renameParcel } from './recents';
-import { leaveParcelLink, openLanding, parcelLinkURL, PIP_TRANSITION_NAME } from './route';
+import { closeParcelLink, forgetParcelLinkOpener, leaveParcelLink, openLanding, parcelLinkOpener, parcelLinkURL, PIP_TRANSITION_NAME } from './route';
 import { SAMPLE_LINK_ID } from './sample';
 import { usePeekSession } from './session';
 import { useParcelLink, type ParcelLinkState } from './useParcelLink';
@@ -64,14 +67,52 @@ const OWN_LINK_AFTER_MS = 1_400;
 const OWN_LINK_MS = 10_000;
 const NEWS_MS = 7_000;
 
+/** The way back to the front door: closing, for a page that lies over it. */
+const Leave = createContext<() => void>(leaveParcelLink);
+
+/**
+ * A page opened from the front door lies over it, as a parcel's page lies over
+ * the deliveries: it grows out of the card it was opened with, or of Pip for
+ * his sample, closes back into it, and can be pulled down from its top.
+ */
+function OverDoor({ linkId, children }: { linkId: string; children: ReactNode }) {
+  const { t } = useI18n();
+  // Measured once, where the card stands as the page opens.
+  const [origin] = useState(() => captureCardOrigin(parcelLinkOpener(linkId) ?? undefined));
+  useEffect(forgetParcelLinkOpener, []);
+  const [dialog, leave] = useCardDialog<HTMLDivElement>(closeParcelLink, undefined, {
+    origin,
+    findCard: () => linkId === SAMPLE_LINK_ID ? document.querySelector<HTMLElement>('.door-pip')
+      : document.querySelector<HTMLElement>(`[data-parcel-link="${CSS.escape(linkId)}"]`),
+    // On a wide screen the page writes beside its map, as the door's cards do: both land on the card.
+    anchor: (page) => page.querySelector<HTMLElement>('.peekp-columns[data-beside], .peekp-card'),
+    worded: (page) => page.querySelector<HTMLElement>('.peekp-card'),
+  });
+  return createPortal(<div className="sheet-backdrop peekp-backdrop">
+    <div ref={dialog} className={`peekp-over${origin ? ' peekp-over--from-card' : ''}`} role="dialog" aria-modal="true" aria-label={t('detail.label')} tabIndex={-1}>
+      <Leave.Provider value={leave}>{children}</Leave.Provider>
+    </div>
+  </div>, document.body);
+}
+
 /**
  * One parcel at its own address, for anyone with the link. `entrance="reveal"`
  * is the hand-over from the front door, with the lookup's answer as `initial`;
  * a link opened directly loads on its own. The sample parcel is shown the same
  * way, as its owner would see it: it says that it is a sample, and leads to a
- * parcel of one's own instead of being kept or forgotten.
+ * parcel of one's own instead of being kept or forgotten. `over` says the
+ * front door is still there underneath.
  */
-export function ParcelPage({ linkId, entrance = 'direct', initial }: {
+export function ParcelPage({ over = false, ...page }: {
+  linkId: string;
+  entrance?: 'reveal' | 'direct';
+  initial?: ParcelLinkView;
+  over?: boolean;
+}) {
+  return over ? <OverDoor linkId={page.linkId}><Page {...page} /></OverDoor> : <Page {...page} />;
+}
+
+function Page({ linkId, entrance = 'direct', initial }: {
   linkId: string;
   entrance?: 'reveal' | 'direct';
   initial?: ParcelLinkView;
@@ -85,7 +126,8 @@ export function ParcelPage({ linkId, entrance = 'direct', initial }: {
 
   // Someone signed in goes back to their deliveries; a visitor to the front door.
   const openDeliveries = session.openDeliveries;
-  const home = useCallback(() => { if (openDeliveries) openDeliveries(); else leaveParcelLink(); }, [openDeliveries]);
+  const leave = useContext(Leave);
+  const home = useCallback(() => { if (openDeliveries) openDeliveries(); else leave(); }, [openDeliveries, leave]);
 
   if (state.status === 'unavailable') return <Gone onHome={home} />;
   if (state.status === 'stopped') return <Gone stopped onHome={home} />;
@@ -158,6 +200,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
 }) {
   const { t, locale, languageTag } = useI18n();
   const session = usePeekSession();
+  const leave = useContext(Leave);
   const { trouble, checking, live, refreshing, seenAt, news, unseen, previousEstimate, refresh, dismissNews, adopt } = state;
   const { parcel, numberHint, link } = view;
   const now = useNow();
@@ -306,7 +349,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
     if (!key) return;
     await forgetParcel(linkId, key);
     announceNotice('link.forget.done');
-    leaveParcelLink();
+    leave();
   }
   const askToForget = key ? () => setForgetting('asked') : undefined;
 
@@ -366,7 +409,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const teaser = abroad && !afterwards && !present && visitor && <PassportTeaser parcel={parcel} origin={abroad} onStart={signInToKeep} />;
   // The sample's way back to the landing: at its own address for someone signed in, whose `/` is their deliveries.
   const landingPath = signedIn ? LANDING_PATH : '/';
-  const toLanding = () => { if (signedIn) openLanding(); else leaveParcelLink(); };
+  const toLanding = () => { if (signedIn) openLanding(); else leave(); };
   const invitation = sample && <SampleInvitation carrier={displayed} onTrack={onHome} onSignIn={visitor ? signInToKeep : undefined} />;
   const map = (shape: 'card' | 'tile') => <RouteMap route={route} parcel={parcel} stage={stage} shape={shape} pip={figure === 'map' || figure === 'none'} onOpen={openMap} />;
 

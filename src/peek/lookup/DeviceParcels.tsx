@@ -33,12 +33,12 @@ function useParcelTitle(recent: RecentParcel): string {
     : numberHint ? maskedNumber(numberHint) : t('common.parcel'));
 }
 
-/** A modified click opens the link the browser's way, in a new tab or window. */
+/** A modified click opens the link the browser's way, in a new tab or window. Any other opens the page out of the card. */
 function openOnClick(id: string) {
-  return (event: MouseEvent) => {
+  return (event: MouseEvent<HTMLElement>) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
     event.preventDefault();
-    openParcelLink(id);
+    openParcelLink(id, { from: event.currentTarget });
   };
 }
 
@@ -51,7 +51,7 @@ function DeviceParcel({ recent }: { recent: RecentParcel }) {
   const when = estimate ? localizedExpectedDelivery(estimate, t, languageTag) : localizedParcelCompletionDate(parcel, languageTag, t);
   const title = useParcelTitle(recent);
   const { placed, route } = useParcelRoute(parcel, languageTag);
-  return <a className={`door-parcel${placed ? ' door-parcel--route' : ''}`} style={carrierBrand(carrier).style} href={parcelLinkPath(recent.id)} onClick={openOnClick(recent.id)}>
+  return <a className={`door-parcel${placed ? ' door-parcel--route' : ''}`} style={carrierBrand(carrier).style} href={parcelLinkPath(recent.id)} data-parcel-link={recent.id} onClick={openOnClick(recent.id)}>
     {placed && <CardRoute route={route} />}
     <span className="door-parcel__top"><CarrierMark carrier={carrier} />{when && <span className="door-parcel__when">{when}</span>}</span>
     <strong>{title}</strong>
@@ -90,7 +90,7 @@ function LeadParcel({ recent }: { recent: RecentParcel }) {
   // A parcel waiting to be collected says where.
   const detail = parcelDetail(parcel, wording) ?? (stage === 'ready_for_pickup' ? pickupPoint(parcel.pickupPoint)?.name : null);
   const mood = pipMood(stage ?? undefined);
-  return <a className="door-nextup" style={carrierBrand(carrier).style} href={parcelLinkPath(recent.id)} onClick={openOnClick(recent.id)}>
+  return <a className="door-nextup" style={carrierBrand(carrier).style} href={parcelLinkPath(recent.id)} data-parcel-link={recent.id} onClick={openOnClick(recent.id)}>
     <span className="door-nextup__map" aria-hidden="true">
       {route && <WorldMap route={route} mode={defaultMode(route, stage ?? undefined)} time={time} look="tint" labels="ends" context={false}
         live={!stage || !isFinal(stage)} pip={mood && { mood, ceiling: LEAD_CEILING, floor: beside ? undefined : LEAD_FLOOR }} languageTag={languageTag}
@@ -116,10 +116,12 @@ function LeadParcel({ recent }: { recent: RecentParcel }) {
  * on a card of its own. They live in the browser only; forgetting them all
  * also forgets, on the server, the lookups this device made.
  */
-export function DeviceParcels({ onSignIn, onForgotten }: {
+export function DeviceParcels({ onSignIn, onForgotten, covered = false }: {
   onSignIn: () => void;
   /** The list is gone: the door takes the focus back. */
   onForgotten: () => void;
+  /** A parcel's page lies over the list, and reads its parcel itself. */
+  covered?: boolean;
 }) {
   const { t } = useI18n();
   const { account } = usePeekSession();
@@ -131,7 +133,8 @@ export function DeviceParcels({ onSignIn, onForgotten }: {
   const list = useRef(recents);
   useEffect(() => { list.current = recents; });
   const listed = recents.length > 0;
-  useEffect(() => listed ? watchDeviceParcels(() => list.current) : undefined, [listed]);
+  const watching = listed && !covered;
+  useEffect(() => watching ? watchDeviceParcels(() => list.current) : undefined, [watching]);
   useEffect(() => { if (asking) question.current?.focus(); }, [asking]);
 
   async function forget() {

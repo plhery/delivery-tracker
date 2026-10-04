@@ -23,7 +23,7 @@ function around(sentence: (value: string) => string): [string, string] {
  * answers. With nothing in the field, tapping him opens a sample parcel: the
  * box opens first. Pasting a number never opens it.
  */
-export function HeroPip({ label, sample, happy, hop, onOpening, onOpen }: {
+export function HeroPip({ label, sample, happy, hop, named = true, onOpening, onOpen }: {
   /** The carrier's label on the box, once the carrier is known. */
   label?: { carrier: CarrierInfo; number: string };
   /** Whether tapping Pip opens a sample: only while the field is empty. */
@@ -31,6 +31,8 @@ export function HeroPip({ label, sample, happy, hop, onOpening, onOpen }: {
   happy: boolean;
   /** Names the answer a carrier gave, and is empty while there is none: Pip hops once for each. */
   hop: string;
+  /** Whether the browser may move him into a parcel's page: not while a page lies over the door, with a Pip of its own. */
+  named?: boolean;
   /** The box starts to open: nothing else on the page should move for attention now. */
   onOpening: () => void;
   /** The box is open: the sample parcel shows. */
@@ -75,7 +77,7 @@ export function HeroPip({ label, sample, happy, hop, onOpening, onOpen }: {
   const [before, after] = around((action) => t('landing.pip.hint', { action }));
   return <>
     <div ref={root} className={`door-pip${opening ? ' door-pip--opening' : ''}`} data-mood={happy && !opening ? 'happy' : undefined}
-      style={{ viewTransitionName: PIP_TRANSITION_NAME }}>
+      style={named ? { viewTransitionName: PIP_TRANSITION_NAME } : undefined}>
       {/* Without an address this is no link: Pip is then the parcel being tracked, not the way to a sample. */}
       <a className="door-pip__tap" href={sample ? SAMPLE_PATH : undefined} aria-label={sample ? t('landing.pip.open') : undefined}
         draggable={false} onClick={sample ? open : undefined}>

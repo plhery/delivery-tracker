@@ -117,15 +117,50 @@ export function openLanding(): void {
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
-/** Shows a parcel's page at its own address. Back returns to where the visitor was. */
-export function openParcelLink(id: string, { replace = false }: { replace?: boolean } = {}): void {
+/** In the history's state of a parcel page: how many steps back the front door it was opened from stands. */
+const DOOR_STEPS = 'peekDoorSteps';
+const doorSteps = (): number => {
+  const steps: unknown = (window.history.state as Record<string, unknown> | null)?.[DOOR_STEPS];
+  return typeof steps === 'number' && steps > 0 ? steps : 0;
+};
+
+/** What a page was opened from, for the page to grow out of. */
+let opener: { id: string; element: HTMLElement } | null = null;
+
+/**
+ * Shows a parcel's page at its own address. Back returns to where the visitor was.
+ * `from` is the card, or Pip, the visitor opened it with.
+ */
+export function openParcelLink(id: string, { replace = false, from }: { replace?: boolean; from?: HTMLElement } = {}): void {
+  opener = from ? { id, element: from } : null;
   if (replace) window.history.replaceState(window.history.state, '', parcelLinkPath(id));
-  else window.history.pushState(null, '', parcelLinkPath(id));
+  else {
+    // One page opened from another stands one step further from the door.
+    const fromPage = parcelLinkIdFromPath(window.location.pathname) !== null;
+    const steps = fromPage ? doorSteps() && doorSteps() + 1 : 1;
+    window.history.pushState(steps ? { [DOOR_STEPS]: steps } : null, '', parcelLinkPath(id));
+  }
   window.dispatchEvent(new Event(eventName));
+}
+
+/** The element the page of this parcel was opened with, until another page opens or it is forgotten. */
+export function parcelLinkOpener(id: string): HTMLElement | null {
+  return opener?.id === id ? opener.element : null;
+}
+
+export function forgetParcelLinkOpener(): void {
+  opener = null;
 }
 
 /** Leaves the parcel page, or the landing's own address: for the front door, or the deliveries of someone signed in. */
 export function leaveParcelLink(path = '/'): void {
   window.history.pushState(null, '', path);
   window.dispatchEvent(new Event(eventName));
+}
+
+/** Closes a page that lies over the front door: back to the door's own step in the history, where there is one. */
+export function closeParcelLink(): void {
+  const steps = doorSteps();
+  if (steps) window.history.go(-steps);
+  else leaveParcelLink();
 }

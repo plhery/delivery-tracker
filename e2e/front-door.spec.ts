@@ -46,7 +46,7 @@ test('a pasted message goes straight to the parcel: the number is found, the car
   await openDoor(page);
   await paste(page, 'Good news, your order has shipped!\nUPS tracking: 1ZDEMO202600000001\nExpected delivery: Wednesday');
   await expect(page).toHaveURL(parcelAddress);
-  await expect(page.locator('main')).toHaveAttribute('data-entrance', 'reveal');
+  await expect(page.locator('.peekp-main')).toHaveAttribute('data-entrance', 'reveal');
   await expect(page.getByLabel('UPS', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('1ZDEMO202600000001', { exact: true }).first()).toBeVisible();
   // Back at the door, the parcel is on this device.

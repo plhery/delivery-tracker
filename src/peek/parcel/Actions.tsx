@@ -57,7 +57,7 @@ export function Actions({ name, ping, onHave, onCalendar, onShare, onRename, com
   if (editing && onRename) {
     return <form className="peekp-name" onSubmit={save}>
       <input type="text" value={draft} maxLength={MAX_NAME_LENGTH} autoFocus autoComplete="off" enterKeyHint="done"
-        aria-label={t('detail.titleAria')} placeholder={t('common.parcel')}
+        aria-label={t('detail.titleAria')} placeholder={t('common.parcel')} data-escape="own"
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => { if (event.key === 'Escape') setEditing(false); }} />
       <button type="button" className="button button--secondary" onClick={() => setEditing(false)}>{t('common.cancel')}</button>

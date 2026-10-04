@@ -903,6 +903,28 @@ describe('FrontDoor: the landing', () => {
     seen.mockRestore();
   });
 
+  it('waits under a parcel’s page without a word: no visit, no tab title, a Pip the browser leaves alone, and its parcels unread', async () => {
+    const analytics = await import('../lib/analytics');
+    const seen = vi.spyOn(analytics, 'trackScreen');
+    const hour = 3_600_000;
+    document.title = 'The parcel’s own title';
+    const view = render(<FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} covered />);
+    expect(seen).not.toHaveBeenCalled();
+    expect(document.title).toBe('The parcel’s own title');
+    expect(document.querySelector<HTMLElement>('.door-pip')!.style.viewTransitionName).toBe('');
+    // The page above reads its parcel itself.
+    act(() => { rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView(), now: Date.now() - hour }); });
+    await screen.findByRole('region', { name: 'On this device' });
+    expect(mocks.read).not.toHaveBeenCalled();
+    // The page closes: the door is looked at again.
+    mocks.read.mockResolvedValue(testView());
+    view.rerender(<FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />);
+    expect(seen).toHaveBeenCalledWith('front-door', 'anonymous');
+    expect(document.title).toBe('Peek — Where’s my parcel? Universal Parcel Tracker');
+    await waitFor(() => expect(mocks.read).toHaveBeenCalledWith(LINK_ID, expect.objectContaining({ key: OWNER_KEY })));
+    seen.mockRestore();
+  });
+
   it('draws the whole first screen on the server: Pip included, nothing of the map or the cards', () => {
     const html = renderToString(<FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />);
     for (const text of ['Where’s my parcel?', 'Open a sample parcel', 'door-pip', 'door-ribbon__truck', 'Who’s behind Peek?']) expect(html).toContain(text);

@@ -53,7 +53,7 @@ export function RouteEngraving({ route, stage, onOpen }: { route: Route | null; 
   const { languageTag } = useI18n();
   const [time] = useState(() => new Date());
   // The globe button beside the bell is the accessible way in; the drawing is a large tap target.
-  return <div className="detail__engraving" onClick={onOpen} aria-hidden="true">
+  return <div className="detail__engraving" onClick={onOpen} aria-hidden="true" data-card-picture="">
     {route && <WorldMap route={route} mode={defaultMode(route, stage)} time={time} look="tint" labels="ends" context={false} live={travelling(stage)} peek
       pip={pip(stage)} languageTag={languageTag} insets={{ top: 40, right: 16, bottom: 44, left: 16 }} className="detail__engraving-map" />}
   </div>;

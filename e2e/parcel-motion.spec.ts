@@ -41,7 +41,7 @@ function expectSameBox(actual: { x: number; y: number; width: number; height: nu
   for (const side of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(actual[side] - expected[side]), side).toBeLessThan(tolerance);
 }
 
-test('opens from the tapped mobile card, retaining focus and browser history', async ({ page, isMobile }) => {
+test('opens from the tapped card, retaining focus and browser history', async ({ page }) => {
   await demo(page);
   const card = page.locator('.parcel-card--hero');
   const parcelName = await card.locator('.parcel-card__label').innerText();
@@ -51,25 +51,24 @@ test('opens from the tapped mobile card, retaining focus and browser history', a
   const detail = page.getByRole('dialog', { name: parcelName, exact: true });
   await expect(detail).toBeVisible();
   const opening = () => detail.evaluate((element) => element.getAnimations().some((animation) => animation.id === 'parcel-card-expand'));
-  expect(await opening()).toBe(isMobile);
-  if (isMobile) {
-    // The page starts as its card: the hero stands in the card's place, and nothing else shows yet.
-    const start = await shown(detail);
-    expectSameBox(start, original!);
-    const hero = (await detail.locator('.detail__hero').boundingBox())!;
-    expectSameBox({ ...hero, height: original!.height }, original!);
-    await detail.evaluate((element) => element.getAnimations().forEach((animation) => { animation.currentTime = 100; }));
-    const middle = await shown(detail);
-    expect(middle.height).toBeGreaterThan(start.height);
-    expect(middle.height).toBeLessThan(page.viewportSize()!.height);
-    expect(middle.opacity).toBe(1);
-    // The parcel's dot keeps pulsing and Pip keeps moving: only what can end is finished.
-    await detail.evaluate((element) => element.getAnimations({ subtree: true })
-      .filter((animation) => Number.isFinite(animation.effect?.getComputedTiming().endTime))
-      .forEach((animation) => animation.finish()));
-    await expect.poll(opening).toBe(false);
-    await expect(detail).toHaveCSS('transform', 'none');
-  }
+  expect(await opening()).toBe(true);
+  // The page starts as its card, on a phone and in a wide screen's panel alike: the hero stands in the card's
+  // place, and nothing else shows yet.
+  const start = await shown(detail);
+  expectSameBox(start, original!);
+  const hero = (await detail.locator('.detail__hero').boundingBox())!;
+  expectSameBox({ ...hero, height: original!.height }, original!);
+  await detail.evaluate((element) => element.getAnimations().forEach((animation) => { animation.currentTime = 100; }));
+  const middle = await shown(detail);
+  expect(middle.height).toBeGreaterThan(start.height);
+  expect(middle.height).toBeLessThan(page.viewportSize()!.height);
+  expect(middle.opacity).toBe(1);
+  // The parcel's dot keeps pulsing and Pip keeps moving: only what can end is finished.
+  await detail.evaluate((element) => element.getAnimations({ subtree: true })
+    .filter((animation) => Number.isFinite(animation.effect?.getComputedTiming().endTime))
+    .forEach((animation) => animation.finish()));
+  await expect.poll(opening).toBe(false);
+  await expect(detail).toHaveCSS('transform', 'none');
   await detail.getByRole('button', { name: 'Back', exact: true }).click();
   await expect(detail).toHaveCount(0);
   await expect(card).toBeFocused();
@@ -82,8 +81,7 @@ test('opens from the tapped mobile card, retaining focus and browser history', a
   await expect(page.locator('.app')).not.toHaveAttribute('inert');
 });
 
-test('handles an interrupted opening and changing motion preferences', async ({ page, isMobile }) => {
-  test.skip(!isMobile, 'Expansion is reserved for the phone layout.');
+test('handles an interrupted opening and changing motion preferences', async ({ page }) => {
   await demo(page);
   const card = page.locator('.parcel-card--hero');
   const parcelName = await card.locator('.parcel-card__label').innerText();
@@ -110,24 +108,24 @@ test('handles an interrupted opening and changing motion preferences', async ({ 
   await expect(detail).toHaveCount(0);
 });
 
-test('goes back into its card when closed, from wherever the card is by then', async ({ page, isMobile }) => {
-  test.skip(!isMobile, 'The way back to the card is reserved for the phone layout.');
+test('goes back into its card when closed, from wherever the card is by then', async ({ page }) => {
   await demo(page, 'detail-card-return');
   const card = page.locator('.parcel-card:not(.parcel-card--hero)').first();
   const parcelName = await card.locator('.parcel-card__label').innerText();
   await card.click();
   const detail = page.getByRole('dialog', { name: parcelName, exact: true });
   await expect.poll(() => detail.evaluate((element) => element.getAnimations().length)).toBe(0);
+  const open = (await detail.boundingBox())!;
   await detail.getByRole('button', { name: 'Back', exact: true }).click();
   const returning = () => detail.evaluate((element) => element.getAnimations().some((animation) => animation.id === 'detail-card-return'));
   await expect.poll(returning).toBe(true);
-  expectSameBox(await shown(detail), { x: 0, y: 0, ...page.viewportSize()! }, 1);
+  expectSameBox(await shown(detail), open, 1);
   // At the end of its way the page shows through a window the size of the card, and has faded over it.
   await detail.evaluate((element) => element.getAnimations().forEach((animation) => {
     animation.currentTime = Number(animation.effect!.getComputedTiming().endTime) - 1;
   }));
   const landed = await shown(detail);
-  expectSameBox(landed, (await card.boundingBox())!, 12);
+  expectSameBox(landed, (await card.boundingBox())!, 24);
   expect(landed.opacity).toBeLessThan(0.1);
   await detail.evaluate((element) => element.getAnimations().forEach((animation) => animation.finish()));
   await expect(detail).toHaveCount(0);

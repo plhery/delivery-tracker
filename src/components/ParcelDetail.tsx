@@ -31,7 +31,7 @@ import {
 } from '../lib/parcelStatus';
 import { currentEvent } from '../lib/stages';
 import { isBackSwipe, type TouchPoint } from '../lib/swipe';
-import { useCardDialog } from '../lib/modal';
+import { useCardDialog } from '../lib/cardDialog';
 import { RefreshTimeoutError, type CarrierId, type ParcelCarrierInput, type ParcelWithEvents } from '../types';
 import { ChangeCarrierSheet } from './ChangeCarrierSheet';
 import { TrackingJournal } from './TrackingJournal';
@@ -164,12 +164,12 @@ export function ParcelDetail({
   const actionsMenu = useRef<HTMLDetailsElement>(null);
   const header = useRef<HTMLElement>(null);
   const hero = useRef<HTMLElement>(null);
-  // On a phone the page opens out of its card and goes back into it: the hero is the card's counterpart.
+  // The page opens out of its card and goes back into it: the hero is the card's counterpart.
   const [dialog, onBack] = useCardDialog<HTMLDivElement>(onDismissed, backButton, {
     origin: openingOrigin,
     findCard: () => document.querySelector<HTMLElement>(`.parcel-card-swipe[data-parcel-id="${CSS.escape(parcel.id)}"] .parcel-card`),
-    anchor: hero,
-    header,
+    anchor: () => hero.current,
+    header: () => header.current,
     canPull: () => !editingCarrier && !confirmingDelete,
   });
 

@@ -40,7 +40,7 @@ export function RouteMap({ route, parcel, stage, shape, pip, onOpen }: {
   const finished = !!stage && isFinal(stage);
   const mood = pip ? pipMood(current) : null;
   const duration = finished ? journeyDuration(parcel, languageTag) : null;
-  return <div className={`peekp-map peekp-map--${shape}`}>
+  return <div className={`peekp-map peekp-map--${shape}`} data-card-picture={shape === 'card' ? '' : undefined}>
     <div className="peekp-map__drawing" aria-hidden="true">
       {route && <WorldMap route={route} mode={defaultMode(route, current)} time={time} look="tint" labels="ends" context={false}
         live={!finished} peek pip={mood && { mood, ceiling: INSETS[shape].top }} languageTag={languageTag} insets={INSETS[shape]} className="peekp-map__canvas" />}
