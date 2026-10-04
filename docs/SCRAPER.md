@@ -37,7 +37,8 @@ the public registry to check dispatch and the host recorder.
 1. Publish a scraper release.
 2. Set the exact version in `package.json` and update the lockfile. `playwright-core`,
    `sharp` and `onnxruntime-web` are the scraper's optional peers: keep them on the
-   versions it asks for.
+   versions it asks for. npm does not check them here, so
+   [a test](../src/server/scraperDependency.test.ts) does.
 3. Run `npm run contract:generate` and `npm run ios:resources`, then the app's validation.
 
 A new carrier ID also needs a migration that adds it to the database's carrier list,

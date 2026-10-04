@@ -22,8 +22,8 @@ import { DEFAULT_CARRIER_COLOR } from './carrierBrand';
 
 /**
  * Organization: number detection has exactly one `it` per carrier ID below
- * (104 total, alphabetical), each covering every known number for that
- * carrier. One carrier may assert many numbers inside its `it`.
+ * (alphabetical), each covering every known number for that carrier. One
+ * carrier may assert many numbers inside its `it`.
  *
  * Numbers mirror the per-carrier `numbers.json` corpus in Universal Parcel
  * Scraper (see its CORPUS.md); each keeps its source URL and evidence role in
@@ -520,6 +520,15 @@ describe('carrier detection', () => {
     // Source: https://www.ocu.org/reclamar/lista-reclamaciones-publicas/paquete-extraviado-cq34377077/a9305cbaea4cb4fa5a
     expect(detectCarrier('CQ343770772DE')).toBe('dhl');
     expectDirectTracking('ecoscooting');
+  });
+
+  it('ems — EMS', () => {
+    // EMS has no number shape of its own: its items carry S10 numbers, which go to
+    // the post that issued them or to the postal fallback. It is chosen by hand.
+    // Synthetic S10 numbers with a valid check digit.
+    expect(detectCarrierMatch('EE123456785DE')).toMatchObject({ carrier: 'intl-post', candidates: ['intl-post'] });
+    expect(detectCarrier('EE123456785CN')).toBe('china-post');
+    expectDirectTracking('ems');
   });
 
   it('estafeta — Estafeta', () => {
