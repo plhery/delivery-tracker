@@ -64,6 +64,7 @@ async function lookup(number: string, health: ProviderHealth, signal: AbortSigna
       remember(state.histories, `${provider}:${number}`, { at: Date.now(), result: structuredClone(result) });
       return { provider, outcome: 'history' };
     } catch (error) {
+      if (signal.aborted) { kind = 'not_found'; return { provider, outcome: 'unavailable' }; }
       const failure = carrierErrorKind(error);
       retryAfterMs = Math.max(0, Math.min(7 * 86_400_000, retryAfterMsOf(error) ?? 0));
       // Missing recipient data is an answer about one parcel, never an upstream outage.

@@ -46,3 +46,14 @@ it('starts no upstream work for a cancelled request', async () => {
   await expect(preflightTracking('1234500013', service, AbortSignal.abort())).rejects.toThrow();
   expect(lookup).not.toHaveBeenCalled(); expect(service.acquireTrackingProvider).not.toHaveBeenCalled();
 });
+it('cancels abandoned work without counting a provider outage or retaining history', async () => {
+  const lookup = vi.spyOn(UniversalTracker.prototype, 'fetchSource').mockImplementation(() => new Promise(() => undefined));
+  const service = health(); const controller = new AbortController();
+  const result = preflightTracking('1234500099', service, controller.signal);
+  await vi.waitFor(() => expect(lookup).toHaveBeenCalledTimes(2));
+  controller.abort();
+  await expect(result).rejects.toThrow();
+  await vi.waitFor(() => expect(service.finishTrackingProvider).toHaveBeenCalledTimes(2));
+  expect(service.finishTrackingProvider.mock.calls.map((call) => call[2])).toEqual(['not_found', 'not_found']);
+  expect(takePreflightHistory('Ship24', '1234500099', null)).toBeUndefined();
+});
