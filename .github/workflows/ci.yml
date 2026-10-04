@@ -8,11 +8,12 @@ on:
 permissions:
   contents: read
 
-# A newer push replaces the run of the one before it, on a pull request and on main alike.
-# Only the newest commit is deployed, and its run should not queue behind superseded ones.
+# One run at a time per branch. On main a run that has started always finishes, so its commit
+# can be deployed; of the pushes that arrive meanwhile, only the newest waits its turn. On a
+# pull request a newer push replaces the run.
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   checks:
@@ -103,32 +104,6 @@ jobs:
         run: npx playwright install-deps chromium webkit
       - run: npm run test:e2e -- --shard=${{ matrix.shard }}/8
 
-  ios:
-    name: Native iPhone app
-    runs-on: macos-26
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: 26
-          cache: npm
-      - run: npm ci
-      - run: npm run test:contract
-      - run: npm run ios:resources -- --check
-      - name: Build app and Share Extension
-        run: >-
-          xcodebuild -project ios/SwissDeliveryTracker.xcodeproj
-          -scheme SwissDeliveryTracker -sdk iphonesimulator
-          -destination 'generic/platform=iOS Simulator'
-          CODE_SIGNING_ALLOWED=NO build
-      - name: Run native tests
-        run: >-
-          xcodebuild -project ios/SwissDeliveryTracker.xcodeproj
-          -scheme SwissDeliveryTracker
-          -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest'
-          CODE_SIGNING_ALLOWED=NO test
-
   # Builds the container while the tests run. On main, where the instance's public build
   # values are set as repository variables, the image is also published for the deploy.
   image:
@@ -194,7 +169,7 @@ jobs:
         run: docker push "$IMAGE"
 
   # Runs only where an instance has set it up: DEPLOY_ENABLED and DEPLOY_URL as repository
-  # variables, and the DEPLOY_SSH_* secrets. The iPhone app's tests do not hold a deploy back.
+  # variables, and the DEPLOY_SSH_* secrets. The iPhone app is tested in its own workflow.
   deploy:
     name: Deploy
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
@@ -206,16 +181,18 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Skip a commit that is no longer the newest on main
+      # Runs on main go one at a time, so commits are deployed in order. Only a re-run could
+      # put an older commit back, and it is skipped unless its commit is still the newest.
+      - name: Skip a re-run of a commit that is no longer the newest on main
         id: current
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           current_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
-          if [ "$current_sha" = "$GITHUB_SHA" ]; then
+          if [ "$GITHUB_RUN_ATTEMPT" = 1 ] || [ "$current_sha" = "$GITHUB_SHA" ]; then
             echo 'latest=true' >> "$GITHUB_OUTPUT"
           else
-            echo "Skipping $GITHUB_SHA: main is now $current_sha"
+            echo "Skipping the re-run of $GITHUB_SHA: main is now $current_sha"
             echo 'latest=false' >> "$GITHUB_OUTPUT"
           fi
       - name: Deploy this commit

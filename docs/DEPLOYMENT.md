@@ -115,8 +115,9 @@ in the repository:
 Once the web checks, the migration tests, the browser tests and the image have passed,
 the workflow runs `deploy <commit>` over SSH on the target and then the smoke test on
 `DEPLOY_URL`. Restrict the key on the host to a command that accepts only that request
-and starts the published image. A commit that is no longer the newest on `main` is
-skipped. The iPhone app's tests do not hold a deploy back.
+and starts the published image. Runs on `main` go one at a time, so commits are deployed
+in order; of the pushes that arrive during a run, only the newest is tested and deployed
+next. The iPhone app is tested in its own workflow and does not hold a deploy back.
 
 ## Delivery email
 
