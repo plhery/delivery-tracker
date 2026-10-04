@@ -41,7 +41,7 @@ export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, 
   const accountButton = useRef<HTMLButtonElement>(null);
   const [dialog, close] = useSheetDialog<HTMLDivElement>(open, () => {
     setOpen(false); setPage('home'); setConfirmingReset(false); setConfirmingDelete(false); setError(null);
-  }, closeButton, undefined, Boolean(working));
+  }, closeButton, Boolean(working));
   const accountTitle = t(onExitDemo ? 'settings.demoData' : 'settings.accountData');
 
   function navigate(next: 'home' | 'account') {

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject, type MouseEvent } from 'react';
-import { expandCardIntoDialog, type CardOrigin } from './cardTransition';
+import { bindCardDialog, type CardDialog, type CardOrigin } from './cardTransition';
 
 /** Safari leaves clicked buttons unfocused; preserve the actual modal launcher. */
 export function focusClickedButton(event: MouseEvent<HTMLElement>) {
@@ -162,13 +162,11 @@ export function useSheetDialog<T extends HTMLElement>(
   open: boolean,
   onClose: () => void,
   initialFocus?: RefObject<HTMLElement | null>,
-  origin?: CardOrigin | null,
   dismissDisabled = false,
 ): readonly [RefObject<T | null>, () => void] {
   const finish = useRef(onClose);
   const closing = useRef(false);
   const alive = useRef(true);
-  const stopOpening = useRef<() => void>(() => {});
   useEffect(() => { finish.current = onClose; }, [onClose]);
   useEffect(() => {
     alive.current = true;
@@ -176,12 +174,6 @@ export function useSheetDialog<T extends HTMLElement>(
     return () => { alive.current = false; };
   }, [open]);
   const dialog = useModalDialog<T>(open, dismiss, initialFocus);
-  useLayoutEffect(() => {
-    if (!open || !origin || !dialog.current) return;
-    const stop = expandCardIntoDialog(dialog.current, origin);
-    stopOpening.current = stop;
-    return stop;
-  }, [open, origin, dialog]);
   function dismiss() {
     if (dismissDisabled || closing.current) return;
     const element = dialog.current;
@@ -191,19 +183,9 @@ export function useSheetDialog<T extends HTMLElement>(
     }
     closing.current = true;
     const visible = getComputedStyle(element);
-    const from = {
-      opacity: visible.opacity, transform: visible.transform, transformOrigin: visible.transformOrigin,
-      borderRadius: visible.borderRadius, backgroundColor: visible.backgroundColor,
-    };
-    stopOpening.current();
-    const rest = getComputedStyle(element);
-    const isDetail = element.classList.contains('detail');
     const animation = element.animate([
-      from,
-      {
-        opacity: 0, transform: isDetail ? 'translateX(24px)' : 'translateY(28px)',
-        transformOrigin: from.transformOrigin, borderRadius: rest.borderRadius, backgroundColor: rest.backgroundColor,
-      },
+      { opacity: visible.opacity, transform: visible.transform },
+      { opacity: 0, transform: 'translateY(28px)' },
     ], { duration: 160, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
     element.closest('.sheet-backdrop')?.animate([
       { backgroundColor: 'rgba(15,22,15,.28)' },
@@ -212,6 +194,53 @@ export function useSheetDialog<T extends HTMLElement>(
     void animation.finished.catch(() => undefined).then(() => {
       if (alive.current) finish.current();
     });
+  }
+  return [dialog, dismiss] as const;
+}
+
+/** What ties a page to the card it opens from. */
+export interface CardDialogLink {
+  /** The tapped card; without one the page arrives on its own. */
+  origin?: CardOrigin | null;
+  /** The card closing returns to, wherever it is by then. */
+  findCard: () => HTMLElement | null;
+  /** The part of the page that looks like the card and takes its place. */
+  anchor?: RefObject<HTMLElement | null>;
+  /** A sticky header that covers the anchor once the page has scrolled. */
+  header?: RefObject<HTMLElement | null>;
+  /** Whether pulling the page down may close it now. */
+  canPull?: () => boolean;
+}
+
+/** A modal page that grows out of a card and goes back into it; on a phone, pulling it down closes it. */
+export function useCardDialog<T extends HTMLElement>(
+  onClose: () => void,
+  initialFocus: RefObject<HTMLElement | null> | undefined,
+  link: CardDialogLink,
+): readonly [RefObject<T | null>, () => void] {
+  const latest = useRef({ onClose, link });
+  useEffect(() => { latest.current = { onClose, link }; });
+  const bound = useRef<CardDialog | null>(null);
+  const dialog = useModalDialog<T>(true, dismiss, initialFocus);
+  useLayoutEffect(() => {
+    if (!dialog.current) return;
+    const { origin } = latest.current.link;
+    const card = bound.current = bindCardDialog(dialog.current, {
+      origin,
+      card: () => (origin?.card.isConnected ? origin.card : null) ?? latest.current.link.findCard(),
+      anchor: () => latest.current.link.anchor?.current ?? null,
+      header: () => latest.current.link.header?.current ?? null,
+      canPull: () => latest.current.link.canPull?.() ?? true,
+      onClosed: () => latest.current.onClose(),
+    });
+    return () => {
+      card.release();
+      bound.current = null;
+    };
+  }, [dialog]);
+  function dismiss() {
+    if (bound.current) bound.current.close();
+    else latest.current.onClose();
   }
   return [dialog, dismiss] as const;
 }

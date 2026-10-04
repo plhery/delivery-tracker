@@ -31,7 +31,7 @@ import {
 } from '../lib/parcelStatus';
 import { currentEvent } from '../lib/stages';
 import { isBackSwipe, type TouchPoint } from '../lib/swipe';
-import { useSheetDialog } from '../lib/modal';
+import { useCardDialog } from '../lib/modal';
 import { RefreshTimeoutError, type CarrierId, type ParcelCarrierInput, type ParcelWithEvents } from '../types';
 import { ChangeCarrierSheet } from './ChangeCarrierSheet';
 import { TrackingJournal } from './TrackingJournal';
@@ -162,7 +162,16 @@ export function ParcelDetail({
   const [sharing, setSharing] = useState(false);
   const backButton = useRef<HTMLButtonElement>(null);
   const actionsMenu = useRef<HTMLDetailsElement>(null);
-  const [dialog, onBack] = useSheetDialog<HTMLDivElement>(true, onDismissed, backButton, openingOrigin);
+  const header = useRef<HTMLElement>(null);
+  const hero = useRef<HTMLElement>(null);
+  // On a phone the page opens out of its card and goes back into it: the hero is the card's counterpart.
+  const [dialog, onBack] = useCardDialog<HTMLDivElement>(onDismissed, backButton, {
+    origin: openingOrigin,
+    findCard: () => document.querySelector<HTMLElement>(`.parcel-card-swipe[data-parcel-id="${CSS.escape(parcel.id)}"] .parcel-card`),
+    anchor: hero,
+    header,
+    canPull: () => !editingCarrier && !confirmingDelete,
+  });
 
   function openMap() {
     if (!route) return;
@@ -356,7 +365,7 @@ export function ParcelDetail({
       onPointerUp={handlePointerUp}
       onPointerCancel={() => { swipeStart.current = null; }}
     >
-      <header className="detail__header">
+      <header ref={header} className="detail__header">
         <button ref={backButton} type="button" className="detail__back" onClick={onBack}>
           <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m13 4-6 6 6 6" /></svg>
           {t('detail.back')}
@@ -416,7 +425,7 @@ export function ParcelDetail({
       </header>
 
       {onExitDemo && <div className="demo-banner demo-banner--detail"><span>{t('app.demo')}</span><button type="button" onClick={onExitDemo}>{t('native.exitDemo')}<Icon name="close" /></button></div>}
-      <section className={`detail__hero${placed ? ' detail__hero--map' : ''}`}>
+      <section ref={hero} className={`detail__hero${placed ? ' detail__hero--map' : ''}`}>
         {placed && <RouteEngraving route={route} stage={current?.stage} onOpen={openMap} />}
         <div className="detail__hero-meta">
           <button

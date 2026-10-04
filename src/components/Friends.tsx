@@ -156,7 +156,7 @@ export function FriendProfileForm({ profile, parcels, busy, onSave, submitKey }:
 }
 export function FriendsSheet({ title, children, onClose, busy = false, kind = 'page' }: { kind?: 'page' | 'invite'; title: string; children: ReactNode; onClose: () => void; busy?: boolean }) {
   const { t } = useI18n();
-  const [dialog, close] = useSheetDialog<HTMLDivElement>(true, onClose, undefined, undefined, busy);
+  const [dialog, close] = useSheetDialog<HTMLDivElement>(true, onClose, undefined, busy);
   return createPortal(<div className={`sheet-backdrop friends-backdrop friends-backdrop--${kind}`} onClick={close}><div ref={dialog} className={`sheet friends-sheet friends-sheet--${kind}`} role="dialog" aria-modal="true" aria-labelledby="friends-sheet-title" aria-busy={busy} tabIndex={-1} onClick={(event) => event.stopPropagation()}><div className="sheet__grabber" aria-hidden="true" /><div className="sheet__heading"><h2 id="friends-sheet-title" className="sheet__title">{title}</h2><button className="sheet__close" aria-label={t('common.close')} disabled={busy} onClick={close}><Icon name="close" /></button></div>{children}</div></div>, document.body);
 }
 type Act = (action: ApiFriendsActionRequest) => Promise<ApiFriendsActionResponse | null>;

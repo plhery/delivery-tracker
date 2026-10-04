@@ -1,5 +1,6 @@
 .sheet-backdrop.detail-backdrop { display: block; padding: 0; z-index: 40; }
-.detail-backdrop .detail { box-shadow: none; }
+/* The page moves and scales from its top left corner when it leaves or returns to its card. */
+.detail-backdrop .detail { box-shadow: none; transform-origin: 0 0; }
 /* Approved postcard header (04), compact tracking utilities (05), and journal. */
 .detail.detail--postcard {
   --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark));

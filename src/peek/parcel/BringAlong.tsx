@@ -46,7 +46,7 @@ function Sheet({ parcels, onBring, onClose }: {
   const [left, setLeft] = useState<ReadonlySet<string>>(new Set());
   const [working, setWorking] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [dialog, dismiss] = useSheetDialog<HTMLDivElement>(true, onClose, close, null, working);
+  const [dialog, dismiss] = useSheetDialog<HTMLDivElement>(true, onClose, close, working);
   const chosen = parcels.filter((recent) => !left.has(recent.id));
 
   async function bring() {

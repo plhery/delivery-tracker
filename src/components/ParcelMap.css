@@ -16,6 +16,8 @@
   position: absolute; inset: 0; animation: parcel-engraving-in .5s var(--ease-out) both;
 }
 .detail__hero .detail__engraving-map *, .parcel-card .parcel-card__engraving-map * { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* A page that opens out of its card carries the card's picture on: the engraving is there from the start. */
+.detail--from-card .detail__hero .detail__engraving-map { animation: none; }
 /* A small route at the end of a card, the same size however wide the card is: the journey as part of the card's picture.
    Its line and dots are pale, close to the map they lie on, and the land fades in from under the card's words. */
 .card-route { position: absolute; inset: 0 0 0 auto; z-index: 0; display: block; width: min(58%, 210px); pointer-events: none; }
