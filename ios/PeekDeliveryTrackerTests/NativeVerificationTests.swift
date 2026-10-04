@@ -1,4 +1,5 @@
 import CryptoKit
+import DeviceCheck
 import Foundation
 import XCTest
 @testable import PeekDeliveryTracker
@@ -101,6 +102,25 @@ final class NativeVerificationTests: XCTestCase {
         XCTAssertNil(requests.last?.value(forHTTPHeaderField: "X-Lookup-Proof"))
     }
 
+    func testInvalidKeyAfterReinstallIsRemovedBeforeFallback() async throws {
+        let server = NativeTestServer(paid: true)
+        let removed = expectation(description: "Invalid key removed")
+        let assertions = NativeTestAssertions()
+        let provider = NativeAttestProvider(supported: { true }, generateKey: { XCTFail("Unexpected new key during backoff"); return "new" },
+            attest: { _, _ in Data() }, assert: { _, _ in
+                if await assertions.next() == 1 { return Data("synthetic-assertion".utf8) }
+                throw NSError(domain: DCError.errorDomain, code: DCError.Code.invalidKey.rawValue)
+            })
+        let verifier = NativeVerification(provider: provider, present: { _ in "token" },
+            records: [base.absoluteString: NativeAttestRecord(keyID: "old", appID: "TESTTEAM01.com.example.Peek", registered: true)],
+            save: { records in XCTAssertTrue(records.isEmpty); removed.fulfill() })
+        // Populate the configuration, then invalidate the already registered key.
+        _ = try await verifier.send(lookup(), baseURL: base, using: { try await server.send($0) })
+        let result = try await verifier.send(lookup(), baseURL: base, using: { try await server.send($0) })
+        XCTAssertEqual(result.1.statusCode, 201)
+        await fulfillment(of: [removed], timeout: 1)
+    }
+
     func testAppleOutageFallsBackAndConcurrentRequestsShareVerification() async throws {
         let server = NativeTestServer(paid: true)
         let provider = NativeAttestProvider(supported: { true }, generateKey: { throw NativeVerificationFailed() }, attest: { _, _ in Data() }, assert: { _, _ in Data() })
@@ -152,4 +172,9 @@ private actor NativeTestServer {
         }
         return (try JSONSerialization.data(withJSONObject: body), HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: headers)!)
     }
+}
+
+private actor NativeTestAssertions {
+    private var count = 0
+    func next() -> Int { count += 1; return count }
 }

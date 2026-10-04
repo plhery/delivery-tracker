@@ -81,7 +81,10 @@ actor NativeVerification {
         do {
             let config = try await configuration(baseURL, using: transport)
             if let appID = config.appAttestAppId { _ = try await registeredKey(baseURL, appID: appID, using: transport) }
-        } catch { pauseAttestUntil[baseURL.absoluteString] = Date().addingTimeInterval(600) }
+        } catch {
+            forgetInvalidKey(error, base: baseURL.absoluteString)
+            pauseAttestUntil[baseURL.absoluteString] = Date().addingTimeInterval(600)
+        }
     }
 
     func send(_ original: URLRequest, baseURL: URL, allowPresentation: Bool = true, using transport: @escaping Send) async throws -> (Data, HTTPURLResponse) {
@@ -98,7 +101,10 @@ actor NativeVerification {
            records[base]?.registered == true, provider.supported(), (pauseAttestUntil[base] ?? .distantPast) <= Date() {
             do { request = try await signed(request, baseURL: baseURL, appID: appID, using: transport) }
             catch is CancellationError { throw CancellationError() }
-            catch { pauseAttestUntil[base] = Date().addingTimeInterval(600) }
+            catch {
+                forgetInvalidKey(error, base: base)
+                pauseAttestUntil[base] = Date().addingTimeInterval(600)
+            }
         }
         // The initial probe also lets installations work when protection is disabled.
         let first = try await transport(request)
@@ -117,7 +123,7 @@ actor NativeVerification {
                 save(records)
             } catch is CancellationError { throw CancellationError() }
             catch {
-                if let error = error as? DCError, error.code == .invalidKey { records[base] = nil; save(records) }
+                forgetInvalidKey(error, base: base)
                 // Apple or the network can be unavailable; the browser check remains usable.
             }
             pauseAttestUntil[base] = Date().addingTimeInterval(600)
@@ -138,6 +144,13 @@ actor NativeVerification {
         let result = try await transport(request)
         if Self.needsVerification(result.1) { proofs[base] = nil; throw NativeVerificationFailed() }
         return result
+    }
+
+    private func forgetInvalidKey(_ error: Error, base: String) {
+        if let error = error as? DCError, error.code == .invalidKey {
+            records[base] = nil
+            save(records)
+        }
     }
 
     private func signed(_ original: URLRequest, baseURL: URL, appID: String, using transport: Send) async throws -> URLRequest {
