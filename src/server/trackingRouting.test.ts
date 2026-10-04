@@ -316,6 +316,8 @@ describe('persistent tracking routing', () => {
       ['a linked journey', 'asendia', swissDpd, notFound('Asendia'),
         { carrier_data: { original_carrier: 'asendia', active_tracking_carrier: 'dpd', active_tracking_number: 'LOCAL1234' } }],
       ['a transient failure of the filed carrier', 'hermes-de', '12345678901231', new Error('timeout'), {}],
+      ['a number the filed carrier already confirmed', 'hermes-de', '12345678901231', notFound('Hermes'),
+        { carrier_data: { routing: state({ configured_carrier: 'hermes-de', confirmed_carrier: 'hermes-de', confirmed_number: '12345678901231' }) } }],
       ['another network of the filed brand', 'gls-de', '12345678901', notFound('GLS'), {}],
     ])('does not ask for %s', async (_label, carrier, trackingNumber, error, overrides) => {
       const { router, direct, recognize } = setup();

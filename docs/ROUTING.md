@@ -166,7 +166,8 @@ are left to the universals.
   parcel. Several answers ask the user to choose. Automatic detection stays a valid
   choice throughout, and the check never holds the Add button.
 - **In routing.** When the filed carrier cannot track the number (no adapter of its own,
-  or its adapter answered not-found; a transient failure does not count), the router asks
+  or its adapter answered not-found; a transient failure does not count, nor does a
+  not-found for a number that carrier already confirmed), the router asks
   before the universals, never another network of the filed carrier's brand, for open
   parcels in their first 30 days outside linked journeys. A carrier that knows the number
   and needs no input gets a full correction lookup, adopted only on real progress on the

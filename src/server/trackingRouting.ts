@@ -370,10 +370,12 @@ export class TrackingRouter {
     // The filed carrier cannot track this number: it has no adapter of its own
     // (unknown, a universal-only carrier) or its adapter does not know the
     // number (a forwarder such as Asendia, a wrong label). A transient failure
-    // is not that. Before the universals, ask the carriers the number could
+    // is not that, nor is a not-found for a number the carrier already
+    // confirmed. Before the universals, ask the carriers the number could
     // belong to whether they know it, never another network of the filed
     // carrier's own brand, for open parcels in their first month.
-    const filedCannotTrack = !directCarrier(primary) || state.failures[primary]?.kind === 'not_found';
+    const confirmed = state.confirmed_carrier === primary && state.confirmed_number === number;
+    const filedCannotTrack = !confirmed && (!directCarrier(primary) || state.failures[primary]?.kind === 'not_found');
     const open = !['delivered', 'returned'].includes(String(parcel.current_stage));
     const young = typeof parcel.created_at !== 'string' || now().getTime() - millis(parcel.created_at) < CANDIDATE_PROBE_WINDOW;
     const recognize = this.options.recognize;
