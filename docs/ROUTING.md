@@ -74,6 +74,13 @@ asked again in the same check. A pending parcel whose failures are all not-found
 `no_history` shows as waiting, not as an outage. When a failed direct adapter recovers, it
 takes over from the universal provider again.
 
+When every source fails, the parcel keeps its last progress. The error chip appears only
+after two consecutive checks fail and the last successful check
+is at least 1 h old by day or 3 h overnight. A successful retrieval or an answer that the
+parcel is awaiting its first scan resets the streak. Checks that only wait for cooldowns
+leave it unchanged. Provider failures remain in the
+audit and health evidence while the chip is hidden.
+
 An adapter whose answer has only local clocks or an undated status summary keeps its
 evidence while a universal provider dates the timeline. It is asked again 6 h later,
 not on every check.

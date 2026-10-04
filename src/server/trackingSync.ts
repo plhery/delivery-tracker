@@ -787,6 +787,8 @@ export class TrackingSyncService {
           && (error.routing.failures[carrierId]?.kind === 'not_found'
             || (failures.length > 0 && failures.every((failure) => ['not_found', 'no_history'].includes(failure.kind))));
         if (!hasProgress && (isUnannouncedTrackingError(error) || routingUnannounced)) {
+          // A carrier saying the label has no scans is an answer, not a missed check.
+          if (error instanceof RoutingDeferred) error.routing.consecutive_failures = 0;
           audit.record('fetch', 'succeeded', performance.now() - fetchStartedAt, {
             disposition: 'unannounced',
           });
@@ -1059,9 +1061,9 @@ export class TrackingSyncService {
           throw persistenceError;
         }
         // A check that contacted nobody says nothing about provider health.
-        // A stale deferral is an error outcome: record why, or the ledger cannot explain it.
+        // Keep the failure evidence even while the parcel's error chip is suppressed.
         await audit.finish({ outcome: error.stale ? 'error' : 'waiting', sourceCarrier: carrierId,
-          evaluateHealth: error.attempted > 0, ...(error.stale ? { error } : {}) });
+          evaluateHealth: error.attempted > 0, error });
         return error.stale ? 'errors' : 'waiting';
       }
       let message = error instanceof Error ? error.message.trim() || error.name : String(error);

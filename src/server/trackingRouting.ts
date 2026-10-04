@@ -46,6 +46,7 @@ export interface RoutingState extends JsonObject {
   confirmed_postcode?: string | null;
   discovered_carrier?: string;
   last_success_at?: string;
+  consecutive_failures: number;
   last_event_at?: string;
   next_check_at?: string;
   direct_retry_at?: string;
@@ -69,6 +70,8 @@ export function routingState(parcel: JsonObject): RoutingState {
     failures: isRecord(state.failures) ? state.failures : {},
     probe_cursor: Number.isSafeInteger(state.probe_cursor) ? state.probe_cursor! : 0,
     discovery_cursor: Number.isSafeInteger(state.discovery_cursor) ? state.discovery_cursor! : 0,
+    consecutive_failures: !changed && Number.isSafeInteger(state.consecutive_failures) && state.consecutive_failures! > 0
+      ? Math.min(20, state.consecutive_failures!) : 0,
     ...(changed ? { direct_retry_at: undefined, next_check_at: undefined } : {}),
     // Migration compatibility: an ok fetch is a success; failed attempts are not.
     last_success_at: typeof state.last_success_at === 'string' ? state.last_success_at
@@ -166,7 +169,7 @@ export class RoutingDeferred extends Error {
   /** `attempted` counts providers actually contacted; zero means every tier was still cooling down. */
   constructor(readonly routing: RoutingState, readonly stale: boolean, readonly attempted = 0) {
     super(stale ? 'Tracking providers are temporarily unavailable. Previous progress has been kept; another check is scheduled.'
-      : 'Recent tracking has been kept while the provider cools down.');
+      : 'Previous tracking has been kept; another check is scheduled.');
     // Ends in "Error" so the audit trail records it instead of a bare "Error".
     this.name = 'RoutingDeferredError';
   }
@@ -239,6 +242,7 @@ export class TrackingRouter {
       // A carrier tracks the parcel directly: nothing is left to ask the user.
       if (directCarrier(provider)) delete state.input_needed;
       state.last_success_at = now().toISOString();
+      state.consecutive_failures = 0;
       // A future-dated scan must not make every later real update look older.
       const eventTime = Math.min(now().getTime(), Math.max(latest(value),
         value.earlierResult ? latestResultTime(value.earlierResult, value.earlierCarrierId ?? value.sourceCarrierId) : 0));
@@ -266,6 +270,12 @@ export class TrackingRouter {
     // Probes are this parcel's own guesses: they are no evidence of provider health.
     let probeContacts = 0;
     const attempted = () => attemptedDirect.size - probeContacts + attempts;
+    const defer = (stale = !recent()): never => {
+      const contacts = attempted();
+      // A cooldown-only check supplies no new evidence of failure.
+      if (contacts > 0) state.consecutive_failures = Math.min(20, state.consecutive_failures + 1);
+      throw new RoutingDeferred(state, stale && state.consecutive_failures >= 2, contacts);
+    };
     const tryDirect = async (carrier: string, candidate = false, terminalStage?: string, probe = false): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
       if (!directCarrier(carrier) || attemptedDirect.has(carrier)) return null;
@@ -339,7 +349,7 @@ export class TrackingRouter {
         if (failure.kind === 'rate_limited' && recent()) {
           state.next_check_at = iso(Math.min(millis(failure.retry_at), millis(state.last_success_at) + freshnessWindow(now())));
           report('fallback_deferred_fresh', carrier, failure.kind);
-          throw new RoutingDeferred(state, false, attempted());
+          defer(false);
         }
         return null;
       }
@@ -494,7 +504,7 @@ export class TrackingRouter {
         retryAfterMs = millis(failure.retry_at) - now().getTime();
         if (kind === 'rate_limited' && recent() && !localDirectFallback) {
           state.next_check_at = iso(Math.min(millis(failure.retry_at), millis(state.last_success_at) + freshnessWindow(now())));
-          throw new RoutingDeferred(state, false, attempted());
+          defer(false);
         }
         return null;
       } finally {
@@ -594,6 +604,6 @@ export class TrackingRouter {
     const deadlines = Object.values(state.failures).map((failure) => millis(failure.retry_at)).filter((time) => time > now().getTime());
     state.next_check_at = iso(Math.max(now().getTime() + 15 * 60_000, Math.min(...deadlines, now().getTime() + HOUR)));
     report('all_providers_unavailable', preferred ?? 'none');
-    throw new RoutingDeferred(state, !recent(), attempted());
+    return defer();
   }
 }

@@ -569,6 +569,57 @@ describe('TrackingSyncService', () => {
     expect(adapter.fetchUniversal).not.toHaveBeenCalled();
   });
 
+  it.each(['pending', 'in_transit'])('persists a missed-check streak for an hourly DPD parcel at %s', async (stage) => {
+    const parcel: JsonObject = { id: 'hourly-dpd', carrier: 'dpd', tracking_number: '06080000000001',
+      current_stage: stage, last_status_text: 'Saved tracking', sync_status: stage === 'pending' ? 'waiting' : 'ok',
+      last_synced_at: '2026-09-10T10:00:00Z', carrier_data: { last_status_text: 'Saved tracking',
+        routing: { version: 1, configured_carrier: 'dpd', last_success_at: '2026-09-10T10:00:00Z' } } };
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T11:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    client.updatePackage.mockImplementation(async (_id, values) => { Object.assign(parcel, values); });
+    const adapter = { fetch: vi.fn().mockRejectedValue(new UpstreamHttpError('DPD', 503)),
+      fetchUniversal: vi.fn().mockRejectedValue(new NotFoundError('Provider')) };
+    let now = new Date('2026-09-10T11:00:00Z');
+    const service = () => new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
+    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ waiting: 1, errors: 0 });
+    expect(parcel).toMatchObject({ current_stage: stage, last_status_text: 'Saved tracking', sync_error: null,
+      sync_status: stage === 'pending' ? 'waiting' : 'ok', carrier_data: { routing: { consecutive_failures: 1 } } });
+    expect(client.insertEvents).not.toHaveBeenCalled();
+    now = new Date('2026-09-10T12:00:00Z');
+    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ errors: 1 });
+    expect(parcel).toMatchObject({ current_stage: stage, last_status_text: 'Saved tracking', sync_status: 'error',
+      carrier_data: { routing: { consecutive_failures: 2, last_success_at: '2026-09-10T10:00:00Z' } } });
+    now = new Date('2026-09-10T13:00:00Z');
+    adapter.fetch.mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit',
+      last_status_text: 'Recovered tracking', last_update: now.toISOString(), events: [] });
+    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ updated: 1, errors: 0 });
+    expect(parcel).toMatchObject({ sync_status: 'ok', sync_error: null,
+      carrier_data: { routing: { consecutive_failures: 0 } } });
+  });
+
+  it('breaks the failure streak when DPD answers that a label has no scans yet', async () => {
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T11:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const adapter = { fetch: vi.fn().mockRejectedValueOnce(new NotFoundError('DPD'))
+      .mockRejectedValue(new UpstreamHttpError('DPD', 503)),
+      fetchUniversal: vi.fn().mockRejectedValue(new NotFoundError('Provider')) };
+    const parcel = { id: 'unscanned-dpd', carrier: 'dpd', tracking_number: '06080000000001', current_stage: 'pending',
+      carrier_data: { routing: { version: 1, configured_carrier: 'dpd', consecutive_failures: 2 } } };
+    let now = new Date('2026-09-10T11:00:00Z');
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ waiting: 1, errors: 0 });
+    const saved = client.updatePackage.mock.calls.at(-1)![1];
+    expect(saved.carrier_data.routing).toMatchObject({ consecutive_failures: 0 });
+    now = new Date('2026-09-10T17:00:00Z');
+    await expect(service.syncPackage({ ...parcel, ...saved })).resolves.toMatchObject({ waiting: 1, errors: 0 });
+    expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ sync_status: 'waiting', sync_error: null,
+      carrier_data: { routing: { consecutive_failures: 1 } } });
+  });
+
   it('does not regress a newer saved summary when a fallback returns older history', async () => {
     const client = { ...fakeClient(),
       acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
@@ -1872,7 +1923,7 @@ describe('TrackingSyncService', () => {
       throw source === 'ParcelsApp' ? new UpstreamHttpError(source, 502) : noHistory(source);
     });
     await expect(service.syncPackage({ ...parcel, id: 'provider-down' }, { trigger: 'scheduled' }))
-      .resolves.toMatchObject({ errors: 1 });
+      .resolves.toMatchObject({ waiting: 1, errors: 0 });
   });
 
   it('records no health sample for a scheduled check that contacted no provider', async () => {
@@ -1881,7 +1932,8 @@ describe('TrackingSyncService', () => {
     const cooling = Object.fromEntries(['dhl', 'Ship24', 'ParcelsApp', '17TRACK']
       .map((provider) => [provider, { count: 1, kind: 'transport', retry_at: '2026-09-10T13:00:00.000Z' }]));
     const parcel = { id: 'cooling', carrier: 'dhl', tracking_number: 'TEST1234', current_stage: 'pending',
-      carrier_data: { routing: { version: 1, configured_carrier: 'dhl', failures: cooling, probe_cursor: 0, discovery_cursor: 0 } } };
+      carrier_data: { routing: { version: 1, configured_carrier: 'dhl', failures: cooling,
+        consecutive_failures: 2, probe_cursor: 0, discovery_cursor: 0 } } };
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
     await expect(service.syncPackage(parcel, { trigger: 'scheduled' })).resolves.toMatchObject({ errors: 1 });
     expect(adapter.fetch).not.toHaveBeenCalled();
@@ -1890,19 +1942,21 @@ describe('TrackingSyncService', () => {
     expect(client.recordTrackingHealth).not.toHaveBeenCalled();
   });
 
-  it('records why a lookup was deferred when every provider failed', async () => {
+  it.each([0, 1])('records why every provider failed with a previous streak of %s', async (streak) => {
     const client = { ...fakeClient(),
       acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
       finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
     };
     const adapter = { fetch: vi.fn().mockRejectedValue(new UpstreamHttpError('DHL', 502)),
       fetchUniversal: vi.fn().mockRejectedValue(new Error('provider down')) };
-    const parcel = { id: 'stale', carrier: 'dhl', tracking_number: 'TEST1234', current_stage: 'in_transit' };
+    const parcel = { id: 'stale', carrier: 'dhl', tracking_number: 'TEST1234', current_stage: 'in_transit',
+      carrier_data: { routing: { version: 1, configured_carrier: 'dhl', consecutive_failures: streak } } };
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
-    await expect(service.syncPackage(parcel, { trigger: 'scheduled' })).resolves.toMatchObject({ errors: 1 });
+    await expect(service.syncPackage(parcel, { trigger: 'scheduled' }))
+      .resolves.toMatchObject({ errors: streak, waiting: 1 - streak });
     expect(client.completeSyncAttempt).toHaveBeenCalledWith(
       expect.any(String),
-      expect.objectContaining({ outcome: 'error', error_type: 'RoutingDeferredError' }),
+      expect.objectContaining({ outcome: streak ? 'error' : 'waiting', error_type: 'RoutingDeferredError' }),
       expect.arrayContaining([expect.objectContaining({
         step: 'fetch', status: 'failed', error_type: 'RoutingDeferredError',
         details: expect.objectContaining({ providers_attempted: expect.any(Number), provider_failures: expect.stringContaining('dhl:transport') }),

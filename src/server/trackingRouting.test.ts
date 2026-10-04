@@ -46,7 +46,7 @@ describe('persistent tracking routing', () => {
     direct.mockRejectedValue(new InputRequiredError('Heppner', 'postcode'));
     universal.mockRejectedValue(new Error('unavailable'));
     await expect(router.fetch(parcel({ carrier: 'heppner' }), false)).rejects.toMatchObject({
-      stale: true,
+      stale: false,
       routing: { failures: { heppner: { kind: 'schema', user_error: 'carrier:input_required' } } },
     });
   });
@@ -466,7 +466,7 @@ describe('persistent tracking routing', () => {
       .map((provider) => [provider, { count: 1, kind: 'transport', retry_at: '2026-09-10T13:00:00.000Z' }]));
     direct.mockClear(); universal.mockClear();
     await expect(router.fetch(parcel({ carrier: 'ups', carrier_data: { routing: state({ configured_carrier: 'ups', failures: cooling }) } }), false))
-      .rejects.toMatchObject({ attempted: 0, stale: true });
+      .rejects.toMatchObject({ attempted: 0, stale: false });
     expect(direct).not.toHaveBeenCalled();
     expect(universal).not.toHaveBeenCalled();
   });
