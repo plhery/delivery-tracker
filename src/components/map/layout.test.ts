@@ -50,4 +50,77 @@ describe('layout', () => {
     expect(narrow.pip).toBeNull();
     expect(narrow.legs).toHaveLength(1);
   });
+
+  const scan = (place: Place, stage: 'in_transit' | 'out_for_delivery' = 'in_transit') => ({ at: '2026-09-28T10:00:00Z', description: 'Scan', stage, place });
+  const lyon = city('Lyon', 'FR', 4.84, 45.76);
+  const bern = city('Bern', 'CH', 7.45, 46.95);
+  const zurich = city('Zürich', 'CH', 8.55, 47.37);
+  const overlay = (route: ReturnType<typeof buildRoute>, mode: 'journey' | 'now') => layout(route, targetCamera(route, mode, SIZE, NO_INSETS, 'rect'), SIZE,
+    NO_INSETS, 'rect', 'ends', false, mode, false, 'en', null, (text) => text.length * 6);
+
+  it('gives each leg its turn in the one stroke that draws the route, for as long as its length in the frame', async () => {
+    await loadWorld();
+    const germany: Place = { id: 'DE', name: 'Germany', country: 'DE', coordinate: [10.4, 51.1], precision: 'country' };
+    const { legs, stroke } = overlay(buildRoute([scan(lyon), scan(bern), scan(zurich), scan(germany)], city('Oslo', 'NO', 10.75, 59.91)), 'journey');
+    expect(legs.map((leg) => leg.kind)).toEqual(['remaining', 'travelled', 'travelled', 'approximate']);
+    // The way still to go is not part of the stroke; the others follow each other from the first place to the parcel's.
+    const [remaining, ...drawn] = legs;
+    expect(remaining.pen).toBeUndefined();
+    const pens = drawn.map((leg) => leg.pen!);
+    expect(pens[0].from).toBe(0);
+    expect(pens[1].from).toBeCloseTo(pens[0].share, 9);
+    expect(pens[2].from).toBeCloseTo(pens[0].share + pens[1].share, 9);
+    expect(pens[2].from + pens[2].share).toBeCloseTo(1, 9);
+    // Lyon to Bern is about three times as far as Bern to Zürich, and takes about three times as long.
+    expect(pens[0].share / pens[1].share).toBeGreaterThan(2.3);
+    expect(pens[0].share / pens[1].share).toBeLessThan(3.7);
+    // All of it is in the frame, so every leg is drawn from its start.
+    expect(pens.map((pen) => pen.reach)).toEqual([1, 1, 1]);
+    expect(stroke).toBeGreaterThan(100);
+    expect(stroke).toBeLessThan(SIZE.width + SIZE.height);
+  });
+
+  it('starts the stroke where the route enters a close-up, and spends no time outside it', async () => {
+    await loadWorld();
+    const route = buildRoute([scan(city('Kyoto', 'JP', 135.77, 35.01)), scan(city('Hamburg', 'DE', 9.99, 53.55)), scan(bern), scan(zurich, 'out_for_delivery')]);
+    const { legs, stroke } = overlay(route, 'now');
+    const [far, entering, close] = legs.map((leg) => leg.pen!);
+    // Kyoto to Hamburg is nowhere near the last mile: it takes a moment and has nothing left to draw.
+    expect(far.share).toBeLessThan(.02);
+    expect(far.reach).toBe(0);
+    // Hamburg to Bern comes in over the edge: only what the frame shows is left to draw, and only that takes time.
+    expect(entering.reach).toBeGreaterThan(0);
+    expect(entering.reach).toBeLessThan(.6);
+    expect(close.reach).toBe(1);
+    expect(entering.share + close.share).toBeGreaterThan(.98);
+    expect(stroke).toBeLessThan(SIZE.width + SIZE.height);
+  });
+
+  it('measures a long leg as its line is drawn: cut a little outside the frame', async () => {
+    await loadWorld();
+    const { legs: [leg] } = overlay(buildRoute([scan(city('Kyoto', 'JP', 135.77, 35.01)), scan(zurich, 'out_for_delivery')]), 'now');
+    // The drawn line, point by point: how much of it lies in the frame is what the stroke has left to draw.
+    const points = leg.d.match(/-?\d+(?:\.\d+)?/g)!.map(Number);
+    let whole = 0;
+    let shown = 0;
+    for (let index = 2; index < points.length; index += 2) {
+      const [x1, y1, x2, y2] = points.slice(index - 2, index + 2);
+      for (let step = 0; step < 100; step += 1) {
+        const x = x1 + (x2 - x1) * (step + .5) / 100;
+        const y = y1 + (y2 - y1) * (step + .5) / 100;
+        whole += Math.hypot(x2 - x1, y2 - y1) / 100;
+        if (x >= 0 && x <= SIZE.width && y >= 0 && y <= SIZE.height) shown += Math.hypot(x2 - x1, y2 - y1) / 100;
+      }
+    }
+    expect(shown).toBeGreaterThan(50);
+    expect(whole - shown).toBeGreaterThan(300);
+    expect(leg.pen!.reach).toBeCloseTo(shown / whole, 2);
+  });
+
+  it('has no stroke to draw before the parcel has travelled', async () => {
+    await loadWorld();
+    const { legs, stroke } = overlay(buildRoute([scan(lyon)], zurich), 'journey');
+    expect(legs.map((leg) => leg.kind)).toEqual(['remaining']);
+    expect(stroke).toBe(0);
+  });
 });

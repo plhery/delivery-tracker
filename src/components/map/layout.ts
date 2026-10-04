@@ -94,7 +94,14 @@ export function mapView(camera: Camera, size: Size) {
 }
 
 export interface Overlay {
-  legs: { id: string; d: string; kind: 'travelled' | 'approximate' | 'remaining' }[];
+  /**
+   * `pen` is a leg's turn in the one stroke that draws the route from its first place to the parcel's: when the turn
+   * starts and how long it lasts, as shares of the whole stroke, and how much of the leg is left to draw once it enters
+   * the frame. The way still to go has no turn.
+   */
+  legs: { id: string; d: string; kind: 'travelled' | 'approximate' | 'remaining'; pen?: { from: number; share: number; reach: number } }[];
+  /** How far the stroke runs in the frame, in pixels. */
+  stroke: number;
   dots: { id: string; x: number; y: number; kind: 'origin' | 'stop' | 'current' | 'last-known' | 'area' | 'destination' }[];
   /** Each name with the corner and the width of the box it found room for. */
   labels: { id: string; x: number; y: number; width: number; text: string; kind: 'current' | 'end' | 'stop' | 'area' | 'context' | 'city' }[];
@@ -104,7 +111,35 @@ export interface Overlay {
 }
 
 type Rect = { x: number; y: number; width: number; height: number };
+/** A hop is drawn whole, however far outside the frame it starts. */
+const UNCUT: Rect = { x: -1e9, y: -1e9, width: 2e9, height: 2e9 };
 const intersects = (a: Rect, b: Rect) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+
+/** How far a line runs before it first enters a box, and how far it runs inside it. */
+function runThrough(track: readonly (readonly [number, number])[], box: Rect): { before: number; inside: number } {
+  let before = 0;
+  let inside = 0;
+  for (let index = 1; index < track.length; index += 1) {
+    const [x1, y1] = track[index - 1];
+    const [x2, y2] = track[index];
+    const length = Math.hypot(x2 - x1, y2 - y1);
+    // Where this step enters and leaves the box, as shares of the step.
+    let enter = 0;
+    let leave = 1;
+    for (const [delta, low, high] of [[x2 - x1, box.x - x1, box.x + box.width - x1], [y2 - y1, box.y - y1, box.y + box.height - y1]]) {
+      if (delta === 0) {
+        if (low > 0 || high < 0) leave = -1;
+      } else {
+        enter = Math.max(enter, Math.min(low / delta, high / delta));
+        leave = Math.min(leave, Math.max(low / delta, high / delta));
+      }
+    }
+    const within = leave > enter ? (leave - enter) * length : 0;
+    if (!inside) before += within ? enter * length : length;
+    inside += within;
+  }
+  return { before, inside };
+}
 
 /**
  * The route's legs, its dots, the names that find room and where Pip stands. `textWidth` measures a name in the
@@ -112,7 +147,9 @@ const intersects = (a: Rect, b: Rect) => a.x < b.x + b.width && a.x + a.width > 
  */
 export function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape: Shape, labels: 'all' | 'ends' | 'none', sites: boolean,
   mode: MapMode, context: boolean, languageTag: string, pip: PipPlacing | null, textWidth: (text: string) => number): Overlay {
-  const project = projection(camera).clipExtent([[-400, -400], [size.width + 400, size.height + 400]]);
+  // Long legs are cut a little outside the frame.
+  const cut: Rect = { x: -400, y: -400, width: size.width + 800, height: size.height + 800 };
+  const project = projection(camera).clipExtent([[cut.x, cut.y], [cut.x + cut.width, cut.y + cut.height]]);
   const svgPath = geoPath(project);
   const visible = (point: Coordinate) => geoDistance(point, camera.center) < Math.PI / 2 - .02;
   const at = (point: Coordinate) => project(point) ?? [0, 0];
@@ -121,9 +158,11 @@ export function layout(route: Route, camera: Camera, size: Size, insets: Insets,
     ? Math.hypot(x - centerX, y - centerY) < radius - margin
     : x > insets.left + margin && x < size.width - insets.right - margin && y > insets.top + margin && y < size.height - insets.bottom - margin;
 
-  // A leg as it is drawn, and sampled along its curve so names and Pip can keep off it.
+  // A leg as it is drawn, with the box its line is cut to, and sampled along its curve so names and Pip can keep off it.
   const tracks: [number, number][][] = [];
-  const legPath = (a: Coordinate, b: Coordinate, km: number) => {
+  const frame: Rect = shape === 'circle' ? { x: centerX - radius, y: centerY - radius, width: radius * 2, height: radius * 2 }
+    : { x: 0, y: 0, width: size.width, height: size.height };
+  const legPath = (a: Coordinate, b: Coordinate, km: number): { d: string; drawn: Rect } => {
     if (km < 900 && visible(a) && visible(b)) {
       // Short hops bow slightly to the left of travel: a hop, not a road.
       const [x1, y1] = at(a);
@@ -137,21 +176,41 @@ export function layout(route: Route, camera: Camera, size: Size, insets: Insets,
         const t = index / steps;
         return [(1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2, (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2];
       }));
-      return `M${x1.toFixed(1)},${y1.toFixed(1)}Q${cx.toFixed(1)},${cy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`;
+      return { d: `M${x1.toFixed(1)},${y1.toFixed(1)}Q${cx.toFixed(1)},${cy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`, drawn: UNCUT };
     }
     const along = geoInterpolate(a, b);
     tracks.push(Array.from({ length: 121 }, (_, index) => along(index / 120) as Coordinate).filter(visible).map(point => at(point) as [number, number]));
-    return svgPath({ type: 'LineString', coordinates: [a, b] }) ?? '';
+    return { d: svgPath({ type: 'LineString', coordinates: [a, b] }) ?? '', drawn: cut };
   };
 
-  const legs: Overlay['legs'] = route.legs.map(leg => ({
-    id: leg.id,
-    d: legPath(leg.from.place.coordinate, leg.to.place.coordinate, leg.km),
-    kind: leg.from.place.precision === 'country' || leg.to.place.precision === 'country' ? 'approximate' : 'travelled',
-  }));
+  // The stroke spends its time where it can be seen: a leg's turn lasts as long as its run through the frame, and starts
+  // where it enters the frame, so a close-up never waits for a line that is still far outside it.
+  const runs = route.legs.map((leg) => {
+    const { d, drawn } = legPath(leg.from.place.coordinate, leg.to.place.coordinate, leg.km);
+    const track = tracks[tracks.length - 1];
+    const line = runThrough(track, drawn);
+    const seen = runThrough(track, frame);
+    const hidden = line.inside > 0 ? Math.max(0, Math.min(1, (seen.before - line.before) / line.inside)) : 1;
+    return { d, seen: seen.inside, reach: seen.inside > 0 ? 1 - hidden : 0 };
+  });
+  const stroke = runs.reduce((sum, run) => sum + run.seen, 0);
+  // Every leg takes a moment, however short: a turn of no length cannot be told as a share.
+  const turns = runs.map(run => Math.max(run.seen, Math.max(stroke, 1) * .005));
+  const whole = turns.reduce((sum, turn) => sum + turn, 0);
+  let from = 0;
+  const legs: Overlay['legs'] = route.legs.map((leg, index) => {
+    const pen = { from, share: turns[index] / whole, reach: runs[index].reach };
+    from += pen.share;
+    return {
+      id: leg.id,
+      d: runs[index].d,
+      kind: leg.from.place.precision === 'country' || leg.to.place.precision === 'country' ? 'approximate' : 'travelled',
+      pen,
+    };
+  });
   if (route.current && route.destination) legs.unshift({
     id: `remaining-${route.destination.id}`,
-    d: legPath(route.current.place.coordinate, route.destination.coordinate, route.remainingKm ?? 0),
+    d: legPath(route.current.place.coordinate, route.destination.coordinate, route.remainingKm ?? 0).d,
     kind: 'remaining',
   });
   /** Whether a leg passes through a box. */
@@ -384,5 +443,5 @@ export function layout(route: Route, camera: Camera, size: Size, insets: Insets,
     shown += 1;
   }
 
-  return { legs, dots, labels: labelBoxes, pointers, pip: pipPlace };
+  return { legs, stroke, dots, labels: labelBoxes, pointers, pip: pipPlace };
 }

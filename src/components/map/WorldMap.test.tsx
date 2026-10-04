@@ -489,6 +489,44 @@ describe('WorldMap', () => {
       .toEqual(start.replace(/[^\d.]+/g, ' ').trim().split(' ').map(Number).map(Math.round));
   });
 
+  it('draws the route as one stroke, leg after leg, and a leg that comes later on its own', async () => {
+    const legs = (container: HTMLElement) => [...container.querySelectorAll<SVGPathElement>('path[data-kind]')];
+    const turn = (leg: SVGPathElement) => ['--pen-from', '--pen-share', '--pen-reach'].map((name) => Number(leg.style.getPropertyValue(name)));
+    // jsdom has no AnimationEvent, so React listens for the prefixed name there.
+    const animationEnds = (element: Element) => fireEvent(element, new Event('webkitAnimationEnd', { bubbles: true }));
+    const hamburg = city('Hamburg', 'DE', 9.99, 53.55);
+    const olten = city('Olten', 'CH', 7.9, 47.35);
+    const start = buildRoute([scan(hamburg), scan(leipzig), scan(basel)], zurich);
+    const { container, rerender } = render(<WorldMap route={start} mode="journey" time={time} />);
+    await waitFor(() => expect(legs(container)).toHaveLength(3));
+    const [remaining, first, second] = legs(container);
+    // Each travelled leg takes over where the one before it ends, and the last ends the stroke.
+    const [from, share, reach] = turn(first);
+    expect([from, reach]).toEqual([0, 1]);
+    expect(turn(second)[0]).toBeCloseTo(share, 3);
+    expect(turn(second)[0] + turn(second)[1]).toBeCloseTo(1, 3);
+    expect([first, second].map((leg) => leg.getAttribute('pathLength'))).toEqual(['1', '1']);
+    // The way still to go is no part of it, and waits for the stroke: it lasts as long as the route is long on screen.
+    expect(remaining).toHaveAttribute('data-kind', 'remaining');
+    expect(remaining.style.getPropertyValue('--pen-from')).toBe('');
+    const stroke = first.parentElement!;
+    const lasting = Number.parseFloat(stroke.style.getPropertyValue('--map-stroke-time'));
+    expect(lasting).toBeGreaterThan(500);
+    expect(lasting).toBeLessThanOrEqual(1800);
+    expect(container.querySelector('[data-late]')).toBeNull();
+
+    // A fade that ends on a leg is not the stroke ending; the stroke's own end is.
+    animationEnds(remaining);
+    rerender(<WorldMap route={buildRoute([scan(hamburg), scan(leipzig), scan(basel), scan(olten)], zurich)} mode="journey" time={time} />);
+    await waitFor(() => expect(legs(container)).toHaveLength(4));
+    expect(container.querySelector('[data-late]')).toBeNull();
+    animationEnds(stroke);
+    rerender(<WorldMap route={buildRoute([scan(hamburg), scan(leipzig), scan(basel), scan(olten), scan(zurich)])} mode="journey" time={time} />);
+    await waitFor(() => expect(legs(container).map((leg) => leg.dataset.late)).toEqual([undefined, undefined, undefined, 'true']));
+    // The stroke keeps the time it was given, however the route grows.
+    expect(Number.parseFloat(stroke.style.getPropertyValue('--map-stroke-time'))).toBe(lasting);
+  });
+
   it('places every dot by its attribute, and frames the route itself, unless told otherwise', async () => {
     const route = buildRoute([scan(leipzig), scan(zurich)]);
     const { container } = render(<WorldMap route={route} mode="journey" time={time} pip={{ mood: 'look' }} />);

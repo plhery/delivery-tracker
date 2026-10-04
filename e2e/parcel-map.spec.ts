@@ -39,6 +39,30 @@ test('engraves the route in the card and opens it as a full map', async ({ page 
   expect(errors).toEqual([]);
 });
 
+test('draws the route as one stroke, leg after leg', async ({ page }) => {
+  await page.getByRole('button', { name: /^Belgian chocolate 🍫 —/ }).click();
+  const legs = page.locator('.detail--postcard .detail__engraving path[data-kind="travelled"]');
+  await expect(legs).toHaveCount(2);
+  // How much of each leg is left to draw with the stroke held at a share of its time: 1 is all of it, 0 none.
+  const left = (share: number) => legs.evaluateAll((paths, share) => {
+    const [stroke] = paths[0].parentElement!.getAnimations();
+    stroke.pause();
+    stroke.currentTime = Number(stroke.effect!.getComputedTiming().duration) * share;
+    return paths.map((path) => Number.parseFloat(getComputedStyle(path).strokeDashoffset));
+  }, share);
+  // Out for delivery, the card shows the last mile: the stroke starts where the leg from Brussels comes into the picture.
+  const [start, waiting] = await left(0);
+  expect(start).toBeGreaterThan(.5);
+  expect(start).toBeLessThan(1);
+  expect(waiting).toBe(1);
+  // That leg is drawn first, and Basel to Zürich waits for it.
+  const [first, second] = await left(.4);
+  expect(first).toBeGreaterThan(0);
+  expect(first).toBeLessThan(start);
+  expect(second).toBe(1);
+  expect(await left(1)).toEqual([0, 0]);
+});
+
 test('draws the route on Next up, and opens the parcel on the same picture', async ({ page }) => {
   // How far below the top of its card the parcel's dot sits.
   const dotOffset = async (card: Locator) => {

@@ -260,8 +260,7 @@ export function WorldMap({
       {overlay && <svg className={styles.mapOverlay} viewBox={`0 0 ${size!.width} ${size!.height}`} aria-hidden="true">
         {circle && <defs><clipPath id={clip}><circle cx={circle.x} cy={circle.y} r={circle.radius} /></clipPath></defs>}
         <g clipPath={circle ? `url(#${clip})` : undefined}>
-          {overlay.legs.map(leg => <path key={leg.id} d={leg.d} className={styles.leg} data-kind={leg.kind}
-            pathLength={leg.kind === 'travelled' ? 1 : undefined} />)}
+          <Legs legs={overlay.legs} stroke={overlay.stroke} />
           {overlay.dots.map(dot => {
             // A dot that travels is one element from place to place, moved by a style so the move can be eased.
             const travels = glide && dot.kind === 'current';
@@ -290,6 +289,34 @@ export function WorldMap({
       <span className={styles.pipIn}><InkPip mood={overlay.pip.mood} side={overlay.pip.side} below={overlay.pip.below} /></span>
     </span>}
   </div>;
+}
+
+/**
+ * How long the route's stroke takes, in milliseconds: a short route is drawn quickly, a long one never drags, and
+ * a route too small to see keeps nothing waiting.
+ */
+const strokeTime = (stroke: number) => Math.round(Math.min(1800, 500 + stroke * 1.6, stroke * 40));
+
+/**
+ * The route's legs. Those there when the route first shows are drawn as one stroke, from the first place to the
+ * parcel's, and the way still to go shows once the stroke has arrived. A leg that comes later, with a new scan,
+ * is drawn on its own.
+ */
+function Legs({ legs, stroke }: Pick<Overlay, 'legs' | 'stroke'>) {
+  // Timed once, for the route as it first shows: a camera that moves afterwards must not draw it again.
+  const [time] = useState(() => strokeTime(stroke));
+  const [drawn, setDrawn] = useState(false);
+  return <g className={styles.route} style={{ '--map-stroke-time': `${time}ms` } as CSSProperties}
+    onAnimationEnd={(event) => { if (event.target === event.currentTarget) setDrawn(true); }}>
+    {legs.map(leg => <Leg key={leg.id} leg={leg} late={drawn} />)}
+  </g>;
+}
+
+function Leg({ leg: { d, kind, pen }, late }: { leg: Overlay['legs'][number]; late: boolean }) {
+  // Whether the stroke had already ended when this leg came.
+  const [after] = useState(late);
+  return <path d={d} className={styles.leg} data-kind={kind} data-late={after || undefined} pathLength={pen ? 1 : undefined}
+    style={pen && { '--pen-from': pen.from.toFixed(4), '--pen-share': pen.share.toFixed(4), '--pen-reach': pen.reach.toFixed(4) } as CSSProperties} />;
 }
 
 /** How large a place is marked: the parcel's own place largest, a stop on the way smallest. A quiet route marks them all smaller. */

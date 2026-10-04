@@ -26,8 +26,21 @@
 .mapCanvas, .mapOverlay { position: absolute; inset: 0; width: 100%; height: 100%; }
 .mapOverlay { overflow: visible; pointer-events: none; }
 .leg { fill: none; stroke: var(--map-route); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.leg[data-kind=travelled] { stroke-dasharray: 1; animation: draw 1s var(--ease-out) both; }
-.leg[data-kind=remaining] { stroke: var(--map-route-muted); stroke-width: 1.4; stroke-dasharray: 3 5; }
+/*
+ * One stroke draws the route from its first place to the parcel's: `--map-drawn` is how much of it is drawn, registered
+ * as a number so that it can move, and each leg takes its turn in it. The way still to go shows once the stroke has arrived.
+ */
+@property --map-drawn { syntax: "<number>"; inherits: true; initial-value: 1; }
+.route { animation: pen var(--map-stroke-time) cubic-bezier(.45, 0, .2, 1) both; }
+.leg:not([data-kind=remaining]) {
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1px * var(--pen-reach) * clamp(0, (var(--pen-from) + var(--pen-share) - var(--map-drawn)) / var(--pen-share), 1));
+}
+.leg[data-kind=remaining] { stroke: var(--map-route-muted); stroke-width: 1.4; stroke-dasharray: 3 5; animation: settle .5s var(--ease-out) var(--map-stroke-time) both; }
+/* A leg that comes with a later scan is drawn on its own. */
+.leg[data-late]:not([data-kind=remaining]) { animation: draw 1s var(--ease-out) both; }
+.leg[data-late][data-kind=remaining] { animation-delay: 0s; }
+@keyframes pen { from { --map-drawn: 0; } to { --map-drawn: 1; } }
 @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 .dot circle { fill: var(--map-route); stroke: var(--map-dot-ring); stroke-width: 1.5; }
 .dot[data-kind=current] circle { fill: var(--map-accent); stroke: var(--paper); stroke-width: 2; }
@@ -37,7 +50,7 @@
 .dot[data-kind=area] circle { fill: none; stroke: var(--map-route); stroke-width: 1.4; stroke-dasharray: 1.6 2.4; }
 /* A quiet route belongs to the picture: a thin line and small dots without the bright ring, there at once. Its card pales the ink. */
 .worldMap[data-quiet] .leg { stroke-width: .9; }
-.worldMap[data-quiet] .leg[data-kind=travelled] { animation: none; }
+.worldMap[data-quiet] :is(.route, .leg) { animation: none; }
 .worldMap[data-quiet] .leg[data-kind=remaining] { stroke-width: .8; }
 .worldMap[data-quiet] .dot circle { stroke-width: 1.1; }
 .worldMap[data-quiet] .dot:is([data-kind=current], [data-kind=last-known]) circle { stroke: var(--map-dot-ring); stroke-width: 1.2; }
@@ -97,5 +110,5 @@
 }
 @keyframes pip-twinkle { 0%, 100% { opacity: .2; transform: scale(.6) rotate(-10deg); } 50% { opacity: 1; transform: scale(1.1) rotate(8deg); } }
 @media (prefers-reduced-motion: reduce) {
-  .leg[data-kind=travelled], .dot[data-kind=current] .halo, .pointer, .placeLabel, .pipIn, .pipBody[data-mood], .pipGlint { animation: none; }
+  .worldMap :is(.route, .leg[data-kind]), .dot[data-kind=current] .halo, .pointer, .placeLabel, .pipIn, .pipBody[data-mood], .pipGlint { animation: none; }
 }
