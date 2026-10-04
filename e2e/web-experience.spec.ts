@@ -99,7 +99,8 @@ test('leads every header with the name: the lockup where it stands alone, the ma
   const mark = page.locator('.app__brand .peek-mark:visible');
   await expect(mark).toHaveCSS('width', phone ? '30px' : '28px');
   await expect(mark).toHaveCSS('stroke', 'none');
-  await expect(page.getByRole('button', { name: 'Add a parcel', exact: true })).toBeVisible();
+  // Adding a parcel sits beside the name, as in the iOS app.
+  await expect(page.locator('.app__leading').getByRole('button', { name: 'Add a parcel', exact: true })).toBeVisible();
 });
 
 test('Pip blinks on the front door’s closed parcel, and keeps still when motion is reduced', async ({ page }) => {
