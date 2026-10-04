@@ -58,7 +58,7 @@ function samplePreview(locale: Locale, now: number): ParcelLinkPreview {
     ...parcelPreviewText(parcel, carrier.name, wording),
     // The page's title and description say what it is, not what the made-up parcel does.
     title: `${t('app.title')} — ${note}`,
-    description: t('landing.lead'),
+    description: `${t('sample.yours.title')} ${t('landing.lead')}`,
     carrier,
     steps: stage ? stageMeta(stage).progress + 1 : 0,
     note,

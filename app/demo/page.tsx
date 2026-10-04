@@ -1,7 +1,19 @@
+import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { ClientApplication } from '../../src/ClientApplication';
+import { translateMessage } from '../../src/lib/messages';
 import { emailConfigured } from '../../src/server/email/config';
-import { requestLanguage } from '../../src/server/requestLocale';
+import { messagesFor, requestLanguage, requestLocale } from '../../src/server/requestLocale';
+
+/** The demo says what it is, in the reader's language: its banner's name, and where its parcels stay. */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await requestLocale();
+  const messages = messagesFor(locale);
+  return {
+    title: `${translateMessage(locale, 'app.title', undefined, messages)} — ${translateMessage(locale, 'app.demo', undefined, messages)}`,
+    description: translateMessage(locale, 'app.demoDescription', undefined, messages),
+  };
+}
 
 /** The demo deliveries, for anyone: nothing here needs an account or leaves the device. */
 export default async function DemoPage() {

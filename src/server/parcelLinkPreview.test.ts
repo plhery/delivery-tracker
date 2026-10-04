@@ -155,7 +155,7 @@ describe('parcelLinkPreview', () => {
     const preview = await parcelLinkPreview('sample', new Headers({ 'x-real-ip': '198.51.100.26' }), 'en', NOW);
     expect(preview).toEqual({
       title: 'Peek — Sample parcel · nothing here is real',
-      description: 'Paste a tracking number, a carrier link or a whole shipping email. No account needed.',
+      description: 'Waiting for a real one? Paste a tracking number, a carrier link or a whole shipping email. No account needed.',
       headline: 'In transit',
       detail: 'Expected: Sun 4 oct',
       carrier: expect.objectContaining({ id: 'gls-de' }),
@@ -251,6 +251,7 @@ describe('the sample page’s metadata', () => {
     const picture = 'https://peek.example.test/api/public/parcels/sample/image?lang=fr';
     expect(metadata).toMatchObject({
       title,
+      description: 'Tu en attends un vrai ? Colle un numéro de suivi, un lien de transporteur ou tout un e-mail d’expédition. Pas besoin de compte.',
       alternates: { canonical: 'https://peek.example.test/sample' },
       openGraph: {
         title, url: 'https://peek.example.test/sample', siteName: 'Peek',

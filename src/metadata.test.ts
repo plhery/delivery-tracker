@@ -2,13 +2,17 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 
+const request = vi.hoisted(() => ({ language: 'en' }));
 vi.mock('next/headers', () => ({
   headers: vi.fn(async () => new Headers({
     host: 'delivery.example.test',
     'x-forwarded-proto': 'https',
+    'accept-language': request.language,
   })),
+  cookies: vi.fn(async () => ({ get: () => undefined })),
 }));
 
+import { generateMetadata as demoMetadata } from '../app/demo/page';
 import { generateMetadata as layoutMetadata } from '../app/layout';
 import manifest from '../app/manifest';
 import { generateMetadata } from '../app/page';
@@ -79,6 +83,13 @@ describe('public product metadata', () => {
     });
     // Without a title or a description here, each page's own are shared.
     expect(twitter).toEqual({ card: 'summary_large_image', images: landing?.images });
+  });
+
+  it('names the demo and says where its parcels stay, in the reader’s language', async () => {
+    expect(await demoMetadata()).toEqual({ title: 'Peek — Demo mode', description: 'These sample parcels stay on this device.' });
+    request.language = 'de-CH,de;q=0.9';
+    expect(await demoMetadata()).toEqual({ title: 'Peek — Demo-Modus', description: 'Diese Beispielpakete bleiben auf diesem Gerät.' });
+    request.language = 'en';
   });
 
   it('signs the preview picture with the mark as it is drawn everywhere else', () => {
