@@ -473,6 +473,27 @@ function fakeClient(packages: JsonObject[] = []) {
 }
 
 describe('TrackingSyncService', () => {
+  it('carries the country hint through provider lookup and later direct recovery', async () => {
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const progress = { status: 'in_transit', current_stage: 'in_transit', last_update: '2026-09-10T11:00:00Z' };
+    const adapter = { fetch: vi.fn().mockRejectedValueOnce(new Error('down')).mockResolvedValue(progress),
+      fetchUniversal: vi.fn().mockResolvedValue(progress) };
+    const parcel = { id: 'country-hint', carrier: 'dhl', tracking_number: 'TEST1234', current_stage: 'pending', carrier_data: { lookup_country_hint: 'FR' } };
+    let now = new Date('2026-09-10T12:00:00Z');
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
+    await service.syncPackage(parcel);
+    expect(adapter.fetchUniversal).toHaveBeenCalledWith('ParcelsApp', 'TEST1234', expect.any(Number), null, 'Europe/Berlin', 'FR');
+    const saved = client.updatePackage.mock.calls.at(-1)![1];
+    expect(saved.carrier_data.lookup_country_hint).toBe('FR');
+    expect(saved.carrier_data.destination_country).toBeUndefined();
+    now = new Date('2026-09-10T13:00:00Z');
+    await service.syncPackage({ ...parcel, ...saved });
+    expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.lookup_country_hint).toBe('FR');
+  });
+
   it('clears the displayed universal provider after successful direct recovery', async () => {
     const client = { ...fakeClient(),
       acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
@@ -1970,6 +1991,13 @@ describe('TrackingSyncService', () => {
     expect(universal.fetchSource).toHaveBeenCalledWith('Ship24', 'TEST1234', 1000, '8000', null);
     await adapter.fetchUniversal('Ship24', 'TEST1234', 1000, null, 'Europe/Zurich');
     expect(universal.fetchSource).toHaveBeenLastCalledWith('Ship24', 'TEST1234', 1000, null, 'Europe/Zurich');
+  });
+
+  it('passes the country hint through the host adapter to the published scraper', async () => {
+    const universal = { fetchSource: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    const adapter = new CarrierTrackingAdapter(universal as unknown as UniversalTracker);
+    await adapter.fetchUniversal('ParcelsApp', 'TEST1234', 1000, '00000', 'Europe/Paris', 'FR');
+    expect(universal.fetchSource).toHaveBeenCalledExactlyOnceWith('ParcelsApp', 'TEST1234', 1000, '00000', 'Europe/Paris', undefined, 'FR');
   });
 
   it('keeps expired Shipping history out of the timeline and Sentry', async () => {

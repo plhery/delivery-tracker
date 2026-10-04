@@ -35,6 +35,12 @@ provider.
      [COMPARISON.md](https://github.com/plhery/universal-parcel-scraper/blob/main/providers/COMPARISON.md)). Dedicated adapters such
      as EMS still go first.
 
+For new lookups, a trusted Cloudflare `CF-IPCountry` header is saved as a country hint.
+A destination reported by a carrier takes precedence. The hint lets ParcelsApp retry an
+empty answer once with its country selector, within the same lookup budget. It does not
+choose the carrier, set the delivery destination or change scan clocks. The visitor's IP
+address is not sent to providers. Reopening a shared parcel does not change its hint.
+
 **Affinity.** A provider that returns history is saved with its lookup number in
 `carrier_data.routing`. The next check starts there, whatever its place in the order, as
 long as it isn't cooling down. Providers in a better tier for the carrier are asked before

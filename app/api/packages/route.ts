@@ -12,6 +12,7 @@ import { withEventPlaces } from '../../../src/server/eventPlaces';
 import { captureOperationalError } from '../../../src/server/observability';
 import { SupabaseError } from '../../../src/server/supabase';
 import { wakeSyncWorker } from '../../../src/server/background';
+import { rememberLookupCountry } from '../../../src/server/lookupCountry';
 import { newPackageValues } from '../../../src/server/validation';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +62,7 @@ export const POST = apiRoute(async (context) => {
     throw error;
   }
 
+  await rememberLookupCountry(service, parcel, context.request);
   const jobIds: string[] = [];
   try {
     const job = await service.enqueueSyncJob({

@@ -177,10 +177,10 @@ export class TrackingRouter {
   constructor(readonly options: {
     direct: (parcel: JsonObject, carrier: string) => Promise<RoutedResult>;
     // postcode is the parcel's stored delivery postcode, if the user supplied
-    // one; providers receive it in their track input but submit it nowhere yet.
+    // one; ParcelsApp submits it with its direct lookup.
     // timezone is the parcel carrier's catalog zone; when that is UTC, the zone
     // of the carrier confirmed for the same number, else null.
-    universal: (source: UniversalSource, number: string, timeoutMs: number, postcode: string | null, timezone: string | null) => Promise<CarrierResult>;
+    universal: (source: UniversalSource, number: string, timeoutMs: number, postcode: string | null, timezone: string | null, countryHint?: string | null) => Promise<CarrierResult>;
     health: ProviderHealth;
     /** A carrier's cheap check of whether it knows a number; without it, no recognition runs. */
     recognize?: (carrier: string, number: string) => Promise<Recognition>;
@@ -474,7 +474,10 @@ export class TrackingRouter {
       let retryAfterMs = 0;
       try {
         const postcode = typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null;
-        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(universalSourceBudget(source), remaining - 5_000), postcode, zone));
+        const country = [metadata.destination_country, metadata.destination_country_name, metadata.lookup_country_hint]
+          .find((value) => typeof value === 'string' && value.trim());
+        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(universalSourceBudget(source), remaining - 5_000), postcode, zone,
+          ...(typeof country === 'string' ? [country] as const : [])));
         if (!usable(result)) throw new TypeError('No usable universal progress');
         if (foreignHistory(result, universalCarrier, parcel.created_at)) {
           report('foreign_history_rejected', source);

@@ -203,6 +203,20 @@ describe('looking up a parcel without an account', () => {
     expect(authenticate).not.toHaveBeenCalled();
   });
 
+  it('saves a trusted visitor country only for a newly created lookup', async () => {
+    allow();
+    store();
+    const updateCountry = vi.spyOn(SupabaseServiceClient.prototype, 'updatePackage').mockResolvedValue(undefined);
+    const response = await lookup({ trackingNumber }, nextIp(), { 'cf-connecting-ip': nextIp(), 'cf-ipcountry': 'FR' });
+    expect(response.status).toBe(201);
+    expect(updateCountry).toHaveBeenCalledWith(packageId, { carrier_data: expect.objectContaining({ lookup_country_hint: 'FR' }) });
+    expect(await response.text()).not.toContain('lookup_country_hint');
+    expect(updateCountry.mock.invocationCallOrder[0]).toBeLessThan(enqueue.mock.invocationCallOrder[0]!);
+    vi.mocked(SupabaseServiceClient.prototype.createOneOffParcel).mockResolvedValue({ link: storedLink({ owner: true }), package: storedPackage(), created: false });
+    expect((await lookup({ trackingNumber }, nextIp(), { 'cf-connecting-ip': nextIp(), 'cf-ipcountry': 'CH' })).status).toBe(201);
+    expect(updateCountry).toHaveBeenCalledOnce();
+  });
+
   it('answers a stored parcel the same way and counts it as reused', async () => {
     allow();
     store(false);

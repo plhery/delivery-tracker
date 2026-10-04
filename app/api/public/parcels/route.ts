@@ -1,6 +1,7 @@
 import { verifyAmazonShippingAddition } from '../../../../src/server/amazonShippingEligibility';
 import { apiRoute, clientIp, json, readJsonObject, requireService } from '../../../../src/server/api';
 import { wakeSyncWorker } from '../../../../src/server/background';
+import { rememberLookupCountry } from '../../../../src/server/lookupCountry';
 import { recordPublicLookup } from '../../../../src/server/metrics';
 import {
   claimLookup,
@@ -43,6 +44,7 @@ export const POST = apiRoute(async (context) => {
 
   const key = newOwnerKey();
   const created = await service.createOneOffParcel(values, ownerKeyHash(key)!);
+  if (created.created) await rememberLookupCountry(service, created.package, context.request);
   recordPublicLookup(created.created ? 'created' : 'reused');
   try {
     await service.enqueueSyncJob({ packageId: String(created.package.id) });

@@ -31,6 +31,16 @@ beforeEach(() => vi.spyOn(monitoring, 'reportRoutingEvent').mockImplementation((
 afterEach(() => vi.restoreAllMocks());
 
 describe('persistent tracking routing', () => {
+  it.each([
+    [{ lookup_country_hint: 'FR' }, 'FR'],
+    [{ lookup_country_hint: 'FR', destination_country: 'CH' }, 'CH'],
+    [{ lookup_country_hint: 'FR', destination_country_name: 'Germany' }, 'Germany'],
+  ])('forwards a destination before the weak country hint: %j', async (carrier_data, country) => {
+    const { router, universal } = setup();
+    await router.fetch(parcel({ carrier_data }), false);
+    expect(universal).toHaveBeenCalledWith('ParcelsApp', 'TEST1234', expect.any(Number), null, null, country);
+  });
+
   it('retains actionable input failures through a deferred lookup', async () => {
     const { router, direct, universal } = setup();
     direct.mockRejectedValue(new InputRequiredError('Heppner', 'postcode'));

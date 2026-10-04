@@ -131,7 +131,7 @@ export function isOpenedParcelSyncDue(parcel: JsonObject, now: Date): boolean {
 }
 
 export interface TrackingAdapter {
-  fetchUniversal?(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null, timezone?: string | null): Promise<CarrierResult>;
+  fetchUniversal?(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null, timezone?: string | null, countryHint?: string | null): Promise<CarrierResult>;
   /** A carrier's cheap check of whether it knows a number (carrier.json `tracking.recognition`). */
   recognize?(carrierId: string, trackingNumber: string): Promise<Recognition>;
   fetch(
@@ -149,8 +149,9 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly recorder: StepRecorder = hostStepRecorder(),
   ) {}
 
-  async fetchUniversal(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null, timezone?: string | null): Promise<CarrierResult> {
-    return this.universal.fetchSource(source, trackingNumber, timeoutMs, dpdPostcode ?? null, timezone ?? null);
+  async fetchUniversal(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null, timezone?: string | null, countryHint?: string | null): Promise<CarrierResult> {
+    if (countryHint === undefined) return this.universal.fetchSource(source, trackingNumber, timeoutMs, dpdPostcode ?? null, timezone ?? null);
+    return this.universal.fetchSource(source, trackingNumber, timeoutMs, dpdPostcode ?? null, timezone ?? null, undefined, countryHint);
   }
 
   async recognize(carrierId: string, trackingNumber: string): Promise<Recognition> {
@@ -763,7 +764,7 @@ export class TrackingSyncService {
         fetched = await audit.observeFetch(async () => this.adapter.fetchUniversal && carrierId !== 'amazon-shipping'
           ? await new TrackingRouter({
             direct: (candidate, carrier) => this.fetchResult(candidate, carrier),
-            universal: (source, number, timeout, postcode, timezone) => this.adapter.fetchUniversal!(source, number, timeout, postcode, timezone),
+            universal: (source, number, timeout, postcode, timezone, countryHint) => this.adapter.fetchUniversal!(source, number, timeout, postcode, timezone, countryHint),
             health: this.client, now: this.now,
             ...(this.adapter.recognize ? { recognize: (carrier: string, number: string) => this.adapter.recognize!(carrier, number) } : {}),
             enablePostalNinja: process.env.TRACKING_ENABLE_POSTAL_NINJA === 'true',
@@ -940,7 +941,7 @@ export class TrackingSyncService {
       if (localHistory) carrierData.direct_local_history = localHistory;
       // Linked journey identity belongs to the parcel, not an individual carrier response.
       if (isRecord(parcel.carrier_data)) {
-        for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier', 'active_tracking_number', 'original_canonical_tracking_number', 'auto_changed_from', 'auto_changed_to', 'auto_changed_at']) {
+        for (const key of ['lookup_country_hint', 'original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier', 'active_tracking_number', 'original_canonical_tracking_number', 'auto_changed_from', 'auto_changed_to', 'auto_changed_at']) {
           if (parcel.carrier_data[key] != null && carrierData[key] == null) carrierData[key] = parcel.carrier_data[key];
         }
       }
@@ -969,7 +970,7 @@ export class TrackingSyncService {
       if (preserveSummary && fetched.earlierCarrierId && result.original_carrier) {
         const data = isRecord(values.carrier_data) ? values.carrier_data : isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
         const preservedData = { ...data };
-        for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url',
+        for (const key of ['lookup_country_hint', 'original_carrier', 'original_tracking_number', 'original_tracking_url',
           'original_canonical_tracking_number', 'active_tracking_carrier', 'active_tracking_number']) {
           if (carrierData[key] != null) preservedData[key] = carrierData[key];
         }
