@@ -186,7 +186,7 @@ struct FirstOpenView: View {
         .buttonStyle(FirstOpenHeroStyle())
         .accessibilityLabel(localizer.text("landing.pip.open"))
         .overlay(alignment: .top) {
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 HStack {
                     PeekLockup()
                     Spacer()
@@ -199,9 +199,10 @@ struct FirstOpenView: View {
                         .accessibilityIdentifier("welcome.signIn")
                 }
                 if let ping = FirstOpenJourney.ping(step: step, localizer: localizer) {
-                    FirstOpenPing(title: parcel.label, detail: ping)
+                    FirstOpenPing(detail: ping, identity: identity)
                         .id(step)
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .transition(.offset(y: -6).combined(with: .opacity))
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .allowsHitTesting(false)
                 }
             }
@@ -223,7 +224,7 @@ struct FirstOpenView: View {
                 .lineLimit(2)
                 .accessibilityAddTraits(.isHeader)
                 .padding(.top, roomy ? 26 : 18)
-            Text(localizer.text(store.tracksWithoutAccount ? "landing.lead" : "arrival.welcomeSubtitle"))
+            Text(localizer.text(store.tracksWithoutAccount ? "native.pasteLead" : "arrival.welcomeSubtitle"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -322,29 +323,21 @@ struct FirstParcelPrimaryLabel: View {
     }
 }
 
-/// An alert, as it lands over the picture when the sample parcel is nearly there.
+/// What an alert would say, as a small mark on the map in the card's own ink: the parcel is
+/// nearly there, or there. It belongs to the picture and does not ask to be read first.
 private struct FirstOpenPing: View {
-    let title: String
     let detail: String
-    @EnvironmentObject private var localizer: Localizer
+    let identity: CarrierVisualIdentity
 
     var body: some View {
-        HStack(spacing: 11) {
-            PeekMark(size: 36)
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(title).font(.subheadline.weight(.semibold))
-                    Spacer()
-                    Text(localizer.text("landing.ping.now")).font(.caption).foregroundStyle(.secondary)
-                }
-                Text(detail).font(.subheadline).lineLimit(1).minimumScaleFactor(0.8)
-            }
+        HStack(spacing: 6) {
+            Image(systemName: "bell.fill").font(.system(size: 9))
+            Text(detail).font(.caption.weight(.medium)).lineLimit(1).minimumScaleFactor(0.8)
         }
-        .foregroundStyle(Brand.ink)
-        .padding(.horizontal, 13)
-        .padding(.vertical, 11)
-        .glassSurface(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .shadow(color: .black.opacity(0.1), radius: 14, y: 6)
+        .foregroundStyle(identity.ink)
+        .padding(.horizontal, 10)
+        .frame(height: 26)
+        .background(identity.ink.opacity(0.1), in: Capsule())
         .accessibilityHidden(true)
     }
 }
@@ -438,7 +431,7 @@ struct DeliveriesEmptyState: View {
                 .foregroundStyle(Brand.ink)
                 .multilineTextAlignment(.center)
                 .accessibilityAddTraits(.isHeader)
-            Text(localizer.text(session.isGuest ? "landing.lead" : "app.emptyDescription"))
+            Text(localizer.text("app.emptyDescription"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -458,14 +451,6 @@ struct DeliveriesEmptyState: View {
             }
             .padding(.top, 10)
             hint.padding(.top, 14)
-            if session.isGuest {
-                Button(localizer.text("welcome.signIn")) { session.showSignIn() }
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(Brand.ink)
-                    .underline(color: Color(uiColor: .tertiaryLabel))
-                    .frame(minHeight: 44)
-                    .accessibilityIdentifier("deliveries.empty.signIn")
-            }
         }
         .buttonStyle(TactileButtonStyle())
         .padding(.horizontal, 8)

@@ -1005,5 +1005,6 @@
   "email.off.askTitle": "Disattivare le e-mail di consegna?",
   "email.off.askBody": "Peek non ti scriverà più quando un pacco viene consegnato. Le notifiche non cambiano.",
   "native.guest.kept": "Per ora, solo su questo iPhone.",
-  "sample.tag": "Esempio"
+  "sample.tag": "Esempio",
+  "native.pasteLead": "Incolla un numero, un link o un’intera email."
 }

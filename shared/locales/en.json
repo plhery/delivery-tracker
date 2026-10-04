@@ -1005,5 +1005,6 @@
   "email.off.askTitle": "Turn off delivery emails?",
   "email.off.askBody": "Peek will stop emailing you when a parcel is delivered. Your notifications stay as they are.",
   "native.guest.kept": "On this iPhone only, for now.",
-  "sample.tag": "Sample"
+  "sample.tag": "Sample",
+  "native.pasteLead": "Paste a number, a link or a whole email."
 }

@@ -1005,5 +1005,6 @@
   "email.off.askTitle": "Desativar os e-mails de entrega?",
   "email.off.askBody": "O Peek deixa de te escrever quando um envio for entregue. As tuas notificações não mudam.",
   "native.guest.kept": "Por agora, só neste iPhone.",
-  "sample.tag": "Exemplo"
+  "sample.tag": "Exemplo",
+  "native.pasteLead": "Cola um número, uma ligação ou um e-mail inteiro."
 }

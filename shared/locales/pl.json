@@ -1005,5 +1005,6 @@
   "email.off.askTitle": "Wyłączyć e-maile o dostarczeniu?",
   "email.off.askBody": "Peek przestanie pisać, gdy przesyłka zostanie dostarczona. Powiadomienia zostają bez zmian.",
   "native.guest.kept": "Na razie tylko na tym iPhonie.",
-  "sample.tag": "Przykład"
+  "sample.tag": "Przykład",
+  "native.pasteLead": "Wklej numer, link albo całego maila."
 }

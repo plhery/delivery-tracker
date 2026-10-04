@@ -164,7 +164,7 @@ struct AnalyticsLifecycleObserver: View {
     @EnvironmentObject private var links: ParcelLinkStore
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.scenePhase) private var phase
-    @AppStorage("sdt.native.firstParcel.v1") private var followedFirstParcel = false
+    @EnvironmentObject private var parcels: ParcelStore
 
     private var mode: DeliveryAnalytics.Mode {
         if session.isDemo { return .demo }
@@ -178,7 +178,7 @@ struct AnalyticsLifecycleObserver: View {
         switch session.state {
         case .loading: return "welcome"
         // Nobody is signed in: the first screen, then the deliveries this iPhone follows itself.
-        case .welcome: return followedFirstParcel ? "deliveries" : "front-door"
+        case .welcome: return parcels.parcels.isEmpty ? "front-door" : "deliveries"
         case .signedOut, .unconfigured: return "sign-in"
         case .demo, .signedIn: return "deliveries"
         }

@@ -8,13 +8,10 @@ struct ParcelListView: View {
     @EnvironmentObject private var store: ParcelStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selection: Int
-    /// Set once this iPhone has followed a parcel without an account: the first screen has done its work.
-    @AppStorage("sdt.native.firstParcel.v1") private var started = false
     @State private var firstParcel: FirstParcelRequest?
     @State private var adding = false
-
-    /// Nobody is signed in and nothing was ever followed here: the first screen stands over the deliveries.
-    private var showsFirstOpen: Bool { session.isGuest && !started }
+    /// Nobody is signed in and this iPhone follows nothing: the first screen stands over the deliveries.
+    @State private var showsFirstOpen = false
 
     var body: some View {
         TabView(selection: $selection) {
@@ -42,19 +39,28 @@ struct ParcelListView: View {
             if showsFirstOpen {
                 FirstOpenView(covered: adding) { firstParcel = $0 }
                     // It lifts away, and the deliveries under it show the parcel that just came in.
-                    .transition(.asymmetric(insertion: .identity, removal: .move(edge: .top).combined(with: .opacity)))
+                    .transition(.asymmetric(insertion: .opacity, removal: .move(edge: .top).combined(with: .opacity)))
             }
         }
-        .animation(reduceMotion ? nil : .smooth(duration: 0.55), value: showsFirstOpen)
-        // The sheet that added the parcel closes first: the list is then seen receiving it.
-        .onChange(of: session.isGuest && !adding && !store.parcels.isEmpty, initial: true) { _, followed in
-            if followed { started = true }
+        .onChange(of: FirstOpenPresence(guest: session.isGuest, empty: store.parcels.isEmpty, adding: adding), initial: true) { before, now in
+            // It comes back when the last parcel is forgotten, at once on a launch. It leaves when the
+            // first parcel is in, once the sheet that added it has closed: the list is then seen receiving it.
+            let shows = now.guest && (now.empty || (now.adding && showsFirstOpen))
+            guard shows != showsFirstOpen else { return }
+            if before == now { showsFirstOpen = shows } else { withAnimation(reduceMotion ? nil : .smooth(duration: 0.55)) { showsFirstOpen = shows } }
         }
         .sensoryFeedback(.selection, trigger: selection)
         .onChange(of: selection) { _, tab in
             DeliveryAnalytics.shared.view(tab == 1 ? "passport" : tab == 2 ? "friends" : "deliveries")
         }
     }
+}
+
+/// What decides whether the first screen stands over the deliveries.
+private struct FirstOpenPresence: Equatable {
+    let guest: Bool
+    let empty: Bool
+    let adding: Bool
 }
 
 struct DemoModeBar: View {
@@ -493,7 +499,8 @@ private struct DeliveryListView: View {
                 } description: { Text(localizer.text("view.noResultsDescription")) }
                 actions: { Button(localizer.text("view.clear")) { clearFilters() } }
                     .frame(maxWidth: .infinity).padding(.vertical, 32)
-            } else if !hasCustomView, store.errorMessage == nil, store.parcels.allSatisfy(\.isDelivered) {
+            // Someone without an account is not told to track another parcel: the row under the cards speaks to them.
+            } else if !session.isGuest, !hasCustomView, store.errorMessage == nil, store.parcels.allSatisfy(\.isDelivered) {
                 VStack(spacing: 12) {
                     Image(systemName: "checkmark").font(.system(size: 36, weight: .ultraLight))
                         .foregroundStyle(.secondary).padding(.bottom, 6).accessibilityHidden(true)

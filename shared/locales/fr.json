@@ -1005,5 +1005,6 @@
   "email.off.askTitle": "Désactiver les e-mails de livraison ?",
   "email.off.askBody": "Peek ne t’écrira plus quand un colis est livré. Tes notifications ne changent pas.",
   "native.guest.kept": "Sur cet iPhone seulement, pour l’instant.",
-  "sample.tag": "Exemple"
+  "sample.tag": "Exemple",
+  "native.pasteLead": "Colle un numéro, un lien ou tout un e-mail."
 }
