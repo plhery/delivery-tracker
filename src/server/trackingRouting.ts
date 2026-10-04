@@ -4,7 +4,7 @@ import { trackingFailureCode } from './trackingFailure';
 import { DateTime } from 'luxon';
 import { appInputField, detectCarrierMatch } from '../lib/carriers';
 import { AUTOMATIC_CARRIER_IDS, carrierAdapter, carrierTimezone, requiredRequirements } from './carriers';
-import { normalizeCarrierResult, type CarrierResult } from 'universal-parcel-scraper';
+import { inferStage, normalizeCarrierResult, resultStage, STAGES, type CarrierResult } from 'universal-parcel-scraper';
 import { isRecord, type JsonObject } from './types';
 import { priorityUniversalSource, universalPlan, universalSourceBudget } from 'universal-parcel-scraper';
 import type { UniversalSource } from 'universal-parcel-scraper';
@@ -130,6 +130,12 @@ function usable(value: CarrierResult): boolean {
   return Boolean(value.events?.length || value.status && !['unknown', 'pending'].includes(value.status)
     || value.current_stage && value.current_stage !== 'pending');
 }
+const PROGRESS_STAGES = new Set<string>(STAGES.filter((stage) => !['pending', 'registered'].includes(stage)));
+/** Movement worth retaining a provider for; registration alone only establishes the label. */
+export function hasRoutingProgress(result: CarrierResult): boolean {
+  return PROGRESS_STAGES.has(resultStage(result) ?? '') || (result.events ?? []).some((event) =>
+    PROGRESS_STAGES.has(event.stage ?? '') || PROGRESS_STAGES.has(inferStage(event.description ?? '', 'pending')));
+}
 /** The newest instant of a routed result, read in its source's zone exactly as its events are persisted. */
 function latest(value: RoutedResult): number {
   return latestResultTime(value.result, value.sourceCarrierId);
@@ -194,6 +200,7 @@ export class TrackingRouter {
   async fetch(parcel: JsonObject, scheduled: boolean, signal?: AbortSignal): Promise<RoutedResult> {
     const now = () => this.options.now?.() ?? new Date();
     const state = routingState(parcel);
+    const previousFailures = state.consecutive_failures;
     const declared = String(parcel.carrier);
     const number = String(parcel.tracking_number ?? '');
     const metadata = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
@@ -236,17 +243,20 @@ export class TrackingRouter {
       report('provider_failed', provider, kind, error);
       return failure;
     };
-    const persistResult = (value: RoutedResult, provider: string): RoutedResult => {
+    const persistResult = (value: RoutedResult, provider: string, withoutProgress = false): RoutedResult => {
       if (state.failures[provider]) report('provider_recovered', provider);
       delete state.failures[provider];
       // A carrier tracks the parcel directly: nothing is left to ask the user.
       if (directCarrier(provider)) delete state.input_needed;
-      state.last_success_at = now().toISOString();
-      state.consecutive_failures = 0;
+      if (!withoutProgress) state.last_success_at = now().toISOString();
+      // A thin answer cannot reset a universal-only parcel's missed-check
+      // streak. Count this check once even if a later rate limit deferred it.
+      state.consecutive_failures = withoutProgress && !directCarrier(declared)
+        ? Math.min(20, previousFailures + 1) : 0;
       // A future-dated scan must not make every later real update look older.
       const eventTime = Math.min(now().getTime(), Math.max(latest(value),
         value.earlierResult ? latestResultTime(value.earlierResult, value.earlierCarrierId ?? value.sourceCarrierId) : 0));
-      state.last_event_at = eventTime && value.result.direct_local_fallback !== true ? iso(eventTime) : state.last_event_at;
+      state.last_event_at = eventTime && !withoutProgress && value.result.direct_local_fallback !== true ? iso(eventTime) : state.last_event_at;
       // Universal checks are deliberately less frequent than direct in-transit polls.
       state.next_check_at = sources.includes(provider as UniversalSource)
         ? iso(now().getTime() + (freshnessWindow(now()) === HOUR ? 15 * 60_000 : HOUR)) : undefined;
@@ -518,13 +528,34 @@ export class TrackingRouter {
       }
     };
 
+    // A label-only answer must not stop discovery or displace a source that
+    // supplied progress. Keep it only if no eligible provider has progress.
+    const needsProgress = PROGRESS_STAGES.has(String(parcel.current_stage ?? ''));
+    let thinAnswer: { value: RoutedResult; source: UniversalSource } | undefined;
+    let selected: { value: RoutedResult; source: UniversalSource } | undefined;
     for (const source of ordered) {
-      let value = await universal(source);
+      const value = await universal(source).catch((error: unknown) => {
+        // A later cooldown cannot erase an answer already available to preserve.
+        if (thinAnswer && error instanceof RoutingDeferred) return null;
+        throw error;
+      });
       if (!value) continue;
+      if (needsProgress && !hasRoutingProgress(value.result)) {
+        thinAnswer ??= { value, source };
+        continue;
+      }
+      selected = { value, source };
+      break;
+    }
+    const withoutProgress = !selected && Boolean(thinAnswer);
+    selected ??= thinAnswer;
+    if (selected) {
+      let { value } = selected;
+      const { source } = selected;
       let chosen = source;
       // Scheduled-only shadow check. Keep affinity unless the alternative has
       // strictly newer progress; never merge contradictory provider summaries.
-      if (scheduled && source !== priority && preferred === source && now().getTime() - millis(state.last_probe_at) >= DAY && attempts < 2) {
+      if (!withoutProgress && scheduled && source !== priority && preferred === source && now().getTime() - millis(state.last_probe_at) >= DAY && attempts < 2) {
         // Only providers with at least as full a history for the carrier are worth the comparison.
         const alternatives = richerSources.filter((item) => item !== source && plan.rank(item) <= plan.rank(source));
         const alternative = alternatives[state.probe_cursor % alternatives.length];
@@ -534,13 +565,13 @@ export class TrackingRouter {
           if (!(error instanceof RoutingDeferred)) throw error;
           return null;
         }) : null;
-        if (probe && latest(probe) > latest(value) && latest(probe) >= millis(state.last_event_at)
+        if (probe && (!hasRoutingProgress(value.result) || hasRoutingProgress(probe.result)) && latest(probe) > latest(value) && latest(probe) >= millis(state.last_event_at)
           && !['delivered', 'returned'].includes(String(value.result.current_stage))) {
           value = probe; chosen = alternative;
           report('fresher_provider_found', chosen);
         }
       }
-      if (preferred !== chosen) report('provider_selected', chosen);
+      if (!withoutProgress && preferred !== chosen) report('provider_selected', chosen);
       // Evidence to refresh the coverage comparison: a provider it found empty for
       // the carrier has this parcel, or one it found with history does not.
       // UPU is ordered by its role, not by evidence.
@@ -550,15 +581,15 @@ export class TrackingRouter {
           if (source !== 'UPU' && ['full', 'partial'].includes(plan.tier(source))) report('coverage_contradicted', source, 'no_history');
         }
       }
-      if (!directCarrier(declared) && declared !== 'unknown' && declared !== 'intl-post' && !preferred) report('direct_support_opportunity', declared);
-      state.preferred_provider = chosen === 'UPU' ? preferred : chosen;
+      if (!withoutProgress && !directCarrier(declared) && declared !== 'unknown' && declared !== 'intl-post' && !preferred) report('direct_support_opportunity', declared);
+      state.preferred_provider = withoutProgress || chosen === 'UPU' ? preferred : chosen;
       state.preferred_number = state.preferred_provider ? universalNumber : undefined;
       if (typeof value.result.discovered_carrier === 'string') {
         state.discovered_carrier = value.result.discovered_carrier;
         if (directCarrier(state.discovered_carrier) && state.discovered_carrier !== state.confirmed_carrier) {
           state.direct_retry_at = now().toISOString();
           report('direct_carrier_discovered', state.discovered_carrier);
-        } else if (!directCarrier(state.discovered_carrier)) report('direct_support_opportunity', state.discovered_carrier);
+        } else if (!withoutProgress && !directCarrier(state.discovered_carrier)) report('direct_support_opportunity', state.discovered_carrier);
       }
       // Confirm a newly reported carrier immediately. Preserve universal data if
       // confirmation fails, needs credentials, or only returned older history.
@@ -570,7 +601,7 @@ export class TrackingRouter {
         if (missed?.kind === 'not_found' && !attemptedDirect.has(state.discovered_carrier) && latest(value) > millis(watermark)) {
           missed.retry_at = now().toISOString();
         }
-        state.last_event_at = iso(Math.max(millis(watermark), latest(value)));
+        state.last_event_at = withoutProgress ? watermark : iso(Math.max(millis(watermark), latest(value)));
         const direct = await tryDirect(state.discovered_carrier, state.discovered_carrier !== declared,
           value.result.current_stage ?? value.result.status).catch((error: unknown) => {
           if (!(error instanceof RoutingDeferred)) throw error;
@@ -597,7 +628,7 @@ export class TrackingRouter {
       state.discovery_cursor = 0;
       // The carrier answered too: only its clock sent the result elsewhere, so links stay with it.
       if (localDirectFallback) value.result = { ...value.result, carrier_answered: true };
-      return persistResult(value, chosen);
+      return persistResult(value, chosen, withoutProgress);
     }
     if (localDirectFallback) {
       const { value, carrier } = localDirectFallback;

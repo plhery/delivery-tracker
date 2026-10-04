@@ -1624,7 +1624,7 @@ describe('TrackingSyncService', () => {
   it.each([
     ['the provider a saved summary came from', false],
     ['another provider, for a carrier without an adapter of its own,', true],
-  ] as const)('still reports %s answering without progress', async (_label, another) => {
+  ] as const)('reports two consecutive thin checks from %s and resets on recovery', async (_label, another) => {
     const capture = vi.spyOn(observability, 'captureSyncAnomaly').mockReturnValue(null);
     const client = leasedClient();
     const adapter = { fetch: vi.fn(), fetchUniversal: vi.fn().mockResolvedValueOnce({ status: 'in_transit',
@@ -1641,14 +1641,63 @@ describe('TrackingSyncService', () => {
       return withoutProgress;
     });
     now = new Date('2026-09-10T13:00:00Z');
-    await expect(service.syncPackage({ ...parcel, ...saved })).resolves.toMatchObject({ errors: 1, waiting: 0 });
-    expect(adapter.fetchUniversal.mock.calls.map(([provider]) => provider))
-      .toEqual([source, source, ...(another ? [expect.not.stringMatching(source)] : [])]);
+    await expect(service.syncPackage({ ...parcel, ...saved })).resolves.toMatchObject({ errors: 0, waiting: 1 });
+    expect(adapter.fetchUniversal.mock.calls.map(([provider]) => provider)).toEqual([source, source, 'Ship24', '17TRACK']);
+    const firstThin = client.updatePackage.mock.calls.at(-1)![1];
+    expect(firstThin).toMatchObject({ sync_status: 'ok', sync_error: null, carrier_data: {
+      tracking_provider: source, routing: { preferred_provider: source, consecutive_failures: 1,
+        last_success_at: '2026-09-10T12:00:00.000Z',
+        last_event_at: '2026-09-10T11:00:00.000Z' },
+    } });
+    expect(firstThin.current_stage).toBeUndefined();
+    expect(capture).not.toHaveBeenCalled();
+    now = new Date('2026-09-10T14:00:00Z');
+    await expect(service.syncPackage({ ...parcel, ...saved, ...firstThin })).resolves.toMatchObject({ errors: 1, waiting: 0 });
     expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ sync_status: 'error',
-      sync_error: 'The carrier temporarily returned no tracking progress. Previous tracking details have been kept.' });
-    expect(client.updatePackage.mock.calls.at(-1)![1].current_stage).toBeUndefined();
+      sync_error: 'The carrier temporarily returned no tracking progress. Previous tracking details have been kept.',
+      carrier_data: { tracking_provider: source, routing: { preferred_provider: source, consecutive_failures: 2,
+        last_success_at: '2026-09-10T12:00:00.000Z',
+        last_event_at: '2026-09-10T11:00:00.000Z' } },
+    });
+    const secondThin = client.updatePackage.mock.calls.at(-1)![1];
+    expect(secondThin.current_stage).toBeUndefined();
     expect(client.completeSyncAttempt).toHaveBeenLastCalledWith(expect.any(String),
       expect.objectContaining({ outcome: 'error', anomaly_codes: ['progress_disappeared'] }), expect.any(Array));
+    expect(capture).toHaveBeenCalledExactlyOnceWith('progress_disappeared', expect.objectContaining({ carrier: 'unknown' }));
+    adapter.fetchUniversal.mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit', last_status_text: 'In transit',
+      last_update: '2026-09-10T11:00:00Z', events: [] });
+    now = new Date('2026-09-10T15:00:00Z');
+    await expect(service.syncPackage({ ...parcel, ...saved, ...secondThin })).resolves.toMatchObject({ updated: 1, errors: 0 });
+    const recovered = client.updatePackage.mock.calls.at(-1)![1];
+    expect(recovered).toMatchObject({ sync_status: 'ok', sync_error: null });
+    expect(recovered.carrier_data.routing.consecutive_failures).toBe(0);
+    adapter.fetchUniversal.mockResolvedValue(withoutProgress);
+    now = new Date('2026-09-10T16:00:00Z');
+    await expect(service.syncPackage({ ...parcel, ...saved, ...recovered })).resolves.toMatchObject({ waiting: 1, errors: 0 });
+    expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.routing.consecutive_failures).toBe(1);
+    expect(capture).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the overnight freshness window while thin answers accumulate missed checks', async () => {
+    const capture = vi.spyOn(observability, 'captureSyncAnomaly').mockReturnValue(null);
+    const client = leasedClient();
+    const adapter = { fetch: vi.fn(), fetchUniversal: vi.fn().mockResolvedValue(withoutProgress) };
+    const parcel = { id: 'overnight-thin', carrier: 'unknown', tracking_number: 'TEST1234', current_stage: 'in_transit',
+      carrier_data: { tracking_provider: 'Ship24', routing: { version: 1, configured_carrier: 'unknown',
+        preferred_provider: 'Ship24', consecutive_failures: 1, last_success_at: '2026-09-10T21:00:00Z' } } };
+    let now = new Date('2026-09-10T23:00:00Z');
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ waiting: 1, errors: 0 });
+    const saved = client.updatePackage.mock.calls.at(-1)![1];
+    expect(saved).toMatchObject({ sync_status: 'ok', sync_error: null, carrier_data: { routing: {
+      consecutive_failures: 2, last_success_at: '2026-09-10T21:00:00Z',
+    } } });
+    expect(capture).not.toHaveBeenCalled();
+    now = new Date('2026-09-11T00:00:00Z');
+    await expect(service.syncPackage({ ...parcel, ...saved })).resolves.toMatchObject({ waiting: 0, errors: 1 });
+    expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ sync_status: 'error', carrier_data: { routing: {
+      consecutive_failures: 3, last_success_at: '2026-09-10T21:00:00Z',
+    } } });
     expect(capture).toHaveBeenCalledExactlyOnceWith('progress_disappeared', expect.objectContaining({ carrier: 'unknown' }));
   });
 
@@ -2222,9 +2271,18 @@ describe('tracking anomaly detection', () => {
     // The provider the summary came from, and the carrier's own adapter, take their progress back.
     expect(detect('dpd', { tracking_provider: 'ParcelsApp' }, fallback, 'unknown')).toEqual(['progress_disappeared']);
     expect(detect('dpd', { tracking_provider: 'ParcelsApp' }, { status: 'pending', events: [scan] }, 'dpd')).toEqual(['progress_disappeared']);
-    // No adapter of its own to ask again: the provider that knows less keeps the parcel.
+    // No adapter of its own: routing exhausts the eligible providers before returning a thin answer.
     expect(detect('unknown', { tracking_provider: 'Ship24' }, fallback, 'unknown')).toEqual(['progress_disappeared']);
     expect(detect('royal-mail', { tracking_provider: 'Ship24' }, fallback, 'unknown')).toEqual(['progress_disappeared']);
+  });
+  it('preserves real movement when a provider has only registration, without flagging a new label', () => {
+    const label: CarrierResult = { status: 'pending', current_stage: 'registered', tracking_provider: 'Ship24',
+      events: [{ time: '2026-08-31T09:00:00Z', description: 'Information received', stage: 'registered' }] };
+    const detect = (stage: string) => detectSyncAnomalies({ carrier: 'unknown', current_stage: stage }, label,
+      [], 'unknown', 'registered', new Date('2026-08-31T12:00:00Z'));
+    expect(detect('in_transit')).toEqual(['progress_disappeared']);
+    expect(detect('pending')).toEqual([]);
+    expect(detect('registered')).toEqual([]);
   });
 });
 

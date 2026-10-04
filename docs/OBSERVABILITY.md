@@ -67,8 +67,11 @@ earlier attempt, since the parcel joined the account, ended `updated` on another
 | `observed_without_timestamp` | A synthetic observation was needed to change stage (recorded, not alerted) |
 | `terminal_stage_regression` | A delivered/returned parcel moved stage (`exception` excepted) |
 | `delivered_status_conflict` | The provider says delivered but the chosen stage doesn't |
-| `progress_disappeared` | The carrier's own adapter, the provider the saved summary came from, or any provider when the carrier has no adapter of its own, answers without progress for a parcel that has some; the last known state is kept and the check ends as an error |
-| `fallback_without_progress` | For a carrier with its own adapter, a fallback provider, not the one the saved summary came from, answers without progress for a parcel that has some; the last known state is kept and the check ends as waiting (recorded, not alerted) |
+| `progress_disappeared` | The carrier's own adapter or the provider its saved summary came from answers without progress; for a carrier without an adapter, exhausted providers return only thin answers and the routing failure threshold is reached. The saved state is kept and the check ends as an error. |
+| `fallback_without_progress` | A different fallback provider answers without progress for a carrier with its own adapter, or a thin answer for a carrier without one stays below the routing failure threshold. The saved state is kept and the check ends as waiting (recorded, not alerted). |
+
+A universal answer with progress resets the consecutive-check count, even when it has
+no new scan. Thin answers keep the previous provider preference and event watermark.
 
 ## Unmapped wording
 

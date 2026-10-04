@@ -47,15 +47,22 @@ long as it isn't cooling down. Providers in a better tier for the carrier are as
 it, each within its own backoff, so a parcel moves up to a fuller history and never back
 down.
 
+For a parcel that already has movement, a provider answering with only pending or
+registered history does not gain affinity. The router asks the remaining eligible
+providers in the same check. If none has progress, the first usable answer follows the
+normal preservation path while the previous affinity and event watermark stay. A parcel
+still waiting for its first progress keeps the first usable answer as before.
+
 **Royal Mail** uses the universal providers. Its browser adapter exists but isn't an active
 route (see its [README](https://github.com/plhery/universal-parcel-scraper/blob/main/carriers/royal-mail/README.md)).
 
 ## When a source fails
 
 In one check, every eligible universal provider is tried once, stopping at the first
-usable answer. Budgets per provider: 45 s for ParcelsApp (slow first lookups, one network
-retry), 30 s for the others, plus 5 s transport allowance each. That's 120 s in total by
-default, 155 s with Postal Ninja, less when a carrier's order leaves a provider out. Postal S10 lookups get 13 s more for UPU. A slow direct
+usable answer with movement if the parcel already has some. Budgets per provider: 45 s
+for ParcelsApp (slow first lookups, one network retry), 30 s for the others, plus 5 s
+transport allowance each. That's 120 s in total by default, 155 s with Postal Ninja,
+less when a carrier's order leaves a provider out. Postal S10 lookups get 13 s more for UPU. A slow direct
 attempt doesn't eat into this budget. If the budget runs out first, the discovery cursor
 moves on so the next check starts elsewhere.
 
@@ -76,10 +83,11 @@ takes over from the universal provider again.
 
 When every source fails, the parcel keeps its last progress. The error chip appears only
 after two consecutive checks fail and the last successful check
-is at least 1 h old by day or 3 h overnight. A successful retrieval or an answer that the
-parcel is awaiting its first scan resets the streak. Checks that only wait for cooldowns
-leave it unchanged. Provider failures remain in the
-audit and health evidence while the chip is hidden.
+is at least 1 h old by day or 3 h overnight. An answer with progress, or one for a parcel
+awaiting its first movement, resets the streak. Thin answers for a universal-only parcel
+count as missed checks and keep the time of the last successful check. Checks that only
+wait for cooldowns leave it unchanged. Provider failures remain in the audit and health
+evidence while the chip is hidden.
 
 An adapter whose answer has only local clocks or an undated status summary keeps its
 evidence while a universal provider dates the timeline. It is asked again 6 h later,

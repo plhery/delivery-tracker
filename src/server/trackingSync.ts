@@ -37,7 +37,7 @@ import {
 import { isRecord, type JsonObject } from './types';
 import { UniversalTracker } from 'universal-parcel-scraper/node';
 import type { UniversalSource } from 'universal-parcel-scraper';
-import { directCarrier, RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
+import { directCarrier, freshnessWindow, hasRoutingProgress, RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 import { upuHistory } from './upuHistory';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
 import { eventTimestamp, latestResultTime, resultTimezone } from 'universal-parcel-scraper/app';
@@ -465,12 +465,12 @@ export function detectSyncAnomalies(
   if (result.status === 'delivered' && selectedStage !== 'delivered') {
     anomalies.add('delivered_status_conflict');
   }
-  if (previousStage !== 'pending' && !resultHasUpdate(result)) {
+  if (previousStage !== 'pending' && !(previousStage === 'registered' ? resultHasUpdate(result) : hasRoutingProgress(result))) {
     // A fallback provider that knows less than the source of the saved summary
     // contradicts nothing while the carrier's own adapter is asked again within
     // hours. That adapter, or the provider the summary came from, answering
-    // without progress does. So does any provider for a carrier without an
-    // adapter: it keeps the parcel, and the one holding the history is not asked.
+    // without progress does. For a carrier without an adapter, routing has
+    // exhausted the eligible providers before returning this thin answer.
     const savedProvider = isRecord(parcel.carrier_data) ? parcel.carrier_data.tracking_provider : undefined;
     anomalies.add(typeof result.tracking_provider === 'string' && result.tracking_provider !== savedProvider
       && directCarrier(String(parcel.carrier)) ? 'fallback_without_progress' : 'progress_disappeared');
@@ -859,6 +859,7 @@ export class TrackingSyncService {
       events = normalized.events;
       reportedStage = normalized.reportedStage;
       selectedStage = normalized.selectedStage;
+      const previousRouting = routingState(parcel);
       anomalies = detectSyncAnomalies(
         parcel,
         result,
@@ -867,6 +868,16 @@ export class TrackingSyncService {
         selectedStage,
         now,
       );
+      const universalProgressMissing = anomalies.includes('progress_disappeared')
+        && typeof result.tracking_provider === 'string' && !directCarrier(String(parcel.carrier));
+      const missedChecks = isRecord(result.routing) ? Number(result.routing.consecutive_failures) : previousRouting.consecutive_failures + 1;
+      const lastSuccess = Date.parse(previousRouting.last_success_at ?? '');
+      const recentProgress = Number.isFinite(lastSuccess) && now.getTime() - lastSuccess < freshnessWindow(now);
+      // Thin answers use the same failure threshold as exhausted lookups.
+      // They do not count as successful checks or reset the failure streak.
+      if (universalProgressMissing && (missedChecks < 2 || recentProgress)) {
+        anomalies = anomalies.map((code) => code === 'progress_disappeared' ? 'fallback_without_progress' : code);
+      }
 
       const deleteDescriptions = sourceCarrierId === 'swiss-post' && (result.events?.length ?? 0) > 0
         ? [
@@ -889,7 +900,6 @@ export class TrackingSyncService {
       const reworded = sameInstantIdentities(events, stored, sourceCarrierId);
       const shared = sharedScans(events, stored, reworded);
       const matches = { reused: new Map([...reworded, ...shared.reused]), skipped: shared.skipped };
-      const previousRouting = routingState(parcel);
       // Copies a universal provider read in the wrong zone must not make a result
       // look fresher, or the carrier's own reply older, than it is.
       const previousEventTime = withoutCopyDrift(
@@ -927,7 +937,7 @@ export class TrackingSyncService {
       const routing = isRecord(result.routing) ? { ...result.routing } : null;
       if (routing) {
         // A fallback's scan that is kept out must not make the carrier's next reply look older.
-        const keepWatermark = olderSnapshot || fallbackWithoutProgress;
+        const keepWatermark = olderSnapshot || keepSaved;
         const watermark = keepWatermark ? previousEventTime : withoutCopyDrift(
           Date.parse(String(routing.last_event_at ?? '')), events, stored, matches, { also: [returnedEventTime,
             fetched.earlierResult ? latestResultTime(fetched.earlierResult, fetched.earlierCarrierId ?? sourceCarrierId) : Number.NaN] },

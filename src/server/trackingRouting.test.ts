@@ -10,6 +10,8 @@ import { IndeterminateError, InputRequiredError, NotFoundError } from 'universal
 const time = new Date('2026-09-10T12:00:00Z');
 const history = (stamp = '2026-09-10T11:00:00Z'): CarrierResult => ({ status: 'in_transit', current_stage: 'in_transit',
   last_update: stamp, events: [{ time: stamp, description: 'In transit', stage: 'in_transit' }] });
+const thinHistory = (): CarrierResult => ({ status: 'pending', current_stage: 'pending', last_update: '2026-09-10T11:30:00Z',
+  events: [{ time: '2026-09-10T11:30:00Z', description: 'Information received', stage: 'pending' }] });
 const directValue = (carrier = 'ups'): RoutedResult => ({ result: history(), sourceCarrierId: carrier, swissPostReady: null, handoffFallbackErrorType: null });
 const yearlessYamato = (): RoutedResult => ({ sourceCarrierId: 'yamato', swissPostReady: null, handoffFallbackErrorType: null,
   result: { status: 'in_transit', current_stage: 'accepted', last_update: null,
@@ -85,6 +87,112 @@ describe('persistent tracking routing', () => {
     const { router, universal } = setup();
     await router.fetch(parcel({ carrier_data: { routing: state({ preferred_provider: 'Ship24' }) } }), false);
     expect(universal.mock.calls.map(([source]) => source)).toEqual(['Ship24']);
+  });
+  it.each([false, true])('searches past thin preferred and fallback answers for progress (scheduled=%s)', async (scheduled) => {
+    const { router, universal, health } = setup();
+    universal.mockImplementation(async (source: string) => source === '17TRACK' ? history() : thinHistory());
+    const result = await router.fetch(parcel({ current_stage: 'in_transit', carrier_data: { routing: state({
+      preferred_provider: 'Ship24', preferred_number: 'TEST1234', last_probe_at: time.toISOString(),
+      consecutive_failures: 3,
+    }) } }), scheduled);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['Ship24', 'ParcelsApp', '17TRACK']);
+    expect(result.result).toMatchObject({ tracking_provider: '17TRACK', routing: { preferred_provider: '17TRACK', consecutive_failures: 0 } });
+    // A thin answer is a healthy transport, not a provider outage.
+    expect(health.finishTrackingProvider).toHaveBeenCalledTimes(3);
+    for (const call of health.finishTrackingProvider.mock.calls) expect(call[2]).toBeNull();
+  });
+  it('keeps the progress provider through thin fallbacks and recovers on an hourly check', async () => {
+    let saved: JsonObject = { tracking_provider: 'Ship24', routing: state({ preferred_provider: 'Ship24',
+      preferred_number: 'TEST1234', last_event_at: '2026-09-10T11:00:00Z', last_success_at: '2026-09-10T11:00:00Z',
+      last_probe_at: time.toISOString() }) };
+    for (let hour = 0; hour < 7; hour++) {
+      const { router, universal } = setup(new Date(time.getTime() + hour * 3_600_000));
+      universal.mockImplementation(async (source: string) => {
+        if (source === 'Ship24') throw new Error('upstream timeout');
+        return thinHistory();
+      });
+      const result = await router.fetch(parcel({ current_stage: 'in_transit', carrier_data: saved }), false);
+      const routing = result.result.routing as JsonObject;
+      expect(routing).toMatchObject({ preferred_provider: 'Ship24', preferred_number: 'TEST1234',
+        last_event_at: '2026-09-10T11:00:00Z', last_success_at: '2026-09-10T11:00:00Z', consecutive_failures: hour + 1 });
+      expect(universal.mock.calls.map(([source]) => source)).toContain('ParcelsApp');
+      saved = { ...saved, routing };
+    }
+    // The transport backoff still applies: resume after its six-hour cap.
+    const recovered = setup(new Date(time.getTime() + 13 * 3_600_000));
+    const result = await recovered.router.fetch(parcel({ current_stage: 'in_transit', carrier_data: saved }), false);
+    expect(recovered.universal.mock.calls.map(([source]) => source)).toEqual(['Ship24']);
+    expect(result.result.routing).toMatchObject({ preferred_provider: 'Ship24', failures: {}, consecutive_failures: 0 });
+  });
+  it('repairs an already pinned thin provider in the same check', async () => {
+    const { router, universal } = setup();
+    universal.mockImplementation(async (source: string) => source === 'ParcelsApp' ? thinHistory() : history());
+    const result = await router.fetch(parcel({ current_stage: 'in_transit', carrier_data: { routing: state({
+      preferred_provider: 'ParcelsApp', preferred_number: 'TEST1234',
+    }) } }), false);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp', 'Ship24']);
+    expect(result.result.routing).toMatchObject({ preferred_provider: 'Ship24' });
+  });
+  it('does not report a direct-support opportunity from a thin answer', async () => {
+    const { router, universal } = setup();
+    universal.mockResolvedValue({ ...thinHistory(), discovered_carrier: 'royal-mail' });
+    await router.fetch(parcel({ carrier: 'royal-mail', current_stage: 'in_transit' }), false);
+    expect(monitoring.reportRoutingEvent).not.toHaveBeenCalledWith('direct_support_opportunity', expect.anything());
+  });
+  it.each([
+    ['registered', { ...thinHistory(), current_stage: 'registered',
+      events: [{ time: '2026-09-10T11:30:00Z', description: 'Information received', stage: 'registered' }] }],
+    ['unmapped', { status: 'pending', events: [{ time: '2026-09-10T11:30:00Z', description: 'Noted at the fixture desk' }] }],
+  ] as const)('searches past a %s label answer without changing carrier classification', async (_label, thin) => {
+    const { router, universal } = setup();
+    universal.mockResolvedValueOnce(thin).mockResolvedValueOnce(history());
+    const result = await router.fetch(parcel({ current_stage: 'in_transit' }), false);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp', 'Ship24']);
+    expect(result.result.routing).toMatchObject({ preferred_provider: 'Ship24' });
+  });
+  it('accepts history that has movement before its latest label scan', async () => {
+    const { router, universal } = setup();
+    universal.mockResolvedValue({ ...thinHistory(), events: [...thinHistory().events!, ...history().events!] });
+    const result = await router.fetch(parcel({ current_stage: 'in_transit' }), false);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp']);
+    expect(result.result.routing).toMatchObject({ preferred_provider: 'ParcelsApp' });
+  });
+  it('accepts movement classified from wording when a provider names no stage', async () => {
+    const { router, universal } = setup();
+    universal.mockResolvedValue({ status: 'pending', events: [{ time: '2026-09-10T11:00:00Z', description: 'In transit' }] });
+    const result = await router.fetch(parcel({ current_stage: 'in_transit' }), false);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp']);
+    expect(result.result.routing).toMatchObject({ preferred_provider: 'ParcelsApp' });
+  });
+  it.each(['pending', 'registered'])('keeps the first label answer when the parcel is %s', async (stage) => {
+    const { router, universal } = setup();
+    universal.mockResolvedValue(thinHistory());
+    const result = await router.fetch(parcel({ current_stage: stage }), false);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp']);
+    expect(result.result.routing).toMatchObject({ preferred_provider: 'ParcelsApp' });
+  });
+  it('retains the first thin answer when later providers fail or defer for a rate limit', async () => {
+    const { router, universal } = setup();
+    universal.mockResolvedValueOnce(thinHistory())
+      .mockRejectedValueOnce(new UpstreamHttpError('Ship24', 429)).mockRejectedValueOnce(new Error('timeout'));
+    const result = await router.fetch(parcel({ current_stage: 'in_transit', carrier_data: { routing: state({
+      preferred_provider: 'ParcelsApp', last_success_at: '2026-09-10T11:50:00Z', last_event_at: '2026-09-10T11:00:00Z',
+    }) } }), false);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp', 'Ship24', '17TRACK']);
+    expect(result.result).toMatchObject({ tracking_provider: 'ParcelsApp', routing: {
+      preferred_provider: 'ParcelsApp', last_event_at: '2026-09-10T11:00:00Z', consecutive_failures: 1,
+      last_success_at: '2026-09-10T11:50:00Z',
+      failures: { Ship24: { kind: 'rate_limited' }, '17TRACK': { kind: 'transport' } },
+    } });
+  });
+  it.each(['pending', 'in_transit'])('keeps movement ahead of a newer pending-only shadow answer for a %s parcel', async (stage) => {
+    const { router, universal } = setup();
+    universal.mockResolvedValueOnce(history()).mockResolvedValueOnce(thinHistory());
+    const result = await router.fetch(parcel({ current_stage: stage, carrier_data: { routing: state({
+      preferred_provider: 'Ship24', last_probe_at: '2026-09-08T12:00:00Z',
+    }) } }), true);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['Ship24', 'ParcelsApp']);
+    expect(result.result).toMatchObject({ tracking_provider: 'Ship24', routing: { preferred_provider: 'Ship24' } });
   });
   it('records original direct failure before a successful fallback', async () => {
     const { router, direct, universal } = setup();
