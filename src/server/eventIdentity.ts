@@ -14,20 +14,29 @@
  * identities from their strings misses it.
  *
  * - The scraper opts sources into same-instant matching and declares whether
- *   their provider codes must agree. A unique matching scan takes over the
- *   stored row at its instant (`sameInstantIdentities`).
+ *   their provider codes or other scan evidence must agree. A unique matching
+ *   scan takes over the stored row at its instant (`sameInstantIdentities`).
  * - A universal provider copies a carrier's scans while the carrier's own
  *   lookup is down, sometimes in a zone it misread (Ship24 keeps GOFO's Pacific
  *   offset on Eastern clocks). A universal copy of a stored scan is left out of
  *   the batch, and a carrier's scan takes over the universal copy stored while
  *   it was down (`sharedScans`).
  */
-import { sameInstantIdentityPolicy } from 'universal-parcel-scraper/app';
+import { sameInstantIdentityPolicy, type SameInstantScan } from 'universal-parcel-scraper/app';
 import { isRecord, type JsonObject } from './types';
 
 function providerCode(row: JsonObject): string {
   const code = row.provider_code ?? (isRecord(row.raw_data) ? row.raw_data.provider_code : undefined);
   return typeof code === 'string' ? code : '';
+}
+
+function scanEvidence(row: JsonObject): SameInstantScan {
+  return {
+    stage: typeof row.stage === 'string' ? row.stage : '',
+    description: typeof row.description === 'string' ? row.description : '',
+    location: typeof row.location === 'string' ? row.location : '',
+    providerCode: providerCode(row),
+  };
 }
 
 function identity(row: JsonObject): string {
@@ -61,7 +70,7 @@ export function sameInstantIdentities(
   sourceCarrierId: string,
 ): Map<string, string> {
   const reused = new Map<string, string>();
-  const policy = sameInstantIdentityPolicy(sourceCarrierId);
+  const policy = sameInstantIdentityPolicy(sourceCarrierId, { supportsScanMatching: true });
   if (!policy || stored.length === 0) return reused;
   const prefixes = policy.storedSources.map((source) => `${source}:`);
   const storedIds = new Set(stored.map(identity));
@@ -78,6 +87,7 @@ export function sameInstantIdentities(
     // A source with changing labels must still agree on its scan kind.
     const code = providerCode(scans[0]!);
     if (policy.requireProviderCode && (!code || code.toLowerCase() === 'unknown' || code !== providerCode(rows[0]!))) continue;
+    if (policy.matches && !policy.matches(scanEvidence(scans[0]!), scanEvidence(rows[0]!))) continue;
     reused.set(identity(scans[0]!), identity(rows[0]!));
   }
   return reused;
@@ -106,7 +116,8 @@ function stageOf(row: JsonObject): string {
 
 /** A stage change the sync stamped with the time it saw it, not a provider scan. */
 function observedOnly(row: JsonObject): boolean {
-  return isRecord(row.raw_data) && row.raw_data.observed_without_provider_timestamp === true;
+  return row.observed_without_provider_timestamp === true
+    || (isRecord(row.raw_data) && row.raw_data.observed_without_provider_timestamp === true);
 }
 
 /** The same wording, or one followed by a further sentence (GOFO's support line). */

@@ -13,6 +13,24 @@ const row = (id: string, occurredAt: string, description?: string, stage?: strin
 const pairs = (map: ReadonlyMap<string, string>) => [...map].sort(([left], [right]) => left.localeCompare(right));
 
 describe('same-instant identity reuse', () => {
+  it('updates a UPS scan when its location is filled in', () => {
+    const at = '2026-07-11T18:05:00Z';
+    const saved = { ...row('ups:without-location', at, 'Package collected', 'accepted'), location: null };
+    const incoming = { ...scan('ups:with-location', at, 'Package collected', 'accepted'), location: 'Example City, France' };
+    expect([...sameInstantIdentities([incoming], [saved], 'ups')])
+      .toEqual([['ups:with-location', 'ups:without-location']]);
+    for (const different of [
+      { ...saved, description: 'Package departed' },
+      { ...saved, stage: 'in_transit' },
+      { ...saved, location: 'Another City, France' },
+      { ...saved, observed_without_provider_timestamp: true },
+      { ...saved, provider_event_id: 'unknown:without-location' },
+    ]) expect(sameInstantIdentities([incoming], [different], 'ups').size).toBe(0);
+    expect(sameInstantIdentities([incoming], [saved, { ...saved, provider_event_id: 'ups:another' }], 'ups').size).toBe(0);
+    expect(sameInstantIdentities([incoming, { ...incoming, provider_event_id: 'ups:departure', description: 'Package departed' }],
+      [saved], 'ups').size).toBe(0);
+  });
+
   it('updates a reworded coded scan without changing its saved identity', () => {
     const at = '2026-07-11T18:05:00Z';
     const incoming = { ...scan('india-post:flight-details', at, 'Flight ZZ0101 departed: FRA → CDG'),

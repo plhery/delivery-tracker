@@ -2177,11 +2177,32 @@ function eventStore() {
       occurred_at: new Date(String(row.occurred_at)).toISOString().replace('.000Z', '+00:00'),
       stage: row.stage,
       description: row.description,
+      location: row.location,
       provider_code: (row.raw_data as JsonObject | undefined)?.provider_code,
+      observed_without_provider_timestamp: (row.raw_data as JsonObject | undefined)?.observed_without_provider_timestamp,
     })),
     batch: () => (client.applyTrackingSync.mock.calls.at(-1)?.[2] ?? []) as JsonObject[],
   };
 }
+
+it('fills in a UPS scan location without creating another notification event', async () => {
+  const store = eventStore();
+  const at = '2026-07-11T18:05:00Z';
+  const result = (location: string) => ({ status: 'accepted', current_stage: 'accepted', last_update: at,
+    last_status_text: 'Package collected', events: [{ time: at, stage: 'accepted', description: 'Package collected', location }] });
+  const adapter = { fetch: vi.fn().mockResolvedValueOnce(result('')).mockResolvedValue(result('Example City, France')) };
+  const service = new TrackingSyncService(store.client as unknown as SupabaseServiceClient, adapter, null,
+    () => new Date('2026-07-12T12:00:00Z'));
+  const load = () => ({ id: 'ups-parcel', user_id: 'owner', carrier: 'ups', tracking_number: '1Z0000000000000000',
+    current_stage: 'accepted', [STORED_EVENT_IDENTITIES]: store.identities() });
+  await service.syncPackage(load());
+  const original = [...store.rows.values()][0]!;
+  await service.syncPackage(load());
+  await service.syncPackage(load());
+  expect(store.rows.size).toBe(1);
+  expect([...store.rows.values()][0]).toMatchObject({ id: original.id, provider_event_id: original.provider_event_id,
+    location: 'Example City, France' });
+});
 
 it('enriches a saved flight in place instead of storing a second event for notifications', async () => {
   const store = eventStore();
