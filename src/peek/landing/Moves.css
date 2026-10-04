@@ -56,11 +56,12 @@
 @keyframes landing-pulse { from { transform: scale(1); opacity: .45; } to { transform: scale(3.2); opacity: 0; } }
 @keyframes landing-ping { from { opacity: 0; transform: translateY(-12px); } }
 
-/* One column: the journey under the words, with the ping over the card's top edge. */
+/* One column: the words over the journey, on the page's middle like the first section's, with the ping over the card's top edge. */
 @media (max-width: 1000px) {
   .landing-moves { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .landing-moves__text { gap: 10px; }
-  .landing-moves__text .landing-chips { margin-top: 6px; }
+  .landing-moves__text { justify-items: center; gap: 10px; text-align: center; }
+  .landing-moves__text p { max-width: 620px; }
+  .landing-moves__text .landing-chips { justify-content: center; margin-top: 6px; }
   .landing-journey { width: min(100%, 620px); margin: 52px auto 0; padding-top: 0; }
   .landing-pings { top: -40px; right: auto; left: 50%; width: min(322px, 100% - 20px); translate: -50% 0; }
 }

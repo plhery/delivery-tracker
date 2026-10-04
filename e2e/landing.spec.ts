@@ -36,6 +36,21 @@ const overflowing = (page: Page) => page.evaluate(() => {
   }).map((element) => `${element.tagName.toLowerCase()}.${element.className} ${Math.round(element.getBoundingClientRect().right)}`);
 });
 
+/** How far the middle of an element's words, or of its own box, stands from the middle of the page. */
+const offCentre = (page: Page, selector: string, box = false) => page.locator(selector).first().evaluate((element, own) => {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  const { left, right } = own ? element.getBoundingClientRect() : range.getBoundingClientRect();
+  return Math.abs((left + right) / 2 - document.documentElement.clientWidth / 2);
+}, box);
+/** The same for the passport's cover with the stamps it holds: the stamp a delivery adds lands beside them. */
+const passportOffCentre = (page: Page) => page.locator('.landing-passport').evaluate((passport) => {
+  const { left } = passport.querySelector('.landing-passport__cover')!.getBoundingClientRect();
+  const held = passport.querySelectorAll('.landing-stamp:not(.landing-stamp--new)');
+  const { right } = held[held.length - 1].getBoundingClientRect();
+  return Math.abs((left + right) / 2 - document.documentElement.clientWidth / 2);
+});
+
 /** Records every layout shift from the first paint on, the way the browser reports them. */
 async function watchLayout(page: Page) {
   await page.addInitScript(() => {
@@ -287,6 +302,46 @@ test('fits a 320 px phone in every language, from the field to the foot of the p
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), locale).toBe(true);
     expect(await overflowing(page), locale).toEqual([]);
   }
+});
+
+test('a section in one column stands on the page’s middle, and a tablet keeps the phone beside the words', async ({ page }) => {
+  // A small window: one column, as wide as the journey's card, centred like the field above it.
+  await page.setViewportSize({ width: 800, height: 900 });
+  await openLanding(page);
+  for (const selector of ['.landing-moves h2', '.landing-moves__text p', '.landing-chips', '.landing-journey__card', '.landing-more h2', '.landing-phone', '.landing-more__actions']) {
+    expect(await offCentre(page, selector), selector).toBeLessThan(2);
+  }
+  expect(await passportOffCentre(page)).toBeLessThan(2);
+  const card = (await page.locator('.landing-journey__card').boundingBox())!;
+  for (const selector of ['.landing-phone', '.landing-benefits']) {
+    const box = (await page.locator(selector).boundingBox())!;
+    expect([Math.round(box.x), Math.round(box.width)], selector).toEqual([Math.round(card.x), Math.round(card.width)]);
+  }
+
+  // A tablet: the list stays in its phone, and what signing in adds stands beside it.
+  await page.setViewportSize({ width: 820, height: 1180 });
+  const phone = (await page.locator('.landing-phone').boundingBox())!;
+  const words = (await page.locator('.landing-more__rest').boundingBox())!;
+  expect(phone.x + phone.width).toBeLessThan(words.x);
+  expect(words.y).toBeLessThan(phone.y + phone.height);
+  // The passport's cover and its stamps keep to one row there.
+  const cover = (await page.locator('.landing-passport__cover').boundingBox())!;
+  const stamps = (await page.locator('.landing-passport__stamps').boundingBox())!;
+  expect(stamps.x).toBeGreaterThan(cover.x + cover.width);
+  expect(await overflowing(page)).toEqual([]);
+
+  // A phone: the same middle, down to the card that says who is behind Peek, and buttons as wide as the column.
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const selector of ['.landing-moves h2', '.landing-more h2', '.landing-who h2', '.landing-who__facts strong', '.landing-who__links']) {
+    expect(await offCentre(page, selector), selector).toBeLessThan(2);
+  }
+  // The stamps stand under the passport's cover there, the three it holds on its middle.
+  for (const selector of ['.landing-passport__cover', '.landing-stamp:nth-child(2)', '.landing-who__icon']) {
+    expect(await offCentre(page, selector, true), selector).toBeLessThan(2);
+  }
+  const column = (await page.locator('.landing-more__rest').boundingBox())!;
+  const signIn = (await page.getByRole('button', { name: 'Sign in to keep them all' }).boundingBox())!;
+  expect(Math.round(signIn.width)).toBe(Math.round(column.width));
 });
 
 test('nothing on the page moves another part of it: the layout holds while every loop runs', async ({ page }) => {

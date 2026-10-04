@@ -1,5 +1,6 @@
 /* "Following more than one?": the list in a phone, what signing in adds, and the passport. */
-.landing-more { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 90px; align-items: center; margin-top: 100px; }
+/* The gap closes as the screen narrows, so the phone and the words stay side by side down to a tablet. */
+.landing-more { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: clamp(40px, 22.3vw - 133px, 90px); align-items: center; margin-top: 100px; }
 .landing-more__intro { grid-column: 2; grid-row: 1; align-self: end; display: grid; gap: 14px; }
 .landing-phone { grid-column: 1; grid-row: 1 / span 2; }
 .landing-more__rest { grid-column: 2; grid-row: 2; align-self: start; display: grid; gap: 22px; margin-top: 22px; }
@@ -59,26 +60,40 @@
 @keyframes landing-bob { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-2.5px) rotate(2deg); } }
 @keyframes landing-stamp { from { opacity: 0; transform: scale(1.4) rotate(-20deg); } }
 
-/* One column, and no phone around the list: the page is on one already. */
+/* Beside the phone on a tablet the words have a narrow column: the title and the passport take a size that fits it. */
 @media (max-width: 1000px) {
+  .landing-passport__cover.passport-cover { width: 200px; }
+}
+@media (min-width: 820px) and (max-width: 1000px) {
+  .landing-section.landing-more h2 { font-size: clamp(36px, 4.4vw, 44px); }
+}
+/* One column on the page's middle, as wide as the journey's card, and no phone around the list: the page is on one already. */
+@media (max-width: 819px) {
   .landing-more { grid-template-columns: minmax(0, 1fr); }
-  .landing-more__intro, .landing-phone, .landing-more__rest { grid-column: 1; grid-row: auto; }
-  .landing-more__intro { gap: 10px; }
-  .landing-phone { width: min(100%, 420px); height: auto; margin-top: 18px; padding: 0; border-radius: 0; background: none; box-shadow: none; }
+  .landing-more__intro, .landing-phone, .landing-more__rest { grid-column: 1; grid-row: auto; justify-self: center; width: min(100%, 620px); }
+  .landing-more__intro { justify-items: center; gap: 10px; text-align: center; }
+  .landing-phone { height: auto; margin-top: 18px; padding: 0; border-radius: 0; background: none; box-shadow: none; }
   .landing-phone__screen { width: auto; height: auto; overflow: visible; border-radius: 0; background: none; }
   .landing-phone__view { position: static; width: auto; height: auto; transform: none; }
   .landing-phone__header, .landing-phone__heading, .landing-phone__tabs { display: none; }
   .landing-phone__main { display: block; padding: 0; }
   .landing-more__rest { gap: 20px; margin-top: 24px; }
   .landing-benefits { gap: 16px; }
-  .landing-passport__cover.passport-cover { width: 200px; }
+  .landing-passport, .landing-more__actions { justify-content: center; }
+  /* The cover and the stamps it holds stand on the middle: the place kept for the next stamp, 38 px and its gap, is matched on the other side. */
+  .landing-passport { padding-inline-start: 46px; }
 }
 @media (max-width: 760px) {
   .landing-more { margin-top: 48px; }
   .landing-list { min-height: 474px; }
-  .landing-more__actions { display: grid; gap: 6px; }
+  .landing-more__actions { display: grid; justify-content: normal; gap: 6px; }
   .landing-more__actions a.button { min-height: 44px; padding: 10px 14px; border-radius: 14px; font-size: 13px; font-weight: 550; }
   .landing-more__actions a.button svg { width: 17px; height: 17px; }
+}
+/* Too narrow for the cover and its stamps in a row: the stamps stand under it, and it is their row that keeps the next stamp's place twice. */
+@media (max-width: 479px) {
+  .landing-passport { flex-direction: column; padding-inline-start: 0; }
+  .landing-passport__stamps { padding-inline-start: 46px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .landing-phone[data-rise=go], .landing-list .parcel-card, .landing-list [data-pip] svg, .landing-stamp--new[data-landed] { animation: none; }
