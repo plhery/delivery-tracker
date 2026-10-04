@@ -157,14 +157,13 @@ Post 17TRACK route skip shadow checks.
 ## Carrier recognition
 
 A number whose shape fits several carriers or only the generic postal carrier is checked
-with the carriers that can answer cheaply ([`carrierRecognition.ts`](../src/server/carrierRecognition.ts)). A carrier
-qualifies when its `carrier.json` declares `tracking.recognition` and its adapter
-implements `recognize()`: plain HTTP, a clean not-found, no browser. Which carriers are
-asked is shared code ([`recognition.ts`](https://github.com/plhery/universal-parcel-scraper/blob/main/core/catalog/recognition.ts));
-the web and iOS Add sheets name them while they answer, and the iOS port replays the
-detection golden file's `asked` lists. Carriers that only
-answer through a browser (DHL, FedEx, UPS, USPS, DPD France, Mondial Relay, SF Express)
-are left to the universals.
+with eligible direct carriers ([`carrierDetection.ts`](../src/server/carrierDetection.ts)).
+HTTP recognition uses the catalog's `tracking.recognition` and the adapter's `recognize()`.
+If no recent carrier is confirmed, the server checks candidates declaring
+`tracking.browserRecognition` through `recognizeWithBrowser()`. Definite HTTP misses do
+not get a browser retry. Browser confirmation requires dated shipment activity; shells,
+undated defaults and old reused numbers cannot identify a carrier. Candidate selection
+comes from the scraper's catalog, and the Add sheets show the possible candidates.
 
 - **Which and in what order.** Matching low-confidence rules that qualify, including
   those hidden by the generic postal detection: the
@@ -180,7 +179,11 @@ are left to the universals.
   overview). Unrelated carriers that all know the number are a choice for the user.
 - **In the Add sheet.** The detect route asks once the number is settled (the field loses
   focus, which includes opening the carrier picker, a paste, a shared number), within
-  three seconds, and caches complete answers per number for ten minutes. The answer lists
+  three seconds for HTTP, then up to twenty seconds for browser confirmation. At most two
+  browser recognitions run per process, and identical requests share work. Complete answers
+  are cached per number for ten minutes; browser answers and their history for five minutes,
+  failures for thirty seconds. Changing the number or leaving the form cancels its request;
+  the final cancelled caller also stops shared browser work. The answer lists
   the carriers asked (`asked`) and those that failed or ran out of time (`unanswered`), so
   the sheet can tell "not found yet" from "could not check". With automatic detection a
   single answer selects the carrier, and its required inputs (the GLS postcode) appear
@@ -193,7 +196,9 @@ are left to the universals.
   before the universals, never another network of the filed carrier's brand, for open
   parcels in their first 30 days outside linked journeys. A carrier that knows the number
   and needs no input gets a full correction lookup, adopted only on real progress on the
-  same number, at least as recent as what we have (a pre-advice is not enough), with the
+  same number, at least as recent as what we have (a pre-advice is not enough). Browser
+  confirmation follows unresolved HTTP checks and uses the same candidate cooldowns. Fresh
+  browser history is consumed once by the correction lookup or the first saved sync, with the
   "Swapped automatically" notice. A carrier that needs the user's input is saved as
   `routing.input_needed`, and the parcel asks the user for it.
   A transient failure of a matching carrier and failures of an already confirmed carrier

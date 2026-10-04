@@ -167,7 +167,7 @@ struct AddParcelView: View {
                 } catch {
                     guard !Task.isCancelled else { return }
                     // No answer keeps the number a suggestion; the first sync asks again.
-                    let asked = catalog.recognitionCandidates(for: number)
+                    let asked = catalog.discoveryCandidates(for: number)
                     recognition.answer = CarrierDetectionResponse(
                         trackingNumber: number, carrier: .unknown,
                         asked: asked.isEmpty ? nil : asked, unanswered: asked.isEmpty ? nil : asked
@@ -605,7 +605,7 @@ struct AddParcelView: View {
     private var recognitionStatus: CarrierRecognition.Status {
         recognition.status(
             for: normalizedNumber, applies: recognizable,
-            asked: recognizable ? catalog.recognitionCandidates(for: normalizedNumber) : []
+            asked: recognizable ? catalog.discoveryCandidates(for: normalizedNumber) : []
         )
     }
 

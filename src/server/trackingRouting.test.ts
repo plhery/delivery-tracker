@@ -27,12 +27,50 @@ function setup(now = time) {
   };
   // No carrier knows the number unless a test says so.
   const recognize = vi.fn().mockResolvedValue({ known: false });
-  return { direct, universal, health, recognize, router: new TrackingRouter({ direct, universal, health, recognize, now: () => now }) };
+  const recognizeBrowser = vi.fn().mockResolvedValue({ known: false });
+  return { direct, universal, health, recognize, recognizeBrowser,
+    router: new TrackingRouter({ direct, universal, health, recognize, recognizeBrowser, now: () => now }) };
 }
 beforeEach(() => vi.spyOn(monitoring, 'reportRoutingEvent').mockImplementation(() => undefined));
 afterEach(() => vi.restoreAllMocks());
 
 describe('persistent tracking routing', () => {
+  it('discovers a browser carrier before using a universal provider', async () => {
+    const { router, direct, universal, recognizeBrowser } = setup();
+    recognizeBrowser.mockResolvedValue({ known: true, lastActivityAt: time.toISOString() });
+    direct.mockImplementation(async (_parcel, carrier) => directValue(carrier));
+    const result = await router.fetch(parcel({ tracking_number: '000000000011' }), false);
+    expect(result.sourceCarrierId).toBe('fedex');
+    expect(recognizeBrowser).toHaveBeenCalledWith('fedex', '000000000011', expect.objectContaining({ budgetMs: 20_000 }), undefined);
+    expect(universal).not.toHaveBeenCalled();
+  });
+
+  it('cools down a browser miss and does not adopt an old reused number', async () => {
+    const first = setup();
+    const input = parcel({ tracking_number: '000000000012' });
+    const result = await first.router.fetch(input, false);
+    const routing = result.result.routing;
+    expect(routing).toMatchObject({ candidate_probes: { fedex: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' } } });
+    const next = setup(new Date('2026-09-10T12:10:00Z'));
+    await next.router.fetch({ ...input, carrier_data: { routing } }, false);
+    expect(next.recognizeBrowser).not.toHaveBeenCalled();
+    const old = setup();
+    old.recognizeBrowser.mockResolvedValue({ known: true, lastActivityAt: '2020-01-01T00:00:00Z' });
+    await old.router.fetch(parcel({ tracking_number: '000000000013' }), false);
+    expect(old.direct).not.toHaveBeenCalled();
+    expect(old.universal).toHaveBeenCalled();
+  });
+
+  it('avoids browser discovery after a matching carrier outage or an HTTP confirmation', async () => {
+    const outage = setup();
+    outage.direct.mockRejectedValue(new Error('Connection failed'));
+    await outage.router.fetch(parcel({ carrier: 'fedex', tracking_number: '000000000014' }), false);
+    expect(outage.recognizeBrowser).not.toHaveBeenCalled();
+    const http = setup();
+    http.recognize.mockResolvedValue({ known: true, lastActivityAt: time.toISOString() });
+    await http.router.fetch(parcel({ tracking_number: '000000000015' }), false);
+    expect(http.recognizeBrowser).not.toHaveBeenCalled();
+  });
   it.each([
     [{ lookup_country_hint: 'FR' }, 'FR'],
     [{ lookup_country_hint: 'FR', destination_country: 'CH' }, 'CH'],

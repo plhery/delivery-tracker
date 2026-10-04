@@ -2,6 +2,12 @@ import XCTest
 @testable import PeekDeliveryTracker
 
 final class CarrierCatalogTests: XCTestCase {
+    func testDiscoveryIncludesBrowserCandidatesWithoutChangingHTTPRecognition() {
+        XCTAssertEqual(catalog.recognitionCandidates(for: "000000000001"), [.colisPrive])
+        XCTAssertEqual(catalog.discoveryCandidates(for: "000000000001"), [.colisPrive, .fedex])
+        XCTAssertEqual(catalog.recognitionCandidates(for: "33870000000000001", browser: true), [.dhlEcommerce])
+        XCTAssertEqual(catalog.discoveryCandidates(for: "1Z999AA10123456784"), [])
+    }
     func testMondialRelayLabelBarcodeDetectionAndPublicLink() throws {
         // Published example in Mondial Relay's label specification, not customer data.
         let barcode = "12123456780101006623123454"

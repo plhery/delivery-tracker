@@ -8,6 +8,7 @@ import '../test/parcelCode';
 import { LINK_ID, OTHER_LINK_ID, OWNER_KEY, pendingView, testView } from '../test/parcelLinks';
 import type { EventPlace, Stage } from '../types';
 import { FrontDoor } from './FrontDoor';
+import { ASK_PATIENCE_MS } from './lookup/useLookup';
 import { FIRST_SAMPLE_MS, SAMPLE_PERIOD_MS } from './landing/useSampleLoop';
 import { ParcelLinkError, type ParcelLookup } from './links';
 import { forgetDeviceChecks } from './lookup/deviceList';
@@ -188,7 +189,7 @@ describe('FrontDoor', () => {
     type(field, SHARED);
     fireEvent.submit(field.closest('form')!);
     expect(mocks.lookup).not.toHaveBeenCalled();
-    await act(async () => { await vi.advanceTimersByTimeAsync(4_000); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(ASK_PATIENCE_MS); });
     expect(mocks.lookup).toHaveBeenCalledWith({ trackingNumber: SHARED }, expect.any(AbortSignal));
     expect((mocks.detect.mock.calls[0][1] as AbortSignal).aborted).toBe(true);
   });

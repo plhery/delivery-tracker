@@ -447,7 +447,8 @@ export const CARRIER_CAPABILITIES = {
     "tracking": {
       "mode": "automatic",
       "adapter": "dhl-ecommerce",
-      "recognitionRank": 23
+      "recognitionRank": 23,
+      "browserRecognitionRank": 90
     },
     "trackingUrlTemplate": "https://www.dhl.com/ch-en/home/tracking.html?tracking-id={trackingNumber}&submit=1",
     "linkRules": [
@@ -659,7 +660,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "fedex"
+      "adapter": "fedex",
+      "browserRecognitionRank": 100
     },
     "trackingUrlTemplate": "https://www.fedex.com/fedextrack/?trknbr={trackingNumber}",
     "linkRules": [

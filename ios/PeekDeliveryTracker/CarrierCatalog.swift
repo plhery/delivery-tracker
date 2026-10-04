@@ -60,6 +60,7 @@ struct CarrierDefinition: Codable, Sendable {
         let requirements: [CarrierRequirement]?
         /// Present when the carrier can recognize a number; no two carriers share a rank.
         var recognitionRank: Int? = nil
+        var browserRecognitionRank: Int? = nil
     }
 
     struct LinkRule: Codable, Sendable {
@@ -355,7 +356,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     /// The carriers the detect route asks about an ambiguous number, best first:
     /// number evidence, then the catalog's recognition rank. Mirrors
     /// `recognitionAskedCarriers`; the detection golden file keeps them in step.
-    func recognitionCandidates(for raw: String) -> [CarrierID] {
+    func recognitionCandidates(for raw: String, browser: Bool = false) -> [CarrierID] {
         let match = detect(raw)
         let unknownPostalCarrier = match.carrier == .internationalPost
         guard match.confidence == .low || unknownPostalCarrier else { return [] }
@@ -377,13 +378,16 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             candidates = postalMatches.map { $0.0 }
             preferred = postalMatches.filter { $0.1 }.map { $0.0 }
         }
-        func rank(_ carrier: CarrierID) -> Int? { definitions[carrier]?.tracking.recognitionRank }
+        func rank(_ carrier: CarrierID) -> Int? {
+            browser ? definitions[carrier]?.tracking.browserRecognitionRank : definitions[carrier]?.tracking.recognitionRank
+        }
         // A preferred carrier that cannot be asked (DPD France) keeps its brand's
         // other networks out: DPD's guest API also answers for DPD France parcels.
         let shadowed = Set(preferred.filter { rank($0) == nil }.compactMap(Self.networkBrand))
         let eligible = candidates.filter { carrier in
             guard let definition = definitions[carrier], rank(carrier) != nil,
                   definition.tracking.mode == "automatic", definition.tracking.adapter != "universal" else { return false }
+            if browser && requirements(for: carrier, trackingNumber: raw).contains(where: { $0.optional != true }) { return false }
             return Self.networkBrand(carrier).map { !shadowed.contains($0) } ?? true
         }
         // Ranks are unique, so the order does not depend on the catalog's key order.
@@ -392,7 +396,12 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             if leftPreferred != preferred.contains(right) { return leftPreferred }
             return (rank(left) ?? 0) > (rank(right) ?? 0)
         }
-        return Array(ordered.prefix(Self.maximumRecognitions))
+        return Array(ordered.prefix(browser ? 2 : Self.maximumRecognitions))
+    }
+
+    func discoveryCandidates(for raw: String) -> [CarrierID] {
+        let http = recognitionCandidates(for: raw)
+        return http + recognitionCandidates(for: raw, browser: true).filter { !http.contains($0) }
     }
 
     func isAmazonTrackingNumber(_ raw: String) -> Bool {

@@ -13,10 +13,11 @@ import {
   AUTOMATIC_CARRIER_IDS,
   supportsSwissPostHandoff,
 } from './carriers';
-import type { AdapterRegistry, Recognition } from 'universal-parcel-scraper/node';
+import type { AdapterRegistry, Recognition, TrackingContext } from 'universal-parcel-scraper/node';
 import { trackCarrier } from 'universal-parcel-scraper/node';
 import type { StepRecorder } from 'universal-parcel-scraper/node';
 import { createAdapterRegistry, hostAdapterEnvironment } from './adapterRegistry';
+import { recognizeBrowser, takeBrowserHistory } from './browserRecognition';
 import { hostStepRecorder } from './stepRecorder';
 import { recordStatusMapping } from './metrics';
 import {
@@ -134,7 +135,8 @@ export function isOpenedParcelSyncDue(parcel: JsonObject, now: Date): boolean {
 export interface TrackingAdapter {
   fetchUniversal?(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null, timezone?: string | null, countryHint?: string | null): Promise<CarrierResult>;
   /** A carrier's cheap check of whether it knows a number (carrier.json `tracking.recognition`). */
-  recognize?(carrierId: string, trackingNumber: string): Promise<Recognition>;
+  recognize?(carrierId: string, trackingNumber: string, context?: TrackingContext): Promise<Recognition>;
+  recognizeBrowser?(carrierId: string, trackingNumber: string, context?: TrackingContext, previousError?: unknown): Promise<Recognition>;
   fetch(
     carrierId: string,
     trackingNumber: string,
@@ -155,11 +157,13 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     return this.universal.fetchSource(source, trackingNumber, timeoutMs, dpdPostcode ?? null, timezone ?? null, undefined, countryHint);
   }
 
-  async recognize(carrierId: string, trackingNumber: string): Promise<Recognition> {
+  async recognize(carrierId: string, trackingNumber: string, context?: TrackingContext): Promise<Recognition> {
     const registered = this.registry.for(carrierId);
     if (!registered?.recognize) throw new RangeError(`${carrierId} cannot recognize a number`);
-    return await registered.recognize(trackingNumber);
+    return await registered.recognize(trackingNumber, context);
   }
+
+  recognizeBrowser = recognizeBrowser;
 
   async fetch(
     carrierId: string,
@@ -167,6 +171,8 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     trackingUrl: string | null,
     dpdPostcode?: string | null,
   ): Promise<CarrierResult> {
+    const prefetched = !trackingUrl && !dpdPostcode ? takeBrowserHistory(carrierId, trackingNumber) : undefined;
+    if (prefetched) return normalizeCarrierResult(prefetched);
     return trackCarrier(carrierId, { number: trackingNumber, trackingUrl, postcode: dpdPostcode ?? null }, {
       registry: this.registry, universal: this.universal, recorder: this.recorder,
     });
@@ -767,7 +773,8 @@ export class TrackingSyncService {
             direct: (candidate, carrier) => this.fetchResult(candidate, carrier),
             universal: (source, number, timeout, postcode, timezone, countryHint) => this.adapter.fetchUniversal!(source, number, timeout, postcode, timezone, countryHint),
             health: this.client, now: this.now,
-            ...(this.adapter.recognize ? { recognize: (carrier: string, number: string) => this.adapter.recognize!(carrier, number) } : {}),
+            ...(this.adapter.recognize ? { recognize: (carrier: string, number: string, context?: TrackingContext) => this.adapter.recognize!(carrier, number, context) } : {}),
+            ...(this.adapter.recognizeBrowser ? { recognizeBrowser: (carrier: string, number: string, context?: TrackingContext, previousError?: unknown) => this.adapter.recognizeBrowser!(carrier, number, context, previousError) } : {}),
             enablePostalNinja: process.env.TRACKING_ENABLE_POSTAL_NINJA === 'true',
           }).fetch(parcel, context.trigger === 'scheduled', context.signal)
           : await this.fetchResult(parcel, carrierId));

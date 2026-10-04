@@ -14,8 +14,9 @@ import { errorType, reportRoutingEvent } from './observability';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from 'universal-parcel-scraper';
 import { captureDirectLocalHistory, directHistoryNumber, directLocalHistory, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
 import { latestResultTime } from 'universal-parcel-scraper/app';
-import type { Recognition } from 'universal-parcel-scraper/node';
+import type { Recognition, TrackingContext } from 'universal-parcel-scraper/node';
 import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from 'universal-parcel-scraper';
+import { BROWSER_RECOGNITION_BUDGET_MS, MAX_BROWSER_RECOGNITIONS } from './browserRecognition';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -192,7 +193,8 @@ export class TrackingRouter {
     universal: (source: UniversalSource, number: string, timeoutMs: number, postcode: string | null, timezone: string | null, countryHint?: string | null) => Promise<CarrierResult>;
     health: ProviderHealth;
     /** A carrier's cheap check of whether it knows a number; without it, no recognition runs. */
-    recognize?: (carrier: string, number: string) => Promise<Recognition>;
+    recognize?: (carrier: string, number: string, context?: TrackingContext) => Promise<Recognition>;
+    recognizeBrowser?: (carrier: string, number: string, context?: TrackingContext, previousError?: unknown) => Promise<Recognition>;
     now?: () => Date;
     enablePostalNinja?: boolean;
   }) {}
@@ -403,21 +405,31 @@ export class TrackingRouter {
     const open = !['delivered', 'returned'].includes(String(parcel.current_stage));
     const young = typeof parcel.created_at !== 'string' || now().getTime() - millis(parcel.created_at) < CANDIDATE_PROBE_WINDOW;
     const recognize = this.options.recognize;
-    if (recognize && filedCannotTrack && open && young && universalNumber === number && !metadata.original_carrier) {
+    if ((recognize || this.options.recognizeBrowser) && filedCannotTrack && open && young && universalNumber === number && !metadata.original_carrier) {
       const brand = carrierBrand(primary) ?? carrierBrand(declared);
-      const due = recognitionCandidates(number, {
-        hint: state.discovered_carrier,
-        skip: (candidate) => candidate === primary || candidate === declared
+      const skip = (candidate: string) => candidate === primary || candidate === declared
           || Boolean(brand && carrierBrand(candidate) === brand) || attemptedDirect.has(candidate)
           || millis(state.candidate_probes?.[candidate]?.retry_at) > now().getTime()
-          || millis(state.failures[candidate]?.retry_at) > now().getTime(),
-      }).slice(0, MAX_RECOGNITIONS);
-      const outcomes = due.length ? await recognizeAll(due, (candidate) => recognize(candidate, number), RECOGNITION_BUDGET_MS) : [];
+          || millis(state.failures[candidate]?.retry_at) > now().getTime();
+      const due = recognize ? recognitionCandidates(number, { hint: state.discovered_carrier, skip }).slice(0, MAX_RECOGNITIONS) : [];
+      const errors = new Map<string, unknown>();
+      const outcomes = due.length ? await recognizeAll(due, async (candidate, context) => {
+        try { return await recognize!(candidate, number, context); }
+        catch (error) { errors.set(candidate, error); throw error; }
+      }, RECOGNITION_BUDGET_MS, signal) : [];
+      const cheap = settleRecognition(outcomes, now());
+      if (this.options.recognizeBrowser && !cheap.carrier && !cheap.choices.length) {
+        const browserDue = recognitionCandidates(number, { phase: 'browser', hint: state.discovered_carrier,
+          skip: (candidate) => skip(candidate) || outcomes.some((outcome) => outcome.carrier === candidate && outcome.status !== 'failed'),
+        }).slice(0, MAX_BROWSER_RECOGNITIONS);
+        outcomes.push(...await recognizeAll(browserDue, (candidate, context) => this.options.recognizeBrowser!(candidate, number, context, errors.get(candidate)),
+          BROWSER_RECOGNITION_BUDGET_MS, signal));
+      }
       signal?.throwIfAborted();
       // A carrier that knows the number and needs no input gets a full
       // lookup, adopted only on real progress (a pre-advice is not enough).
       for (const outcome of outcomes) {
-        if (outcome.status !== 'known' || outcome.needsInput) continue;
+        if (outcome.needsInput || settleRecognition([outcome], now()).carrier !== outcome.carrier) continue;
         const failure = state.failures[outcome.carrier];
         const retry = state.direct_retry_at;
         const value = await tryDirect(outcome.carrier, true, undefined, true).catch((error: unknown) => {
@@ -448,9 +460,9 @@ export class TrackingRouter {
       // Nothing adopted: ask again after 1, 2, 4, then 6 hours, since a parcel
       // shows up once it is handed over, and daily after six misses. These
       // answers decide neither the parcel's status nor the filed carrier's retry.
-      for (const outcome of outcomes) {
-        const count = Math.min(20, (state.candidate_probes?.[outcome.carrier]?.count ?? 0) + 1);
-        state.candidate_probes = { ...state.candidate_probes, [outcome.carrier]: {
+      for (const carrier of new Set(outcomes.map((outcome) => outcome.carrier))) {
+        const count = Math.min(20, (state.candidate_probes?.[carrier]?.count ?? 0) + 1);
+        state.candidate_probes = { ...state.candidate_probes, [carrier]: {
           count, retry_at: iso(now().getTime() + Math.min(count > 6 ? DAY : 6 * HOUR, HOUR * 2 ** (count - 1))),
         } };
       }

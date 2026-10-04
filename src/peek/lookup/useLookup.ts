@@ -21,7 +21,7 @@ import {
 } from './machine';
 
 /** How long the carriers get to answer before the door stops waiting for them. The first check asks them again. */
-export const ASK_PATIENCE_MS = 4_000;
+export const ASK_PATIENCE_MS = 25_000;
 /** The recognise beat: the label prints and the carrier's colour rises before the parcel's page takes over. */
 export const RECOGNISE_BEAT_MS = 250;
 /** When a refusal names no delay. */

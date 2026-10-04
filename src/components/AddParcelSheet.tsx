@@ -11,7 +11,7 @@ import {
   formatTrackingNumber,
   normalizeTrackingNumber,
   parseTrackingInput,
-  recognitionAskedCarriers,
+  discoveryAskedCarriers,
   requirementSatisfied,
   tracksAutomatically,
 } from '../lib/carriers';
@@ -162,7 +162,7 @@ export function AddParcelSheet({
   // The check keeps running when a carrier is picked by hand meanwhile: its
   // answer then only says when another carrier has the parcel.
   const recognizable = Boolean(apiAuth) && !amazonNumber && canAskCarrier(parsedTracking, normalizedNumber);
-  const askedCarriers = (recognizable ? recognitionAskedCarriers(normalizedNumber) : []) as CarrierId[];
+  const askedCarriers = (recognizable ? discoveryAskedCarriers(normalizedNumber) : []) as CarrierId[];
   const currentRecognition = recognizable && recognition?.trackingNumber === normalizedNumber ? recognition : undefined;
   const check = carrierCheck({
     applies: recognizable,
@@ -202,7 +202,7 @@ export function AddParcelSheet({
         if (!controller.signal.aborted) setRecognition(result);
       }).catch(() => {
         // No answer keeps the number a suggestion; the first sync asks again.
-        const asked = recognitionAskedCarriers(normalizedNumber) as CarrierId[];
+        const asked = discoveryAskedCarriers(normalizedNumber) as CarrierId[];
         if (!controller.signal.aborted) {
           setRecognition({ trackingNumber: normalizedNumber, carrier: 'unknown', ...(asked.length ? { asked, unanswered: asked } : {}) });
         }

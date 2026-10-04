@@ -4,7 +4,7 @@ import { canAskCarrier, carrierCheck, type CarrierCheck } from '../../lib/carrie
 import {
   carrierRequirements,
   normalizeTrackingNumber,
-  recognitionAskedCarriers,
+  discoveryAskedCarriers,
   requirementSatisfied,
   type CarrierInputField,
   type CarrierInputRequirement,
@@ -169,7 +169,7 @@ export function survey(state: LookupState, device: readonly DeviceParcel[] = [])
   const check = carrierCheck({
     applies: recognizable && (state.carrier === 'auto' || answer !== undefined),
     settled: settledForAsking,
-    asked: recognizable ? recognitionAskedCarriers(normalized) as CarrierId[] : [],
+    asked: recognizable ? discoveryAskedCarriers(normalized) as CarrierId[] : [],
     answer,
   });
 
@@ -325,7 +325,7 @@ export function lookupStep(state: LookupState, event: LookupEvent, device: reado
  */
 export function unanswered(number: string): CarrierAnswer {
   if (isAmazonTrackingNumber(number)) return { trackingNumber: number, carrier: 'amazon-logistics', amazonShippingStatus: 'unavailable' };
-  const asked = recognitionAskedCarriers(number) as CarrierId[];
+  const asked = discoveryAskedCarriers(number) as CarrierId[];
   return { trackingNumber: number, carrier: 'unknown', ...(asked.length ? { asked, unanswered: asked } : {}) };
 }
 

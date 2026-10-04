@@ -7,6 +7,6 @@ export const runtime = 'nodejs';
 
 export const POST = apiRoute(
   async (context) => json(await detectCarrier(await readJsonObject(context.request), () =>
-    claimAccountTracking(requireService(context), requireUser(context).id, 'detection'))),
+    claimAccountTracking(requireService(context), requireUser(context).id, 'detection'), context.request.signal)),
   { serviceRequired: true },
 );
