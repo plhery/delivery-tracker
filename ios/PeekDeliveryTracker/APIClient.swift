@@ -140,7 +140,8 @@ final class DeliveryAPIClient {
         id: UUID,
         carrier: CarrierID,
         trackingURL: String?,
-        dpdPostcode: String?
+        dpdPostcode: String?,
+        providerPostcode: String? = nil
     ) async throws -> ChangePackageCarrierResponse {
         try await request(
             "/api/packages/\(id.uuidString)/carrier",
@@ -148,7 +149,8 @@ final class DeliveryAPIClient {
             body: ChangePackageCarrierRequest(
                 carrier: carrier,
                 trackingURL: trackingURL,
-                dpdPostcode: dpdPostcode
+                dpdPostcode: dpdPostcode,
+                providerPostcode: providerPostcode
             )
         )
     }

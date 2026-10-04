@@ -113,7 +113,7 @@ describe('carrier check', () => {
     expect(carrierCheck({ applies: true, settled: false, asked })).toEqual({ status: 'idle' });
     expect(carrierCheck({ applies: false, settled: true, asked })).toEqual({ status: 'idle' });
     expect(carrierCheck({ applies: true, settled: true, asked })).toEqual({ status: 'asking', asked });
-    expect(carrierCheck({ applies: true, settled: true, asked: [] })).toEqual({ status: 'unasked' });
+    expect(carrierCheck({ applies: true, settled: true, asked: [] })).toEqual({ status: 'asking', asked: [] });
   });
 
   it('reads the answer', () => {

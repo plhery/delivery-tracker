@@ -119,6 +119,8 @@ export function toParcel(row: ApiPackageRow): ParcelWithEvents {
     autoChangedFrom: row.carrier_data?.auto_changed_from ?? undefined,
     autoChangedTo: row.carrier_data?.auto_changed_to ?? undefined,
     autoChangedAt: row.carrier_data?.auto_changed_at ?? undefined,
+    providerInputNeeded: row.carrier_data?.routing?.provider_input_needed,
+    nextCheckAt: row.carrier_data?.routing?.next_check_at,
     inputNeeded: row.carrier_data?.routing?.input_needed ?? undefined,
     senderName: row.carrier_data?.sender_name?.trim() || undefined,
     expectedDeliveryFrom: row.carrier_data?.expected_delivery_from ?? undefined,
@@ -385,6 +387,7 @@ export function createApiRepo(
     async changeCarrier(id: string, input: ParcelCarrierInput): Promise<ParcelWithEvents> {
       const body: ApiChangePackageCarrierRequest = {
         carrier: input.carrier,
+        providerPostcode: input.providerPostcode?.trim() || undefined,
         trackingUrl: input.trackingUrl?.trim() || undefined,
         dpdPostcode: input.dpdPostcode?.trim() || undefined,
       };

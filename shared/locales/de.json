@@ -1008,5 +1008,12 @@
   "native.pasteLead": "Füge eine Nummer, einen Link oder eine ganze E-Mail ein.",
   "door.verification.title": "Eine kurze Browserprüfung",
   "door.verification.body": "Die Prüfung konnte nicht abgeschlossen werden. Schließe sie ab, falls sie angezeigt wird, und versuche es erneut. Deine Nummer bleibt erhalten.",
-  "native.verification.title": "Eine kurze Überprüfung"
+  "native.verification.title": "Eine kurze Überprüfung",
+  "add.checkingServices": "Trackingdienste werden geprüft…",
+  "add.historyFound": "Sendungsverlauf gefunden. Wir bestätigen den Versanddienst nach dem Speichern.",
+  "add.providerInputNeeded": "Ein Trackingdienst benötigt die Zustellpostleitzahl. Du kannst sie nach dem Speichern hinzufügen.",
+  "detail.providerInputNeeded": "{{provider}} benötigt die Zustellpostleitzahl für diese Sendung.",
+  "detail.nextCheckAfter": "Nächste Prüfung nach {{date}}",
+  "status.noHistory": "Noch kein Sendungsverlauf",
+  "status.inputNeeded": "Zustellpostleitzahl erforderlich"
 }

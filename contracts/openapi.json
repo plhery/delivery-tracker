@@ -3855,6 +3855,37 @@
           "confidence": "high"
         }
       ]
+    },
+    "dhl-express": {
+      "displayName": "DHL Express",
+      "aliases": [
+        "DHL Express Worldwide",
+        "MyDHL+"
+      ],
+      "color": "#ffcc00",
+      "selectable": true,
+      "timezone": "UTC",
+      "tracking": {
+        "mode": "automatic",
+        "adapter": "dhl-express",
+        "recognitionRank": 75,
+        "browserRecognitionRank": 75
+      },
+      "trackingUrlTemplate": "https://mydhl.express.dhl/gb/en/tracking.html#/results?id={trackingNumber}",
+      "linkRules": [
+        {
+          "domains": [
+            "mydhl.express.dhl"
+          ],
+          "fragment": "^/results\\?id=(\\d{10})(?:&|$)"
+        }
+      ],
+      "detectionRules": [
+        {
+          "pattern": "^\\d{10}$",
+          "confidence": "low"
+        }
+      ]
     }
   },
   "servers": [
@@ -4668,7 +4699,7 @@
         },
         "responses": {
           "200": {
-            "description": "Language updated for the signed-in account’s active subscription",
+            "description": "Language updated for the signed-in account\u2019s active subscription",
             "content": {
               "application/json": {
                 "schema": {
@@ -6127,6 +6158,16 @@
             "items": {
               "$ref": "#/components/schemas/CarrierId"
             }
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackingProviderCheck"
+            }
+          },
+          "trackingFound": {
+            "type": "boolean",
+            "description": "A universal provider returned tracking history; carrier identity can still need direct confirmation."
           }
         }
       },
@@ -6307,7 +6348,8 @@
           "intl-post",
           "unknown",
           "ems",
-          "omgo"
+          "omgo",
+          "dhl-express"
         ]
       },
       "Stage": {
@@ -6379,7 +6421,7 @@
           "site": {
             "type": "string",
             "minLength": 1,
-            "description": "The facility the point is on, when it has a name of its own (\"Zürich-Mülligen\"). Shown where there is room; name stays the town."
+            "description": "The facility the point is on, when it has a name of its own (\"Z\u00fcrich-M\u00fclligen\"). Shown where there is room; name stays the town."
           }
         }
       },
@@ -6693,6 +6735,29 @@
                         ]
                       }
                     }
+                  },
+                  "provider_input_needed": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "provider",
+                      "field"
+                    ],
+                    "properties": {
+                      "provider": {
+                        "type": "string"
+                      },
+                      "field": {
+                        "type": "string",
+                        "enum": [
+                          "dpdPostcode"
+                        ]
+                      }
+                    }
+                  },
+                  "next_check_at": {
+                    "type": "string",
+                    "format": "date-time"
                   }
                 }
               }
@@ -6826,6 +6891,11 @@
             "type": "string",
             "pattern": "^(?=.{3,10}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
             "description": "Recipient postcode, optional for DPD Switzerland and required by GLS Switzerland, GLS Germany, Mondial Relay short shipment numbers, Heppner or Paack."
+          },
+          "providerPostcode": {
+            "type": "string",
+            "pattern": "^(?=.{3,12}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
+            "description": "Recipient postcode for universal providers; bound to the current tracking number and kept separate from carrier credentials."
           }
         }
       },
@@ -8481,6 +8551,32 @@
               "null"
             ],
             "maxLength": 60
+          }
+        }
+      },
+      "TrackingProviderCheckOutcome": {
+        "type": "string",
+        "enum": [
+          "history",
+          "no_history",
+          "input_required",
+          "unavailable",
+          "deferred"
+        ]
+      },
+      "TrackingProviderCheck": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "provider",
+          "outcome"
+        ],
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/TrackingProviderCheckOutcome"
           }
         }
       }

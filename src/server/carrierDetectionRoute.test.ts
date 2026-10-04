@@ -3,10 +3,13 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { POST } from '../../app/api/carriers/detect/route';
 import { POST as detectWithoutAccount } from '../../app/api/public/detect/route';
 import { detectCarrierMatch, recognitionAskedCarriers } from '../lib/carriers';
+import { preflightTracking } from './trackingPreflight';
 import * as amazon from './amazonShippingEligibility';
 import { SupabaseAuthenticator } from './auth';
 import * as metrics from './metrics';
 import { SupabaseServiceClient } from './supabase';
+
+vi.mock('./trackingPreflight', () => ({ preflightTracking: vi.fn().mockResolvedValue(undefined) }));
 
 // The route asks carriers through the adapter registry; no test reaches a carrier.
 const recognize = vi.hoisted(() => vi.fn());
@@ -25,6 +28,7 @@ const knows = (...carriers: string[]) => async (carrier: string) => ({ known: ca
 const asked = () => recognize.mock.calls.map(([carrier]) => carrier);
 
 beforeEach(() => {
+  vi.mocked(preflightTracking).mockReset().mockResolvedValue(undefined as unknown as Awaited<ReturnType<typeof preflightTracking>>);
   vi.stubEnv('SUPABASE_URL', 'https://database.example');
   vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', 'public-key');
   vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
@@ -278,5 +282,13 @@ it('takes the detection allowances from the environment, and fails closed when t
   const claim = vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance').mockRejectedValue(new Error('database down'));
   expect((await withoutAccount('12345678901254', '198.51.100.41')).status).toBe(500);
   expect(claim).toHaveBeenCalledExactlyOnceWith({ bucket: expect.any(String), limit: 5, overall: { bucket: 'detection', limit: 0 } });
+  expect(recognize).not.toHaveBeenCalled();
+});
+
+it('uses universal preflight for a number with no direct candidates and reports history without forcing carrier identity', async () => {
+  vi.mocked(preflightTracking).mockResolvedValue({ trackingFound: true, providers: [{ provider: 'Ship24', outcome: 'history' }] });
+  const response = await request('TESTPREFLIGHT0001');
+  expect(await response.json()).toEqual({ trackingNumber: 'TESTPREFLIGHT0001', carrier: 'unknown', trackingFound: true, providers: [{ provider: 'Ship24', outcome: 'history' }] });
+  expect(preflightTracking).toHaveBeenCalledWith('TESTPREFLIGHT0001', expect.any(SupabaseServiceClient), expect.any(AbortSignal));
   expect(recognize).not.toHaveBeenCalled();
 });

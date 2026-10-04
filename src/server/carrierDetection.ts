@@ -9,6 +9,7 @@ import { BROWSER_RECOGNITION_BUDGET_MS, MAX_BROWSER_RECOGNITIONS, recognizeBrows
 import { checkAmazonShipping } from './amazonShippingEligibility';
 import { HttpError } from './api';
 import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from 'universal-parcel-scraper';
+import { preflightTracking } from './trackingPreflight';
 import { recordDetection } from './metrics';
 import { logOperationalEvent } from './observability';
 import type { SupabaseServiceClient } from './supabase';
@@ -25,12 +26,13 @@ const MAX_ANSWERS = 500;
 let registry: AdapterRegistry | undefined;
 const answers = new Map<string, { at: number; answer: ApiCarrierDetectionResponse }>();
 
-async function recognize(trackingNumber: string, beforeAsking?: () => Promise<void>, signal?: AbortSignal): Promise<ApiCarrierDetectionResponse> {
+async function recognize(trackingNumber: string, beforeAsking?: () => Promise<void>, signal?: AbortSignal, health?: SupabaseServiceClient): Promise<ApiCarrierDetectionResponse> {
   const cached = answers.get(trackingNumber);
-  if (cached && Date.now() - cached.at < ANSWER_TTL_MS) return cached.answer;
+  if (cached && Date.now() - cached.at < (cached.answer.carrier === 'unknown' ? 30_000 : ANSWER_TTL_MS)) return cached.answer;
   const candidates = recognitionCandidates(trackingNumber).slice(0, MAX_RECOGNITIONS);
   const browserCandidates = recognitionCandidates(trackingNumber, { phase: 'browser' }).slice(0, MAX_BROWSER_RECOGNITIONS);
-  if (candidates.length || browserCandidates.length) await beforeAsking?.();
+  const deadline = performance.now() + 25_000;
+  await beforeAsking?.();
   const errors = new Map<string, unknown>();
   const outcomes = await recognizeAll(candidates, async (carrier, context) => {
     const adapter = (registry ??= createAdapterRegistry()).for(carrier);
@@ -39,10 +41,12 @@ async function recognize(trackingNumber: string, beforeAsking?: () => Promise<vo
     catch (error) { errors.set(carrier, error); throw error; }
   }, RECOGNITION_BUDGET_MS, signal);
   const cheap = settleRecognition(outcomes);
-  if (!cheap.carrier && !cheap.choices.length) {
+  const preflight = !cheap.carrier && !cheap.choices.length && health
+    ? await preflightTracking(trackingNumber, health, signal) : undefined;
+  if (!cheap.carrier && !cheap.choices.length && !preflight?.trackingFound) {
     const due = browserCandidates.filter(({ carrier }) => !outcomes.some((outcome) => outcome.carrier === carrier && outcome.status !== 'failed'));
     outcomes.push(...await recognizeAll(due, (carrier, context) => recognizeBrowser(carrier, trackingNumber, context, errors.get(carrier)),
-      BROWSER_RECOGNITION_BUDGET_MS, signal));
+      Math.max(1, Math.min(BROWSER_RECOGNITION_BUDGET_MS, Math.floor(deadline - performance.now()))), signal));
   }
   const { carrier, choices } = settleRecognition(outcomes);
   // Who was asked, and who could not answer, tells "nobody knows it yet" from "could not check".
@@ -50,6 +54,7 @@ async function recognize(trackingNumber: string, beforeAsking?: () => Promise<vo
   const unanswered = asked.filter((carrier) => outcomes.filter((outcome) => outcome.carrier === carrier).every((outcome) => outcome.status === 'failed'));
   const answer: ApiCarrierDetectionResponse = {
     trackingNumber,
+    ...preflight,
     carrier: (carrier ?? 'unknown') as ApiCarrierId,
     ...(!carrier && choices.length > 1 ? { recognized: choices as ApiCarrierId[] } : {}),
     ...(asked.length ? { asked } : {}),
@@ -64,7 +69,7 @@ async function recognize(trackingNumber: string, beforeAsking?: () => Promise<vo
     });
   }
   // A carrier that could not answer may answer on the next focus-out.
-  if (unanswered.length === 0) {
+  if (unanswered.length === 0 && !preflight?.providers.some(({ outcome }) => outcome === 'unavailable' || outcome === 'deferred')) {
     answers.delete(trackingNumber);
     answers.set(trackingNumber, { at: Date.now(), answer });
     if (answers.size > MAX_ANSWERS) answers.delete(answers.keys().next().value!);
@@ -101,8 +106,8 @@ export async function detectCarrier(
   const detected = detectCarrierMatch(trackingNumber);
   // Shared shapes and generic postal numbers need a direct carrier to confirm them.
   // Only a carrier that knows the number is returned; the rest stay suggestions.
-  const answer = recognitionCandidates(trackingNumber).length > 0 || recognitionCandidates(trackingNumber, { phase: 'browser' }).length > 0
-    ? await recognize(trackingNumber, beforeAsking, signal).catch((error: unknown) => {
+  const answer = detected.carrier === 'unknown' || recognitionCandidates(trackingNumber).length > 0 || recognitionCandidates(trackingNumber, { phase: 'browser' }).length > 0
+    ? await recognize(trackingNumber, beforeAsking, signal, supportClient).catch((error: unknown) => {
       if (signal?.aborted) throw new HttpError(499, 'Carrier check cancelled');
       throw error;
     })

@@ -13,6 +13,8 @@ struct CarrierDetectionResponse: Codable, Equatable, Hashable, Sendable {
     var recognized: [CarrierID]? = nil
     var asked: [CarrierID]? = nil
     var unanswered: [CarrierID]? = nil
+    var providers: [TrackingProviderCheck]? = nil
+    var trackingFound: Bool? = nil
 }
 
 struct AccountExportResponse: Codable, Equatable, Hashable, Sendable {
@@ -140,6 +142,7 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
     static let unknown = CarrierID(rawValue: "unknown")
     static let ems = CarrierID(rawValue: "ems")
     static let omgo = CarrierID(rawValue: "omgo")
+    static let dhlExpress = CarrierID(rawValue: "dhl-express")
 
     static let allCases: [CarrierID] = [
         .swissPost,
@@ -248,6 +251,7 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
         .unknown,
         .ems,
         .omgo,
+        .dhlExpress,
     ]
 
     init(from decoder: Decoder) throws {
@@ -397,11 +401,13 @@ struct ChangePackageCarrierRequest: Codable, Equatable, Hashable, Sendable {
     var carrier: CarrierID
     var trackingURL: String? = nil
     var dpdPostcode: String? = nil
+    var providerPostcode: String? = nil
 
     private enum CodingKeys: String, CodingKey {
         case carrier
         case trackingURL = "trackingUrl"
         case dpdPostcode
+        case providerPostcode
     }
 }
 
@@ -981,6 +987,21 @@ struct GiftWords: Codable, Equatable, Hashable, Sendable {
     var from: String? = nil
 }
 
+enum TrackingProviderCheckOutcome: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case history
+    case noHistory = "no_history"
+    case inputRequired = "input_required"
+    case unavailable
+    case deferred
+
+    var id: String { rawValue }
+}
+
+struct TrackingProviderCheck: Codable, Equatable, Hashable, Sendable {
+    var provider: String
+    var outcome: TrackingProviderCheckOutcome
+}
+
 enum CarrierDetectionResponseAmazonShippingStatus: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
     case available
     case expired
@@ -1108,6 +1129,8 @@ enum ClaimParcelResultOutcome: String, Codable, CaseIterable, Hashable, Sendable
 
 struct CarrierDataRouting: Codable, Equatable, Hashable, Sendable {
     var inputNeeded: CarrierInputNeeded? = nil
+    var providerInputNeeded: ProviderInputNeeded? = nil
+    var nextCheckAt: String? = nil
 }
 
 struct CarrierInputNeeded: Codable, Equatable, Hashable, Sendable {
@@ -1115,9 +1138,20 @@ struct CarrierInputNeeded: Codable, Equatable, Hashable, Sendable {
     var field: CarrierInputNeededField
 }
 
+struct ProviderInputNeeded: Codable, Equatable, Hashable, Sendable {
+    var provider: String
+    var field: ProviderInputNeededField
+}
+
 enum CarrierInputNeededField: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
     case dpdPostcode
     case trackingURL = "trackingUrl"
+
+    var id: String { rawValue }
+}
+
+enum ProviderInputNeededField: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case dpdPostcode
 
     var id: String { rawValue }
 }

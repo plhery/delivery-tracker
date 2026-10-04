@@ -253,6 +253,12 @@ struct ParcelDetailView: View {
                     Color.clear.frame(height: 68).allowsHitTesting(false)
                 }
                 AutomaticCarrierNotice(parcel: parcel)
+                if let needed = parcel.carrierData?.routing?.providerInputNeeded, !parcel.isArchived {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(localizer.text("detail.providerInputNeeded", ["provider": needed.provider]))
+                        Button(localizer.text("detail.inputNeededAction")) { carrierEditor = CarrierEditorRequest() }
+                    }.font(.footnote)
+                }
                 if let needed = parcel.inputNeededPrompt {
                     inputNeededPrompt(needed, tint: branding.ink)
                 }
@@ -531,6 +537,10 @@ struct ParcelDetailView: View {
 
     private func syncStatus(_ parcel: Parcel, tint: Color) -> some View {
         HStack(spacing: 7) {
+            if let next = parcel.carrierData?.routing?.nextCheckAt.flatMap(DateParser.date), !parcel.isArchived {
+                Text(localizer.text("detail.nextCheckAfter", ["date": next.formatted(date: .abbreviated, time: .shortened)]))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if let lastSyncedAt = parcel.lastSyncedAt {
                 Text(localizer.text("detail.lastChecked", ["date": localizer.relativeTime(from: lastSyncedAt)]))
             }
@@ -711,6 +721,7 @@ private struct ChangeCarrierView: View {
     @State private var selectedCarrier: CarrierID
     @State private var trackingURL: String
     @State private var deliveryPostcode: String
+    @State private var providerPostcode = ""
     @State private var saving = false
     @State private var errorMessage: String?
     @State private var detent: PresentationDetent = .medium
@@ -782,6 +793,14 @@ private struct ChangeCarrierView: View {
                     }
                 }
 
+                if needsProviderPostcode {
+                    Section {
+                        TextField(localizer.text("add.requirement.dpdPostcode"), text: $providerPostcode)
+                            .textContentType(.postalCode).textInputAutocapitalization(.characters).autocorrectionDisabled()
+                    } footer: {
+                        Text(localizer.text("detail.providerInputNeeded", ["provider": parcel.carrierData!.routing!.providerInputNeeded!.provider]))
+                    }
+                }
                 if let errorMessage {
                     Section {
                         Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
@@ -844,7 +863,14 @@ private struct ChangeCarrierView: View {
         requirements.first(where: { $0.field == .dpdPostcode })
     }
 
+    private var needsProviderPostcode: Bool { selectedCarrier == parcel.carrier && parcel.carrierData?.routing?.providerInputNeeded != nil }
+    private var normalizedProviderPostcode: String? {
+        guard needsProviderPostcode else { return nil }
+        let value = providerPostcode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        return value.range(of: "^(?=.{3,12}$)(?=.*[0-9])[A-Z0-9]+(?:[ -][A-Z0-9]+)*$", options: .regularExpression) != nil ? value : nil
+    }
     private var canSave: Bool {
+        if needsProviderPostcode && normalizedProviderPostcode == nil { return false }
         guard changed else { return false }
         for requirement in requirements {
             switch requirement.field {
@@ -862,7 +888,7 @@ private struct ChangeCarrierView: View {
     }
 
     private var changed: Bool {
-        selectedCarrier != parcel.carrier
+        normalizedProviderPostcode != nil || selectedCarrier != parcel.carrier
             || normalizedTrackingURL != (parcel.trackingURL ?? "")
             || normalizedPostcode != (parcel.dpdPostcode ?? "")
     }
@@ -919,7 +945,8 @@ private struct ChangeCarrierView: View {
                     parcel,
                     carrier: selectedCarrier,
                     trackingURL: normalizedTrackingURL.nonEmpty,
-                    dpdPostcode: normalizedPostcode.nonEmpty
+                    dpdPostcode: normalizedPostcode.nonEmpty,
+                    providerPostcode: normalizedProviderPostcode
                 )
                 dismiss()
             } catch {

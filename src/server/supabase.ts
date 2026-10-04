@@ -1464,6 +1464,12 @@ export class SupabaseUserClient extends SupabaseClient {
     if (changed !== true) throw new SupabaseError('Package not found', 404);
   }
 
+  async setProviderPostcode(packageId: string, postcode: string): Promise<boolean> {
+    return await this.request('/rest/v1/rpc/set_owned_package_provider_postcode', {
+      method: 'POST', body: { p_package_id: packageId, p_postcode: postcode },
+    }) === true;
+  }
+
   async changePackageCarrier(
     packageId: string,
     carrier: string,

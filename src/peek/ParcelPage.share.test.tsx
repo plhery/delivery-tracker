@@ -23,7 +23,7 @@ const ago = (hours: number) => new Date(Date.now() - hours * HOUR).toISOString()
 const scan = (stage: Stage, hoursAgo: number, description = `Scan at ${stage}`, extra: Partial<TrackingEvent> = {}): TrackingEvent =>
   ({ id: `${stage}-${hoursAgo}`, parcelId: 'parcel-1', stage, description, occurredAt: ago(hoursAgo), ...extra });
 const journey = [scan('registered', 50), scan('accepted', 30), scan('in_transit', 6)];
-const arrived = [...journey, scan('out_for_delivery', 3), scan('delivered', 1)];
+const arrived = [...journey, scan('out_for_delivery', 3), scan('delivered', 0)];
 
 function view({ events = journey, parcel = {}, owner = true, link = {} }: {
   events?: TrackingEvent[];

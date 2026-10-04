@@ -1008,5 +1008,12 @@
   "native.pasteLead": "Incolla un numero, un link o un’intera email.",
   "door.verification.title": "Una rapida verifica del browser",
   "door.verification.body": "La verifica non è stata completata. Esegui il controllo se appare, poi riprova. Il tuo numero è ancora qui.",
-  "native.verification.title": "Una rapida verifica"
+  "native.verification.title": "Una rapida verifica",
+  "add.checkingServices": "Verifica dei servizi di tracciamento…",
+  "add.historyFound": "Cronologia trovata. Confermeremo il corriere dopo il salvataggio.",
+  "add.providerInputNeeded": "Un servizio richiede il codice postale di consegna. Puoi aggiungerlo dopo il salvataggio.",
+  "detail.providerInputNeeded": "{{provider}} richiede il codice postale di consegna per cercare questo pacco.",
+  "detail.nextCheckAfter": "Prossima verifica dopo {{date}}",
+  "status.noHistory": "Nessuna cronologia di tracciamento per ora",
+  "status.inputNeeded": "Codice postale di consegna richiesto"
 }

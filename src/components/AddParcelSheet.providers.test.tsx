@@ -163,7 +163,7 @@ describe('DPD carrier lookup', () => {
     const user = userEvent.setup();
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput="06080000000002" />);
     // The line names the carriers being asked while they answer.
-    expect(await screen.findByText('asking DPD, SEUR, BRT and Ciblex…')).toBeInTheDocument();
+    expect(await screen.findByText('Checking tracking services…')).toBeInTheDocument();
     const button = screen.getByRole('button', { name: /^add parcel$/i });
     expect(button).toBeEnabled();
     await user.click(button);
@@ -234,9 +234,9 @@ describe('DPD carrier lookup', () => {
     expect(await screen.findByText('couldn’t check · we’ll retry after you add it')).toBeInTheDocument();
   });
 
-  it('says a number no carrier can be asked about is looked up after saving', () => {
+  it('checks tracking services even when no dedicated carrier fits', () => {
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={vi.fn()} onClose={vi.fn()} initialTrackingInput="12345678" />);
-    expect(carrierLine(/^Detect automatically we’ll look it up after you add it/)).toBeInTheDocument();
+    expect(carrierLine(/^Detect automatically Checking tracking services/)).toBeInTheDocument();
   });
 });
 

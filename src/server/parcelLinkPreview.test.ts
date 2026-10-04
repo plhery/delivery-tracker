@@ -96,7 +96,7 @@ describe('parcelLinkPreview', () => {
     vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel').mockResolvedValue(stored({ carrier: 'unknown', sync_status: 'waiting', expected_delivery: null }, [
       { id: 'e1', package_id: 'p', stage: 'pending', description: 'Tracking added', location: null, occurred_at: '2026-10-01T08:00:00Z' },
     ]));
-    expect(await parcelLinkPreview(linkId, new Headers(), 'en')).toMatchObject({ title: 'Waiting for the carrier · Peek', carrier: null, steps: 0 });
+    expect(await parcelLinkPreview(linkId, new Headers(), 'en')).toMatchObject({ title: 'No tracking history yet · Peek', carrier: null, steps: 0 });
   });
 
   it('answers nothing for a malformed id without asking the database, and for a link that leads nowhere', async () => {

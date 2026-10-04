@@ -81,6 +81,9 @@
   "dhl-ecommerce": {
     "family": "dhl"
   },
+  "dhl-express": {
+    "family": "dhl"
+  },
   "dpd": {
     "decal": "dpd"
   },

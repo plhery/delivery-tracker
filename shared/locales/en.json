@@ -1008,5 +1008,12 @@
   "native.pasteLead": "Paste a number, a link or a whole email.",
   "door.verification.title": "A quick browser check",
   "door.verification.body": "Verification could not finish. Complete the check if it appears, then try again. Your number is still here.",
-  "native.verification.title": "A quick check"
+  "native.verification.title": "A quick check",
+  "add.checkingServices": "Checking tracking services…",
+  "add.historyFound": "Tracking history found. We’ll confirm the carrier after saving.",
+  "add.providerInputNeeded": "A tracking service needs the delivery postcode. You can add it after saving.",
+  "detail.providerInputNeeded": "{{provider}} needs the delivery postcode to look up this parcel.",
+  "detail.nextCheckAfter": "Next check after {{date}}",
+  "status.noHistory": "No tracking history yet",
+  "status.inputNeeded": "Delivery postcode needed"
 }

@@ -431,7 +431,8 @@ final class ParcelStore: ObservableObject {
         _ parcel: Parcel,
         carrier: CarrierID,
         trackingURL: String?,
-        dpdPostcode: String?
+        dpdPostcode: String?,
+        providerPostcode: String? = nil
     ) async throws {
         let generation = session.generation
         let cleanedURL = trackingURL?
@@ -459,7 +460,8 @@ final class ParcelStore: ObservableObject {
                 id: parcel.id,
                 carrier: carrier,
                 trackingURL: cleanedURL,
-                dpdPostcode: cleanedPostcode
+                dpdPostcode: cleanedPostcode,
+                providerPostcode: providerPostcode
             )
             updated = response.package
             try session.checkGeneration(generation)

@@ -17,6 +17,7 @@ import type { AdapterRegistry, Recognition, TrackingContext } from 'universal-pa
 import { trackCarrier } from 'universal-parcel-scraper/node';
 import type { StepRecorder } from 'universal-parcel-scraper/node';
 import { createAdapterRegistry, hostAdapterEnvironment } from './adapterRegistry';
+import { preflightInputNeeded, takePreflightHistory } from './trackingPreflight';
 import { recognizeBrowser, takeBrowserHistory } from './browserRecognition';
 import { hostStepRecorder } from './stepRecorder';
 import { recordStatusMapping } from './metrics';
@@ -796,6 +797,7 @@ export class TrackingSyncService {
             direct: (candidate, carrier) => this.fetchResult(candidate, carrier),
             universal: (source, number, timeout, postcode, timezone, countryHint) => this.adapter.fetchUniversal!(source, number, timeout, postcode, timezone, countryHint),
             health: this.client, now: this.now,
+            takePrefetchedUniversal: takePreflightHistory, preflightInputNeeded,
             ...(this.adapter.recognize ? { recognize: (carrier: string, number: string, context?: TrackingContext) => this.adapter.recognize!(carrier, number, context) } : {}),
             ...(this.adapter.recognizeBrowser ? { recognizeBrowser: (carrier: string, number: string, context?: TrackingContext, previousError?: unknown) => this.adapter.recognizeBrowser!(carrier, number, context, previousError) } : {}),
             enablePostalNinja: process.env.TRACKING_ENABLE_POSTAL_NINJA === 'true',
@@ -815,8 +817,8 @@ export class TrackingSyncService {
         // Without a carrier to ask, every provider answering without history means the same.
         const failures = error instanceof RoutingDeferred ? Object.values(error.routing.failures) : [];
         const routingUnannounced = error instanceof RoutingDeferred
-          && (error.routing.failures[carrierId]?.kind === 'not_found'
-            || (failures.length > 0 && failures.every((failure) => ['not_found', 'no_history'].includes(failure.kind))));
+          && (Boolean(error.routing.provider_input_needed) || error.routing.failures[carrierId]?.kind === 'not_found'
+            || (failures.length > 0 && failures.every((failure) => ['not_found', 'no_history', 'input_required'].includes(failure.kind))));
         if (!hasProgress && (isUnannouncedTrackingError(error) || routingUnannounced)) {
           // A carrier saying the label has no scans is an answer, not a missed check.
           if (error instanceof RoutingDeferred) error.routing.consecutive_failures = 0;

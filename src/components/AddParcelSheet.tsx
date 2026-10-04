@@ -242,10 +242,12 @@ export function AddParcelSheet({
   // otherwise what the carrier check has found so far.
   const lineCarrier = carrier && carrier.id !== 'unknown' ? carrier : null;
   const numberCarrier = shapeCarrier(parsedTracking);
-  const lineDetail = !automatic ? t('add.line.chosen')
+  const preflightDetail = recognition?.carrier !== 'unknown' ? undefined : recognition?.trackingFound ? t('add.historyFound')
+    : recognition?.providers?.some(({ outcome }) => outcome === 'input_required') ? t('add.providerInputNeeded') : undefined;
+  const lineDetail = automatic && preflightDetail ? preflightDetail : !automatic ? t('add.line.chosen')
     : check.status === 'found' ? t('add.line.found')
       : amazonNumber || (lineCarrier && lineCarrier.id !== 'intl-post') ? t('add.detectedCarrier')
-        : check.status === 'asking' ? t('add.line.asking', { carriers: carrierNames(check.asked) })
+        : check.status === 'asking' ? t('add.checkingServices')
           : check.status === 'several' ? t('add.line.several', { carriers: carrierNames(check.carriers) })
             : check.status === 'none' ? t('add.line.none')
               : check.status === 'failed' ? t('add.line.failed')
@@ -254,13 +256,13 @@ export function AddParcelSheet({
   // The picker leads with the carriers that fit the number, then the ones used before.
   const pickerSections = carrierChoiceSections({ detection: parsedTracking, check, used: usedCarriers, t });
   const pickerTags = carrierChoiceTags(check, t);
-  const autoDescription = check.status === 'asking' ? t('add.recognizing')
+  const autoDescription = preflightDetail ?? (check.status === 'asking' ? t('add.recognizing')
     : check.status === 'found' ? t('add.recognized', { carrier: carrierInfo(check.carrier, locale).name })
       : check.status === 'several' ? t('picker.auto.several', { carriers: carrierNames(check.carriers) })
         : check.status === 'none' ? t('picker.auto.none', { carriers: carrierNames(check.asked) })
           : check.status === 'failed' ? t('picker.auto.failed', { carriers: carrierNames(check.asked) })
             : numberCarrier ? t('picker.auto.detected', { carrier: carrierInfo(numberCarrier, locale).name })
-              : t('picker.auto.later');
+              : t('picker.auto.later'));
 
   // iPhone Safari scrolls the page to center every newly focused field above
   // the keyboard. That animated scroll drags this fixed sheet away from the

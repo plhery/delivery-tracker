@@ -182,11 +182,15 @@ struct CarrierRecognition: Equatable, Sendable {
         guard applies, !number.isEmpty else { return .idle }
         guard let answer, answer.trackingNumber == number else {
             guard settledNumber == number else { return .idle }
-            return asked.isEmpty ? .unasked : .asking(asked)
+            return .asking(asked)
         }
         if answer.carrier != .unknown && answer.carrier != .internationalPost { return .recognized(answer.carrier) }
         if let choices = answer.recognized, choices.count > 1 { return .several(choices) }
         let answered = answer.asked ?? []
+        if let providers = answer.providers, !providers.isEmpty {
+            return answer.trackingFound == true || providers.contains(where: { $0.outcome == .inputRequired || $0.outcome == .noHistory })
+                ? .notFound(answered) : .failed(answered)
+        }
         if answered.isEmpty { return .unasked }
         if (answer.unanswered?.count ?? 0) >= answered.count { return .failed(answered) }
         return .notFound(answered)

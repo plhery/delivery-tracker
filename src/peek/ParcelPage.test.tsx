@@ -260,7 +260,7 @@ describe('ParcelPage stages and troubles', () => {
 
   it('keeps a number no carrier knows on a neutral card, and says to keep the page', async () => {
     await shown(view([scan('pending', 60, 'Tracking added; the carrier has not announced it yet')], { carrier: 'unknown', syncStatus: 'waiting' }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Waiting for the carrier' })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 1, name: 'No tracking history yet' })).toBeVisible();
     expect(card()).toHaveClass('peekp-card--neutral');
     expect(within(card()).getByText('Carrier not found yet')).toBeVisible();
     expect(within(card()).getByText('No carrier knows 1234567899 yet. That’s normal for a day or two after ordering.')).toBeVisible();

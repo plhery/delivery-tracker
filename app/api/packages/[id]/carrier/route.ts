@@ -1,3 +1,4 @@
+import { normalizeDeliveryPostcode } from 'universal-parcel-scraper';
 import { verifyAmazonShippingAddition } from '../../../../../src/server/amazonShippingEligibility';
 import {
   apiRoute,
@@ -37,24 +38,32 @@ export const PATCH = apiRoute<PackageParameters>(async (context) => {
     throw new HttpError(404, 'Package not found');
   }
 
+  const body = await readJsonObject(context.request);
   const values = packageCarrierValues(
-    await readJsonObject(context.request),
+    body,
     original.tracking_number,
   );
   const unchanged = original.carrier === values.carrier
     && nullableText(original.tracking_url) === values.trackingUrl
     && nullableText(original.dpd_postcode) === values.dpdPostcode;
-  if (unchanged) return json({ package: withEventPlaces(original), jobIds: [] });
+  if (body.providerPostcode !== undefined && !unchanged) throw new HttpError(400, 'Save the carrier change before updating provider input');
+  let providerPostcode: string | undefined;
+  if (body.providerPostcode !== undefined) {
+    if (typeof body.providerPostcode !== 'string') throw new HttpError(400, 'Invalid delivery postcode');
+    try { providerPostcode = normalizeDeliveryPostcode(body.providerPostcode); }
+    catch { throw new HttpError(400, 'Invalid delivery postcode'); }
+  }
+  if (unchanged && !providerPostcode) return json({ package: withEventPlaces(original), jobIds: [] });
 
   await verifyAmazonShippingAddition(values.carrier, original.tracking_number);
-  if (!await client.changePackageCarrier(
+  if (providerPostcode ? !await client.setProviderPostcode(packageId, providerPostcode) : !await client.changePackageCarrier(
     packageId,
     values.carrier,
     values.trackingUrl,
     values.dpdPostcode,
   )) throw new HttpError(404, 'Package not found');
 
-  logOperationalEvent('package_carrier_changed', {
+  logOperationalEvent(providerPostcode ? 'package_provider_input_changed' : 'package_carrier_changed', {
     package_id: packageId,
     previous_carrier: String(original.carrier ?? 'unknown'),
     carrier: values.carrier,

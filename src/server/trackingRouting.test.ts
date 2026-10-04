@@ -87,7 +87,7 @@ describe('persistent tracking routing', () => {
     universal.mockRejectedValue(new Error('unavailable'));
     await expect(router.fetch(parcel({ carrier: 'heppner' }), false)).rejects.toMatchObject({
       stale: false,
-      routing: { failures: { heppner: { kind: 'schema', user_error: 'carrier:input_required' } } },
+      routing: { failures: { heppner: { kind: 'input_required', user_error: 'carrier:input_required' } } },
     });
   });
   it.each(['ups', 'fedex', 'usps', 'canada-post', 'aramex'])('uses a direct carrier without contacting a universal provider', async (carrier) => {
@@ -967,12 +967,46 @@ describe('routingFailure with carrier package errors', () => {
     expect(routingFailure(new errors.RateLimitedError('Ship24', 30_000))).toEqual({ kind: 'rate_limited', retryAfterMs: 30_000 });
     expect(routingFailure(new errors.ChallengeError('UPS'))).toEqual({ kind: 'verification', retryAfterMs: 0 });
     expect(routingFailure(new errors.SchemaError('DHL'))).toEqual({ kind: 'schema', retryAfterMs: 0 });
-    expect(routingFailure(new errors.InputRequiredError('Heppner', 'the delivery postcode'))).toEqual({ kind: 'schema', retryAfterMs: 0 });
+    expect(routingFailure(new errors.InputRequiredError('Heppner', 'the delivery postcode'))).toEqual({ kind: 'input_required', retryAfterMs: 0 });
     expect(routingFailure(new errors.InvalidInputError('Evri', 'Evri requires a 16-character tracking number'))).toEqual({ kind: 'schema', retryAfterMs: 0 });
     expect(routingFailure(new errors.IndeterminateError('Colisweb'))).toEqual({ kind: 'transport', retryAfterMs: 0 });
     expect(routingFailure(new Error('wrapped', { cause: new errors.NotFoundError('CTT') }))).toEqual({ kind: 'not_found', retryAfterMs: 0 });
     // Errors outside the taxonomy keep the historical status-based classification.
     expect(routingFailure(Object.assign(new Error('legacy'), { status: 429, retryAfterMs: 1_000 }))).toEqual({ kind: 'rate_limited', retryAfterMs: 1_000 });
     expect(routingFailure(new TypeError('bad payload'))).toEqual({ kind: 'schema', retryAfterMs: 0 });
+  });
+});
+
+describe('universal preflight and recipient input', () => {
+  it('reuses a matching history before acquiring an upstream lease', async () => {
+    const value = setup();
+    value.router.options.takePrefetchedUniversal = vi.fn((source) => source === 'Ship24' ? { ...history(), discovered_carrier: 'dhl-express' } : undefined);
+    const result = await value.router.fetch(parcel({ tracking_number: '1234567891' }), false);
+    expect(result.result.tracking_provider).toBe('Ship24');
+    expect(value.health.acquireTrackingProvider).not.toHaveBeenCalled();
+    expect(value.universal).not.toHaveBeenCalled();
+    expect(value.recognize).not.toHaveBeenCalled();
+    expect(value.recognizeBrowser).not.toHaveBeenCalled();
+    expect(value.direct).not.toHaveBeenCalled();
+  });
+  it('retains an explicit postcode requirement and keeps it out of global failure cooldowns', async () => {
+    const value = setup();
+    value.universal.mockImplementation(async (source) => { if (source === 'ParcelsApp') throw new InputRequiredError(source, 'postcode'); throw new NotFoundError(source); });
+    const error = await value.router.fetch(parcel({ tracking_number: '1234567891' }), false).catch((error) => error);
+    expect(error).toBeInstanceOf(RoutingDeferred);
+    expect(error.routing).toMatchObject({ provider_input_needed: { provider: 'ParcelsApp', field: 'dpdPostcode' }, failures: { ParcelsApp: { kind: 'input_required' } } });
+    expect(value.health.finishTrackingProvider.mock.calls.every((call) => call[2] === 'not_found')).toBe(true);
+  });
+  it('submits provider credentials only for their bound number and clears the prompt after recovery', async () => {
+    const matching = setup();
+    const result = await matching.router.fetch(parcel({ tracking_number: '1234567891', dpd_postcode: '9999', carrier_data: {
+      universal_input: { number: '1234567891', postcode: '8000' },
+      routing: { version: 1, provider_input_needed: { provider: 'ParcelsApp', field: 'dpdPostcode' } },
+    } }), false);
+    expect(matching.universal).toHaveBeenCalledWith('Ship24', '1234567891', expect.any(Number), '8000', null);
+    expect(result.result.routing).not.toHaveProperty('provider_input_needed');
+    const foreign = setup();
+    await foreign.router.fetch(parcel({ tracking_number: '1234567891', carrier_data: { universal_input: { number: '1234567880', postcode: '8000' } } }), false);
+    expect(foreign.universal).toHaveBeenCalledWith('Ship24', '1234567891', expect.any(Number), null, null);
   });
 });

@@ -57,7 +57,7 @@ export function parcelDisplayStatus(parcel: ParcelWithEvents): ParcelDisplayStat
     };
   }
   if (!hasCarrierUpdate && parcel.syncStatus === 'waiting') {
-    return { label: 'Waiting for the carrier', tone: 'ok', syncing: false };
+    return { label: parcel.providerInputNeeded ? 'Delivery postcode needed' : parcel.carrier === 'unknown' ? 'No tracking history yet' : 'Waiting for the carrier', tone: parcel.providerInputNeeded ? 'warn' : 'ok', syncing: false };
   }
 
   const meta = current ? stageMeta(current.stage) : null;
@@ -79,7 +79,7 @@ export function parcelDisplayStatusKey(parcel: ParcelWithEvents): MessageKey {
   }
   if (!hasCarrierUpdate && parcel.syncStatus === 'error') return 'status.failed';
   if (!hasCarrierUpdate && parcel.syncStatus === 'unsupported') return 'status.unsupported';
-  if (!hasCarrierUpdate && parcel.syncStatus === 'waiting') return 'status.unannounced';
+  if (!hasCarrierUpdate && parcel.syncStatus === 'waiting') return parcel.providerInputNeeded ? 'status.inputNeeded' : parcel.carrier === 'unknown' ? 'status.noHistory' : 'status.unannounced';
   return current ? (`stage.${current.stage}` as MessageKey) : 'status.unannounced';
 }
 

@@ -1456,7 +1456,7 @@ describe('ambiguous number shapes', () => {
     expect(detectCarrierMatch('1234567890')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['dhl', 'mondial-relay', 'relais-colis', 'tipsa', 'estafeta'],
+      candidates: ['dhl', 'mondial-relay', 'relais-colis', 'tipsa', 'estafeta', 'dhl-express'],
       preferred: [],
     });
   });

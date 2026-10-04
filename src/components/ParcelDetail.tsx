@@ -466,6 +466,12 @@ export function ParcelDetail({
           </span>
         </div>
         <AutoCarrierNotice parcel={parcel} className="detail__sender" />
+        {parcel.providerInputNeeded && !parcel.archivedAt && <div className="detail__input-needed" role="status">
+          <p>{t('detail.providerInputNeeded', { provider: parcel.providerInputNeeded.provider })}</p>
+          <button type="button" className="text-button" onClick={() => {
+            setCarrierSheetInitial(parcel.carrier); setEditingCarrier(true);
+          }}>{t('detail.inputNeededAction')}</button>
+        </div>}
         {inputNeeded && (
           <div className="detail__input-needed" role="status">
             <p>{t('detail.inputNeeded', { carrier: carrierInfo(inputNeeded.carrier, locale).name })}</p>
@@ -607,6 +613,7 @@ export function ParcelDetail({
       <div className="detail__sync">
         <div className="detail__freshness">
           <div className="detail__freshness-times">
+            {parcel.nextCheckAt && !parcel.archivedAt && <span>{t('detail.nextCheckAfter', { date: new Date(parcel.nextCheckAt).toLocaleString(languageTag) })}</span>}
             {lastChecked && <span>{t('detail.lastChecked', { date: lastChecked })}</span>}
             {lastUpdate && <span>{t('detail.lastUpdate', { date: lastUpdate })}</span>}
           </div>

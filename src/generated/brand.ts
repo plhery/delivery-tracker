@@ -7,6 +7,7 @@ export const DEFAULT_CARRIER_COLOR = "#8e8e93";
 export const CARRIER_FAMILIES: Record<string, string> = {
   "amazon-shipping": "amazon-logistics",
   "dhl-ecommerce": "dhl",
+  "dhl-express": "dhl",
   "dpd-fr": "dpd",
   "gls-ch": "gls",
   "gls-de": "gls",
@@ -59,6 +60,17 @@ export const CARRIER_PALETTES: Record<string, Partial<CarrierPalette>> = {
     "accent": "#d40511"
   },
   "dhl-ecommerce": {
+    "surface-light": "#f7e8aa",
+    "surface-dark": "#514727",
+    "ink-light": "#6c5419",
+    "ink-dark": "#ead695",
+    "brand-light": "#d40511",
+    "brand-dark": "#ffe274",
+    "truck": "#ffcc00",
+    "edge": "#b88d16",
+    "accent": "#d40511"
+  },
+  "dhl-express": {
     "surface-light": "#f7e8aa",
     "surface-dark": "#514727",
     "ink-light": "#6c5419",
@@ -176,6 +188,7 @@ export const CARRIER_DECALS: Record<string, CarrierDecal> = {
   "chronopost": "chronopost",
   "dhl": "dhl",
   "dhl-ecommerce": "dhl",
+  "dhl-express": "dhl",
   "dpd": "dpd",
   "dpd-fr": "dpd",
   "fedex": "fedex",

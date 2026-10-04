@@ -3849,6 +3849,37 @@
           "confidence": "high"
         }
       ]
+    },
+    "dhl-express": {
+      "displayName": "DHL Express",
+      "aliases": [
+        "DHL Express Worldwide",
+        "MyDHL+"
+      ],
+      "color": "#ffcc00",
+      "selectable": true,
+      "timezone": "UTC",
+      "tracking": {
+        "mode": "automatic",
+        "adapter": "dhl-express",
+        "recognitionRank": 75,
+        "browserRecognitionRank": 75
+      },
+      "trackingUrlTemplate": "https://mydhl.express.dhl/gb/en/tracking.html#/results?id={trackingNumber}",
+      "linkRules": [
+        {
+          "domains": [
+            "mydhl.express.dhl"
+          ],
+          "fragment": "^/results\\?id=(\\d{10})(?:&|$)"
+        }
+      ],
+      "detectionRules": [
+        {
+          "pattern": "^\\d{10}$",
+          "confidence": "low"
+        }
+      ]
     }
   }
 }

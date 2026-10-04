@@ -1008,5 +1008,12 @@
   "native.pasteLead": "Colle un numéro, un lien ou tout un e-mail.",
   "door.verification.title": "Une vérification rapide",
   "door.verification.body": "La vérification n’a pas abouti. Effectuez le contrôle s’il apparaît, puis réessayez. Votre numéro est toujours là.",
-  "native.verification.title": "Une petite vérification"
+  "native.verification.title": "Une petite vérification",
+  "add.checkingServices": "Vérification des services de suivi…",
+  "add.historyFound": "Historique trouvé. Nous confirmerons le transporteur après l’ajout.",
+  "add.providerInputNeeded": "Un service de suivi demande le code postal de livraison. Vous pourrez l’ajouter après l’enregistrement.",
+  "detail.providerInputNeeded": "{{provider}} demande le code postal de livraison pour suivre ce colis.",
+  "detail.nextCheckAfter": "Prochaine vérification après {{date}}",
+  "status.noHistory": "Aucun historique de suivi pour le moment",
+  "status.inputNeeded": "Code postal de livraison requis"
 }

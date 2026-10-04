@@ -208,7 +208,7 @@ extension Parcel {
             return ParcelDisplayStatus(key: "status.unsupported", tone: .warning, syncing: false)
         }
         if isUnannounced {
-            return ParcelDisplayStatus(key: "status.unannounced", tone: .normal, syncing: false)
+            return ParcelDisplayStatus(key: carrierData?.routing?.providerInputNeeded != nil ? "status.inputNeeded" : carrier == .unknown ? "status.noHistory" : "status.unannounced", tone: .normal, syncing: false)
         }
         guard let currentStage else {
             return ParcelDisplayStatus(key: "status.unannounced", tone: .normal, syncing: false)

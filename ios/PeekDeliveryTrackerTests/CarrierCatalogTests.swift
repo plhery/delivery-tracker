@@ -202,7 +202,7 @@ final class CarrierCatalogTests: XCTestCase {
         // The line names the carriers being asked while they answer.
         XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .asking([.glsCh, .glsDe, .postlogistics]))
         // A shape no carrier can be asked about is left to routing after saving.
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: []), .unasked)
+        XCTAssertEqual(recognition.status(for: number, applies: true, asked: []), .asking([]))
         XCTAssertNil(recognition.request(for: number, applies: false))
         XCTAssertEqual(recognition.status(for: number, applies: false, asked: asked), .idle)
         // Editing the number drops the request until it settles again.

@@ -221,6 +221,8 @@ const swiftInlineNames = {
   'AccountExportResponse.account': 'AccountExportAccount',
   'PackageRow.carrier_data': 'CarrierData',
   'PackageRow.carrier_data.routing': 'CarrierDataRouting',
+  'PackageRow.carrier_data.routing.provider_input_needed': 'ProviderInputNeeded',
+  'PackageRow.carrier_data.routing.provider_input_needed.field': 'ProviderInputNeededField',
   'PackageRow.carrier_data.routing.input_needed': 'CarrierInputNeeded',
   'PackageRow.carrier_data.routing.input_needed.field': 'CarrierInputNeededField',
   'NativePushDeviceRequest.environment': 'NativePushEnvironment',

@@ -1,3 +1,4 @@
+import { normalizeDeliveryPostcode } from 'universal-parcel-scraper';
 import { userErrorMessage } from '../lib/userMessages';
 import { useId, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
@@ -40,6 +41,10 @@ export function ChangeCarrierSheet({
   const [selectedCarrier, setSelectedCarrier] = useState<CarrierId>(initialCarrier);
   const [trackingUrl, setTrackingUrl] = useState(initialCarrier === parcel.carrier ? parcel.trackingUrl ?? '' : '');
   const [dpdPostcode, setDpdPostcode] = useState(initialCarrier === parcel.carrier ? parcel.dpdPostcode ?? '' : '');
+  const [providerPostcode, setProviderPostcode] = useState('');
+  const needsProviderPostcode = Boolean(parcel.providerInputNeeded && selectedCarrier === parcel.carrier);
+  let normalizedProviderPostcode: string | undefined;
+  if (needsProviderPostcode) { try { normalizedProviderPostcode = normalizeDeliveryPostcode(providerPostcode); } catch { /* The field stays invalid until complete. */ } }
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -63,7 +68,7 @@ export function ChangeCarrierSheet({
   const valueFor = (field: CarrierInputField) => field === 'trackingUrl'
     ? trackingUrl
     : dpdPostcode;
-  const requirementsSatisfied = requirements.every((requirement) =>
+  const requirementsSatisfied = (!needsProviderPostcode || Boolean(normalizedProviderPostcode)) && requirements.every((requirement) =>
     requirementSatisfied(requirement, valueFor(requirement.field)));
   const nextTrackingUrl = requirements.some(({ field }) => field === 'trackingUrl')
     ? trackingUrl.trim()
@@ -71,7 +76,7 @@ export function ChangeCarrierSheet({
   const nextPostcode = requirements.some(({ field }) => field === 'dpdPostcode')
     ? dpdPostcode.trim()
     : undefined;
-  const changed = selectedCarrier !== parcel.carrier
+  const changed = Boolean(normalizedProviderPostcode) || selectedCarrier !== parcel.carrier
     || (nextTrackingUrl ?? '') !== (parcel.trackingUrl ?? '')
     || (nextPostcode ?? '') !== (parcel.dpdPostcode ?? '');
 
@@ -90,6 +95,7 @@ export function ChangeCarrierSheet({
     try {
       await onChange({
         carrier: selectedCarrier,
+        providerPostcode: normalizedProviderPostcode,
         trackingUrl: nextTrackingUrl,
         dpdPostcode: nextPostcode,
       });
@@ -197,6 +203,13 @@ export function ChangeCarrierSheet({
               )}
             </label>
           ))}
+          {needsProviderPostcode && <label className="field">
+            <span className="field__label">{t('add.requirement.dpdPostcode')}</span>
+            <input className="field__input" value={providerPostcode} maxLength={12} required autoComplete="postal-code"
+              autoCapitalize="characters" autoCorrect="off" spellCheck={false}
+              onChange={(event) => setProviderPostcode(event.target.value)} />
+            <small className="field__help">{t('detail.providerInputNeeded', { provider: parcel.providerInputNeeded!.provider })}</small>
+          </label>}
           {error && <p className="sheet__error" role="alert">{error}</p>}
           <div className="sheet__actions">
             <button

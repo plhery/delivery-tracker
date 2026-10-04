@@ -1008,5 +1008,12 @@
   "native.pasteLead": "Wklej numer, link albo całego maila.",
   "door.verification.title": "Szybkie sprawdzenie przeglądarki",
   "door.verification.body": "Nie udało się zakończyć weryfikacji. Wykonaj sprawdzenie, jeśli się pojawi, i spróbuj ponownie. Twój numer nadal tu jest.",
-  "native.verification.title": "Krótka weryfikacja"
+  "native.verification.title": "Krótka weryfikacja",
+  "add.checkingServices": "Sprawdzanie usług śledzenia…",
+  "add.historyFound": "Znaleziono historię. Potwierdzimy przewoźnika po zapisaniu.",
+  "add.providerInputNeeded": "Usługa wymaga kodu pocztowego dostawy. Możesz go dodać po zapisaniu.",
+  "detail.providerInputNeeded": "{{provider}} wymaga kodu pocztowego dostawy, aby sprawdzić tę przesyłkę.",
+  "detail.nextCheckAfter": "Następne sprawdzenie po {{date}}",
+  "status.noHistory": "Brak historii śledzenia",
+  "status.inputNeeded": "Wymagany kod pocztowy dostawy"
 }

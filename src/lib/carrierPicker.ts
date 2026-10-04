@@ -191,9 +191,12 @@ export function carrierCheck({ applies, settled, asked, answer }: {
   if (!applies || !settled) return { status: 'idle' };
   if (answer?.carrier && answer.carrier !== 'unknown' && answer.carrier !== 'intl-post') return { status: 'found', carrier: answer.carrier };
   if (answer?.recognized && answer.recognized.length > 1) return { status: 'several', carriers: answer.recognized };
-  if (asked.length === 0) return { status: 'unasked' };
   if (!answer) return { status: 'asking', asked };
   const answered = answer.asked ?? [];
+  if (answer.providers?.length) {
+    if (answer.trackingFound || answer.providers.some(({ outcome }) => outcome === 'input_required' || outcome === 'no_history')) return { status: 'none', asked: answered };
+    return { status: 'failed', asked: answered };
+  }
   if (answered.length === 0) return { status: 'unasked' };
   if ((answer.unanswered?.length ?? 0) >= answered.length) return { status: 'failed', asked: answered };
   return { status: 'none', asked: answered };

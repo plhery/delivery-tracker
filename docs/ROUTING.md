@@ -8,6 +8,29 @@ The **carrier** (what the user sees) and the **source** (who answered) are separ
 FedEx parcel can be served by the FedEx adapter or, as a fallback, by a universal
 provider.
 
+## Add preflight
+
+Both detection endpoints ask the shape-matching carriers first. If none confirms the
+number, Ship24 and ParcelsApp share a short lookup budget before browser confirmation.
+They run only after the request allowance is granted. A successful universal answer
+returns immediately; direct confirmation continues after saving. Their outcomes distinguish missing
+history, recipient input, cooldowns and service failures. Universal history proves that
+tracking is available; a direct carrier still confirms its identity. The Add button stays
+available while the check runs, and the saved parcel continues the full lookup chain.
+
+Concurrent anonymous checks share work until their last caller cancels. A process-wide
+cache lets the first sync consume a fresh, number-bound history before acquiring another
+provider lease. This first result can be saved without waiting for speculative carrier
+confirmation; later checks retain the usual confirmation policy. Credentialed lookups bypass it. Browser confirmation keeps the same reuse
+policy. These caches are transient; persisted routing remains the source of retry times.
+
+An explicit universal postcode requirement is retained separately from carrier inputs.
+The owner supplies it through the carrier editor. It is bound to the current number,
+kept private, and ignored for a different tracking number. Updating it invalidates an older
+sync and clears the provider's parcel-level backoff. Missing recipient input does not
+open the shared provider circuit. Another source with progress clears the prompt.
+Clients show the earliest next-check eligibility; polling windows can delay the actual run.
+
 ## Source order
 
 1. **The carrier's own adapter**, when it has one. Cainiao (`aliexpress`) is an aggregator
@@ -190,8 +213,8 @@ comes from the scraper's catalog, and the Add sheets show the possible candidate
   before saving; for a carrier picked by hand it only points out the one that has the
   parcel. Several answers ask the user to choose. Automatic detection stays a valid
   choice throughout, and the check never holds the Add button.
-  Detection asks dedicated carriers only. Universal providers run after a parcel lookup
-  or save queues its first sync. A pasted number continues into that lookup when recognition
+  When dedicated carriers cannot confirm the number, preflight also asks the fast universal
+  providers. Saving continues the full provider chain. A pasted number continues into that lookup when recognition
   finds no carrier or cannot answer, so the universals can retrieve its history. A typed
   number waits for Track. Multiple carrier matches and missing inputs still require a choice.
 - **In routing.** When the filed carrier cannot track the number (no adapter of its own,

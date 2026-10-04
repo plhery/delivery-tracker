@@ -1008,5 +1008,12 @@
   "native.pasteLead": "Pega un número, un enlace o un correo entero.",
   "door.verification.title": "Una rápida comprobación",
   "door.verification.body": "No se pudo completar la verificación. Completa la comprobación si aparece e inténtalo de nuevo. Tu número sigue aquí.",
-  "native.verification.title": "Una comprobación rápida"
+  "native.verification.title": "Una comprobación rápida",
+  "add.checkingServices": "Comprobando servicios de seguimiento…",
+  "add.historyFound": "Historial encontrado. Confirmaremos el transportista después de guardar.",
+  "add.providerInputNeeded": "Un servicio necesita el código postal de entrega. Puedes añadirlo después de guardar.",
+  "detail.providerInputNeeded": "{{provider}} necesita el código postal de entrega para consultar este paquete.",
+  "detail.nextCheckAfter": "Próxima comprobación después de {{date}}",
+  "status.noHistory": "Todavía no hay historial de seguimiento",
+  "status.inputNeeded": "Se necesita el código postal de entrega"
 }

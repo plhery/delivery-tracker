@@ -3850,6 +3850,37 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       }
     ]
+  },
+  "dhl-express": {
+    "displayName": "DHL Express",
+    "aliases": [
+      "DHL Express Worldwide",
+      "MyDHL+"
+    ],
+    "color": "#ffcc00",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "dhl-express",
+      "recognitionRank": 75,
+      "browserRecognitionRank": 75
+    },
+    "trackingUrlTemplate": "https://mydhl.express.dhl/gb/en/tracking.html#/results?id={trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "mydhl.express.dhl"
+        ],
+        "fragment": "^/results\\?id=(\\d{10})(?:&|$)"
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{10}$",
+        "confidence": "low"
+      }
+    ]
   }
 } as const;
 
@@ -3864,6 +3895,8 @@ export interface ApiCarrierDetectionResponse {
   "recognized"?: Array<ApiCarrierId>;
   "asked"?: Array<ApiCarrierId>;
   "unanswered"?: Array<ApiCarrierId>;
+  "providers"?: Array<ApiTrackingProviderCheck>;
+  "trackingFound"?: boolean;
 }
 
 export interface ApiAccountExportResponse {
@@ -3988,7 +4021,8 @@ export const CARRIER_IDS = [
   "intl-post",
   "unknown",
   "ems",
-  "omgo"
+  "omgo",
+  "dhl-express"
 ] as const;
 export type ApiCarrierId = (typeof CARRIER_IDS)[number];
 
@@ -4075,6 +4109,11 @@ export interface ApiPackageRow {
   "carrier": ApiCarrierId;
   "field": "dpdPostcode" | "trackingUrl";
 };
+  "provider_input_needed"?: {
+  "provider": string;
+  "field": "dpdPostcode";
+};
+  "next_check_at"?: string;
 };
 };
   "archived_at": string | null;
@@ -4108,6 +4147,7 @@ export interface ApiChangePackageCarrierRequest {
   "carrier": ApiCarrierId;
   "trackingUrl"?: string;
   "dpdPostcode"?: string;
+  "providerPostcode"?: string;
 }
 
 export interface ApiChangePackageCarrierResponse {
@@ -4502,4 +4542,11 @@ export interface ApiGiftWords {
   "name": string | null;
   "note": string | null;
   "from": string | null;
+}
+
+export type ApiTrackingProviderCheckOutcome = "history" | "no_history" | "input_required" | "unavailable" | "deferred";
+
+export interface ApiTrackingProviderCheck {
+  "provider": string;
+  "outcome": ApiTrackingProviderCheckOutcome;
 }
