@@ -256,7 +256,7 @@ export function AddParcelSheet({
   // The picker leads with the carriers that fit the number, then the ones used before.
   const pickerSections = carrierChoiceSections({ detection: parsedTracking, check, used: usedCarriers, t });
   const pickerTags = carrierChoiceTags(check, t);
-  const autoDescription = preflightDetail ?? (check.status === 'asking' ? t('add.recognizing')
+  const autoDescription = preflightDetail ?? (check.status === 'asking' ? t('add.checkingServices')
     : check.status === 'found' ? t('add.recognized', { carrier: carrierInfo(check.carrier, locale).name })
       : check.status === 'several' ? t('picker.auto.several', { carriers: carrierNames(check.carriers) })
         : check.status === 'none' ? t('picker.auto.none', { carriers: carrierNames(check.asked) })

@@ -290,7 +290,7 @@ export function FrontDoor({ onTracked, onSample, onSignIn, covered = false }: {
     {picking && found.match && <CarrierPickerSheet
       selected={state.carrier}
       auto={{
-        description: found.check.status === 'asking' ? t('add.recognizing')
+        description: found.check.status === 'asking' ? t('add.checkingServices')
           : found.check.status === 'found' ? t('add.recognized', { carrier: carrierInfo(found.check.carrier, locale).name })
             : shapeCarrier(found.match) ? t('picker.auto.detected', { carrier: carrierInfo(found.match.carrier, locale).name })
               : t('door.picker.auto'),

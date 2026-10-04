@@ -4,7 +4,6 @@ import { Icon } from '../../components/Icon';
 import { useI18n, type MessageKey } from '../../i18n';
 import { amazonOrdersUrl } from '../../lib/amazon';
 import { carrierBrand } from '../../lib/carrierBrand';
-import { carrierNameList } from '../../lib/carrierPicker';
 import { carrierInfo, carrierTrackingHintKey, formatTrackingNumber, tracksAutomatically } from '../../lib/carriers';
 import type { CarrierId } from '../../types';
 import { usePeekSession } from '../session';
@@ -16,9 +15,6 @@ import type { Lookup } from './useLookup';
 const SHAPES: readonly (readonly [CarrierId, MessageKey])[] = [
   ['ups', 'door.shapes.ups'], ['dhl', 'door.shapes.dhl'], ['swiss-post', 'door.shapes.swissPost'], ['dpd', 'door.shapes.dpd'],
 ];
-
-/** The line names this many of the carriers being asked; the ellipsis stands for the rest. */
-const ASKED_NAMED = 3;
 
 /** A sentence around the value it names, so the value can be set in its own type. */
 function around(sentence: (value: string) => string): [string, string] {
@@ -41,7 +37,7 @@ export function LookupFeedback({ lookup, pointer, onSignIn, onPickCarrier, onSug
   /** Takes the suggested number instead of the typed one. */
   onSuggestion: (number: string) => void;
 }) {
-  const { t, locale, languageTag } = useI18n();
+  const { t, locale } = useI18n();
   const { account, openDeliveries } = usePeekSession();
   // Someone signed in is not asked to sign in: what an account is for is in their deliveries.
   const mine = account === 'signed-in' && openDeliveries;
@@ -63,7 +59,7 @@ export function LookupFeedback({ lookup, pointer, onSignIn, onPickCarrier, onSug
     const said: { mark: ReactNode; strong: string; detail: string; attention?: boolean } | null =
       found.source === 'device' ? { mark: truck, strong: carrier.name, detail: t('door.line.onDevice') }
         : found.amazon ? { mark: truck, strong: carrier.name, detail: t('add.detectedCarrier') }
-          : check.status === 'asking' ? { mark: detect(true), strong: t('door.line.finding'), detail: t('add.line.asking', { carriers: carrierNameList(check.asked.slice(0, ASKED_NAMED), locale, languageTag) }) }
+          : check.status === 'asking' ? { mark: detect(true), strong: t('add.checkingServices'), detail: '' }
             : check.status === 'several' ? { mark: detect(), strong: t('door.line.several.many', { count: check.carriers.length }), detail: t('door.line.chooseYours'), attention: true }
               : found.source !== 'none' ? { mark: truck, strong: carrier.name, detail: t(found.source === 'chosen' ? 'add.line.chosen' : found.source === 'found' ? 'add.line.found' : 'add.detectedCarrier') }
                 : rested ? { mark: detect(), strong: t('add.carrier'), detail: t(check.status === 'none' ? 'add.line.none' : 'door.line.later') }

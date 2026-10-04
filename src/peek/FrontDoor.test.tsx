@@ -159,7 +159,7 @@ describe('FrontDoor', () => {
     const line = document.querySelector('.door-line')!;
     expect(line).toHaveAttribute('aria-live', 'polite');
     expect(line).toHaveAttribute('aria-busy', 'true');
-    expect(line).toHaveTextContent('Finding the carrier asking DPD, SEUR and BRT…');
+    expect(line).toHaveTextContent('Checking tracking services…');
     expect(screen.getByText(SHARED, { selector: 'strong' })).toBeVisible();
     expect(mocks.lookup).not.toHaveBeenCalled();
     await act(async () => { answer({ trackingNumber: SHARED, carrier: 'seur', asked: ['dpd', 'seur'] }); });
