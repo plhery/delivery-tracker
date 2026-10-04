@@ -8,7 +8,7 @@ import { normalizeCarrierResult, type CarrierResult } from 'universal-parcel-scr
 import { isRecord, type JsonObject } from './types';
 import { priorityUniversalSource, universalPlan, universalSourceBudget } from 'universal-parcel-scraper';
 import type { UniversalSource } from 'universal-parcel-scraper';
-import { isKnownCarrierName } from 'universal-parcel-scraper/app';
+import { isCarrierFeedName, isKnownCarrierName } from 'universal-parcel-scraper/app';
 import { brandCarrierIds, carrierBrand, carrierIdFromName } from 'universal-parcel-scraper/app';
 import { errorType, reportRoutingEvent } from './observability';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from 'universal-parcel-scraper';
@@ -566,8 +566,9 @@ export class TrackingRouter {
         const seen = Array.isArray(state.reported_carriers_seen) ? state.reported_carriers_seen : [];
         for (const name of value.result.reported_carriers) {
           // A catalog carrier is no discovery, even as one leg of a handoff or with a country.
+          // Nor is the postal union's feed, which names no carrier.
           if (typeof name === 'string' && !value.result.discovered_carrier && !seen.includes(name)
-            && !isKnownCarrierName(name)) report('carrier_coverage_discovered', name);
+            && !isKnownCarrierName(name) && !isCarrierFeedName(name)) report('carrier_coverage_discovered', name);
         }
         state.reported_carriers_seen = [...new Set([...seen, ...value.result.reported_carriers])].slice(-20);
       }

@@ -273,5 +273,6 @@ parcel.
 | `provider_recovered` | Recovery signal (doesn't auto-resolve issues) |
 
 `carrier_coverage_discovered` fires once per parcel, only for names that are neither a
-catalog name/alias nor a known network of DHL, DPD, GLS or Hermes. Timings and metrics are
-in [OBSERVABILITY.md](OBSERVABILITY.md).
+catalog name/alias nor a known network of DHL, DPD, GLS or Hermes. The postal union's feed,
+which an aggregator lists as "UPU" beside a parcel's carriers, is not reported either.
+Timings and metrics are in [OBSERVABILITY.md](OBSERVABILITY.md).

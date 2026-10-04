@@ -612,7 +612,7 @@ describe('persistent tracking routing', () => {
   });
   it('reports only carrier names the catalog does not know, once per parcel', async () => {
     const { router, universal } = setup();
-    const reported = ['La Poste', 'Posti', 'Chronopost Portugal', 'DHL Express', 'Example Parcel Co'];
+    const reported = ['La Poste', 'Posti', 'Finland Post', 'UPU', 'Universal Postal Union', 'Chronopost Portugal', 'DHL Express', 'Example Parcel Co'];
     universal.mockResolvedValue({ ...history(), reported_carriers: reported });
     const coverage = () => vi.mocked(monitoring.reportRoutingEvent).mock.calls
       .filter(([code]) => code === 'carrier_coverage_discovered').map(([, context]) => context.provider);
@@ -653,6 +653,7 @@ describe('persistent tracking routing', () => {
   it.each([
     ['a name for the filed carrier', { carrier: 'yamato' }, ['Yamato Transport'], '2026-01-09T13:19:00Z'],
     ['a name the catalog does not know', { carrier: 'yamato' }, ['Example Parcel Co'], '2026-01-09T13:19:00Z'],
+    ["only the postal union's feed", { carrier: 'yamato' }, ['UPU'], '2026-01-09T13:19:00Z'],
     ['no filed carrier', { carrier: 'unknown' }, ['FedEx'], '2026-01-09T13:19:00Z'],
     ['a recent history', { carrier: 'yamato' }, ['FedEx'], '2026-08-20T10:00:00Z'],
   ])('keeps a universal history with %s', async (_label, filed, reported, stamp) => {
