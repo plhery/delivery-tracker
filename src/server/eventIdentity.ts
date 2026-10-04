@@ -60,9 +60,9 @@ function byInstant(rows: readonly JsonObject[]): Map<number, JsonObject[]> {
  * Only a scan from `sourceCarrierId` whose own identity is not stored yet is
  * considered. It takes over a stored row at the exact same instant whose
  * identity has an allowed prefix and is not carried by any event of this
- * batch, and only when that row is the only such candidate and the scan is
- * the only such new scan at the instant. Anything else is ambiguous: nothing
- * is reused and the scan is inserted as before.
+ * batch. The scan and stored row must match uniquely in both directions.
+ * Sources without an evidence-based opt-in still require exactly one new
+ * scan and one candidate at the instant. Ambiguous scans are inserted as before.
  */
 export function sameInstantIdentities(
   events: readonly JsonObject[],
@@ -83,12 +83,19 @@ export function sameInstantIdentities(
   )));
   for (const [instant, scans] of unmatched) {
     const rows = candidates.get(instant) ?? [];
-    if (scans.length !== 1 || rows.length !== 1) continue;
-    // A source with changing labels must still agree on its scan kind.
-    const code = providerCode(scans[0]!);
-    if (policy.requireProviderCode && (!code || code.toLowerCase() === 'unknown' || code !== providerCode(rows[0]!))) continue;
-    if (policy.matches && !policy.matches(scanEvidence(scans[0]!), scanEvidence(rows[0]!))) continue;
-    reused.set(identity(scans[0]!), identity(rows[0]!));
+    if ((!policy.matchEachScan || !policy.matches) && (scans.length !== 1 || rows.length !== 1)) continue;
+    const matches = (scan: JsonObject, row: JsonObject) => {
+      const code = providerCode(scan);
+      if (policy.requireProviderCode && (!code || code.toLowerCase() === 'unknown' || code !== providerCode(row))) return false;
+      return !policy.matches || policy.matches(scanEvidence(scan), scanEvidence(row));
+    };
+    for (const scan of scans) {
+      const matching = rows.filter((row) => matches(scan, row));
+      if (matching.length !== 1) continue;
+      const saved = matching[0]!;
+      if (scans.filter((other) => matches(other, saved)).length !== 1) continue;
+      reused.set(identity(scan), identity(saved));
+    }
   }
   return reused;
 }

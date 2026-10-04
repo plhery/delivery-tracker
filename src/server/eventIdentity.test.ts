@@ -13,6 +13,33 @@ const row = (id: string, occurredAt: string, description?: string, stage?: strin
 const pairs = (map: ReadonlyMap<string, string>) => [...map].sort(([left], [right]) => left.localeCompare(right));
 
 describe('same-instant identity reuse', () => {
+  it.each(['unknown', 'swiss-post'])('enriches distinct %s scans sharing an instant without duplicating their identities', (source) => {
+    const at = '2026-07-11T18:05:00Z';
+    const saved = ['Arrived at sorting centre', 'Departed sorting centre'].map((description, i) => ({
+      ...row(`${source}:old-${i}`, at, description, 'in_transit'), location: null,
+      raw_data: { provider_code: `SCAN-${i}` },
+    }));
+    const incoming = saved.map((item, i) => ({
+      ...item, provider_event_id: `${source}:located-${i}`, location: 'Example City, France',
+    }));
+    const expected = incoming.map((item, i) => [item.provider_event_id, saved[i]!.provider_event_id]);
+    expect([...sameInstantIdentities(incoming, saved, source)]).toEqual(expected);
+    expect([...sameInstantIdentities(incoming, saved.map((item) => ({ ...item, location: 'Example City, France' })), source)])
+      .toEqual(expected);
+    expect(sameInstantIdentities([incoming[0]!], [saved[0]!, { ...saved[0]!, provider_event_id: `${source}:duplicate` }], source).size)
+      .toBe(0);
+    expect(sameInstantIdentities([incoming[0]!, { ...incoming[0]!, provider_event_id: `${source}:duplicate` }], [saved[0]!], source).size)
+      .toBe(0);
+    for (const different of [
+      { ...saved[0]!, stage: 'out_for_delivery' },
+      { ...saved[0]!, location: 'Another City, France' },
+      { ...saved[0]!, observed_without_provider_timestamp: true },
+    ]) expect(sameInstantIdentities([incoming[0]!], [different], source).size).toBe(0);
+    if (source === 'swiss-post') {
+      expect(sameInstantIdentities([incoming[0]!], [{ ...saved[0]!, raw_data: { provider_code: 'OTHER' } }], source).size).toBe(0);
+    }
+  });
+
   it('updates a UPS scan when its location is filled in', () => {
     const at = '2026-07-11T18:05:00Z';
     const saved = { ...row('ups:without-location', at, 'Package collected', 'accepted'), location: null };
