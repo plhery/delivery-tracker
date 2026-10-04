@@ -56,17 +56,18 @@ export async function parcelLinkMetadata(linkId: unknown): Promise<Metadata> {
 /**
  * The sample page's metadata, in the request's language: a parcel's picture
  * with the note that nothing in it is real. The sample is nobody's parcel, so
- * the page is indexed like the landing. A client over its allowance gets
- * Peek's own preview.
+ * its links may be followed, but a made-up parcel the browser draws is not a
+ * page to find in a search. A client over its allowance gets Peek's own preview.
  */
 export async function sampleLinkMetadata(): Promise<Metadata> {
+  const robots = { index: false, follow: true };
   const locale = await requestLocale();
   const preview = await parcelLinkPreview(SAMPLE_LINK_ID, await headers(), locale);
-  if (!preview) return {};
+  if (!preview) return { robots };
   const origin = await requestOrigin();
   const url = new URL(SAMPLE_PATH, origin);
   const image = new URL(`/api/public/parcels/${SAMPLE_LINK_ID}/image`, origin);
   image.searchParams.set('lang', locale);
   const { title, description } = preview;
-  return { metadataBase: origin, title, description, alternates: { canonical: url.href }, ...shared(url, image, title, description) };
+  return { metadataBase: origin, title, description, robots, alternates: { canonical: url.href }, ...shared(url, image, title, description) };
 }

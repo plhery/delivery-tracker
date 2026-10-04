@@ -1,6 +1,6 @@
 import 'server-only';
 import { headers } from 'next/headers';
-import { movedOrigin, requestHost } from './siteHosts';
+import { canonicalOrigin, movedOrigin, requestHost } from './siteHosts';
 
 export async function requestOrigin(): Promise<URL> {
   const requestHeaders = await headers();
@@ -34,6 +34,17 @@ export async function requestOrigin(): Promise<URL> {
   } catch {
     return new URL('http://localhost');
   }
+}
+
+/**
+ * The origin the site's addresses are written on for search engines: the
+ * canonical origin when one is configured, else the origin of the request.
+ */
+export async function siteOrigin(): Promise<URL> {
+  // Read from the request every time, so the answer is never a build's.
+  const requested = await requestOrigin();
+  const canonical = canonicalOrigin();
+  return canonical ? new URL(canonical) : requested;
 }
 
 /**

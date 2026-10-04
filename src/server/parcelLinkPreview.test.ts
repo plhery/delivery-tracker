@@ -243,7 +243,7 @@ describe('the parcel page’s metadata', () => {
 });
 
 describe('the sample page’s metadata', () => {
-  it('previews a parcel noted as made up, in the request’s language and open to search engines', async () => {
+  it('previews a parcel noted as made up, in the request’s language, and stays out of search results', async () => {
     request.headers.set('accept-language', 'fr-CH,fr;q=0.9');
     request.headers.set('x-real-ip', '198.51.100.34');
     const metadata = await sampleMetadata();
@@ -259,14 +259,15 @@ describe('the sample page’s metadata', () => {
       },
       twitter: { card: 'summary_large_image', images: [{ url: picture }] },
     });
-    expect(metadata.robots).toBeUndefined();
+    // A made-up parcel is not a page to find, but its links may be followed and it leaves as a referrer.
+    expect(metadata.robots).toEqual({ index: false, follow: true });
     expect(metadata.referrer).toBeUndefined();
   });
 
   it('leaves a client over its allowance Peek’s own preview', async () => {
     request.headers.set('x-real-ip', '198.51.100.35');
     for (let count = 0; count < 60; count += 1) expect(await sampleMetadata()).toHaveProperty('openGraph');
-    expect(await sampleMetadata()).toEqual({});
+    expect(await sampleMetadata()).toEqual({ robots: { index: false, follow: true } });
   });
 });
 

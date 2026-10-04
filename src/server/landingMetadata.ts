@@ -1,8 +1,7 @@
 import 'server-only';
 import type { Metadata } from 'next';
-import type { Locale } from '../lib/locale';
 import { requestLocale } from './requestLocale';
-import { requestOrigin } from './requestOrigin';
+import { requestOrigin, siteOrigin } from './requestOrigin';
 import { landingTitle, PREVIEW_LOCALES, sitePicture, wordsIn } from './sitePreview';
 
 /**
@@ -12,6 +11,8 @@ import { landingTitle, PREVIEW_LOCALES, sitePicture, wordsIn } from './sitePrevi
  */
 export async function landingMetadata(): Promise<Metadata> {
   const origin = await requestOrigin();
+  // The page's address is named on the site's canonical origin, whichever host answered.
+  const address = (await siteOrigin()).href;
   const locale = await requestLocale();
   const t = wordsIn(locale);
   const title = landingTitle(t);
@@ -21,10 +22,10 @@ export async function landingMetadata(): Promise<Metadata> {
     metadataBase: origin,
     title,
     description,
-    alternates: { canonical: origin.href },
+    alternates: { canonical: address },
     openGraph: {
       type: 'website',
-      url: origin.href,
+      url: address,
       siteName: 'Peek',
       locale: PREVIEW_LOCALES[locale],
       title,
@@ -38,21 +39,4 @@ export async function landingMetadata(): Promise<Metadata> {
       images: [picture.url],
     },
   };
-}
-
-/** What Peek is, for a search engine: a web application at this address, described as the page describes it. */
-export function landingStructuredData(origin: URL, locale: Locale): string {
-  const t = wordsIn(locale);
-  return JSON.stringify({
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: t('app.title'),
-    alternateName: `${t('app.title')} — ${t('app.tagline')}`,
-    url: origin.href,
-    description: t('preview.landing.description'),
-    applicationCategory: 'UtilitiesApplication',
-    operatingSystem: 'Web, iOS',
-    inLanguage: locale,
-    isAccessibleForFree: true,
-  }).replaceAll('<', '\\u003c');
 }

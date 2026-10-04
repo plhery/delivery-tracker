@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { proxy } from '../../proxy';
-import { legacyHostRedirect, movedOrigin, requestHost, siteHosts } from './siteHosts';
+import { canonicalOrigin, legacyHostRedirect, movedOrigin, requestHost, siteHosts } from './siteHosts';
 
 const moved = { CANONICAL_ORIGIN: 'https://peek.example.test', LEGACY_HOSTS: 'delivery.example.test, old.example.test' } as unknown as NodeJS.ProcessEnv;
 const env = (values: Record<string, string>) => values as unknown as NodeJS.ProcessEnv;
@@ -28,6 +28,13 @@ describe('siteHosts', () => {
     expect(siteHosts(env({ CANONICAL_ORIGIN: 'https://peek.example.test/', LEGACY_HOSTS: 'Delivery.Example.Test,delivery.example.test' })))
       .toEqual({ canonicalOrigin: 'https://peek.example.test', legacyHosts: ['delivery.example.test'] });
     expect(siteHosts(env({ CANONICAL_ORIGIN: 'https://peek.example.test' }))?.legacyHosts).toEqual([]);
+  });
+
+  it('names the canonical origin for the addresses the site writes, and none when unset or malformed', () => {
+    expect(canonicalOrigin(moved)).toBe('https://peek.example.test');
+    expect(canonicalOrigin(env({ CANONICAL_ORIGIN: 'https://peek.example.test/' }))).toBe('https://peek.example.test');
+    expect(canonicalOrigin(env({}))).toBeNull();
+    expect(canonicalOrigin(env({ CANONICAL_ORIGIN: 'peek.example.test' }))).toBeNull();
   });
 
   it.each([
@@ -87,7 +94,7 @@ describe('legacyHostRedirect', () => {
     '/api/packages', '/api/public/parcels/k7Qm2xW9bTfR', '/api/friends/invite-image?preview=abc', '/api',
     '/health', '/health/live',
     '/_next/static/chunks/main-app-0123.js', '/_next/image?url=%2Fog.png', '/icons/icon-192.png', '/fonts/gelasio/regular.woff2',
-    '/favicon.ico', '/privacy.css', '/theme.css',
+    '/favicon.ico', '/robots.txt', '/sitemap.xml', '/privacy.css', '/theme.css',
     '/sw.js', '/push-sw.js', '/manifest.webmanifest',
     '/.well-known/apple-app-site-association', '/.well-known/assetlinks.json',
     '/auth-emails/magic-link.html', '/og.png', '/og.png?v=73229339', '/og.svg',

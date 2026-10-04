@@ -197,6 +197,14 @@ sight for a browser that holds a sign-in. The map and the sample parcels of the 
 load when their sections come near; a visitor with parcels on the device gets the map at
 once, for the routes on their cards.
 
+For search engines, `/robots.txt` lets everything be fetched and `/sitemap.xml` lists the
+pages meant to be found: the landing and the privacy notice. The landing's HTML carries
+its title, description and canonical address, and a schema.org description of the site and
+the app ([`landingStructuredData.ts`](../src/server/landingStructuredData.ts)). Parcel
+links, invitations and `/email/off` answer `noindex` in a header; the demo, the sample and
+the offline page say it in the page, and let their links be followed. These addresses are
+written on `CANONICAL_ORIGIN` when it is set ([DEPLOYMENT.md](DEPLOYMENT.md)).
+
 ## Data lifecycle
 
 - **Adding a parcel** writes it through the user's RLS client and queues a job with the

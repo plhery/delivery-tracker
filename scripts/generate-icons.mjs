@@ -46,6 +46,29 @@ const render = (svg, width, options = {}) => new Resvg(svg, { fitTo: { mode: 'wi
 /** Icons the system masks have no transparency at all: the App Store rejects an alpha channel. */
 const opaque = (png) => sharp(png).flatten({ background: tile.fill }).removeAlpha().png().toBuffer();
 
+/**
+ * An ICO file holding one PNG per size: what a browser, a feed reader or a crawler gets when
+ * it asks for `/favicon.ico` without reading the page. Browsers that read the page use the SVG.
+ */
+function ico(sizes) {
+  const images = sizes.map((size) => ({ size, png: render(markSvg(), size) }));
+  const header = Buffer.alloc(6 + 16 * images.length);
+  header.writeUInt16LE(1, 2); // An icon, not a cursor.
+  header.writeUInt16LE(images.length, 4);
+  let offset = header.length;
+  images.forEach(({ size, png }, index) => {
+    const entry = 6 + 16 * index;
+    header.writeUInt8(size, entry);
+    header.writeUInt8(size, entry + 1);
+    header.writeUInt16LE(1, entry + 4); // Colour planes.
+    header.writeUInt16LE(32, entry + 6); // Bits per pixel.
+    header.writeUInt32LE(png.length, entry + 8);
+    header.writeUInt32LE(offset, entry + 12);
+    offset += png.length;
+  });
+  return Buffer.concat([header, ...images.map(({ png }) => png)]);
+}
+
 async function write(file, contents) {
   writeFileSync(join(root, file), await contents);
   console.log(`wrote ${file}`);
@@ -53,6 +76,7 @@ async function write(file, contents) {
 
 await write('public/icons/icon.svg', markSvg());
 await write('public/icons/favicon.svg', markSvg());
+await write('public/favicon.ico', ico([16, 32, 48]));
 await write('public/icons/icon-192.png', render(markSvg(), 192));
 await write('public/icons/icon-512.png', render(markSvg(), 512));
 await write('public/icons/icon-maskable-512.png', opaque(render(markSvg({ bleed: true, scale: maskableScale }), 512)));

@@ -167,6 +167,8 @@ malformed value stops the server at startup.
   service workers, the manifest, `/.well-known`, `/auth-emails` and `/og.png`. Installed
   iPhone apps and open sessions keep calling the old host with their token, which a
   redirect to another host would drop.
+- `/robots.txt` and `/sitemap.xml` answer on every host too, and name the canonical origin:
+  a crawler of the old host is let in, follows the redirects, and finds the new addresses.
 - A browser that already has the old host's service worker gets the app from it, without
   asking the server. A tab then continues at the same address on the canonical origin. An
   installed web app stays on the old host and keeps working there, with its session and
