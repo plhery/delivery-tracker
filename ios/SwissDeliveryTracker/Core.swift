@@ -53,6 +53,14 @@ struct AppConfiguration: Sendable {
         apiBaseURL.appending(path: "privacy.html")
     }
 
+    /// The site's landing at its own address, which shows it to someone signed in there too.
+    var homePageURL: URL {
+        apiBaseURL.appending(path: "home")
+    }
+
+    /// Where Peek's code is published.
+    static let sourceURL = URL(string: "https://github.com/plhery/delivery-tracker")!
+
     private static func value(_ key: String) -> String {
         guard let raw = Bundle.main.object(forInfoDictionaryKey: key) as? String else { return "" }
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -370,6 +370,7 @@ struct AccountView: View {
     @State private var confirmingDemoReset = false
     @State private var confirmation = ""
     @State private var errorMessage: String?
+    @State private var showingHomePage = false
 
     var body: some View {
         NavigationStack {
@@ -420,6 +421,13 @@ struct AccountView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("settings.accountData")
+                        settingsDivider
+                        // The site's landing, which the app itself never shows.
+                        Button { showingHomePage = true } label: {
+                            SettingsRow(title: localizer.text("app.homePage"), value: session.configuration.homePageURL.host(), chevron: true)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.homePage")
                     }
                 }
                 .padding(24)
@@ -429,6 +437,9 @@ struct AccountView: View {
             .background(Brand.background)
             .navigationTitle(localizer.text("settings.title"))
             .navigationBarTitleDisplayMode(.large)
+            .sheet(isPresented: $showingHomePage) {
+                SafariPage(url: session.configuration.homePageURL).ignoresSafeArea()
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(localizer.text("common.close")) { dismiss() }.disabled(working)
@@ -576,8 +587,14 @@ private struct ActivityShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
+/// A web page a list or a row leads to, shown in a sheet.
+struct SitePage: Identifiable {
+    let url: URL
+    var id: URL { url }
+}
+
 /// A page of the site, read without leaving the app. It opens web addresses only.
-private struct SafariPage: UIViewControllerRepresentable {
+struct SafariPage: UIViewControllerRepresentable {
     let url: URL
     func makeUIViewController(context: Context) -> SFSafariViewController {
         let controller = SFSafariViewController(url: url)

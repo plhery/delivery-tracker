@@ -30,6 +30,16 @@ final class AppRoutingTests: XCTestCase {
         XCTAssertNil(defaults.object(forKey: preference))
     }
 
+    func testTheFootOpensTheSitesLandingAtItsOwnAddressBesideThePrivacyNoticeAndTheCode() {
+        let configuration = AppConfiguration(mode: .demo, apiBaseURL: URL(string: "https://peektracker.com")!, supabaseURL: nil, supabasePublishableKey: "",
+                                             googleAuthEnabled: false, appleAuthEnabled: false, emailOTPEnabled: true, appGroupIdentifier: "routing.test")
+        // `/` shows someone signed in on the web their deliveries; the landing has an address of its own.
+        XCTAssertEqual(configuration.homePageURL.absoluteString, "https://peektracker.com/home")
+        XCTAssertEqual(configuration.privacyURL.absoluteString, "https://peektracker.com/privacy.html")
+        XCTAssertEqual(AppConfiguration.sourceURL.scheme, "https")
+        XCTAssertEqual(AppConfiguration.sourceURL.host(), "github.com")
+    }
+
     func testInvitationLinksKeepTheTokenOutOfHTTPPathsAndQueries() {
         let code = String(repeating: "a", count: 32)
         let base = URL(string: "https://peektracker.com")!

@@ -68,6 +68,55 @@ struct DemoModeBar: View {
     }
 }
 
+/// The foot of the deliveries: the name, then the site's landing, its privacy notice and
+/// the code. Each opens as a page of the site, read without leaving the app.
+struct DeliveriesFoot: View {
+    let configuration: AppConfiguration
+    let open: (URL) -> Void
+
+    @EnvironmentObject private var localizer: Localizer
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                PeekMark(size: 18)
+                Text(verbatim: "\(localizer.text("app.title")) · \(localizer.text("app.tagline"))")
+                    .multilineTextAlignment(.center)
+            }
+            .frame(minHeight: 44)
+            .accessibilityElement(children: .combine)
+            // Side by side where they fit, one under the other in a large text size.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 22) { links }
+                VStack(spacing: 0) { links }
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .accessibilityIdentifier("deliveries.foot")
+    }
+
+    @ViewBuilder private var links: some View {
+        link(localizer.text("app.homePage"), to: configuration.homePageURL, id: "home")
+        link(localizer.text("auth.privacyLink"), to: configuration.privacyURL, id: "privacy")
+        link("GitHub", to: AppConfiguration.sourceURL, id: "source")
+    }
+
+    /// A quiet link with a full-height touch target.
+    private func link(_ title: String, to url: URL, id: String) -> some View {
+        Button { open(url) } label: {
+            Text(verbatim: title)
+                .underline(color: Color(uiColor: .tertiaryLabel))
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityIdentifier("deliveries.foot.\(id)")
+    }
+}
+
 private struct DeliveryListView: View {
     let isSelected: Bool
     @EnvironmentObject private var store: ParcelStore
@@ -92,6 +141,7 @@ private struct DeliveryListView: View {
     @State private var revealParcelID: UUID?
     @State private var parcelBurstID: UUID?
     @State private var showingAccount = false
+    @State private var sitePage: SitePage?
     @State private var archivedExpanded = false
     @State private var sharedDraft: SharedParcelDraft?
     @State private var toast: ListToast?
@@ -167,6 +217,7 @@ private struct DeliveryListView: View {
                 .environmentObject(session)
                 .environmentObject(localizer)
         }
+        .sheet(item: $sitePage) { SafariPage(url: $0.url).ignoresSafeArea() }
         .alert(localizer.text("native.errorTitle"), isPresented: Binding(
             get: { actionError != nil },
             set: { if !$0 { actionError = nil } }
@@ -251,6 +302,10 @@ private struct DeliveryListView: View {
                         }
                     }
                     ForEach(layout.sections) { section in sectionContent(section, next: layout.next) }
+                    // The foot ends the list once there is one: the first load shows its own message.
+                    if !(store.loading && store.parcels.isEmpty) {
+                        DeliveriesFoot(configuration: session.configuration) { sitePage = SitePage(url: $0) }
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -533,7 +588,7 @@ private struct DeliveryListView: View {
 
     private var shouldShowNotificationInvitation: Bool {
         isSelected && (scenePhase == .active || store.notificationEnableInProgress)
-            && path.isEmpty && !showingAdd && !showingAccount && !showingFilters
+            && path.isEmpty && !showingAdd && !showingAccount && !showingFilters && sitePage == nil
             && !showingSearch && !searchFocused && !store.refreshing && actionError == nil
             && addedParcelID == nil && revealParcelID == nil && parcelBurstID == nil
             && store.shouldInviteNotifications
@@ -739,10 +794,11 @@ private struct DeliveryListView: View {
     private func receive(_ arrival: ParcelLinkStore.Arrival?) {
         guard let arrival else { return }
         links.consumeArrival()
-        let elsewhere = !path.isEmpty || showingAdd || showingAccount || showingFilters
+        let elsewhere = !path.isEmpty || showingAdd || showingAccount || showingFilters || sitePage != nil
         showingAdd = false
         showingAccount = false
         showingFilters = false
+        sitePage = nil
         switch arrival {
         case .open(let parcelID):
             path = [parcelID]
