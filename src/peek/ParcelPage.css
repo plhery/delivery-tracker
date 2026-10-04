@@ -93,16 +93,18 @@
 .peekp-giftnote__inside svg { width: 15px; height: 15px; flex: 0 0 auto; margin-top: 2px; }
 .peekp-giftnote__inside strong { color: var(--ink); font-weight: 600; }
 
-/* The marker beside the carrier. */
-.peekp-live { position: relative; display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; min-height: 36px; padding: 0; border-radius: 10px; background: none; color: var(--tone); font-size: 11px; line-height: 1.2; white-space: nowrap; }
-button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
-.peekp-live[data-kind=offline] { color: var(--ink-soft); }
-.peekp-live[aria-busy=true] { opacity: .6; }
-.peekp-live__dot { position: relative; display: inline-block; width: 7px; height: 7px; }
-.peekp-live__dot::after, .peekp-live__dot i { content: ''; position: absolute; inset: 0; border-radius: 50%; background: currentColor; }
-.peekp-live__dot i { opacity: 0; }
-.peekp-live[data-pulse] .peekp-live__dot i { animation: peekp-pulse 2.4s var(--ease-out) infinite; }
-.peekp-live__short { display: none; }
+/* A gift's way into the alerts, in its card's corner. */
+.peekp-bell { position: relative; display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; min-height: 32px; padding: 0; background: none; color: var(--tone); font-size: 12px; font-weight: 600; line-height: 1.2; white-space: nowrap; transition: scale .18s var(--spring); }
+.peekp-bell::before { content: ''; position: absolute; inset: -6px -10px; }
+.peekp-bell:active { scale: .96; }
+.peekp-bell svg { width: 15px; height: 15px; flex: 0 0 auto; }
+.peekp-bell[data-on] svg { fill: currentColor; }
+
+/* When the carrier was last asked, said quietly under the journal. */
+.peekp-fresh { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 6px; color: var(--ink-soft); font-size: 11px; }
+.peekp-fresh button { display: grid; place-items: center; width: 44px; height: 44px; margin-inline-end: -12px; padding: 0; border-radius: 50%; background: none; color: var(--tone); }
+.peekp-fresh button svg { width: 18px; height: 18px; }
+.peekp-fresh button[aria-busy=true] { opacity: .6; }
 
 /* The route, in the card's ink. On a phone it runs across the top of the card. */
 .peekp-map { position: relative; }
@@ -281,7 +283,6 @@ button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
 @keyframes peekp-fade { from { opacity: 0; } }
 @keyframes peekp-fill { from { transform: scaleX(0); } }
 @keyframes peekp-land { from { opacity: 0; transform: scale(1.3) rotate(-16deg); } }
-@keyframes peekp-pulse { from { transform: scale(1); opacity: .45; } to { transform: scale(3.2); opacity: 0; } }
 @keyframes peekp-spark { 0%, 100% { opacity: 0; transform: scale(.6) rotate(-10deg); } 45% { opacity: 1; transform: scale(1.1) rotate(8deg); } }
 
 /* Room for the map beside the card. */
@@ -323,17 +324,12 @@ button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
   .peekp-action { gap: 6px; padding-inline: 10px; font-size: 12.5px; }
   .peekp-giftnote { padding: 16px; }
   .peekp-giftnote__text { font-size: 18px; }
-  .peekp-live__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .peekp-live__short { display: inline; }
-  .peekp-live[data-kind=live] .peekp-live__label, .peekp-live[data-kind=offline] .peekp-live__label, .peekp-live[data-kind=stale] .peekp-live__label, .peekp-live[data-kind=ended] .peekp-live__label { position: static; width: auto; height: auto; clip-path: none; }
-  .peekp-live[data-kind=live] .peekp-live__short, .peekp-live[data-kind=offline] .peekp-live__short, .peekp-live[data-kind=stale] .peekp-live__short, .peekp-live[data-kind=ended] .peekp-live__short { display: none; }
   .peekp-card--map { padding-top: 200px; }
   .peekp-map--card { height: 200px; }
   .peekp-card--map .peekp-card__top { top: 12px; right: 12px; left: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .peekp-pip .parcel-illustration__ribbon { transition: none; }
-  .peekp-card, .peekp-actions, .peekp-pip__sparks svg, .peekp-map .peekp-map__canvas, .peekp-passport__stamp, .peekp-live__dot i,
   .peekp-main[data-entrance=reveal] .tracking-journal__events > li, .peekp-card[data-settled] .progress-track__dot--current,
   .peekp-pip .parcel-illustration__body, .peekp-pip .parcel-illustration__eye, .peekp-pip--open .parcel-illustration__light, .peekp-pip--open .parcel-illustration__sparkle { animation: none !important; }
 }

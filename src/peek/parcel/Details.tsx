@@ -20,6 +20,7 @@ import type { ParcelWithEvents, Stage } from '../../types';
 import { maskedNumber, parcelLinkErrorKey, type ParcelLinkError, type ParcelLinkView } from '../links';
 import { Glyph } from './glyphs';
 import { copyText } from './share';
+import type { Freshness } from './summary';
 
 /**
  * Where the carrier shows the parcel. A link that masks the number leads to
@@ -158,5 +159,16 @@ export function ShipmentFacts({ parcel, stage }: { parcel: ParcelWithEvents; sta
       {weight && <div><dt>{t('detail.weight')}</dt><dd>{weight}</dd></div>}
       {parcel.dimensionsText && <div><dt>{t('detail.dimensions')}</dt><dd>{parcel.dimensionsText}</dd></div>}
     </dl>}
+  </div>;
+}
+
+/** Under the journal: when the carrier was last asked, and the way to ask again. */
+export function FreshnessLine({ freshness, busy, onCheck }: { freshness: Freshness; busy: boolean; onCheck: () => void }) {
+  const { t } = useI18n();
+  return <div className="peekp-fresh" data-kind={freshness.kind}>
+    <span>{freshness.label}</span>
+    <button type="button" disabled={busy} aria-busy={busy} title={t('detail.checkNow')} aria-label={t('detail.checkNow')} onClick={onCheck}>
+      <Icon name="refresh" />
+    </button>
   </div>;
 }

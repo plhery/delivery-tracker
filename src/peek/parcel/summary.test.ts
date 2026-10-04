@@ -103,14 +103,13 @@ describe('what the card says under the headline', () => {
   });
 });
 
-describe('the marker beside the carrier', () => {
-  const base = { checking: false, live: true, offline: false, trouble: false, seenAt: null };
+describe('how fresh a parcel is', () => {
+  const base = { checking: false, offline: false, trouble: false, seenAt: null };
 
-  it('says “updated” with a pulsing dot while the parcel moves and the page reads on its own', () => {
+  it('says “updated” while the parcel moves', () => {
     expect(parcelFreshness({ ...base, parcel: moving({ lastSyncedAt: at(2, 11, 58) }) }, wording)).toEqual({
-      kind: 'updated', label: 'Updated: 2 min ago', short: '2 min ago', dot: true, pulse: true,
+      kind: 'updated', label: 'Updated: 2 min ago', dot: true,
     });
-    expect(parcelFreshness({ ...base, live: false, parcel: moving({ lastSyncedAt: at(2, 11, 58) }) }, wording).pulse).toBe(false);
     // Without a check time of the parcel's own, the device's last answer dates it.
     expect(parcelFreshness({ ...base, seenAt: at(2, 11), parcel: moving() }, wording).label).toBe('Updated: 1 h ago');
   });
@@ -125,21 +124,21 @@ describe('the marker beside the carrier', () => {
   });
 
   it('says “Live” until there is a check to date, “Offline” without a connection, and “As of” after a failure', () => {
-    expect(parcelFreshness({ ...base, checking: true, parcel: moving({ lastSyncedAt: at(2, 11, 58) }) }, wording)).toMatchObject({ kind: 'live', label: 'Live', pulse: true });
+    expect(parcelFreshness({ ...base, checking: true, parcel: moving({ lastSyncedAt: at(2, 11, 58) }) }, wording)).toMatchObject({ kind: 'live', label: 'Live' });
     expect(parcelFreshness({ ...base, parcel: moving() }, wording)).toMatchObject({ kind: 'live' });
     expect(parcelFreshness({ ...base, parcel: moving({ lastSyncedAt: 'never' }) }, wording)).toMatchObject({ kind: 'live' });
     expect(parcelFreshness({ ...base, offline: true, parcel: moving({ lastSyncedAt: at(2, 11, 58) }) }, wording)).toEqual({
-      kind: 'offline', label: 'Offline', short: 'Offline', dot: true, pulse: false,
+      kind: 'offline', label: 'Offline', dot: true,
     });
     expect(parcelFreshness({ ...base, trouble: true, parcel: moving({ lastSyncedAt: at(2, 9, 14) }) }, wording)).toEqual({
-      kind: 'stale', label: 'As of 09:14', short: 'As of 09:14', dot: false, pulse: false,
+      kind: 'stale', label: 'As of 09:14', dot: false,
     });
     expect(parcelFreshness({ ...base, parcel: moving({ lastSyncedAt: at(2, 9, 14), syncStatus: 'error' }) }, wording).kind).toBe('stale');
   });
 
   it('dates the end of the journey without a dot', () => {
     expect(parcelFreshness({ ...base, parcel: parcel([['delivered', at(2, 10)]], { lastSyncedAt: at(2, 11, 58) }) }, wording)).toEqual({
-      kind: 'ended', label: '2 h ago', short: '2 h ago', dot: false, pulse: false,
+      kind: 'ended', label: '2 h ago', dot: false,
     });
   });
 });

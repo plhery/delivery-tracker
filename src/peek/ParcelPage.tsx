@@ -22,8 +22,8 @@ import { collapseGiftRows, isWrappedGift, maskedNumber, parcelLinkErrorKey, type
 import { Actions, type PingAction } from './parcel/Actions';
 import { AlertsSheet } from './parcel/AlertsSheet';
 import { deliveryCalendar, deliverySlot, downloadCalendar } from './parcel/calendar';
-import { LinkCard, LiveMarker } from './parcel/Card';
-import { carrierLinks, Notes, NumberSection, ShipmentFacts } from './parcel/Details';
+import { CardBell, LinkCard } from './parcel/Card';
+import { carrierLinks, FreshnessLine, Notes, NumberSection, ShipmentFacts } from './parcel/Details';
 import { ForgetDialog, ForgetFooter, forgetParcel } from './parcel/Forget';
 import { GiftNote, GiftSurprise } from './parcel/Gift';
 import { Glyph } from './parcel/glyphs';
@@ -188,7 +188,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const failing = trouble && !offline ? trouble : null;
   // A number no carrier knows yet says so in its headline already.
   const flag = (carrierKnown ? parcelFlag(parcel, now) : null) ?? (failing ? 'sync_error' : null);
-  const freshness = parcelFreshness({ parcel, checking, live, offline, trouble: !!failing, seenAt }, wording);
+  const freshness = parcelFreshness({ parcel, checking, offline, trouble: !!failing, seenAt }, wording);
   // The carrier's own page would tell a gift's recipient where it comes from.
   const links = wrapped ? [] : carrierLinks(view, locale);
   const scan = currentEvent(parcel.events);
@@ -335,12 +335,15 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   }
   // Nothing scanned yet: being told is the one next step, and every scan is worth telling.
   const early = !moving || stage === 'registered';
-  const ping: PingAction | undefined = final || checking ? undefined : {
-    label: t(alert ? 'alerts.action.on' : !carrierKnown ? 'alerts.action.found' : early ? 'alerts.action.moves' : owner ? 'alerts.action.ping' : 'alerts.action.too'),
+  const canPing = !final && !checking;
+  // A wrapped gift says little, and keeps its one button in its card; any other parcel has it among its actions.
+  const ping: PingAction | undefined = canPing && !wrapped ? {
+    label: t(alert ? 'alerts.action.on' : !carrierKnown ? 'alerts.action.found' : early ? 'alerts.action.moves' : 'alerts.action.ping'),
     long: !alert && owner && !early ? t('alerts.title') : undefined,
     prominent: !alert && early,
     onOpen: () => setAlerting(true),
-  };
+  } : undefined;
+  const bell = canPing && wrapped && <CardBell label={t(alert ? 'alerts.action.on' : 'alerts.action.ping')} on={!!alert} onOpen={() => setAlerting(true)} />;
   const forgetOn = forgetDate(link.forgetAt, languageTag);
   const forgetLine = forgetOn ? t('link.forget.on', { date: forgetOn }) : null;
   // Someone the link was shared with reads above the card how long it works; the owner reads the date at the foot.
@@ -390,7 +393,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
           notes={notes} flag={flag} figure={figure} number={number} links={links} settled={entrance === 'reveal' && !checking}
           gift={wrapped ? 'wrapped' : opened ? 'opened' : link.gift ? 'own' : undefined}
           map={figure === 'map' ? map('card') : undefined}
-          marker={<LiveMarker freshness={freshness} busy={refreshing} onCheck={final ? undefined : () => void check()} />} />
+          bell={bell} />
         <p className="sr-only" role="status">{checked}</p>
         {wrapped && <GiftSurprise />}
         {opened && <GiftNote note={state.words.note} from={state.words.from} inside={state.words.name ?? state.name} />}
@@ -412,6 +415,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
         {carrierKnown && (automatic || moving) && <section className="peekp-journal">
           <TrackingJournal events={wrapped ? collapseGiftRows(parcel.events) : parcel.events} syncing={checking} fold />
         </section>}
+        {!final && freshness.kind !== 'live' && <FreshnessLine freshness={freshness} busy={refreshing} onCheck={() => void check()} />}
         {/* The sample ends on the way to a parcel of one's own; any other page on the device's other parcels. */}
         {sample ? !beside && invitation
           : <OtherParcels linkId={linkId} visitor={visitor} over={afterwards} onTrackAnother={onHome} onSignIn={signInToKeep} />}

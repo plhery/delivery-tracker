@@ -666,7 +666,6 @@
   "share.stopped.title": "Ce colis n’est plus partagé",
   "share.stopped.body": "La personne qui l’a partagé a arrêté le partage. Si c’est le tien, colle son numéro de suivi pour le suivre à nouveau.",
   "alerts.action.ping": "Préviens-moi",
-  "alerts.action.too": "Moi aussi, préviens-moi",
   "alerts.action.moves": "Préviens-moi quand il bouge",
   "alerts.action.found": "Préviens-moi quand il est trouvé",
   "alerts.title": "Préviens-moi quand il arrive",

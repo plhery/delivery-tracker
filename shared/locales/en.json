@@ -666,7 +666,6 @@
   "share.stopped.title": "This parcel isn’t shared anymore",
   "share.stopped.body": "The person who shared it stopped sharing. If it’s yours, paste its tracking number to follow it again.",
   "alerts.action.ping": "Ping me",
-  "alerts.action.too": "Ping me too",
   "alerts.action.moves": "Ping me when it moves",
   "alerts.action.found": "Ping me when it’s found",
   "alerts.title": "Ping me when it arrives",

@@ -6,7 +6,7 @@ import { Glyph } from './glyphs';
 
 /** The way into the alerts, as the actions row words it. */
 export interface PingAction {
-  /** "Ping me", "Ping me too", "Alerts on"… */
+  /** "Ping me", "Alerts on"… */
   label: string;
   /** What the button says where there is room: "Ping me when it arrives". */
   long?: string;

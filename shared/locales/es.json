@@ -666,7 +666,6 @@
   "share.stopped.title": "Este paquete ya no se comparte",
   "share.stopped.body": "Quien lo compartió dejó de compartirlo. Si es tuyo, pega su número de seguimiento para seguirlo de nuevo.",
   "alerts.action.ping": "Avísame",
-  "alerts.action.too": "Avísame a mí también",
   "alerts.action.moves": "Avísame cuando se mueva",
   "alerts.action.found": "Avísame cuando aparezca",
   "alerts.title": "Avísame cuando llegue",

@@ -86,8 +86,7 @@ function LeadParcel({ recent }: { recent: RecentParcel }) {
   const title = useParcelTitle(recent);
   const { route } = useParcelRoute(parcel, languageTag);
   const wording = { t, languageTag, now };
-  // The list reads its parcels when it opens and then rests, so the marker never pulses here.
-  const freshness = parcelFreshness({ parcel, checking: false, live: false, offline: false, trouble: false, seenAt: recent.lastSeenAt }, wording);
+  const freshness = parcelFreshness({ parcel, checking: false, offline: false, trouble: false, seenAt: recent.lastSeenAt }, wording);
   // A parcel waiting to be collected says where.
   const detail = parcelDetail(parcel, wording) ?? (stage === 'ready_for_pickup' ? pickupPoint(parcel.pickupPoint)?.name : null);
   const mood = pipMood(stage ?? undefined);

@@ -666,7 +666,6 @@
   "share.stopped.title": "Questo pacco non è più condiviso",
   "share.stopped.body": "Chi lo aveva condiviso ha interrotto la condivisione. Se è tuo, incolla il numero di tracciamento per seguirlo di nuovo.",
   "alerts.action.ping": "Avvisami",
-  "alerts.action.too": "Avvisa anche me",
   "alerts.action.moves": "Avvisami quando si muove",
   "alerts.action.found": "Avvisami quando viene trovato",
   "alerts.title": "Avvisami quando arriva",

@@ -122,26 +122,20 @@ export function forgetDate(forgetAt: string | null, languageTag: string): string
 export interface Freshness {
   /** `live`: watching, nothing to date yet. `ended`: the journey is over. `stale`: the last read or check failed. */
   kind: 'live' | 'updated' | 'checked' | 'stale' | 'offline' | 'ended';
-  /** The whole label: "Updated: 2 min ago". */
+  /** "Updated: 2 min ago". */
   label: string;
-  /** What is left where there is no room: "2 min ago". */
-  short: string;
-  /** Whether the dot is drawn, and whether it pulses. */
+  /** Whether a dot goes with it, where one is drawn. */
   dot: boolean;
-  pulse: boolean;
 }
 
 /**
- * The marker beside the carrier: how fresh the card is. It says "updated"
- * while the parcel moves, "last checked" while there is nothing new to tell,
- * and pulses only while the page is reading on its own.
+ * How fresh what a parcel shows is. It says "updated" while the parcel
+ * moves, and "last checked" while there is nothing new to tell.
  */
-export function parcelFreshness({ parcel, checking, live, offline, trouble, seenAt }: {
+export function parcelFreshness({ parcel, checking, offline, trouble, seenAt }: {
   parcel: ParcelWithEvents;
   /** The carrier has not been asked yet. */
   checking: boolean;
-  /** The page is reading on its own. */
-  live: boolean;
   offline: boolean;
   /** The newest read failed. */
   trouble: boolean;
@@ -150,32 +144,26 @@ export function parcelFreshness({ parcel, checking, live, offline, trouble, seen
 }, wording: Wording): Freshness {
   const { t, languageTag, now = Date.now() } = wording;
   if (offline) {
-    const label = t('link.offlineLabel');
-    return { kind: 'offline', label, short: label, dot: true, pulse: false };
+    return { kind: 'offline', label: t('link.offlineLabel'), dot: true };
   }
   const current = currentEvent(parcel.events);
   const stage = parcelStage(parcel);
   if (stage && isFinal(stage) && current) {
-    const label = capitalized(localizedRelativeTime(current.occurredAt, t, languageTag, now), languageTag);
-    return { kind: 'ended', label, short: label, dot: false, pulse: false };
+    return { kind: 'ended', label: capitalized(localizedRelativeTime(current.occurredAt, t, languageTag, now), languageTag), dot: false };
   }
   const checkedAt = parcel.lastSyncedAt ?? seenAt;
   if (checking || !checkedAt || Number.isNaN(Date.parse(checkedAt))) {
-    const label = t('link.live');
-    return { kind: 'live', label, short: label, dot: true, pulse: live };
+    return { kind: 'live', label: t('link.live'), dot: true };
   }
   if (trouble || parcel.syncStatus === 'error') {
-    const label = t('link.asOf', { time: momentLabel(checkedAt, wording) });
-    return { kind: 'stale', label, short: label, dot: false, pulse: false };
+    return { kind: 'stale', label: t('link.asOf', { time: momentLabel(checkedAt, wording) }), dot: false };
   }
   const ago = localizedRelativeTime(checkedAt, t, languageTag, now);
   const quiet = !parcelHasCarrierUpdate(parcel) || stage === 'registered' || parcelAttention(parcel, now) === 'stalled';
   return {
     kind: quiet ? 'checked' : 'updated',
     label: t(quiet ? 'detail.lastChecked' : 'parcel.updated', { date: ago }),
-    short: capitalized(ago, languageTag),
     dot: true,
-    pulse: live,
   };
 }
 

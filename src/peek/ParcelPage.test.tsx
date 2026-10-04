@@ -34,6 +34,8 @@ function open(session?: PeekSession, props: Partial<Parameters<typeof ParcelPage
   return render(session ? <PeekSessionProvider value={session}>{page}</PeekSessionProvider> : page);
 }
 const card = () => screen.getByRole('region', { name: screen.getByRole('heading', { level: 1 }).textContent! });
+/** Under the journal: when the carrier was last asked. */
+const freshness = () => document.querySelector<HTMLElement>('.peekp-fresh')!;
 const clipboard = (writeText: (text: string) => Promise<void>) => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
 
 beforeEach(() => {
@@ -65,7 +67,10 @@ describe('ParcelPage', () => {
     expect(within(card()).getByLabelText('DHL')).toBeVisible();
     expect(within(card()).getByText(/^Expected: /)).toBeVisible();
     expect(within(card()).getByRole('img', { name: 'Step 4 of 6: In transit' })).toBeVisible();
-    expect(within(card()).getByRole('button', { name: 'Updated: 2 min ago. Check now' })).toBeEnabled();
+    // The card dates nothing but the parcel: the last check is told under the journal, with the way to ask again.
+    expect(within(card()).queryByText(/Updated/)).toBeNull();
+    expect(freshness()).toHaveTextContent('Updated: 2 min ago');
+    expect(within(freshness()).getByRole('button', { name: 'Check now' })).toBeEnabled();
     expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('1234567899');
     expect(screen.getByRole('link', { name: 'Open the DHL website' })).toHaveAttribute('href', expect.stringContaining('1234567899'));
     expect(screen.getByText('Scan 2')).toBeVisible();
@@ -100,7 +105,8 @@ describe('ParcelPage', () => {
     expect(document.querySelector('main')).toHaveAttribute('data-entrance', 'reveal');
     expect(screen.getByRole('heading', { level: 1, name: 'Checking for updates' })).toBeVisible();
     expect(screen.getByText('Checking for updates…')).toBeVisible();
-    expect(within(card()).getByRole('button', { name: 'Live. Check now' })).toBeVisible();
+    // Nothing is dated before the first answer.
+    expect(freshness()).toBeNull();
     expect(document.title).toBe('Finding the carrier… · Peek');
     expect(card()).not.toHaveAttribute('data-settled');
     expect(mocks.read).not.toHaveBeenCalled();
@@ -163,9 +169,9 @@ describe('ParcelPage', () => {
     const banner = await screen.findByText(/^You’re offline\. Showing the update from (yesterday, )?\d\d:\d\d\.$/);
     expect(banner).toHaveAttribute('role', 'status');
     expect(screen.getByRole('heading', { level: 1, name: 'In transit' })).toBeVisible();
-    const marker = within(card()).getByRole('button', { name: 'Offline. Check now' });
-    expect(marker).toHaveAttribute('data-kind', 'offline');
-    expect(marker).not.toHaveAttribute('data-pulse');
+    expect(freshness()).toHaveAttribute('data-kind', 'offline');
+    expect(freshness()).toHaveTextContent('Offline');
+    expect(within(freshness()).getByRole('button', { name: 'Check now' })).toBeVisible();
     // Being offline is not the carrier's trouble.
     expect(screen.queryByText('Couldn’t get the latest update')).toBeNull();
   });
@@ -177,7 +183,7 @@ describe('ParcelPage', () => {
     expect(await within(card()).findByText('Couldn’t get the latest update')).toBeVisible();
     expect(screen.getByRole('note')).toHaveTextContent('Something went wrong. Please try again.');
     expect(screen.getByRole('heading', { level: 1, name: 'In transit' })).toBeVisible();
-    expect(within(card()).getByRole('button', { name: /^As of \d\d:\d\d\. Check now$/ })).toBeVisible();
+    expect(freshness()).toHaveTextContent(/^As of \d\d:\d\d$/);
   });
 
   it('explains why nothing can be shown when the first read fails, and tries again on request', async () => {
@@ -190,12 +196,12 @@ describe('ParcelPage', () => {
     expect(mocks.read).toHaveBeenLastCalledWith(LINK_ID, expect.objectContaining({ advance: true }));
   });
 
-  it('checks again from the marker, announces what it found, and tells the new scan', async () => {
+  it('checks again from under the journal, announces what it found, and tells the new scan', async () => {
     const delivered = view([...journey, scan('delivered', 0, 'Left in the mailbox')]);
     mocks.read.mockResolvedValueOnce(view(journey)).mockResolvedValueOnce(delivered).mockResolvedValue(delivered);
     const user = userEvent.setup();
     open();
-    await user.click(await screen.findByRole('button', { name: 'Updated: 2 min ago. Check now' }));
+    await user.click(await screen.findByRole('button', { name: 'Check now' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Delivered' })).toBeVisible();
     expect(mocks.read).toHaveBeenLastCalledWith(LINK_ID, expect.objectContaining({ advance: true }));
     expect(screen.getByText('Tracking updated')).toHaveAttribute('role', 'status');
@@ -249,7 +255,7 @@ describe('ParcelPage stages and troubles', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Announced' })).toBeVisible();
     expect(within(card()).getByText('No delivery date yet')).toBeVisible();
     expect(within(card()).getByText('DHL hasn’t scanned the parcel yet. That usually happens within a day or two.')).toBeVisible();
-    expect(within(card()).getByRole('button', { name: 'Last checked: 2 min ago. Check now' })).toHaveAttribute('data-pulse', 'true');
+    expect(freshness()).toHaveTextContent('Last checked: 2 min ago');
   });
 
   it('keeps a number no carrier knows on a neutral card, and says to keep the page', async () => {
@@ -303,7 +309,7 @@ describe('ParcelPage stages and troubles', () => {
     await shown(view([scan('accepted', 140), scan('in_transit', 120)]));
     expect(within(card()).getByText('No tracking update for four days')).toBeVisible();
     expect(screen.getByRole('note')).toHaveTextContent(/^Parcels often go quiet on long flights.+Peek keeps asking DHL and shows the next scan here\.$/);
-    expect(within(card()).getByRole('button', { name: 'Last checked: 2 min ago. Check now' })).toBeVisible();
+    expect(freshness()).toHaveTextContent('Last checked: 2 min ago');
   });
 
   it('says what the carrier’s check failed with, keeping the last thing known', async () => {
@@ -312,7 +318,7 @@ describe('ParcelPage stages and troubles', () => {
     expect(within(card()).getByText('Couldn’t get the latest update')).toBeVisible();
     expect(screen.getByRole('note').textContent).not.toMatch(/carrier:not_found/);
     expect(screen.getByRole('note').textContent!.length).toBeGreaterThan(20);
-    expect(within(card()).getByRole('button', { name: /^As of \d\d:\d\d\. Check now$/ })).not.toHaveAttribute('data-pulse');
+    expect(freshness()).toHaveTextContent(/^As of \d\d:\d\d$/);
   });
 
   it('says so when the carrier cannot be followed automatically', async () => {

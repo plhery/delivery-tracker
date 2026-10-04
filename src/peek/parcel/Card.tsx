@@ -9,26 +9,18 @@ import { trackAction } from '../../lib/analytics';
 import type { ParcelWithEvents, Stage } from '../../types';
 import { PIP_TRANSITION_NAME } from '../route';
 import { Glyph } from './glyphs';
-import { flagKey, type Freshness } from './summary';
+import { flagKey } from './summary';
 import type { ParcelAttention } from '../../lib/parcelPriority';
 
-/** The marker beside the carrier: how fresh the card is. Tapping it checks now. */
-export function LiveMarker({ freshness, busy, onCheck }: {
-  freshness: Freshness;
-  busy: boolean;
-  /** Absent once the journey is over: there is nothing left to check. */
-  onCheck?: () => void;
+/** In a gift's card, beside the carrier: the way into the alerts. */
+export function CardBell({ label, on, onOpen }: {
+  /** "Ping me", or "Alerts on" once this browser has them. */
+  label: string;
+  on: boolean;
+  onOpen: () => void;
 }) {
-  const { t } = useI18n();
-  const content = <>
-    {freshness.dot && <span className="peekp-live__dot" aria-hidden="true"><i /></span>}
-    <span className="peekp-live__label">{freshness.label}</span>
-    <span className="peekp-live__short" aria-hidden="true">{freshness.short}</span>
-  </>;
-  if (!onCheck) return <span className="peekp-live" data-kind={freshness.kind}>{content}</span>;
-  return <button type="button" className="peekp-live" data-kind={freshness.kind} data-pulse={freshness.pulse || undefined}
-    disabled={busy} aria-busy={busy} title={t('detail.checkNow')} aria-label={`${freshness.label}. ${t('detail.checkNow')}`} onClick={onCheck}>
-    {content}
+  return <button type="button" className="peekp-bell" data-on={on || undefined} onClick={onOpen}>
+    <Icon name="bell" /><span>{label}</span>
   </button>;
 }
 
@@ -86,7 +78,7 @@ const FLAG_ICONS: Record<ParcelAttention, ReactNode> = {
  * the open box in the middle (`hero`), or not at all when the map beside the
  * card has him.
  */
-export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes, flag, figure, number, map, marker, links, settled, gift }: {
+export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes, flag, figure, number, map, bell, links, settled, gift }: {
   parcel: ParcelWithEvents;
   stage: Stage | null;
   /** Null while no carrier is known. */
@@ -100,7 +92,8 @@ export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes
   /** What the label on Pip's side says: the number, masked for a viewer. */
   number: string | null;
   map?: ReactNode;
-  marker: ReactNode;
+  /** A wrapped gift's way into the alerts, in the card's corner. */
+  bell?: ReactNode;
   /** The carriers of a journey handed from one to another, each with its own page. */
   links: readonly ParcelTrackingLink[];
   /** The reveal's settle beat: the newest step fills and the sparks twinkle. */
@@ -120,7 +113,7 @@ export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes
     <div className="peekp-card__top">
       {carrier ? <CarrierMark carrier={carrier} />
         : <span className="peekp-card__nocarrier"><Icon name="detect" />{t('link.unknown.carrier')}</span>}
-      {marker}
+      {bell}
     </div>
     {figure === 'hero' && <KraftPip carrier={carrier} number={number} open={delivered} hero sparks={false} ribbon={present} />}
     <div className="peekp-card__body">

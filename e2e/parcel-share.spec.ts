@@ -162,7 +162,8 @@ test('a gift stays a surprise until it is delivered, then shows its note and wha
   await expect(recipient.locator('body')).not.toContainText(/Belgian chocolate|Happy birthday|Chocolaterie|chocolatier|Brussels|DEMOCHOC|Tracking number/i);
   await expect(recipient.locator('body')).not.toContainText(/\bSam\b/);
   await expect(recipient.getByText('Left the sender')).toHaveCount(1);
-  await expect(recipient.getByRole('button', { name: 'Ping me too' })).toBeVisible();
+  // A gift's way into the alerts is in its card.
+  await expect(recipient.locator('.peekp-card').getByRole('button', { name: 'Ping me', exact: true })).toBeVisible();
   expect(await fits(recipient)).toBe(true);
   // The device's list does not learn the name either.
   await recipient.goto('/');
@@ -322,7 +323,7 @@ test('alerts: an iPhone outside its Home Screen app gets the steps there, not a 
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1',
   });
   await show(page, phone, page.url());
-  await phone.getByRole('button', { name: 'Ping me too' }).click();
+  await phone.getByRole('button', { name: 'Ping me', exact: true }).click();
   const sheet = phone.getByRole('dialog', { name: 'Alerts on iPhone' });
   await expect(sheet.getByText('Safari only sends notifications from sites on your Home Screen.')).toBeVisible();
   // Safari 27 keeps Share in the page menu of its address bar, which the first step draws.

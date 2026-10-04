@@ -75,7 +75,9 @@ describe('the parcel page of a recipient', () => {
     expect(screen.getByText('For Mum')).toBeVisible();
     expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('••• 99');
     expect(screen.queryByRole('button', { name: 'Copy tracking number' })).toBeNull();
-    expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Ping me too', 'Add to calendar', 'Edit parcel name']);
+    expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Ping me', 'Add to calendar', 'Edit parcel name']);
+    // The alerts are among the actions: the card's corner stays empty.
+    expect(document.querySelector('.peekp-bell')).toBeNull();
     // Forgetting is the owner's, and so is choosing what the link shows.
     expect(screen.queryByRole('button', { name: 'Forget it now' })).toBeNull();
     expect(actions().queryByRole('button', { name: 'Share' })).toBeNull();
@@ -98,7 +100,7 @@ describe('the parcel page of a recipient', () => {
     open(view({ owner: false, link: { numberShown: true, canKeep: true }, parcel: { trackingNumber: '1234567899', expectedDelivery: undefined } }));
     expect(await screen.findByRole('button', { name: /Create an account/ })).toBeVisible();
     expect(actions().queryByRole('button', { name: 'Add to calendar' })).toBeNull();
-    expect(actions().getByRole('button', { name: 'Ping me too' })).toBeVisible();
+    expect(actions().getByRole('button', { name: 'Ping me' })).toBeVisible();
   });
 
   it('tells a recipient how long the link works once the parcel is delivered, in place of the footer’s line', async () => {
@@ -359,7 +361,27 @@ describe('a gift', () => {
     expect(screen.queryByRole('button', { name: 'Share this parcel' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Track another parcel' })).toBeNull();
     expect(screen.queryByText(/Shared with you/)).toBeNull();
-    expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Ping me too', 'Add to calendar']);
+    // The way into the alerts is in the card's corner; the row keeps the calendar.
+    expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Add to calendar']);
+    const bell = within(card).getByRole('button', { name: 'Ping me' });
+    fireEvent.click(bell);
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Ping me when it arrives' })).getByRole('button', { name: 'Close' }));
+    expect(bell).toHaveFocus();
+  });
+
+  it('turns alerts on from the card, which then says they are on, and has no row of actions without a delivery window', async () => {
+    stubAlertBrowser();
+    const user = userEvent.setup();
+    const shown = wrapped();
+    open({ ...shown, parcel: { ...shown.parcel, expectedDelivery: undefined } }, { hash: words });
+    const card = await screen.findByRole('region', { name: 'Something’s on its way to you' });
+    await user.click(within(card).getByRole('button', { name: 'Ping me' }));
+    const sheet = screen.getByRole('dialog', { name: 'Ping me when it arrives' });
+    await user.click(within(sheet).getByRole('button', { name: 'Turn on' }));
+    expect(await within(sheet).findByText('Alerts are on in this browser')).toBeVisible();
+    await user.click(within(sheet).getByRole('button', { name: 'Close' }));
+    expect(within(card).getByRole('button', { name: 'Alerts on' })).toHaveAttribute('data-on', 'true');
+    expect(document.querySelector('.peekp-actions')).toBeNull();
   });
 
   it('tells where it comes from once: the scans the server blurred alike are one row', async () => {

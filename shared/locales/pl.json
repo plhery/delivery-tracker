@@ -666,7 +666,6 @@
   "share.stopped.title": "Ta przesyłka nie jest już udostępniana",
   "share.stopped.body": "Osoba, która ją udostępniła, zakończyła udostępnianie. Jeśli jest Twoja, wklej jej numer śledzenia, aby znów ją śledzić.",
   "alerts.action.ping": "Daj mi znać",
-  "alerts.action.too": "Mnie też daj znać",
   "alerts.action.moves": "Daj mi znać, gdy ruszy",
   "alerts.action.found": "Daj mi znać, gdy się znajdzie",
   "alerts.title": "Daj mi znać, gdy dotrze",
