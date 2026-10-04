@@ -166,14 +166,7 @@ struct FirstOpenView: View {
                             .transition(.opacity)
                     }
                     Spacer(minLength: 0)
-                    VStack(alignment: .trailing, spacing: 12) {
-                        Text(localizer.text("sample.tag"))
-                            .font(.caption2)
-                            .textCase(.uppercase)
-                            .tracking(1.2)
-                            .foregroundStyle(identity.ink.opacity(0.75))
-                        DeliveryPostageStamp(parcel: parcel, identity: identity, width: 50, appeared: appeared)
-                    }
+                    DeliveryPostageStamp(parcel: parcel, identity: identity, width: 50, appeared: appeared)
                 }
                 .multilineTextAlignment(.leading)
                 .padding(.horizontal, 26)
