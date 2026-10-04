@@ -50,7 +50,7 @@ jobs:
   # push job as a patch.
   adopt:
     name: Adopt
-    if: github.repository == 'plhery/delivery-tracker'
+    if: github.repository == 'plhery/peek-delivery-tracker'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     outputs:

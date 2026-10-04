@@ -114,7 +114,7 @@ jobs:
       contents: read
       packages: write
     env:
-      IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      IMAGE: ghcr.io/${{ vars.CONTAINER_IMAGE_REPOSITORY || github.repository }}:${{ github.sha }}
       PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEXT_PUBLIC_SUPABASE_URL != '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

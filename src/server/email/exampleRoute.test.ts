@@ -58,13 +58,13 @@ describe('GET /email/example', () => {
     const links = async () => [...(await (await example()).text()).matchAll(/href="([^"]*)"/g)].map(([, href]) => href);
     // Home, the off page without a token, the privacy notice and the code.
     expect(new Set(await links())).toEqual(new Set([
-      'https://peek.example.test/', 'https://peek.example.test/email/off', 'https://peek.example.test/privacy.html', 'https://github.com/plhery/delivery-tracker',
+      'https://peek.example.test/', 'https://peek.example.test/email/off', 'https://peek.example.test/privacy.html', 'https://github.com/plhery/peek-delivery-tracker',
     ]));
     request.headers = new Headers({ host: '127.0.0.1:4173' });
     expect(await links()).toContain('http://127.0.0.1:4173/email/off');
     vi.stubEnv('CANONICAL_ORIGIN', 'https://canonical.example.test');
     expect(new Set(await links())).toEqual(new Set([
-      'https://canonical.example.test/', 'https://canonical.example.test/email/off', 'https://canonical.example.test/privacy.html', 'https://github.com/plhery/delivery-tracker',
+      'https://canonical.example.test/', 'https://canonical.example.test/email/off', 'https://canonical.example.test/privacy.html', 'https://github.com/plhery/peek-delivery-tracker',
     ]));
     // A setting the deployment got wrong is reported at startup; the example still reads.
     vi.stubEnv('CANONICAL_ORIGIN', 'not an origin');

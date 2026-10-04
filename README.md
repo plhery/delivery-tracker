@@ -11,7 +11,7 @@ Peek finds the carrier, draws the journey, pings you when the parcel moves.
 
 <sub>The carriers are read by our engine, <a href="https://github.com/plhery/universal-parcel-scraper">Universal Parcel Scraper</a>.</sub>
 
-[![CI](https://github.com/plhery/delivery-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/plhery/delivery-tracker/actions/workflows/ci.yml)
+[![CI](https://github.com/plhery/peek-delivery-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/plhery/peek-delivery-tracker/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 [Try it: peektracker.com](https://peektracker.com) · [Run it locally](#run-it-locally) · [iPhone app](#iphone-app) · [Host your own](#host-your-own)
@@ -80,8 +80,8 @@ background, alerts and the two apps.
 You need Node.js 26. No account, no database, no `.env` file.
 
 ```bash
-git clone https://github.com/plhery/delivery-tracker.git
-cd delivery-tracker
+git clone https://github.com/plhery/peek-delivery-tracker.git
+cd peek-delivery-tracker
 nvm use
 npm ci
 npm run dev

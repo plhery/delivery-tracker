@@ -281,7 +281,7 @@ your data, have it corrected or deleted, or object to how it is used, write to
 your data protection authority.
 
 For a security concern, use GitHub's
-[private vulnerability report](https://github.com/plhery/delivery-tracker/security/advisories/new).
+[private vulnerability report](https://github.com/plhery/peek-delivery-tracker/security/advisories/new).
 Do not include a real tracking number, delivery postcode, sign-in code, access
 token or private tracking link in a public issue.
 

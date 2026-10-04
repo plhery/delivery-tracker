@@ -338,7 +338,7 @@ export function captureTrackingHealth(incident: JsonObject): string | null {
     scope.setTag('provider', String(incident.subject));
     scope.setContext('tracking_health', { ...incident, impact: message.impact, next_steps: message.nextSteps,
       suppression: 'Repeated incident notifications are limited to one per six hours.',
-      runbook: 'https://github.com/plhery/delivery-tracker/blob/main/ops/sentry/README.md' });
+      runbook: 'https://github.com/plhery/peek-delivery-tracker/blob/main/ops/sentry/README.md' });
     // Opening, reminders and recovery belong to one incident history.
     scope.setFingerprint(['delivery-tracker', 'tracking-health', String(incident.kind), String(incident.subject)]);
     scope.setLevel(recovered ? 'info' : incident.kind === 'refresh' ? 'error' : 'warning');

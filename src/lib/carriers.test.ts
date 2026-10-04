@@ -312,7 +312,7 @@ describe('carrier detection', () => {
 
   it('colisweb — Colisweb', () => {
     // Synthetic baseline only (website says at least eight digits; exactly-eight is unproven).
-    // Source: https://github.com/plhery/delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/lib/carriers.test.ts
+    // Source: https://github.com/plhery/peek-delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/lib/carriers.test.ts
     const match = detectCarrierMatch('87654321');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
   });
@@ -405,7 +405,7 @@ describe('carrier detection', () => {
   it('dachser — Dachser', () => {
     // Synthetic baseline only (Customer Iberia needs the complete capability URL;
     // a bare number or generic freight label proves nothing about the route).
-    // Source: https://github.com/plhery/delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/lib/carriers.test.ts
+    // Source: https://github.com/plhery/peek-delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/lib/carriers.test.ts
     expect(detectCarrier('9010000001234')).toBe('unknown');
   });
 
@@ -598,7 +598,7 @@ describe('carrier detection', () => {
 
   it('gls-ch — GLS Switzerland', () => {
     // Synthetic baseline only (Swiss origin can never come from broad lengths alone).
-    // Source: https://github.com/plhery/delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/lib/carriers.test.ts
+    // Source: https://github.com/plhery/peek-delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/lib/carriers.test.ts
     const match = detectCarrierMatch('993990103198');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('gls-ch');
@@ -645,7 +645,7 @@ describe('carrier detection', () => {
 
   it('heppner — Heppner', () => {
     // Explicit synthetic existing fixture only (receipt + postcode live in the adapter).
-    // Source: https://github.com/plhery/delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/server/heppner.test.ts
+    // Source: https://github.com/plhery/peek-delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/server/heppner.test.ts
     const match = detectCarrierMatch('23456789');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('heppner');
@@ -654,7 +654,7 @@ describe('carrier detection', () => {
   it('hermes — Hermes Einrichtungs-Service', () => {
     // Baseline only: repo-called official/public HES sample, not fresh verification.
     // (Furniture-service Hermes, not German small-parcel Hermes or UK Evri.)
-    // Source: https://github.com/plhery/delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/server/hermes.live.test.ts
+    // Source: https://github.com/plhery/peek-delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/server/hermes.live.test.ts
     expect(detectCarrier('62162057330000611')).toBe('unknown');
   });
 
@@ -1043,7 +1043,7 @@ describe('carrier detection', () => {
   it('postlogistics — PostLogistics', () => {
     // Deliberate no-result canary only (synthetic all-zeros): no positive shipment
     // evidence, and the canary must never count as successful verification.
-    // Source: https://github.com/plhery/delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/server/upstreamAdapters.live.test.ts
+    // Source: https://github.com/plhery/peek-delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/server/upstreamAdapters.live.test.ts
     expect(detectCarrier('000000000000000000')).toBe('unknown');
   });
 
@@ -1230,7 +1230,7 @@ describe('carrier detection', () => {
   it('swiss-post-cargo — Swiss Post Cargo', () => {
     // Repository-documented official-form example only; never constrain cargo
     // identifiers to this eight-digit sample (no exclusive detector).
-    // Source: https://github.com/plhery/delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/server/swissPostCargo.live.test.ts
+    // Source: https://github.com/plhery/peek-delivery-tracker/blob/739b360d45d1cf723e0058350bcf19f8e373f076/src/server/swissPostCargo.live.test.ts
     expect(detectCarrier('12345678')).toBe('unknown');
   });
 

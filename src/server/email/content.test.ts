@@ -22,7 +22,7 @@ const NOW = new Date('2026-10-03T15:00:00Z');
 const JOURNEY = 'https://peek.example.test/?parcel=11111111-2222-4333-8444-555555555555';
 const OFF = 'https://peek.example.test/email/off#t=made-up.not-a-real-token';
 const PRIVACY = 'https://peek.example.test/privacy.html';
-const SOURCE = 'https://github.com/plhery/delivery-tracker';
+const SOURCE = 'https://github.com/plhery/peek-delivery-tracker';
 
 function event(stage: ApiTrackingEventRow['stage'], occurredAt: string, extra: Partial<ApiTrackingEventRow> = {}): ApiTrackingEventRow {
   return { id: `${stage}-${occurredAt}`, package_id: 'p1', stage, description: 'Signed by ALEX EXAMPLE, code 4711', location: 'Samplestrasse 1, 9999 Exampletown', occurred_at: occurredAt, place: null, ...extra };

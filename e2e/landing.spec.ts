@@ -102,7 +102,7 @@ test('asks four questions in order, with the field first and the name, the code 
 
   const who = page.getByRole('region', { name: 'Who’s behind Peek?' });
   await expect(who.getByRole('listitem')).toHaveCount(3);
-  await expect(who.getByRole('link', { name: 'View on GitHub' })).toHaveAttribute('href', 'https://github.com/plhery/delivery-tracker');
+  await expect(who.getByRole('link', { name: 'View on GitHub' })).toHaveAttribute('href', 'https://github.com/plhery/peek-delivery-tracker');
   await expect(who.getByRole('link', { name: '@plhery on X' })).toHaveAttribute('href', 'https://x.com/plhery');
   const footer = page.getByRole('contentinfo');
   await expect(footer.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy.html');

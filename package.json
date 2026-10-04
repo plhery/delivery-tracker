@@ -7,12 +7,12 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/plhery/delivery-tracker.git"
+    "url": "git+https://github.com/plhery/peek-delivery-tracker.git"
   },
   "bugs": {
-    "url": "https://github.com/plhery/delivery-tracker/issues"
+    "url": "https://github.com/plhery/peek-delivery-tracker/issues"
   },
-  "homepage": "https://github.com/plhery/delivery-tracker#readme",
+  "homepage": "https://github.com/plhery/peek-delivery-tracker#readme",
   "engines": {
     "node": ">=26.5.1",
     "npm": ">=10"

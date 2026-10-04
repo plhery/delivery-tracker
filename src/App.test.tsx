@@ -64,7 +64,7 @@ describe('App', () => {
     const foot = view.container.querySelector<HTMLElement>('.app-foot')!;
     expect(foot).toHaveTextContent('Peek · Universal Parcel Tracker');
     expect(within(foot).getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy.html');
-    expect(within(foot).getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/plhery/delivery-tracker');
+    expect(within(foot).getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/plhery/peek-delivery-tracker');
     const home = within(foot).getByRole('link', { name: 'Home page' });
     expect(home).toHaveAttribute('href', '/home');
     const scrolled = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);

@@ -116,7 +116,9 @@ in the repository:
 
 - the public build values as variables (`NEXT_PUBLIC_SUPABASE_URL`,
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and the `NEXT_PUBLIC_AUTH_*` switches). With
-  them, a commit on `main` is published as `ghcr.io/<owner>/<repository>:<commit>`;
+  them, a commit on `main` is published as `ghcr.io/<owner>/<repository>:<commit>`.
+  `CONTAINER_IMAGE_REPOSITORY` can keep an existing `<owner>/<package>` path when the
+  repository is renamed;
 - `DEPLOY_ENABLED=true` and `DEPLOY_URL` (the public origin) as variables;
 - `DEPLOY_SSH_TARGET` (`user@host`), `DEPLOY_SSH_KEY` and `DEPLOY_SSH_KNOWN_HOSTS` as
   secrets.

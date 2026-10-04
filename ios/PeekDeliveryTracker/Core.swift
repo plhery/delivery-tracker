@@ -59,7 +59,7 @@ struct AppConfiguration: Sendable {
     }
 
     /// Where Peek's code is published.
-    static let sourceURL = URL(string: "https://github.com/plhery/delivery-tracker")!
+    static let sourceURL = URL(string: "https://github.com/plhery/peek-delivery-tracker")!
 
     private static func value(_ key: String) -> String {
         guard let raw = Bundle.main.object(forInfoDictionaryKey: key) as? String else { return "" }

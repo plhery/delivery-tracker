@@ -86,7 +86,7 @@ describe('ParcelPage', () => {
     expect(screen.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy.html');
     // The foot names the code as the landing's does.
     const code = screen.getByRole('link', { name: 'GitHub' });
-    expect(code).toHaveAttribute('href', 'https://github.com/plhery/delivery-tracker');
+    expect(code).toHaveAttribute('href', 'https://github.com/plhery/peek-delivery-tracker');
     expect(code).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
