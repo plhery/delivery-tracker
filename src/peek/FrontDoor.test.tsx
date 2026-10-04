@@ -4,6 +4,7 @@ import { hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { scroll, stubIntersections } from '../test/intersections';
+import '../test/parcelCode';
 import { LINK_ID, OTHER_LINK_ID, OWNER_KEY, pendingView, testView } from '../test/parcelLinks';
 import type { EventPlace, Stage } from '../types';
 import { FrontDoor } from './FrontDoor';

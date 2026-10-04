@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import '../test/parcelCode';
 import { LINK_ID, OWNER_KEY, pendingView, testView } from '../test/parcelLinks';
 import { PeekRoot } from './PeekRoot';
 import { forgetAllRecents, recentFor, RECENTS_STORAGE_KEY } from './recents';

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DemoApplication, shouldUseDemoRepository } from './ClientApplication';
 import './test/accountCode';
+import './test/parcelCode';
 import { lookupParcel, parcelLinksMode, readParcelLink } from './peek/links';
 import { onKeepOutcome, pendingKeep, rememberPendingKeep, type KeepOutcome } from './peek/pending';
 import { forgetAllRecents, recentFor, rememberParcel, renameParcel } from './peek/recents';

@@ -224,12 +224,14 @@ header; the demo, the sample and the offline page say it in the page, and let th
 be followed. These addresses are written on `CANONICAL_ORIGIN` when it is set
 ([DEPLOYMENT.md](DEPLOYMENT.md)).
 
-The landing comes without the code of the account's screens (the deliveries, signing in,
-an invitation, the demo): it is fetched when one of them is about to show
-([`accountCode.ts`](../src/accountCode.ts)). A browser the script marked, or one that
-holds a sign-in at any address, asks for it as its page loads, and comes alive with it.
-The demo's and an invitation's addresses bring the code along. Every page loads all the
-stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
+The landing comes without the code of the screens behind it. The account's screens (the
+deliveries, signing in, an invitation, the demo) are fetched when one of them is about to
+show ([`accountCode.ts`](../src/accountCode.ts)); the parcel page and the list of the
+device's parcels once the landing is live ([`parcelCode.ts`](../src/peek/parcelCode.ts)).
+A browser the script marked asks for what it will open on as its page loads, and comes
+alive with it. An address that opens on such a screen (`/demo`, `/invite`, `/p/<id>`,
+`/sample`) brings the code along. Every page loads all the stylesheets, in one order
+([`cascade.ts`](../src/cascade.ts)).
 
 ## Data lifecycle
 

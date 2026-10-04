@@ -7,6 +7,7 @@ import { ApiApplication } from './ApiApplication';
 import { AuthProvider } from './auth/AuthContext';
 import { REQUESTED_PARCEL_STORAGE_KEY as NOTE_KEY } from './lib/requestedParcel';
 import './test/accountCode';
+import './test/parcelCode';
 import { stubIntersections } from './test/intersections';
 
 // A link to one of an account's parcels, as a delivery email and a notification carry it,

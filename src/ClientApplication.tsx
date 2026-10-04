@@ -18,6 +18,7 @@ import { useDemoAddress, useEntryExperience } from './lib/experience';
 import { MovedHost } from './lib/movedHost';
 import { ParcelIllustration } from './components/Icon';
 import { usePendingInvitation } from './lib/friendInvites';
+import { parcelCode } from './peek/parcelCode';
 import { PeekRoot } from './peek/PeekRoot';
 import { useLandingRoute, useParcelLinkRoute } from './peek/route';
 import { useVisitorSession } from './peek/visitor';
@@ -56,8 +57,9 @@ export function ClientApplication({ movedTo, ...props }: ApplicationProps & {
 }
 
 function Application({ invitationRoute = false, parcelLinkId = null, demoRoute = false, landingRoute = false, deliveryEmails = false, initialLocale, initialMessages }: ApplicationProps) {
-  // A browser that will open on the account's screens comes alive with their code in hand.
+  // A browser that will open on the account's screens, or on its own parcels, comes alive with their code in hand.
   accountCode.useEarly();
+  parcelCode.useEarly();
   const demoRepo = useMemo(
     () => isDemoBuild ? createDemoRepo() : null,
     [],

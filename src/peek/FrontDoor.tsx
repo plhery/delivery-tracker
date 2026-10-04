@@ -19,12 +19,12 @@ import { SAMPLE_COUNT, SampleLine, SampleText } from './landing/Sample';
 import { useLive, useReducedMotion } from './landing/useLive';
 import { useSampleLoop } from './landing/useSampleLoop';
 import { startSample, type ParcelLinkView, type ParcelLookup } from './links';
-import { DeviceParcels } from './lookup/DeviceParcels';
 import { DoorIcon } from './lookup/DoorNote';
 import { LookupFeedback } from './lookup/LookupFeedback';
 import { countdown } from './lookup/machine';
 import { looksLikeNumber } from './lookup/reading';
 import { useLookup } from './lookup/useLookup';
+import { parcelCode } from './parcelCode';
 import { useRecents } from './recents';
 import { usePeekSession } from './session';
 import './FrontDoor.css';
@@ -62,6 +62,8 @@ export function FrontDoor({ onTracked, onSample, onSignIn }: {
   const recents = useRecents();
   // With parcels on this device the first screen is theirs: the field, then the list.
   const firstVisit = recents.length === 0;
+  // Their list, with its routes, is code a first visit comes without.
+  const screens = parcelCode.useCode(!firstVisit);
   // The buttons wait for the page to be live; what was typed into the field before that stays.
   const ready = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const lookup = useLookup(useCallback(({ id, key, view }: ParcelLookup) =>
@@ -270,7 +272,7 @@ export function FrontDoor({ onTracked, onSample, onSignIn }: {
             hop={answered} onOpening={() => { setUnboxing(true); sample.current = startSample(locale); }}
             onOpen={() => void sample.current?.then(onSample)} />}
           {opening && <div className="door-skeleton" aria-hidden="true"><span /><span /><span /></div>}
-          <DeviceParcels onSignIn={onSignIn} onForgotten={() => field.current?.focus()} />
+          {screens && <screens.DeviceParcels onSignIn={onSignIn} onForgotten={() => field.current?.focus()} />}
         </div>
         <CarrierRibbon />
       </section>
