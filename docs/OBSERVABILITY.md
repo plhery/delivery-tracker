@@ -73,6 +73,36 @@ earlier attempt, since the parcel joined the account, ended `updated` on another
 A universal answer with progress resets the consecutive-check count, even when it has
 no new scan. Thin answers keep the previous provider preference and event watermark.
 
+## Tracking support backlog
+
+`tracking_support_cases` keeps one private case per normalized tracking number when
+recognition is unknown, ambiguous or generic postal, the carrier has no direct adapter,
+or its number points elsewhere. The audit captures recognition before fetching, so a
+successful fallback still leaves the gap visible. Known-carrier outages stay in health
+monitoring.
+
+Cases and their bounded `tracking_support_observations` are service-role only. They
+survive parcel deletion and audit pruning. Repeating an audit write does not count the
+same check twice. Cases retain sightings, fallback counts, detection candidates, the
+last outcome and direct verification evidence.
+
+Review open cases:
+
+```sql
+select id, tracking_number, reasons, detection_candidates, seen_count, fallback_count,
+       last_outcome, last_provider, first_seen, last_seen, fix_status, fix_reference
+from public.tracking_support_cases
+where fix_status = 'open'
+order by last_seen desc;
+```
+
+After shipping support, set `fix_status = 'fixed'`, `fixed_at` to its deployment time
+and `fix_reference` to the commit or release. A later successful direct check with
+accepted, timestamped progress for that same number promotes it to `verified`.
+Provider answers, thin results, preserved older summaries and a different handoff
+number cannot verify a fix. Use `ignored` with a note for a case that needs no change;
+future sightings still accumulate.
+
 ## Unmapped wording
 
 `tracking_status_observations` collects carrier wording whose stage didn't come from a

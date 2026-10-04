@@ -41,6 +41,7 @@ import { directCarrier, freshnessWindow, hasRoutingProgress, RoutingDeferred, ro
 import { upuHistory } from './upuHistory';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
 import { eventTimestamp, latestResultTime, resultTimezone } from 'universal-parcel-scraper/app';
+import { trackingSupportEvidence } from './trackingSupport';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 /** One-off parcels have no owner: a scheduled run checks this many of them, all together. */
@@ -1051,6 +1052,7 @@ export class TrackingSyncService {
         eventsReceived: result.events?.length ?? 0,
         eventsNormalized: events.length,
         anomalyCodes: anomalies,
+        supportEvidence: trackingSupportEvidence(parcel, result, sourceCarrierId, outcome, preserveSummary),
       } as const;
       await audit.finish(completion);
       audit.reportAnomalies(anomalies, completion);

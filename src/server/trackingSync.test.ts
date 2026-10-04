@@ -1609,7 +1609,10 @@ describe('TrackingSyncService', () => {
     expect(client.insertEvents).not.toHaveBeenCalled();
     expect(client.deleteEventsByDescriptions).not.toHaveBeenCalled();
     expect(client.completeSyncAttempt).toHaveBeenCalledWith(expect.any(String),
-      expect.objectContaining({ outcome: 'waiting', anomaly_codes: ['fallback_without_progress'] }), expect.any(Array));
+      expect.objectContaining({ outcome: 'waiting', anomaly_codes: ['fallback_without_progress'] }),
+      expect.arrayContaining([expect.objectContaining({ step: 'complete', details: expect.objectContaining({
+        support_lookup_number: '06080000000002', support_direct_progress: false,
+      }) })]));
     expect(client.recordTrackingHealth).toHaveBeenLastCalledWith(expect.any(String), 'thin-fallback',
       expect.arrayContaining([expect.objectContaining({ kind: 'refresh', healthy: true })]));
     expect(capture).not.toHaveBeenCalled();
@@ -1796,6 +1799,9 @@ describe('TrackingSyncService', () => {
       package_id: 'package-1',
       trigger: 'scheduled',
       configured_carrier: 'dpd',
+      support_context: expect.objectContaining({
+        tracking_number: '06080000000002', reasons: ['ambiguous_shape'],
+      }),
     }), undefined);
     expect(client.completeSyncAttempt).toHaveBeenCalledWith(
       expect.any(String),
@@ -1811,7 +1817,9 @@ describe('TrackingSyncService', () => {
         expect.objectContaining({ step: 'normalize', status: 'succeeded' }),
         expect.objectContaining({ step: 'persist_events', status: 'succeeded' }),
         expect.objectContaining({ step: 'persist_package', status: 'succeeded' }),
-        expect.objectContaining({ step: 'complete', status: 'succeeded' }),
+        expect.objectContaining({ step: 'complete', status: 'succeeded', details: expect.objectContaining({
+          support_lookup_number: '06080000000002', support_provider: null, support_direct_progress: true,
+        }) }),
       ]),
     );
   });

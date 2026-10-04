@@ -13,6 +13,7 @@ import { recordRefresh } from './metrics';
 import { observeTrackingHealth, type HealthSample } from './trackingHealth';
 import { SupabaseError, type SupabaseServiceClient } from './supabase';
 import type { JsonObject } from './types';
+import { trackingSupportContext } from './trackingSupport';
 
 export type SyncTrigger = 'package' | 'scheduled';
 export type SyncStep =
@@ -52,6 +53,7 @@ export interface SyncAuditCompletion {
   error?: unknown;
   /** False when no provider was contacted, so the check is not evidence of provider health. */
   evaluateHealth?: boolean;
+  supportEvidence?: JsonObject;
 }
 
 type StepStatus = 'succeeded' | 'failed' | 'skipped';
@@ -118,6 +120,7 @@ export class TrackingSyncAudit {
         configured_carrier: this.configuredCarrier,
         previous_stage: this.previousStage,
         started_at: this.#startedAtIso,
+        support_context: trackingSupportContext(this.trackingNumber, this.configuredCarrier),
       }, this.context.lease);
     });
     logOperationalEvent('tracking_sync_started', this.logContext());
@@ -216,6 +219,7 @@ export class TrackingSyncAudit {
     if (!this.#steps.some((step) => step.step === 'complete')) {
       this.record('complete', 'succeeded', elapsedMilliseconds(this.#startedAt), {
         outcome: completion.outcome,
+        ...completion.supportEvidence,
       });
     }
     const completedAt = new Date();
