@@ -16,6 +16,7 @@ import { useMedia, useNow } from '../parcel/hooks';
 import { parcelDetail, parcelFreshness, parcelHeadline, parcelStage } from '../parcel/summary';
 import { useRecents, type RecentParcel } from '../recents';
 import { openParcelLink, parcelLinkPath } from '../route';
+import { usePeekSession } from '../session';
 import { forgetDeviceParcels, leadParcel, watchDeviceParcels } from './deviceList';
 
 /** A long number as a card writes it: its two ends. A short one stays whole. */
@@ -122,6 +123,7 @@ export function DeviceParcels({ onSignIn, onForgotten }: {
   onForgotten: () => void;
 }) {
   const { t } = useI18n();
+  const { account } = usePeekSession();
   const recents = useRecents();
   const [asking, setAsking] = useState(false);
   const [forgetting, setForgetting] = useState(false);
@@ -162,6 +164,6 @@ export function DeviceParcels({ onSignIn, onForgotten }: {
       {lead && <li key={lead.id} className="door-device__lead"><LeadParcel recent={lead} /></li>}
       {recents.filter((recent) => recent !== lead).map((recent) => <li key={recent.id}><DeviceParcel recent={recent} /></li>)}
     </ul>
-    <p className="door-aside">{t('door.recents.kept')} <button type="button" className="door-link" onClick={onSignIn}>{t('door.recents.signIn')}</button></p>
+    <p className="door-aside">{t('door.recents.kept')}{account !== 'signed-in' && <>{' '}<button type="button" className="door-link" onClick={onSignIn}>{t('door.recents.signIn')}</button></>}</p>
   </section>;
 }

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { AddParcelSheet } from './components/AddParcelSheet';
 import { ParcelAddedBurst } from './components/ParcelAddedBurst';
 import { AccountMenu } from './components/AccountMenu';
+import { AppFoot } from './components/AppFoot';
 import { NotificationPrompt } from './components/NotificationPrompt';
 import { AppNavigation, type AppTab } from './components/AppNavigation';
 import { ParcelCard } from './components/ParcelCard';
@@ -82,6 +83,7 @@ export default function App({
   onDeleteAccount,
   apiAuth,
   onExitDemo,
+  onOpenLanding,
 }: {
   accountEmail?: string;
   onSignOut?: () => Promise<void>;
@@ -89,6 +91,8 @@ export default function App({
   onDeleteAccount?: (confirmation: string) => Promise<void>;
   apiAuth?: ApiAuth;
   onExitDemo?: () => void;
+  /** Shows the landing: at its own address for an account, at `/` for the demo of a visitor. */
+  onOpenLanding?: () => void;
 } = {}) {
   const { t } = useI18n();
   const {
@@ -437,6 +441,12 @@ export default function App({
   ) : null;
   const nextCard = nextParcel && <div className="delivery-next"><ParcelCard key={nextParcel.id} parcel={nextParcel} variant="hero" onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>;
 
+  // The landing opens at its top: the links to it stand at the foot of the list and of Settings.
+  const openLanding = onOpenLanding && (() => {
+    onOpenLanding();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  });
+
   return (
     <div className={`app${tab === 'deliveries' ? ' app--deliveries' : ''}`} onClickCapture={focusClickedButton}>
       <a className="skip-link" href="#main-content">{t('web.skipContent')}</a>
@@ -448,7 +458,7 @@ export default function App({
           </div>
           <h1 className="app__title">{t(tab === 'deliveries' ? 'native.deliveries' : tab === 'passport' ? 'passport.title' : 'friends.title')}</h1>
           <div className="app__actions">
-            <AccountMenu email={accountEmail} onExport={onExportAccount} onDelete={onDeleteAccount} onSignOut={onSignOut} onExitDemo={onExitDemo} onResetDemo={mode === 'demo' ? resetDemo : undefined} apiAuth={apiAuth} />
+            <AccountMenu email={accountEmail} onExport={onExportAccount} onDelete={onDeleteAccount} onSignOut={onSignOut} onExitDemo={onExitDemo} onResetDemo={mode === 'demo' ? resetDemo : undefined} onOpenLanding={openLanding} apiAuth={apiAuth} />
           </div>
           <AppNavigation selected={tab} onSelect={switchTab} />
         </div>
@@ -655,6 +665,8 @@ export default function App({
         )}
         </div>
         </div>
+        {/* The foot ends the deliveries and moves with them when they are pulled. */}
+        {openLanding && <AppFoot onOpenLanding={openLanding} />}
         </PullToRefresh>
         {tab === 'passport' && <Passport parcels={parcels} loading={loading} />}
         {tab === 'friends' && <Friends key={apiAuth?.userId ?? 'demo'} client={friendsClient} parcels={parcels} demo={mode === 'demo'} onExitDemo={onExitDemo} />}

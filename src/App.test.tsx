@@ -55,6 +55,32 @@ describe('App', () => {
     expect(await repo.list()).toHaveLength(original.length);
   });
 
+  it('ends the deliveries on a quiet foot that leads to the landing, the privacy notice and the code', async () => {
+    const onOpenLanding = vi.fn();
+    const user = userEvent.setup();
+    const view = render(<ParcelsProvider repo={createDemoRepo(window.localStorage)}>
+      <App accountEmail="owner@example.test" onSignOut={vi.fn()} onOpenLanding={onOpenLanding} />
+    </ParcelsProvider>);
+    const foot = view.container.querySelector<HTMLElement>('.app-foot')!;
+    expect(foot).toHaveTextContent('Peek · Universal Parcel Tracker');
+    expect(within(foot).getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy.html');
+    expect(within(foot).getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/plhery/delivery-tracker');
+    const home = within(foot).getByRole('link', { name: 'Home page' });
+    expect(home).toHaveAttribute('href', '/home');
+    const scrolled = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    await user.click(home);
+    expect(onOpenLanding).toHaveBeenCalledOnce();
+    // The landing opens at its top, not as far down as the foot stood.
+    expect(scrolled).toHaveBeenLastCalledWith({ top: 0, behavior: 'instant' });
+    scrolled.mockRestore();
+    // The foot belongs to the deliveries: the other tabs end on their own.
+    await user.click(screen.getByRole('button', { name: 'Passport' }));
+    expect(foot).not.toBeVisible();
+    view.unmount();
+    // Where nothing shows the landing, there is no foot.
+    expect(renderApp().container.querySelector('.app-foot')).toBeNull();
+  });
+
   it('adds a Dutch postal shipment with automatic PostNL tracking', async () => {
     const repo = createDemoRepo(window.localStorage);
     const add = vi.spyOn(repo, 'add');

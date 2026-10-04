@@ -4,21 +4,25 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LanguageControl, useI18n } from '../i18n';
 import { useAppearance, type Appearance } from '../lib/appearance';
+import { LANDING_PATH } from '../lib/experience';
 import { useSheetDialog } from '../lib/modal';
 import type { ApiAuth } from '../lib/apiClient';
+import { followInPlace } from '../peek/landing/links';
 import { Icon } from './Icon';
 import { NotificationControl } from './NotificationControl';
 import './Settings.css';
 
 type AccountAction = 'export' | 'delete' | 'sign-out' | 'reset-demo';
 
-export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, onResetDemo, apiAuth }: {
+export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, onResetDemo, onOpenLanding, apiAuth }: {
   email?: string;
   onExport?: () => Promise<void>;
   onDelete?: (confirmation: string) => Promise<void>;
   onSignOut?: () => Promise<void>;
   onExitDemo?: () => void;
   onResetDemo?: () => Promise<void>;
+  /** Shows the landing, which someone signed in no longer meets at `/`. */
+  onOpenLanding?: () => void;
   apiAuth?: ApiAuth;
 }) {
   const { t } = useI18n();
@@ -70,7 +74,8 @@ export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, 
               <div>{(['system', 'light', 'dark'] as Appearance[]).map((option) => <button type="button" key={option} aria-pressed={appearance === option} onClick={() => { setAppearance(option); trackAction('appearance-change'); }}><span className={`settings-mini-screen settings-mini-screen--${option}`} aria-hidden="true"><i /><i /></span>{t(`native.appearance.${option}`)}</button>)}</div>
             </fieldset><LanguageControl className="language-control--account" /></div>
           </section>
-          <div className="settings-box"><button ref={accountButton} className="settings-row" type="button" onClick={() => navigate('account')}>{accountTitle}<span className="settings-chevron" aria-hidden="true">›</span></button></div>
+          <div className="settings-box"><button ref={accountButton} className="settings-row" type="button" onClick={() => navigate('account')}>{accountTitle}<span className="settings-chevron" aria-hidden="true">›</span></button>
+            {onOpenLanding && <a className="settings-row" href={LANDING_PATH} onClick={(event) => followInPlace(event, onOpenLanding)}>{t('app.homePage')}<span className="settings-value">{window.location.host}</span><span className="settings-chevron" aria-hidden="true">›</span></a>}</div>
         </div>
         {page === 'account' && <>
           <p className="settings-description">{email || t('app.demo')}</p>

@@ -14,7 +14,7 @@ import { LandingIcon } from './landing/glyphs';
 import { HeroPip } from './landing/HeroPip';
 import { Landing } from './landing/Landing';
 import { LandingFooter } from './landing/Who';
-import { SOURCE_URL } from './landing/links';
+import { followInPlace, SOURCE_URL } from './landing/links';
 import { SAMPLE_COUNT, SampleLine, SampleText } from './landing/Sample';
 import { useLive, useReducedMotion } from './landing/useLive';
 import { useSampleLoop } from './landing/useSampleLoop';
@@ -55,7 +55,10 @@ export function FrontDoor({ onTracked, onSample, onSignIn }: {
   onSignIn: () => void;
 }) {
   const { t, locale } = useI18n();
-  const { account } = usePeekSession();
+  const { account, email, openDeliveries } = usePeekSession();
+  // Someone signed in reads the landing at its own address: the way back to their deliveries stands where signing in does.
+  const mine = account === 'signed-in' && openDeliveries;
+  const initial = email?.trim().charAt(0).toUpperCase();
   const recents = useRecents();
   // With parcels on this device the first screen is theirs: the field, then the list.
   const firstVisit = recents.length === 0;
@@ -81,7 +84,7 @@ export function FrontDoor({ onTracked, onSample, onSignIn }: {
   const beat = useSampleLoop(SAMPLE_COUNT, ready && firstVisit && !touched && !written && !unboxing && !still && live);
 
   // While a saved sign-in is still being looked for, nobody may be looking at the door.
-  useEffect(() => { if (account !== 'checking') trackScreen('front-door', 'anonymous'); }, [account]);
+  useEffect(() => { if (account !== 'checking') trackScreen('front-door', account === 'signed-in' ? 'account' : 'anonymous'); }, [account]);
 
   // The tab asks the page's question, in the reader's language. Whatever follows the landing is the app again.
   useEffect(() => {
@@ -200,7 +203,12 @@ export function FrontDoor({ onTracked, onSample, onSignIn }: {
       <PeekLockup />
       <div className="door-header__actions">
         <a className="door-github" href={SOURCE_URL} target="_blank" rel="noopener noreferrer"><LandingIcon name="github" />GitHub</a>
-        <button type="button" className="door-signin" disabled={!ready} onClick={onSignIn}>{t('arrival.signInTitle')}</button>
+        {mine
+          // eslint-disable-next-line @next/next/no-html-link-for-pages -- followed in place: the app itself answers at `/`
+          ? <a className="door-signin door-mine" href="/" onClick={(event) => followInPlace(event, () => mine())}>
+            <span className="door-mine__avatar" aria-hidden="true">{initial || <Icon name="account" />}</span>{t('landing.mine')}
+          </a>
+          : <button type="button" className="door-signin" disabled={!ready} onClick={onSignIn}>{t('arrival.signInTitle')}</button>}
       </div>
     </header>
     <main>

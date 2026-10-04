@@ -178,6 +178,7 @@ Key server modules:
 | Address | What it shows |
 | --- | --- |
 | `/` | The landing to a visitor, with the parcels of their device right under the field; the deliveries to someone signed in |
+| `/home` | The landing to anyone. Someone signed in reaches it from the foot of their deliveries or from Settings, and it leads back to `/` |
 | `/p/<id>` | One parcel, to anyone with the link |
 | `/sample` | A made-up parcel on a parcel page, told by the browser: nothing is asked of the server or kept on the device |
 | `/i/<key>`, `/invite` | A friend invitation ([FRIENDS.md](FRIENDS.md)) |
@@ -191,8 +192,10 @@ The server draws the landing at `/` for everyone, because a sign-in lives in the
 storage. A script that runs before the first paint
 ([`entryHintConfig.ts`](../src/lib/entryHintConfig.ts)) marks a browser that holds a
 sign-in, or has the demo open, so it shows the splash instead until its own screen is
-ready. The map and the sample parcels of the landing load when their sections come near;
-a visitor with parcels on the device gets the map at once, for the routes on their cards.
+ready. At `/home` the landing shows at once, and the script only keeps "Sign in" out of
+sight for a browser that holds a sign-in. The map and the sample parcels of the landing
+load when their sections come near; a visitor with parcels on the device gets the map at
+once, for the routes on their cards.
 
 ## Data lifecycle
 

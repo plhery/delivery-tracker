@@ -7,6 +7,7 @@ import { carrierBrand } from '../../lib/carrierBrand';
 import { carrierNameList } from '../../lib/carrierPicker';
 import { carrierInfo, carrierTrackingHintKey, formatTrackingNumber, tracksAutomatically } from '../../lib/carriers';
 import type { CarrierId } from '../../types';
+import { usePeekSession } from '../session';
 import { DoorNote } from './DoorNote';
 import { FoundNumber } from './FoundNumber';
 import type { Lookup } from './useLookup';
@@ -41,6 +42,9 @@ export function LookupFeedback({ lookup, pointer, onSignIn, onPickCarrier, onSug
   onSuggestion: (number: string) => void;
 }) {
   const { t, locale, languageTag } = useI18n();
+  const { account, openDeliveries } = usePeekSession();
+  // Someone signed in is not asked to sign in: what an account is for is in their deliveries.
+  const mine = account === 'signed-in' && openDeliveries;
   const { state, found, send } = lookup;
   const { match, check, typo, several } = found;
   const opening = state.job?.type === 'lookup';
@@ -115,7 +119,7 @@ export function LookupFeedback({ lookup, pointer, onSignIn, onPickCarrier, onSug
           <span className="door-number__text"><strong>{info.name}</strong><span>{formatTrackingNumber(number.trackingNumber, number.carrier)}</span></span>
         </label>;
       })}
-      <p className="door-aside">{t('door.several.question')} <button type="button" className="door-link" onClick={onSignIn}>{t('door.several.signIn')}</button></p>
+      {!mine && <p className="door-aside">{t('door.several.question')} <button type="button" className="door-link" onClick={onSignIn}>{t('door.several.signIn')}</button></p>}
     </fieldset>}
 
     {check.status === 'several' && line && <fieldset className="door-carriers">
@@ -185,8 +189,8 @@ export function LookupFeedback({ lookup, pointer, onSignIn, onPickCarrier, onSug
 
     {trouble === 'burst' && <DoorNote icon="hourglass" tone="warm" title={t('door.burst.title')} urgent><p>{t('door.burst.body')}</p></DoorNote>}
     {trouble === 'daily' && <DoorNote icon="hourglass" tone="warm" title={t('door.daily.title')} urgent>
-      <p>{t('door.daily.body')}</p>
-      <button type="button" className="door-note__action" onClick={onSignIn}>{t('arrival.signInTitle')}</button>
+      <p>{t(mine ? 'door.daily.account' : 'door.daily.body')}</p>
+      <button type="button" className="door-note__action" onClick={mine ? () => mine() : onSignIn}>{t(mine ? 'landing.mine' : 'arrival.signInTitle')}</button>
     </DoorNote>}
     {trouble === 'offline' && <DoorNote icon="offline" title={t('offline.title')} urgent><p>{t('door.offline.body')}</p></DoorNote>}
     {trouble === 'server' && <DoorNote icon="refresh" tone="warm" title={t('door.trouble.title')} urgent><p>{t('door.trouble.body')}</p></DoorNote>}

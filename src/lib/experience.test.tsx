@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { trackAction } from './analytics';
-import { DEMO_PATH, EXPERIENCE_STORAGE_KEY, endSignInStep, useDemoAddress, useEntryExperience } from './experience';
+import { DEMO_PATH, EXPERIENCE_STORAGE_KEY, LANDING_PATH, endSignInStep, useDemoAddress, useEntryExperience } from './experience';
 
 vi.mock('./analytics', () => ({ trackAction: vi.fn() }));
 
@@ -67,6 +67,24 @@ describe('the entry experience', () => {
     // The address is the demo: nothing is remembered for `/`.
     expect(sessionStorage.getItem(EXPERIENCE_STORAGE_KEY)).toBe('sign-in');
     expect(localStorage.getItem(EXPERIENCE_STORAGE_KEY)).toBeNull();
+  });
+
+  it('shows the landing at its own address, whatever this browser remembers, and opens every other step at `/`', () => {
+    localStorage.setItem(EXPERIENCE_STORAGE_KEY, 'demo');
+    history.replaceState(null, '', LANDING_PATH);
+    const { result } = renderHook(() => useEntryExperience());
+    expect(result.current.screen).toBe('welcome');
+    // Signing in happens at `/`, where a sign-in provider returns to. Back is the landing again.
+    const length = history.length;
+    act(() => result.current.navigate('sign-in'));
+    expect(location.pathname).toBe('/');
+    expect(history.length).toBe(length + 1);
+    expect(result.current.screen).toBe('sign-in');
+    act(() => { history.replaceState(null, '', LANDING_PATH); window.dispatchEvent(new PopStateEvent('popstate')); });
+    expect(result.current.screen).toBe('welcome');
+    // Staying at the landing is no step to take.
+    act(() => result.current.navigate('welcome'));
+    expect(location.pathname).toBe(LANDING_PATH);
   });
 
   it('leaves the demo’s address for `/` when the demo is left', () => {

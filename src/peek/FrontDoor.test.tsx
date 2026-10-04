@@ -908,3 +908,62 @@ describe('FrontDoor: the landing', () => {
     expect(html).not.toContain('parcel-card');
   });
 });
+
+describe('FrontDoor: for someone signed in', () => {
+  const openDeliveries = vi.fn();
+  async function accountDoor() {
+    const { PeekSessionProvider } = await import('./session');
+    const user = userEvent.setup();
+    render(<PeekSessionProvider value={{ account: 'signed-in', email: 'paul@example.test', signIn: () => undefined, openDeliveries }}>
+      <FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />
+    </PeekSessionProvider>);
+    return { user, field: screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Tracking number or link' }) };
+  }
+
+  it('leads back to their deliveries where a visitor is asked to sign in: in the header behind their initial, and under what an account adds', async () => {
+    const analytics = await import('../lib/analytics');
+    const seen = vi.spyOn(analytics, 'trackScreen');
+    const { user } = await accountDoor();
+    expect(screen.queryByRole('button', { name: /^Sign in/ })).toBeNull();
+    const [header, section] = screen.getAllByRole('link', { name: 'My deliveries' });
+    expect(header).toHaveAttribute('href', '/');
+    expect(header).toHaveTextContent('PMy deliveries');
+    expect(section).toHaveClass('button--primary');
+    expect(screen.getByText('Peek keeps them all, on the web and on your iPhone. The next one rides on its map.')).toBeInTheDocument();
+    await user.click(header);
+    await user.click(section);
+    expect(openDeliveries).toHaveBeenCalledTimes(2);
+    expect(seen).toHaveBeenCalledWith('front-door', 'account');
+    seen.mockRestore();
+  });
+
+  it('leaves a modified click on the way back to the browser, for a new tab', async () => {
+    await accountDoor();
+    fireEvent.click(screen.getAllByRole('link', { name: 'My deliveries' })[0], { metaKey: true });
+    expect(openDeliveries).not.toHaveBeenCalled();
+  });
+
+  it('still looks a parcel up, and keeps the parcels of the device without offering to sign in', async () => {
+    rememberParcel({ id: OTHER_LINK_ID, key: OWNER_KEY, view: testView({ id: OTHER_LINK_ID }) });
+    const { user, field } = await accountDoor();
+    const device = screen.getByRole('region', { name: 'On this device' });
+    expect(device).toHaveTextContent('Kept in this browser only.');
+    expect(within(device).queryByRole('button', { name: /Sign in/ })).toBeNull();
+    await user.type(field, `${UPS}{Enter}`);
+    await waitFor(() => expect(onTracked).toHaveBeenCalledOnce());
+  });
+
+  it('does not ask whether to sign in for several numbers, and sends them to their deliveries once the day’s lookups are used up', async () => {
+    mocks.lookup.mockRejectedValueOnce(new ParcelLinkError('daily', { retryAfterSeconds: 3_600 }));
+    const { user, field } = await accountDoor();
+    await user.click(field);
+    await user.paste(`UPS ${UPS}\nUPS 1ZDEMO202600000002`);
+    const list = screen.getByRole('group', { name: '2 tracking numbers in this text' });
+    expect(within(list).queryByRole('button', { name: /Sign in/ })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Track this one' }));
+    const note = await screen.findByRole('alert');
+    expect(note).toHaveTextContent('Add this one from your deliveries.');
+    await user.click(within(note).getByRole('button', { name: 'My deliveries' }));
+    expect(openDeliveries).toHaveBeenCalledOnce();
+  });
+});

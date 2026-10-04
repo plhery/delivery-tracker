@@ -25,16 +25,18 @@ import { KeepPendingParcel } from './peek/KeepPending';
 import { BringAlongParcels } from './peek/parcel/BringAlong';
 import { PeekRoot } from './peek/PeekRoot';
 import { keepParcelLink } from './peek/pending';
-import { leaveParcelLink, useParcelLinkRoute } from './peek/route';
+import { leaveParcelLink, openLanding, useLandingRoute, useParcelLinkRoute } from './peek/route';
 import type { PeekSession } from './peek/session';
 import { useVisitorSession } from './peek/visitor';
 
-export function ApiApplication({ invitationRoute = false, parcelLinkId = null, demoRoute = false, deliveryEmails = false }: {
+export function ApiApplication({ invitationRoute = false, parcelLinkId = null, demoRoute = false, landingRoute = false, deliveryEmails = false }: {
   invitationRoute?: boolean;
   /** The link id of the parcel page the server rendered, at `/p/<id>`. */
   parcelLinkId?: string | null;
   /** The server rendered the demo's address, `/demo`. */
   demoRoute?: boolean;
+  /** The server rendered the landing's own address, `/home`. */
+  landingRoute?: boolean;
   /** The server emails accounts when a parcel is delivered: the landing says so. */
   deliveryEmails?: boolean;
 }) {
@@ -44,6 +46,7 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
   const demoAddress = useDemoAddress(demoRoute);
   const invitation = usePendingInvitation(invitationRoute);
   const linkId = useParcelLinkRoute(parcelLinkId);
+  const landingAddress = useLandingRoute(landingRoute);
   const visitor = useVisitorSession(auth.status === 'loading' ? 'checking' : 'visitor');
   // A browser that holds a sign-in says so before the first paint: it waits for its deliveries, not at the landing.
   const restoring = useEntryHint(auth.status !== 'loading') === 'app';
@@ -121,20 +124,22 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
     configured: auth.status !== 'unconfigured', googleEnabled: auth.googleEnabled, appleEnabled: auth.appleEnabled, emailOtpEnabled: auth.emailOtpEnabled,
     signInWithGoogle: auth.signInWithGoogle, signInWithApple: auth.signInWithApple, sendCode: auth.sendCode, verifyCode: auth.verifyCode,
   };
+  // Someone signed in has the landing at its own address; a visitor's is `/`, where leaving the demo leads.
   const demo = <ParcelsProvider key="demo" repo={demoRepo}>
-    <App onExitDemo={() => experience.navigate('welcome')} />
+    <App onExitDemo={() => experience.navigate('welcome')} onOpenLanding={auth.user ? openLanding : () => experience.navigate('welcome')} />
   </ParcelsProvider>;
   // The demo's address shows the demo to anyone at once, signed in or not. Leaving the demo returns to `/`.
   if (demoAddress) return demo;
   // A parcel's address shows the parcel to anyone at once, while a saved sign-in is still being restored.
   // Without one, a visitor arrives at the front door: the server draws it for everyone, since it cannot see a saved
   // sign-in, and so does a browser that holds none while it makes sure.
-  const landing = !linkId && !invitation.pending && experience.screen === 'welcome' && !(auth.status === 'loading' && restoring);
+  // The landing's own address shows it to anyone at once, like a parcel's.
+  const landing = landingAddress || (!linkId && !invitation.pending && experience.screen === 'welcome' && !(auth.status === 'loading' && restoring));
   if (auth.status !== 'authenticated' && (linkId || landing)) {
     return <>
       <PeekRoot session={visitorSession} serverLinkId={parcelLinkId} />
       {/* For the browser that does hold a sign-in: what it shows, in place of the landing, until the page is live. */}
-      {landing && auth.status === 'loading' && <div className="auth-loading entry-splash" aria-hidden="true"><ParcelIllustration /><span>{t('auth.loading')}</span></div>}
+      {landing && !landingAddress && auth.status === 'loading' && <div className="auth-loading entry-splash" aria-hidden="true"><ParcelIllustration /><span>{t('auth.loading')}</span></div>}
     </>;
   }
   if (auth.status === 'loading') {
@@ -163,12 +168,13 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
     <FriendsActivityProvider key={auth.user?.id} auth={apiAuth!} paused={!!invitation.pending}>
     <ParcelsProvider key={auth.user?.id} repo={repo}>
       <KeepPendingParcel auth={apiAuth!} />
-      {linkId ? <SignedInPeek auth={apiAuth!} serverLinkId={parcelLinkId} />
+      {linkId || landingAddress ? <SignedInPeek auth={apiAuth!} email={auth.user?.email} serverLinkId={parcelLinkId} />
         : invitation.pending ? <AuthenticatedInvitation key={invitation.pending.code ?? 'invalid'} {...invitationProps} client={friendsClient} /> : <><App
         accountEmail={auth.user?.email ?? t('native.account')}
         onSignOut={handleSignOut}
         onExportAccount={handleExport}
         onDeleteAccount={handleDelete}
+        onOpenLanding={openLanding}
         apiAuth={apiAuth}
       /><BringAlongParcels auth={apiAuth!} /></>}
     </ParcelsProvider>
@@ -181,11 +187,16 @@ function AuthenticatedInvitation(props: ComponentProps<typeof FriendInvitation>)
   return <FriendInvitation {...props} parcels={parcels} />;
 }
 
-/** A parcel page opened by someone signed in: it can join their deliveries without leaving the page. */
-function SignedInPeek({ auth, serverLinkId }: { auth: ApiAuth; serverLinkId: string | null }) {
+/**
+ * A parcel page opened by someone signed in: it can join their deliveries
+ * without leaving the page. The landing at its own address shows them the way
+ * back to their deliveries.
+ */
+function SignedInPeek({ auth, email, serverLinkId }: { auth: ApiAuth; email?: string; serverLinkId: string | null }) {
   const { parcels, loading, retryLoad } = useParcels();
   const session = useMemo<PeekSession>(() => ({
     account: 'signed-in',
+    email,
     signIn: () => undefined,
     async keep(linkId) {
       const outcome = await keepParcelLink(linkId, auth);
@@ -193,7 +204,11 @@ function SignedInPeek({ auth, serverLinkId }: { auth: ApiAuth; serverLinkId: str
       return outcome;
     },
     deliveries: loading ? undefined : parcels,
-    openDeliveries: (parcelId) => leaveParcelLink(parcelId ? `/?parcel=${encodeURIComponent(parcelId)}` : '/'),
-  }), [auth, parcels, loading, retryLoad]);
+    openDeliveries: (parcelId) => {
+      leaveParcelLink(parcelId ? `/?parcel=${encodeURIComponent(parcelId)}` : '/');
+      // The deliveries open at their top, wherever on the page the way to them stood.
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    },
+  }), [auth, email, parcels, loading, retryLoad]);
   return <PeekRoot session={session} serverLinkId={serverLinkId} />;
 }

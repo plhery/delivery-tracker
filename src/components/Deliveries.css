@@ -29,12 +29,20 @@
 .app--deliveries .archived-section__count { background: none; padding: 0; font-weight: 400; }
 .app--deliveries .archived-section__count::before { content: '('; }
 .app--deliveries .archived-section__count::after { content: ')'; }
+/* The foot of the deliveries, quiet like the landing's own: the name, then the ways out of the app. */
+.app-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 22px; margin-top: 26px; color: var(--ink-soft); font-size: 12px; }
+.app-foot > * { display: inline-flex; align-items: center; min-height: 44px; }
+.app-foot__name { gap: 8px; }
+.app-foot a { gap: 5px; color: inherit; }
+.app-foot a svg { width: 13px; height: 13px; }
 .delivery-arrived { text-align: center; padding: 36px 16px 28px; }
 .delivery-arrived > svg { width: 45px; height: 45px; fill: none; stroke: var(--ink-soft); stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 18px; }
 .delivery-arrived h2 { font-size: 24px; letter-spacing: -.6px; margin-bottom: 8px; }
 .delivery-arrived p { font-size: 13px; color: var(--ink-soft); margin-bottom: 20px; }
 .delivery-arrived .button { min-height: 44px; font-size: 13px; padding: 10px 16px; border-radius: 12px; }
 @media (max-width: 760px) {
+  /* On a phone the name has its own line, over the links. */
+  .app-foot__name { flex-basis: 100%; justify-content: center; }
   .app--deliveries .parcel-grid { grid-template-columns: 1fr; }
   .app--deliveries .parcel-card--hero { padding: 17px 18px 18px; }
   .app--deliveries .parcel-card__hero-main { margin: 19px 0 15px; }

@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { LANDING_PATH } from '../lib/experience';
 import { cleanLinkText, MAX_GIFT_FROM_LENGTH, MAX_GIFT_NOTE_LENGTH } from './linkModel';
 import { cleanParcelName } from './recents';
 import { SAMPLE_LINK_ID, SAMPLE_PATH } from './sample';
@@ -105,6 +106,23 @@ export function useParcelLinkRoute(serverId: string | null = null): string | nul
   return useSyncExternalStore(subscribe, current, () => serverId ?? '') || null;
 }
 
+const atLanding = () => window.location.pathname === LANDING_PATH;
+
+/**
+ * Whether the address is the landing's own, where the landing shows to
+ * someone signed in too. `serverLanding` says the server rendered that address.
+ */
+export function useLandingRoute(serverLanding = false): boolean {
+  return useSyncExternalStore(subscribe, atLanding, () => serverLanding);
+}
+
+/** Shows the landing at its own address, without leaving the page. Back returns to where the reader was. */
+export function openLanding(): void {
+  window.history.pushState(null, '', LANDING_PATH);
+  // Told the way the browser tells a step in the history, so everything that follows the address hears it.
+  window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
 /** Shows a parcel's page at its own address. Back returns to where the visitor was. */
 export function openParcelLink(id: string, { replace = false }: { replace?: boolean } = {}): void {
   if (replace) window.history.replaceState(window.history.state, '', parcelLinkPath(id));
@@ -112,7 +130,7 @@ export function openParcelLink(id: string, { replace = false }: { replace?: bool
   window.dispatchEvent(new Event(eventName));
 }
 
-/** Leaves the parcel page: for the front door, or the deliveries of someone signed in. */
+/** Leaves the parcel page, or the landing's own address: for the front door, or the deliveries of someone signed in. */
 export function leaveParcelLink(path = '/'): void {
   window.history.pushState(null, '', path);
   window.dispatchEvent(new Event(eventName));

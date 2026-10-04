@@ -25,9 +25,14 @@ export function openDemo(): void {
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
-/** For a link to the demo deliveries: a plain click opens them in place, a modified one is left to the browser. */
-export function followDemoLink(event: MouseEvent<HTMLAnchorElement>): void {
+/** For a link inside the app: a plain click is followed in place, a modified one is left to the browser. */
+export function followInPlace(event: MouseEvent<HTMLAnchorElement>, open: () => void): void {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
   event.preventDefault();
-  openDemo();
+  open();
+}
+
+/** For a link to the demo deliveries. */
+export function followDemoLink(event: MouseEvent<HTMLAnchorElement>): void {
+  followInPlace(event, openDemo);
 }

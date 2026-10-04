@@ -22,7 +22,7 @@ import { usePendingInvitation } from './lib/friendInvites';
 import { KeepPendingInDemo } from './peek/KeepPending';
 import { BringAlongInDemo } from './peek/parcel/BringAlong';
 import { PeekRoot } from './peek/PeekRoot';
-import { useParcelLinkRoute } from './peek/route';
+import { useLandingRoute, useParcelLinkRoute } from './peek/route';
 import { useVisitorSession } from './peek/visitor';
 import type { ParcelRepo } from './types';
 
@@ -42,6 +42,8 @@ interface ApplicationProps {
   parcelLinkId?: string | null;
   /** The server rendered the demo's address, `/demo`. */
   demoRoute?: boolean;
+  /** The server rendered the landing's own address, `/home`. */
+  landingRoute?: boolean;
   /** The server has mail settings: it emails accounts when a parcel is delivered. */
   deliveryEmails?: boolean;
   initialLocale?: Locale;
@@ -56,7 +58,7 @@ export function ClientApplication({ movedTo, ...props }: ApplicationProps & {
   return movedTo ? <MovedHost to={movedTo}><Application {...props} /></MovedHost> : <Application {...props} />;
 }
 
-function Application({ invitationRoute = false, parcelLinkId = null, demoRoute = false, deliveryEmails = false, initialLocale, initialMessages }: ApplicationProps) {
+function Application({ invitationRoute = false, parcelLinkId = null, demoRoute = false, landingRoute = false, deliveryEmails = false, initialLocale, initialMessages }: ApplicationProps) {
   const demoRepo = useMemo(
     () => isDemoBuild ? createDemoRepo() : null,
     [],
@@ -84,9 +86,9 @@ function Application({ invitationRoute = false, parcelLinkId = null, demoRoute =
   return (
     <I18nProvider initialLocale={initialLocale} initialMessages={initialMessages}>
       <AppearanceProvider>
-      {demoRepo ? <DemoApplication repo={demoRepo} invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} demoRoute={demoRoute} /> : (
+      {demoRepo ? <DemoApplication repo={demoRepo} invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} demoRoute={demoRoute} landingRoute={landingRoute} /> : (
         <AuthProvider config={authConfig}>
-          <ApiApplication invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} demoRoute={demoRoute} deliveryEmails={deliveryEmails} />
+          <ApiApplication invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} demoRoute={demoRoute} landingRoute={landingRoute} deliveryEmails={deliveryEmails} />
         </AuthProvider>
       )}
       </AppearanceProvider>
@@ -95,23 +97,25 @@ function Application({ invitationRoute = false, parcelLinkId = null, demoRoute =
 }
 
 /** A build without an API: everyone is a visitor, and the demo stands in for an account. */
-export function DemoApplication({ repo, invitationRoute = false, parcelLinkId = null, demoRoute = false }: {
+export function DemoApplication({ repo, invitationRoute = false, parcelLinkId = null, demoRoute = false, landingRoute = false }: {
   repo: ParcelRepo;
   invitationRoute?: boolean;
   parcelLinkId?: string | null;
   demoRoute?: boolean;
+  landingRoute?: boolean;
 }) {
   const invitation = usePendingInvitation(invitationRoute);
   const experience = useEntryExperience(demoRoute);
   const demoAddress = useDemoAddress(demoRoute);
   const linkId = useParcelLinkRoute(parcelLinkId);
+  const landingAddress = useLandingRoute(landingRoute);
   const session = useVisitorSession('visitor');
   // Without accounts the page knows who is looking as soon as it is live.
   useEntryHint(true);
   const signIn = { configured: false, googleEnabled: false, emailOtpEnabled: false, sendCode: async () => undefined, verifyCode: async () => undefined };
 
-  // A parcel's address shows the parcel, whatever this browser was doing before.
-  if (linkId || (!invitation.pending && experience.screen === 'welcome')) {
+  // A parcel's address shows the parcel, and the landing's the landing, whatever this browser was doing before.
+  if (linkId || landingAddress || (!invitation.pending && experience.screen === 'welcome')) {
     return <PeekRoot session={session} serverLinkId={parcelLinkId} />;
   }
   // The demo's address shows the demo; an invitation waiting in this tab comes back after it.
@@ -122,7 +126,8 @@ export function DemoApplication({ repo, invitationRoute = false, parcelLinkId = 
   if (experience.screen === 'demo') {
     return <ParcelsProvider repo={repo}>
       <KeepPendingInDemo repo={repo} />
-      <App onExitDemo={() => experience.navigate('welcome')} />
+      {/* Without accounts the landing is at `/`: its link leaves the demo for it. */}
+      <App onExitDemo={() => experience.navigate('welcome')} onOpenLanding={() => experience.navigate('welcome')} />
       <BringAlongInDemo repo={repo} />
     </ParcelsProvider>;
   }

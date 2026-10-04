@@ -6,7 +6,7 @@ import { useI18n, type MessageKey } from '../../i18n';
 import { DEMO_PATH } from '../../lib/experience';
 import { usePeekSession } from '../session';
 import { LandingIcon } from './glyphs';
-import { followDemoLink, IOS_APP_URL } from './links';
+import { followDemoLink, followInPlace, IOS_APP_URL } from './links';
 import { lazyPicture, useNear, useRise } from './useLive';
 import './More.css';
 
@@ -40,14 +40,16 @@ export function More({ onSignIn, landed }: {
   landed: boolean;
 }) {
   const { t, languageTag } = useI18n();
-  const { deliveryEmails } = usePeekSession();
+  const { deliveryEmails, account, openDeliveries } = usePeekSession();
+  // Someone signed in already has what the section offers: it leads to their deliveries.
+  const mine = account === 'signed-in' && openDeliveries;
   const phone = useRef<HTMLDivElement>(null);
   const near = useNear(phone);
   const rise = useRise(phone);
   return <section className="landing-section landing-more" aria-labelledby="landing-more-title">
     <div className="landing-more__intro">
       <h2 id="landing-more-title">{t('landing.more.title')}</h2>
-      <p>{t('landing.more.body')}</p>
+      <p>{t(mine ? 'landing.more.account' : 'landing.more.body')}</p>
     </div>
     {/* A picture of the app: on a wide screen it stands in a phone. Nothing in it is read out. */}
     <div ref={phone} className="landing-phone" data-rise={rise} aria-hidden="true">
@@ -86,9 +88,12 @@ export function More({ onSignIn, landed }: {
       </div>
       <div className="landing-more__actions">
         {/* The page has two ways to sign in; this one says what it is for. */}
-        <button type="button" className="button button--primary" onClick={onSignIn}>
-          <span>{t('arrival.signInTitle')}{' '}<span className="sr-only">{t('landing.more.signInFor')}</span></span>
-        </button>
+        {mine
+          // eslint-disable-next-line @next/next/no-html-link-for-pages -- followed in place: the app itself answers at `/`
+          ? <a className="button button--primary" href="/" onClick={(event) => followInPlace(event, () => mine())}>{t('landing.mine')}</a>
+          : <button type="button" className="button button--primary" onClick={onSignIn}>
+            <span>{t('arrival.signInTitle')}{' '}<span className="sr-only">{t('landing.more.signInFor')}</span></span>
+          </button>}
         <a className="button button--secondary" href={DEMO_PATH} onClick={followDemoLink}>{t('landing.more.demo')}</a>
         {IOS_APP_URL && <a className="button button--secondary" href={IOS_APP_URL} target="_blank" rel="noopener noreferrer"><LandingIcon name="iphone" />{t('landing.more.app')}</a>}
       </div>

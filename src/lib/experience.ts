@@ -6,13 +6,17 @@ export type EntryScreen = 'welcome' | 'sign-in' | 'demo';
 export const EXPERIENCE_STORAGE_KEY = 'sdt.web.experience.v1'; // gitleaks:allow -- public browser storage preference name
 /** The demo's own address. Anyone who opens it sees the demo, with an account or without. */
 export const DEMO_PATH = '/demo';
+/** The landing's own address. Anyone who opens it sees the landing; at `/`, someone signed in sees their deliveries. */
+export const LANDING_PATH = '/home';
 const DEMO_ARRIVAL_KEY = 'sdt.web.demo-arrival.v1'; // gitleaks:allow -- sessionStorage marker name
 const eventName = 'delivery-experience-change';
 let memoryScreen: EntryScreen | null = null;
 const atDemoAddress = () => window.location.pathname === DEMO_PATH;
+const atLandingAddress = () => window.location.pathname === LANDING_PATH;
 function read(): EntryScreen {
   // The address decides before anything this browser remembers.
   if (atDemoAddress()) return 'demo';
+  if (atLandingAddress()) return 'welcome';
   try {
     // The sign-in step belongs to its tab: it lasts a reload and the trip to a sign-in provider, and ends with the tab.
     if (sessionStorage.getItem(EXPERIENCE_STORAGE_KEY) === 'sign-in') return 'sign-in';
@@ -47,6 +51,8 @@ function navigate(next: EntryScreen) {
     window.history.replaceState(state, '', `${url.pathname}${url.search}${url.hash}`);
     try { sessionStorage.removeItem(DEMO_ARRIVAL_KEY); } catch { /* Nothing was noted. */ }
   }
+  // The landing's address shows the landing only: signing in and the demo happen at `/`.
+  if (next !== 'welcome' && atLandingAddress()) window.history.pushState(null, '', '/');
   memoryScreen = next;
   try {
     if (next === 'sign-in') sessionStorage.setItem(EXPERIENCE_STORAGE_KEY, next);

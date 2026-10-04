@@ -404,6 +404,48 @@ test('the sign-in step lasts a reload of its tab, and the next visit opens the l
   await later.close();
 });
 
+test('the landing has an address of its own, and the deliveries end on a foot that leads to it', async ({ page }) => {
+  // This browser has the demo open: `/` shows the demo deliveries.
+  await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
+  await page.goto('/home');
+  await expect(page.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => document.documentElement.dataset.entry)).toBeUndefined();
+  await page.goto('/');
+  await expect(page.locator('.demo-banner')).toBeVisible();
+  const foot = page.locator('.app-foot');
+  await foot.scrollIntoViewIfNeeded();
+  await expect(foot).toContainText('Peek · Universal Parcel Tracker');
+  await expect(foot.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy.html');
+  // Without an account the landing is at `/`: the link leaves the demo for it.
+  await foot.getByRole('link', { name: 'Home page' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+  expect(path(page)).toBe('/');
+  // The landing opens at its top, not as far down as the foot stood.
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test('the foot of the deliveries fits a 320 px phone in every language', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 320, height: 700 });
+  for (const [locale, home] of [
+    ['en', 'Home page'], ['de', 'Startseite'], ['fr', 'Page d’accueil'], ['it', 'Pagina iniziale'],
+    ['es', 'Página de inicio'], ['pt', 'Página inicial'], ['pl', 'Strona główna'],
+  ]) {
+    await page.addInitScript((value) => localStorage.setItem('deliveryTrackerLocale', value), locale);
+    await page.goto('/demo');
+    const foot = page.locator('.app-foot');
+    await foot.scrollIntoViewIfNeeded();
+    await expect(foot.getByRole('link', { name: home })).toBeVisible();
+    const sides = await foot.evaluate((element) => [...element.children].map((child) => child.getBoundingClientRect()).map(({ left, right }) => [Math.floor(left), Math.ceil(right)]));
+    for (const [left, right] of sides) {
+      expect(left, locale).toBeGreaterThanOrEqual(0);
+      expect(right, locale).toBeLessThanOrEqual(320);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), locale).toBe(true);
+  }
+});
+
 test('a visitor with parcels on this device never sees the first visit’s screen before their own', async ({ page }) => {
   await openLanding(page);
   await field(page).fill('1ZDEMO202600000001');

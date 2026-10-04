@@ -15,6 +15,8 @@ export type SignInMethods = Pick<ComponentProps<typeof SignInScreen>,
 export interface PeekSession {
   /** `checking` while a saved sign-in is being restored; the demo build only has visitors. */
   account: 'checking' | 'visitor' | 'signed-in';
+  /** The account's email, for someone signed in: its initial stands in the landing's header. */
+  email?: string;
   /** Opens the sign-in step. With a link id, that parcel is kept as soon as the visitor is signed in. */
   signIn(keepLinkId?: string): void;
   /** Lets a visitor sign in without leaving the page they are on. Absent where signing in is its own step, as in the demo. */

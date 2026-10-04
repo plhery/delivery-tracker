@@ -11,12 +11,13 @@ import { createDemoRepo } from './store/demoRepo';
 vi.hoisted(() => { process.env.NEXT_PUBLIC_USE_API = 'false'; });
 vi.mock('./App', async () => {
   const { useParcels } = await import('./store/ParcelsContext');
-  function Deliveries({ onExitDemo }: { onExitDemo?: () => void }) {
+  function Deliveries({ onExitDemo, onOpenLanding }: { onExitDemo?: () => void; onOpenLanding?: () => void }) {
     const { parcels, loading } = useParcels();
     return <div>
       <h1>Deliveries</h1>
       {!loading && <ul>{parcels.map((parcel) => <li key={parcel.id}>{parcel.label || parcel.trackingNumber} ({parcel.events.length} scans)</li>)}</ul>}
       <button type="button" onClick={onExitDemo}>Exit demo</button>
+      <button type="button" onClick={onOpenLanding}>Home page</button>
     </div>;
   }
   return { default: Deliveries };
@@ -92,6 +93,23 @@ describe('DemoApplication', () => {
     await user.click(screen.getByRole('button', { name: 'Exit demo' }));
     expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
     expect(location.pathname + location.search).toBe('/');
+  });
+
+  it('shows the landing at its own address, whatever this browser remembers, and leads there from the foot of the demo deliveries', async () => {
+    experience('demo');
+    history.replaceState(null, '', '/home');
+    const user = userEvent.setup();
+    const landing = render(<DemoApplication repo={createDemoRepo(window.localStorage)} landingRoute />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    landing.unmount();
+    // Without accounts the landing is at `/`: the foot's link leaves the demo for it.
+    history.replaceState(null, '', '/');
+    app();
+    expect(await screen.findByText(/Coffee beans/)).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Home page' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(location.pathname).toBe('/');
+    expect(localStorage.getItem('sdt.web.experience.v1')).toBe('welcome');
   });
 
   it('shows the demo at its address before an invitation waiting in the tab, which comes back after it', async () => {

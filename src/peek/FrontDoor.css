@@ -7,11 +7,17 @@
 .door-github svg { width: 15px; height: 15px; }
 .door-signin { flex-shrink: 0; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); font-size: 13px; font-weight: 550; line-height: 1.35; white-space: nowrap; transition: scale .18s var(--spring); }
 .door-signin:active:not(:disabled) { scale: .96; }
+/* Someone signed in: the way back to their deliveries, behind their initial as in the app. */
+.door-mine { display: inline-flex; align-items: center; gap: 8px; padding-left: 8px; text-decoration: none; }
+.door-mine__avatar { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--yellow); color: var(--on-yellow); font-size: 12px; font-weight: 700; }
+.door-mine__avatar svg { width: 14px; height: 14px; }
 /* Before the page is live (src/lib/entryHintConfig.ts): a browser that holds a sign-in, or has the demo open, is not
    shown the landing it is about to leave; it sees what it saw while its parcels opened. */
 html[data-entry=app] .door { display: none; }
 .entry-splash { display: none; }
 html[data-entry=app] .entry-splash { display: grid; }
+/* At the landing's own address a browser that holds a sign-in is not asked to sign in while the page makes sure. */
+html[data-entry=account] .door-signin { visibility: hidden; }
 /* A visitor with parcels on this device gets them first: until they are in place, only the name stands. */
 html[data-entry=device] .door > :not(.door-header), html[data-entry=device] .door > :not(.door-header) * { visibility: hidden !important; }
 /* "Where's my parcel?": the first section. */

@@ -3,6 +3,8 @@ import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   leaveParcelLink,
+  openLanding,
+  useLandingRoute,
   linkNameFromHash,
   linkNameFromLocation,
   linkWordsFromHash,
@@ -127,5 +129,33 @@ describe('the parcel page’s address', () => {
     }
     expect(renderToString(<Probe id={LINK_ID} />)).toContain(LINK_ID);
     expect(renderToString(<Probe id={null} />)).toContain('door');
+  });
+});
+
+describe('the landing’s own address', () => {
+  it('follows the address: opening pushes it, leaving and Back return to where the reader was', () => {
+    const { result } = renderHook(() => ({ landing: useLandingRoute(), link: useParcelLinkRoute() }));
+    expect(result.current.landing).toBe(false);
+    const length = history.length;
+    act(() => openLanding());
+    expect(location.pathname).toBe('/home');
+    expect(history.length).toBe(length + 1);
+    expect(result.current).toEqual({ landing: true, link: null });
+    // A lookup made there opens the parcel's page, and leaving that page leads to the deliveries.
+    act(() => openParcelLink(LINK_ID));
+    expect(result.current).toEqual({ landing: false, link: LINK_ID });
+    act(() => { history.replaceState(null, '', '/home'); window.dispatchEvent(new PopStateEvent('popstate')); });
+    expect(result.current.landing).toBe(true);
+    act(() => leaveParcelLink());
+    expect(location.pathname).toBe('/');
+    expect(result.current.landing).toBe(false);
+  });
+
+  it('renders the server’s address before the browser has one, and is no other address', () => {
+    function Probe({ landing }: { landing?: boolean }) { return <>{String(useLandingRoute(landing))}</>; }
+    expect(renderToString(<Probe landing />)).toContain('true');
+    expect(renderToString(<Probe />)).toContain('false');
+    history.replaceState(null, '', '/home/more');
+    expect(renderHook(() => useLandingRoute()).result.current).toBe(false);
   });
 });

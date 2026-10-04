@@ -15,6 +15,7 @@ vi.mock('next/headers', () => ({
 import { generateMetadata as demoMetadata } from '../app/demo/page';
 import { generateMetadata as layoutMetadata } from '../app/layout';
 import manifest from '../app/manifest';
+import { generateMetadata as landingAddressMetadata } from '../app/home/page';
 import { generateMetadata } from '../app/page';
 import mark from './brand/mark.json';
 
@@ -64,6 +65,11 @@ describe('public product metadata', () => {
         description: LANDING_DESCRIPTION,
       },
     });
+  });
+
+  it('names `/` as the landing’s address at the landing’s own address too', async () => {
+    expect(await landingAddressMetadata()).toEqual(await generateMetadata());
+    expect((await landingAddressMetadata()).alternates).toEqual({ canonical: 'https://delivery.example.test/' });
   });
 
   it('links the preview image by its contents, so a redrawn image replaces cached copies', async () => {

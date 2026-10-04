@@ -1,10 +1,11 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiApplication } from './ApiApplication';
 import { onKeepOutcome, pendingKeep, rememberPendingKeep, type KeepOutcome } from './peek/pending';
 import { forgetAllRecents, recentFor, rememberParcel, renameParcel } from './peek/recents';
+import { openParcelLink } from './peek/route';
 import { LINK_ID, OWNER_KEY, testView } from './test/parcelLinks';
 
 const mocks = vi.hoisted(() => ({
@@ -70,14 +71,17 @@ vi.mock('./App', () => ({
     onExportAccount,
     onDeleteAccount,
     onExitDemo,
+    onOpenLanding,
   }: {
     accountEmail: string;
     onSignOut: () => Promise<void>;
     onExportAccount: () => Promise<void>;
     onDeleteAccount: (confirmation: string) => Promise<void>;
     onExitDemo?: () => void;
-  }) => onExitDemo ? <button type="button" onClick={onExitDemo}>Exit demo</button> : (
+    onOpenLanding?: () => void;
+  }) => onExitDemo ? <><button type="button" onClick={onExitDemo}>Exit demo</button><button type="button" onClick={onOpenLanding}>Home page</button></> : (
     <div>
+      <button type="button" onClick={onOpenLanding}>Home page</button>
       <span>{accountEmail}</span>
       <button type="button" onClick={() => void onExportAccount()}>Export</button>
       <button type="button" onClick={() => void onDeleteAccount(accountEmail)}>Delete</button>
@@ -186,6 +190,68 @@ describe('ApiApplication', () => {
     expect(window.sessionStorage.getItem('sdt.web.experience.v1')).toBe('sign-in');
     await user.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+  });
+
+  it('shows the landing at its own address to someone signed in, with the way back to their deliveries', async () => {
+    mocks.auth.status = 'authenticated';
+    mocks.auth.user = USER;
+    const user = userEvent.setup();
+    render(<ApiApplication />);
+    await user.click(screen.getByRole('button', { name: 'Home page' }));
+    expect(location.pathname).toBe('/home');
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(screen.queryByText('owner@example.test')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sign in' })).not.toBeInTheDocument();
+    const [mine] = screen.getAllByRole('link', { name: 'My deliveries' });
+    expect(mine).toHaveTextContent('OMy deliveries');
+    await user.click(mine);
+    expect(location.pathname).toBe('/');
+    expect(screen.getByText('owner@example.test')).toBeVisible();
+    // Back is the landing again, and a reload of its address too.
+    act(() => { history.replaceState(null, '', '/home'); window.dispatchEvent(new PopStateEvent('popstate')); });
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+  });
+
+  it('keeps the door in place when a lookup made at the landing’s address opens its parcel', async () => {
+    mocks.auth.status = 'authenticated';
+    mocks.auth.user = USER;
+    history.replaceState(null, '', '/home');
+    render(<ApiApplication landingRoute />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    act(() => openParcelLink(LINK_ID));
+    expect(screen.getByText(`Parcel page ${LINK_ID} for signed-in with 0 deliveries`)).toBeVisible();
+    act(() => { history.replaceState(null, '', '/home'); window.dispatchEvent(new PopStateEvent('popstate')); });
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+  });
+
+  it('shows the landing at its own address to a visitor too, whatever the tab was doing, and signs in at `/`', async () => {
+    // The tab was left at the sign-in step.
+    history.replaceState(null, '', '/home');
+    const user = userEvent.setup();
+    render(<ApiApplication landingRoute />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(screen.queryByText('Configured sign in')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(location.pathname).toBe('/');
+    expect(screen.getByText('Configured sign in')).toBeVisible();
+  });
+
+  it('leads from the demo to the landing: at `/` for a visitor, at its own address for someone signed in', async () => {
+    history.replaceState(null, '', '/demo');
+    const user = userEvent.setup();
+    const visitor = render(<ApiApplication demoRoute />);
+    await user.click(screen.getByRole('button', { name: 'Home page' }));
+    expect(location.pathname).toBe('/');
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeVisible();
+    visitor.unmount();
+    history.replaceState(null, '', '/demo');
+    mocks.auth.status = 'authenticated';
+    mocks.auth.user = USER;
+    render(<ApiApplication demoRoute />);
+    await user.click(screen.getByRole('button', { name: 'Home page' }));
+    expect(location.pathname).toBe('/home');
+    expect(screen.getAllByRole('link', { name: 'My deliveries' })[0]).toBeVisible();
   });
 
   it('opens the front door again once the tab that was at sign-in is closed', async () => {

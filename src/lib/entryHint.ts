@@ -4,7 +4,7 @@ import { ENTRY_HINT_ATTRIBUTE, type EntryHint } from './entryHintConfig';
 const never = () => () => undefined;
 const read = (): EntryHint | null => {
   const value = document.documentElement.dataset[ENTRY_HINT_ATTRIBUTE];
-  return value === 'app' || value === 'device' ? value : null;
+  return value === 'app' || value === 'account' || value === 'device' ? value : null;
 };
 
 /**

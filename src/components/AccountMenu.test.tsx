@@ -23,6 +23,23 @@ describe('AccountMenu', () => {
     expect(onExitDemo).not.toHaveBeenCalled();
   });
 
+  it('leads to the landing from the end of Settings, in place for a plain click', async () => {
+    const onOpenLanding = vi.fn();
+    const user = userEvent.setup();
+    const view = render(<AccountMenu email="owner@example.test" onOpenLanding={onOpenLanding} />);
+    await user.click(screen.getByLabelText('Account options for owner@example.test'));
+    const home = screen.getByRole('link', { name: /^Home page/ });
+    expect(home).toHaveAttribute('href', '/home');
+    expect(home).toHaveTextContent(window.location.host);
+    await user.click(home);
+    expect(onOpenLanding).toHaveBeenCalledOnce();
+    view.unmount();
+    // Where nothing shows the landing, the row is not there.
+    render(<AccountMenu email="owner@example.test" />);
+    await user.click(screen.getByLabelText('Account options for owner@example.test'));
+    expect(screen.queryByRole('link', { name: /^Home page/ })).not.toBeInTheDocument();
+  });
+
   it('shows the account and signs out once', async () => {
     const onSignOut = vi.fn().mockResolvedValue(undefined);
     const user = userEvent.setup();
