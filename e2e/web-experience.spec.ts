@@ -99,8 +99,11 @@ test('leads every header with the name: the lockup where it stands alone, the ma
   const mark = page.locator('.app__brand .peek-mark:visible');
   await expect(mark).toHaveCSS('width', phone ? '30px' : '28px');
   await expect(mark).toHaveCSS('stroke', 'none');
-  // Adding a parcel sits beside the name, as in the iOS app.
-  await expect(page.locator('.app__leading').getByRole('button', { name: 'Add a parcel', exact: true })).toBeVisible();
+  // On a phone, adding a parcel sits right of the mark, as in the iOS app; on a wide screen it joins the account.
+  const add = (await page.getByRole('button', { name: 'Add a parcel', exact: true }).boundingBox())!;
+  const title = (await page.locator('.app__title').boundingBox())!;
+  if (phone) expect(add.x - (await mark.boundingBox())!.x).toBe(40);
+  expect(add.x < title.x).toBe(phone);
 });
 
 test('Pip blinks on the front door’s closed parcel, and keeps still when motion is reduced', async ({ page }) => {

@@ -452,12 +452,10 @@ export default function App({
       <a className="skip-link" href="#main-content">{t('web.skipContent')}</a>
       <header className="app__header">
         <div className="app__masthead">
-          <div className="app__leading">
-            <span className="app__brand"><PeekMark size={30} /><PeekLockup /></span>
-            <button type="button" className="app__add-button" aria-label={t('app.addParcelAria')} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t('app.addParcel')}</span></button>
-          </div>
+          <span className="app__brand"><PeekMark size={30} /><PeekLockup /></span>
           <h1 className="app__title">{t(tab === 'deliveries' ? 'native.deliveries' : tab === 'passport' ? 'passport.title' : 'friends.title')}</h1>
           <div className="app__actions">
+            <button type="button" className="app__add-button" aria-label={t('app.addParcelAria')} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t('app.addParcel')}</span></button>
             <AccountMenu email={accountEmail} onExport={onExportAccount} onDelete={onDeleteAccount} onSignOut={onSignOut} onExitDemo={onExitDemo} onResetDemo={mode === 'demo' ? resetDemo : undefined} onOpenLanding={openLanding} apiAuth={apiAuth} />
           </div>
           <AppNavigation selected={tab} onSelect={switchTab} />
