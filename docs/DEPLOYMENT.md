@@ -72,7 +72,16 @@ optional:
   `APNS_BUNDLE_ID`. The same key sends alerts and Live Activity pushes.
 
 Partial VAPID or APNs configuration is rejected at startup. [`.env.example`](../.env.example)
-lists everything.
+lists everything. Copy it to `.env`, set the Supabase values and
+`NEXT_PUBLIC_USE_API=true`, remove the optional services you don't use, and start the
+container:
+
+```bash
+docker run -d --name delivery-tracker --restart unless-stopped \
+  --env-file .env -p 3000:3000 delivery-tracker
+```
+
+The public Supabase values must be the same at build time and at runtime.
 
 **Links that open in the iPhone app.** `/.well-known/apple-app-site-association` lets iOS
 open parcel links and invitations (`/p/…`, `/i/…`, `/invite`) in the app. It names the app

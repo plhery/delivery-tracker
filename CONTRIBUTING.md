@@ -15,6 +15,9 @@ npm install
 npm run dev    # self-contained demo, no account or database needed
 ```
 
+The demo's sample parcels live in `shared/delivery-demo.json` in English, with their
+translations in `shared/demo-locales/`; the demo writes them in the app's language.
+
 Production mode needs Supabase and the server values in `.env.example`. Never expose a
 service-role key through a `NEXT_PUBLIC_` variable.
 

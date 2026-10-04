@@ -1,52 +1,83 @@
+<div align="center">
+
+<img src="public/icons/icon-192.png" width="88" alt="Peek's mark: two eyes on a yellow tile">
+
+# Peek
+
+**Universal parcel tracker for iPhone and the web. Open source.**
+
+Paste a tracking number, a carrier link or a whole shipping email.<br>
+Peek finds the carrier, draws the journey on a map and pings you when the parcel moves.
+
+<sub>The carriers are read by <a href="https://github.com/plhery/universal-parcel-scraper">Universal Parcel Scraper</a>, the engine next door.</sub>
+
+[![CI](https://github.com/plhery/delivery-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/plhery/delivery-tracker/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
+[Try it](https://peektracker.com) · [Open a sample parcel](https://peektracker.com/sample) · [Run it locally](#run-it-locally) · [iPhone app](#iphone-app) · [Host your own](#host-your-own)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.webp">
+  <img src="docs/assets/hero-light.webp" width="860" alt="Peek in a browser and on an iPhone. The browser lists deliveries as coloured cards, the next one drawn on a map of its route. The iPhone asks “Where's my parcel?” over a field to paste a tracking number, under a globe that follows a sample parcel from Shenzhen to Zürich.">
+</picture>
+
+</div>
+
+## What you get
+
+**Where's my parcel?**<br>
+Paste what you have. Peek works out which of 3,500+ carriers has the parcel and gives it a
+page of its own: the journey on a map, every scan, the day it should arrive. No account
+needed.
+
+**Will I know when it moves?**<br>
+Yes. Choose every scan, the important steps or delivery day only, on your iPhone or in
+your browser. Quiet hours keep the night quiet, and an email can tell you it arrived.
+
+**Following more than one?**<br>
+Sign in and they share one list, on the web and on the iPhone. Each delivery stamps your
+passport, which you can compare with friends while your parcels stay private.
+
+**Someone else waiting for it?**<br>
+Share the parcel's page with them. Wrap it as a gift, and what's inside stays a surprise
+until it arrives.
+
 <p align="center">
-  <img src="public/icons/icon-192.png" width="80" alt="Peek logo">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screens-dark.webp">
+    <img src="docs/assets/screens-light.webp" width="860" alt="Four screens: a parcel's page with its route and tracking history, a globe showing a journey from Kyoto to Zürich, a share sheet wrapping a parcel as a gift, and a passport of stamps earned by deliveries.">
+  </picture>
 </p>
 
-<h1 align="center">Peek</h1>
+<p align="center"><sub>A parcel's page · its journey · shared as a gift · the passport. Every parcel in these pictures is made up.</sub></p>
 
-<p align="center">Universal Parcel Tracker. Open source, for iPhone and the web.</p>
+Also in the box: light and dark themes, seven languages (English, German, French, Italian,
+Spanish, Portuguese and Polish), a web app you can install, and on iPhone a barcode
+scanner, a Share extension, widgets and Live Activities.
 
-<p align="center">
-  <a href="https://github.com/plhery/delivery-tracker/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/plhery/delivery-tracker/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-blue.svg"></a>
-</p>
+Peek shows no ads and sells no data. A parcel followed without an account is forgotten 30
+days after it arrives. The [privacy notice](PRIVACY.md) has the rest.
 
-<p align="center">
-  <a href="https://peektracker.com">Open app</a> ·
-  <a href="#local-development">Run locally</a> ·
-  <a href="#iphone">iPhone</a> ·
-  <a href="#self-hosting">Self-hosting</a>
-</p>
+## Carriers live next door
 
-<p align="center">
-  <img src="docs/screenshot.jpg" width="780" alt="Web dashboard showing active parcels, tracking notices, and recent deliveries">
-</p>
+Reading carriers is a job of its own, so it has a repository of its own:
+**[Universal Parcel Scraper](https://github.com/plhery/universal-parcel-scraper)**. It
+works out which carrier a number belongs to, reads that carrier's own site, falls back on
+universal trackers such as ParcelsApp, Ship24 and 17TRACK, and turns everyone's wording
+into the same delivery stages.
 
-## Features
+Peek installs it from npm and builds the rest around it: accounts, checks in the
+background, alerts and the two apps.
 
-- Delivery estimates, tracking timelines, search, filters, and an archive.
-- A map of each parcel's journey, from the globe down to the last mile.
-- Add parcels from tracking numbers, carrier links, or shipping email text.
-- Optional notifications with quiet hours and per-parcel mute.
-- An optional email when a parcel is delivered, sent through any SMTP service.
-- Passport stamps and statistics from delivery history. Share selected stats
-  with friends by invitation; parcel details stay private.
-- Synced accounts, light and dark themes, and English, German, French, Italian, Spanish, Portuguese, and Polish.
-- Installable web app and native iPhone app with barcode scanning, a Share
-  extension, offline snapshots, widgets, and Live Activities.
+- A carrier is missing, or tracks wrongly?
+  [Tell the scraper](https://github.com/plhery/universal-parcel-scraper/issues/new/choose).
+- Want tracking without Peek? The scraper runs on its own, as a command-line tool, a Node
+  library or a small HTTP server.
+- Curious how the two fit together? See [the scraper package](docs/SCRAPER.md).
 
-<p align="center">
-  <img src="docs/screenshot-ios.png" width="230" alt="Native iPhone deliveries screen">
-  <img src="docs/screenshot-detail.jpg" width="230" alt="Mobile web tracking timeline">
-  <img src="docs/screenshot-passport.jpg" width="230" alt="Mobile web Passport">
-</p>
+## Run it locally
 
-<p align="center"><sub>iPhone · Tracking timeline · Passport. Screenshots use fictional parcels.</sub></p>
-
-## Local development
-
-Requires Node.js 26 and npm 10+. The local demo needs no account, database,
-or environment file.
+You need Node.js 26. No account, no database, no `.env` file.
 
 ```bash
 git clone https://github.com/plhery/delivery-tracker.git
@@ -56,106 +87,59 @@ npm ci
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000) and tap Pip, the parcel under the field,
-for a sample parcel on its own page; [localhost:3000/demo](http://localhost:3000/demo)
-opens the demo deliveries. Refresh advances the sample parcels; **Reset demo data** in settings restores them.
-The samples live in `shared/delivery-demo.json` in English, with their translations
-in `shared/demo-locales/`; the demo writes them in the app's language.
+Open [localhost:3000](http://localhost:3000) and paste anything: with no server behind it,
+Peek answers in the browser with made-up parcels.
 
-The [near and far study](http://localhost:3000/design/map) shows three
-Flighty-style maps that turn from a globe into a close-up as a parcel arrives;
-press play to follow a journey scan by scan.
+- Tap Pip, the parcel with a face, to open a sample parcel.
+- [localhost:3000/demo](http://localhost:3000/demo) is a whole list of sample deliveries.
+  Refresh moves them along, and **Reset demo data** in settings starts over.
+- [localhost:3000/design/map](http://localhost:3000/design/map) is a study of three ways
+  to draw a journey, from the globe to a close-up.
 
-For real accounts, copy [`.env.example`](.env.example) to `.env.local`, configure
-Supabase, and set `NEXT_PUBLIC_USE_API=true`. See [Authentication](docs/AUTHENTICATION.md).
+For real accounts and real tracking, copy [`.env.example`](.env.example) to `.env.local`,
+fill in your Supabase project and set `NEXT_PUBLIC_USE_API=true`.
+[Authentication](docs/AUTHENTICATION.md) has the steps.
 
-## Carriers
+## iPhone app
 
-Over 100 carriers, including Swiss Post, DHL, UPS, FedEx, USPS, DPD, GLS, La Poste /
-Colissimo, Chronopost, Mondial Relay, PostNL, Royal Mail and Cainiao. Most major carriers
-have a dedicated adapter. Others go through Ship24, ParcelsApp and 17TRACK, which also step
-in when an adapter fails.
+A native SwiftUI app for iOS 18 and later. It isn't on the App Store yet, so for now you
+build it yourself: open [`ios/PeekDeliveryTracker.xcodeproj`](ios/PeekDeliveryTracker.xcodeproj)
+in Xcode 26 or newer, pick the `PeekDeliveryTracker` scheme and an iPhone simulator, and
+press Run. It starts with sample parcels, so it needs no account, no server and no Apple
+team.
 
-The app detects the carrier from a pasted number, tracking link or shipping email, turns
-each carrier's status codes and wording into the same delivery stages, and keeps refreshing
-in the background.
+The [iPhone guide](ios/README.md) covers connecting it to a server, signing it for a real
+phone, notifications, widgets and Live Activities.
 
-Tracking comes from [Universal Parcel Scraper](https://github.com/plhery/universal-parcel-scraper),
-used in-process as an exact npm dependency. Carrier adapters, detection, provider coverage
-and live tests live in that repository. A carrier that tracks wrongly or is missing is
-[reported there](https://github.com/plhery/universal-parcel-scraper/issues/new/choose).
+## Host your own
 
-## iPhone
+Peek is one long-running container (the web app, the API and the worker that keeps
+checking carriers) next to Supabase for sign-in and Postgres, behind HTTPS.
+[Deployment](docs/DEPLOYMENT.md) takes you through the database, sign-in, the build,
+upgrades and backups.
 
-Requires iOS 18+ and Xcode 26. Open
-[`ios/PeekDeliveryTracker.xcodeproj`](ios/PeekDeliveryTracker.xcodeproj), select
-the `PeekDeliveryTracker` scheme and an iPhone simulator, then run the demo.
+## Under the hood
 
-See [native setup](ios/README.md) for server configuration, signing, and push
-notifications.
+Next.js, React and TypeScript for the web and the API, SwiftUI for the iPhone. Supabase
+Auth and Postgres row-level security keep accounts apart, and a queue in the database runs
+the carrier checks and the alerts.
 
-## Self-hosting
+- [Architecture](docs/ARCHITECTURE.md): how the pieces fit, and who can see what
+- [Scraper package](docs/SCRAPER.md): what Peek takes from the scraper, and how it updates
+- [Routing](docs/ROUTING.md): where a refresh looks for a parcel's history
+- [Deployment](docs/DEPLOYMENT.md): hosting, upgrades, operations
+- [Authentication](docs/AUTHENTICATION.md): Google, Apple and email sign-in
+- [Observability](docs/OBSERVABILITY.md): logs, audit tables, Sentry, metrics
+- [Friends](docs/FRIENDS.md): how passports are shared, and what never is
+- [Analytics](docs/ANALYTICS.md): optional usage analytics with Umami
+- [Localization](docs/LOCALIZATION.md): which language carrier text shows up in
+- [iPhone](ios/README.md): the native app
 
-Requires Supabase Auth, Postgres, Docker, and HTTPS. The server must run
-continuously for background tracking.
+## Contributing
 
-1. Apply `supabase/migrations/*.sql` in filename order. For upgrades, check the
-   [rollout notes](docs/DEPLOYMENT.md) first.
-2. [Configure authentication](docs/AUTHENTICATION.md). The example below uses
-   email OTP with custom SMTP.
-3. Copy [`.env.example`](.env.example) to `.env`, set the Supabase values and
-   `NEXT_PUBLIC_USE_API=true`, and remove unused optional service placeholders.
-4. Build and run:
+Fixes and ideas are welcome. [Contributing](CONTRIBUTING.md) has the setup and the checks
+to run before a pull request. Carrier fixes go to the
+[scraper](https://github.com/plhery/universal-parcel-scraper/blob/main/CONTRIBUTING.md).
+Found a security problem? [Report it privately](SECURITY.md).
 
-```bash
-docker build \
-  --build-arg NEXT_PUBLIC_SUPABASE_URL=https://supabase.example.com \
-  --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-public-key \
-  --build-arg NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED=true \
-  -t delivery-tracker .
-
-docker run -d --name delivery-tracker --restart unless-stopped \
-  --env-file .env -p 3000:3000 delivery-tracker
-```
-
-Serve port `3000` behind HTTPS. `/health` reports readiness. Public Supabase
-values are set at build time and must match the runtime configuration.
-Service-role and private push keys stay on the server.
-
-See [Deployment](docs/DEPLOYMENT.md) for backups, migrations, and production checks.
-
-## Code and tests
-
-Next.js, React, and TypeScript for the web and API; SwiftUI for iPhone.
-Supabase Auth and Postgres row-level security isolate accounts. A database queue
-handles carrier sync and notification delivery.
-
-| Command | Purpose |
-| --- | --- |
-| `npm run lint` | Lint |
-| `npm run typecheck` | TypeScript checks |
-| `npm test` | Unit and integration tests, the app's and then the server's |
-| `npm run test:e2e` | Playwright browser tests |
-| `npm run test:contract` | Generated API contract checks |
-| `npm run build` / `npm start` | Production build and server |
-
-See [Contributing](CONTRIBUTING.md) for the full validation workflow.
-
-## Documentation
-
-| | |
-| --- | --- |
-| [Architecture](docs/ARCHITECTURE.md) | Components, trust boundaries, data lifecycle |
-| [Carriers](https://github.com/plhery/universal-parcel-scraper/blob/main/README.md) | Carrier catalog, adapters, coverage, adding a carrier |
-| [Scraper package](docs/SCRAPER.md) | What the app imports from the scraper, updating it |
-| [Routing](docs/ROUTING.md) | How a refresh picks a carrier adapter or fallback provider |
-| [Deployment](docs/DEPLOYMENT.md) | Self-hosting, upgrades, operations |
-| [Authentication](docs/AUTHENTICATION.md) | Google, Apple and email sign-in |
-| [Observability](docs/OBSERVABILITY.md) | Logs, audit tables, Sentry, metrics |
-| [Friends](docs/FRIENDS.md) | Private stamp sharing |
-| [Analytics](docs/ANALYTICS.md) | Optional Umami usage analytics |
-| [Localization](docs/LOCALIZATION.md) | Carrier text languages |
-| [iPhone](ios/README.md) | Native app setup |
-| [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md) | |
-
-Licensed under [Apache 2.0](LICENSE).
+Made by [@plhery](https://x.com/plhery). Licensed under [Apache 2.0](LICENSE).
