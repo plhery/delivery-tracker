@@ -355,8 +355,6 @@ grant execute on function public.change_owned_package_carrier(uuid, text, text, 
 comment on function public.change_owned_package_carrier(uuid, text, text, text) is
   'Changes carrier selection, fences stale workers, and preserves verified history and recovery routing.';
 
-notify pgrst, 'reload schema';
-
 create or replace function public.set_owned_package_provider_postcode(p_package_id uuid, p_postcode text)
 returns boolean
 language plpgsql
@@ -396,3 +394,5 @@ set carrier_data = jsonb_set(carrier_data, '{routing,provider_input_needed}',
 where current_stage = 'pending' and archived_at is null
   and carrier_data#>>'{routing,failures,ParcelsApp,user_error}' = 'carrier:input_required'
   and carrier_data#>'{routing,provider_input_needed}' is null;
+
+notify pgrst, 'reload schema';
