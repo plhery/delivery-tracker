@@ -24,7 +24,7 @@ const replacements = [
   ],
   ['APS_ENVIRONMENT = development; ', '', 1],
   ['APS_ENVIRONMENT = production; ', '', 1],
-  ['CODE_SIGN_ENTITLEMENTS = SwissDeliveryTracker/SwissDeliveryTracker.entitlements; ', '', 2],
+  ['CODE_SIGN_ENTITLEMENTS = PeekDeliveryTracker/PeekDeliveryTracker.entitlements; ', '', 2],
   ['CODE_SIGN_ENTITLEMENTS = DeliveryWidgetExtension/DeliveryWidgetExtension.entitlements; ', '', 2],
   [
     'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.SwissDeliveryTracker;',

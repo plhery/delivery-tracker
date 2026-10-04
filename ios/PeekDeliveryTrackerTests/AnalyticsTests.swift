@@ -1,5 +1,5 @@
 import XCTest
-@testable import SwissDeliveryTracker
+@testable import PeekDeliveryTracker
 
 final class AnalyticsTests: XCTestCase {
     func testSharedCatalogExcludesPollingAndPrivateInputs() throws {

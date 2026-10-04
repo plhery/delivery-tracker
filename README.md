@@ -88,8 +88,8 @@ and live tests live in that repository. A carrier that tracks wrongly or is miss
 ## iPhone
 
 Requires iOS 18+ and Xcode 26. Open
-[`ios/SwissDeliveryTracker.xcodeproj`](ios/SwissDeliveryTracker.xcodeproj), select
-the `SwissDeliveryTracker` scheme and an iPhone simulator, then run the demo.
+[`ios/PeekDeliveryTracker.xcodeproj`](ios/PeekDeliveryTracker.xcodeproj), select
+the `PeekDeliveryTracker` scheme and an iPhone simulator, then run the demo.
 
 See [native setup](ios/README.md) for server configuration, signing, and push
 notifications.
@@ -134,7 +134,7 @@ handles carrier sync and notification delivery.
 | --- | --- |
 | `npm run lint` | Lint |
 | `npm run typecheck` | TypeScript checks |
-| `npm test` | Unit and integration tests |
+| `npm test` | Unit and integration tests, the app's and then the server's |
 | `npm run test:e2e` | Playwright browser tests |
 | `npm run test:contract` | Generated API contract checks |
 | `npm run build` / `npm start` | Production build and server |

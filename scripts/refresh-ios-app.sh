@@ -4,7 +4,7 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd)"
 SOURCE_IOS="$PROJECT_ROOT/ios"
-SCHEME="SwissDeliveryTracker"
+SCHEME="PeekDeliveryTracker"
 BUNDLE_ID="com.plhery.SwissDeliveryTracker.Personal"
 TEAM_ID="${DELIVERY_TRACKER_TEAM_ID:-HGC93X794T}"
 DEVICE_NAME="${DELIVERY_TRACKER_DEVICE_NAME:-${SWISS_SCOOTERS_DEVICE_NAME:-iPhone de Paul}}"
@@ -15,7 +15,7 @@ DERIVED_DATA="$CACHE_ROOT/DerivedData"
 BUILD_LOG="$CACHE_ROOT/refresh.log"
 WORK_DIR="$(mktemp -d "$TEMP_ROOT/delivery-tracker-refresh.XXXXXX")"
 PROJECT_COPY="$WORK_DIR/ios"
-PROJECT_PATH="$PROJECT_COPY/SwissDeliveryTracker.xcodeproj"
+PROJECT_PATH="$PROJECT_COPY/PeekDeliveryTracker.xcodeproj"
 PROFILE_DIR="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
 PROFILE_BACKUP_DIR="$WORK_DIR/profiles"
 SIGNING_BUILD_SUCCEEDED=0
@@ -91,7 +91,7 @@ print "The Lock Screen and Dynamic Island Live Activity remain available."
 print
 notify "Refresh started. Keep the iPhone unlocked and nearby."
 
-if [[ ! -d "$SOURCE_IOS/SwissDeliveryTracker.xcodeproj" ]]; then
+if [[ ! -d "$SOURCE_IOS/PeekDeliveryTracker.xcodeproj" ]]; then
   print -u2 "Xcode project not found under: $SOURCE_IOS"
   exit 1
 fi
@@ -130,7 +130,7 @@ xcodebuild \
   -quiet \
   build 2>&1 | tee "$BUILD_LOG"
 
-APP_PATH="$DERIVED_DATA/Build/Products/Debug-iphoneos/SwissDeliveryTracker.app"
+APP_PATH="$DERIVED_DATA/Build/Products/Debug-iphoneos/PeekDeliveryTracker.app"
 if [[ ! -d "$APP_PATH" ]]; then
   print -u2 "The build succeeded but the app bundle was not found at $APP_PATH"
   exit 1

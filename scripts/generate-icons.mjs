@@ -56,7 +56,7 @@ await write('public/icons/icon-192.png', render(markSvg(), 192));
 await write('public/icons/icon-512.png', render(markSvg(), 512));
 await write('public/icons/icon-maskable-512.png', opaque(render(markSvg({ bleed: true, scale: maskableScale }), 512)));
 await write('public/icons/apple-touch-icon.png', opaque(render(markSvg({ bleed: true }), 180)));
-await write('ios/SwissDeliveryTracker/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png', opaque(render(markSvg({ bleed: true }), 1024)));
+await write('ios/PeekDeliveryTracker/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png', opaque(render(markSvg({ bleed: true }), 1024)));
 
 // The preview's text is set in the typeface the invitation card uses, so it renders the same everywhere.
 await write('public/og.png', render(readFileSync(join(root, 'public/og.svg'), 'utf8'), 1200, {

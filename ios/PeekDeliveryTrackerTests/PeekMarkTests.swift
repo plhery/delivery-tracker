@@ -1,5 +1,5 @@
 import XCTest
-@testable import SwissDeliveryTracker
+@testable import PeekDeliveryTracker
 
 final class PeekMarkTests: XCTestCase {
     private let frame = CGRect(x: 0, y: 0, width: PeekMarkArtwork.frame, height: PeekMarkArtwork.frame)

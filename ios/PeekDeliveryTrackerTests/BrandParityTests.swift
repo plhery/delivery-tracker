@@ -1,6 +1,6 @@
 import SwiftUI
 import XCTest
-@testable import SwissDeliveryTracker
+@testable import PeekDeliveryTracker
 
 /// The carrier livery is declared once, in `src/brand`, and
 /// shipped to the app as `Resources/Brand.json`. The SwiftUI identity and canvas

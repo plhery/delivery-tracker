@@ -1,7 +1,7 @@
 import Combine
 import XCTest
 import UIKit
-@testable import SwissDeliveryTracker
+@testable import PeekDeliveryTracker
 
 final class ParcelLogicTests: XCTestCase {
     func testPickupPointSplitsNameFromAddressAndOpensAppleMaps() {

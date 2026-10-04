@@ -6,7 +6,7 @@ import { CARRIER_CATALOG, STAGES } from 'universal-parcel-scraper';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const contractPath = path.join(root, 'contracts', 'openapi.json');
 const typesPath = path.join(root, 'src', 'generated', 'apiContract.ts');
-const swiftPath = path.join(root, 'ios', 'SwissDeliveryTracker', 'GeneratedAPIContract.swift');
+const swiftPath = path.join(root, 'ios', 'PeekDeliveryTracker', 'GeneratedAPIContract.swift');
 
 const contractSource = await readFile(contractPath, 'utf8');
 const contract = JSON.parse(contractSource);

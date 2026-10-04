@@ -21,7 +21,7 @@ for (const key of Object.values(trackingMessages.failures)) {
   if (!languages.en[key]) throw new Error(`Missing tracking failure translation: ${key}`);
 }
 
-const swiftSources = ['SwissDeliveryTracker', 'DeliveryWidgetExtension']
+const swiftSources = ['PeekDeliveryTracker', 'DeliveryWidgetExtension']
   .flatMap((directory) => fs.readdirSync(path.join(root, 'ios', directory))
     .filter((name) => name.endsWith('.swift'))
     .map((name) => fs.readFileSync(path.join(root, 'ios', directory, name), 'utf8')))
@@ -34,7 +34,7 @@ if (missingNativeReferences.length) {
   );
 }
 
-const resources = path.join(root, 'ios', 'SwissDeliveryTracker', 'Resources');
+const resources = path.join(root, 'ios', 'PeekDeliveryTracker', 'Resources');
 const contract = JSON.parse(fs.readFileSync(path.join(root, 'contracts', 'openapi.json'), 'utf8'));
 const apiFixture = JSON.parse(fs.readFileSync(
   path.join(root, 'contracts', 'fixtures', 'delivery-api.json'),

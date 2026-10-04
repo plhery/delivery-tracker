@@ -1,7 +1,7 @@
 import SwiftUI
 import UserNotifications
 import XCTest
-@testable import SwissDeliveryTracker
+@testable import PeekDeliveryTracker
 
 final class NotificationLogicTests: XCTestCase {
     func testPresetsMatchStageSetsRegardlessOfOrder() {

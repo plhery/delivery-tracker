@@ -11,6 +11,8 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.{ts,tsx}'],
+    // The server's tests run under Node, with vitest.server.config.ts.
+    exclude: ['src/server/**'],
     environment: 'jsdom',
     environmentOptions: {
       jsdom: { url: 'http://localhost/' },

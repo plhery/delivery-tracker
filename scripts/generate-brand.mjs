@@ -94,7 +94,7 @@ function renderJson(value, indent = 0) {
   return JSON.stringify(value);
 }
 
-/** The payload ios/SwissDeliveryTracker/Resources/Brand.json carries. */
+/** The payload ios/PeekDeliveryTracker/Resources/Brand.json carries. */
 export function renderBrandJson(brand) {
   return `${renderJson(brand)}\n`;
 }

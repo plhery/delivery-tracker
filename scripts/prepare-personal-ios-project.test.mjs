@@ -12,7 +12,7 @@ after(() => rm(temporaryDirectory, { recursive: true, force: true }));
 describe('Personal Team Xcode project preparation', () => {
   it('removes unsupported capabilities and rewrites bundle identifiers exactly once', async () => {
     const source = fileURLToPath(new URL(
-      '../ios/SwissDeliveryTracker.xcodeproj/project.pbxproj',
+      '../ios/PeekDeliveryTracker.xcodeproj/project.pbxproj',
       import.meta.url,
     ));
     const target = join(temporaryDirectory, 'project.pbxproj');
@@ -22,14 +22,14 @@ describe('Personal Team Xcode project preparation', () => {
     const transformed = await readFile(target, 'utf8');
     assert.doesNotMatch(
       transformed,
-      /CODE_SIGN_ENTITLEMENTS = (?:SwissDeliveryTracker|DeliveryWidgetExtension)\//,
+      /CODE_SIGN_ENTITLEMENTS = (?:PeekDeliveryTracker|DeliveryWidgetExtension)\//,
     );
     assert.doesNotMatch(transformed, /APS_ENVIRONMENT =/);
     assert.doesNotMatch(transformed, /com.apple.SignInWithApple/);
     // Associated Domains: the capability is recorded as SafariKeychain, and its
     // entitlement lives only in the file the Personal Team build no longer signs with.
     assert.doesNotMatch(transformed, /com.apple.SafariKeychain|associated-domains/);
-    const entitlements = await readFile(new URL('../ios/SwissDeliveryTracker/SwissDeliveryTracker.entitlements', import.meta.url), 'utf8');
+    const entitlements = await readFile(new URL('../ios/PeekDeliveryTracker/PeekDeliveryTracker.entitlements', import.meta.url), 'utf8');
     assert.match(
       entitlements,
       /<key>com\.apple\.developer\.associated-domains<\/key>\s*<array>\s*<string>\$\(SDT_ASSOCIATED_DOMAIN\)<\/string>\s*<string>\$\(SDT_ASSOCIATED_DOMAIN_LEGACY\)<\/string>\s*<\/array>/,

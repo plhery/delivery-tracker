@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct SwissDeliveryTrackerApp: App {
+struct PeekDeliveryTrackerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var session: SessionStore
     @StateObject private var parcels: ParcelStore

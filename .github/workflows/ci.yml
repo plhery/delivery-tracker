@@ -144,12 +144,12 @@ jobs:
       - name: Start the container and check it
         run: |
           set -euo pipefail
-          docker run -d --name swiss-delivery-tracker-test -p 127.0.0.1:3000:3000 \
+          docker run -d --name peek-delivery-tracker-test -p 127.0.0.1:3000:3000 \
             -e SUPABASE_URL=http://supabase.invalid \
             -e SUPABASE_PUBLISHABLE_KEY=test-public-key \
             -e SUPABASE_SERVICE_ROLE_KEY=test-service-key \
             "$IMAGE"
-          trap 'docker logs swiss-delivery-tracker-test; docker rm -f swiss-delivery-tracker-test' EXIT
+          trap 'docker logs peek-delivery-tracker-test; docker rm -f peek-delivery-tracker-test' EXIT
           for _ in $(seq 1 20); do
             if curl -fsS http://127.0.0.1:3000/health/live >/dev/null; then
               break

@@ -40,9 +40,9 @@ env:
     package-lock.json
     contracts/openapi.json
     src/generated/apiContract.ts
-    ios/SwissDeliveryTracker/GeneratedAPIContract.swift
-    ios/SwissDeliveryTracker/Resources/CarrierCatalog.json
-    ios/SwissDeliveryTracker/Resources/DetectionGolden.json
+    ios/PeekDeliveryTracker/GeneratedAPIContract.swift
+    ios/PeekDeliveryTracker/Resources/CarrierCatalog.json
+    ios/PeekDeliveryTracker/Resources/DetectionGolden.json
 
 jobs:
   # Runs the release, its dependencies' scripts, the build and the tests. It has

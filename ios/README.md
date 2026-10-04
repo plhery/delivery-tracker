@@ -4,14 +4,16 @@ Peek on the iPhone is a native SwiftUI app (not a web view) for iOS 18+, with a 
 extension, Home Screen widgets and Live Activities. It uses Liquid Glass on iOS 26 and
 materials on older versions. It talks to the same authenticated `/api` as the web app.
 
-The project, its targets, bundle ids and URL scheme keep the name `SwissDeliveryTracker`.
-
 ## Run the demo
 
-Open `SwissDeliveryTracker.xcodeproj` in Xcode 26, pick the `SwissDeliveryTracker` scheme
-and an iPhone simulator, and run. The checked-in configuration starts in demo mode: no
-account, network or Apple team needed. Refresh advances the fictional parcels, and Account
-resets them.
+Open `PeekDeliveryTracker.xcodeproj` in Xcode 26, pick the `PeekDeliveryTracker` scheme
+and an iPhone simulator, and press Run. That's it: the checked-in configuration starts in
+demo mode, so you need no account, no network and no Apple team. Refresh moves the
+made-up parcels along, and Account resets them.
+
+One thing that may look odd: the bundle ids, the app group and the URL scheme still say
+`SwissDeliveryTracker`, the app's first name. That's on purpose. To iOS those names *are*
+the app, so changing them would sign everyone out and break the links already out there.
 
 ## Connect to a server
 
@@ -23,7 +25,7 @@ APNs key, OAuth secret or SMTP credential in the app.
 - Supabase is used only for sign-in. All parcel changes go through the API.
 - Building from a temporary checkout? Copy `Local.xcconfig` into its `ios/Configuration/`
   first. Before installing an account build, check it with
-  `node scripts/validate-ios-install.mjs /path/to/SwissDeliveryTracker.app`.
+  `node scripts/validate-ios-install.mjs /path/to/PeekDeliveryTracker.app`.
   `scripts/refresh-ios-app.sh` runs this for you and refuses unconfigured builds.
 - The carrier catalog refreshes from `/api/carriers` (ETag-cached) at launch and on
   foreground, with the generated catalog bundled as offline fallback. New carriers don't
@@ -96,13 +98,14 @@ npm run ios:resources       # translations, message map, analytics catalog, map 
 Build from `ios/`:
 
 ```bash
-xcodebuild -project SwissDeliveryTracker.xcodeproj -scheme SwissDeliveryTracker \
+xcodebuild -project PeekDeliveryTracker.xcodeproj -scheme PeekDeliveryTracker \
   -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-Use a real simulator destination and `test` instead of `build` to run the unit tests. APNs
-itself needs a signed build on a device.
+To run the unit tests, swap `build` for `test` and name a real simulator, for example
+`-destination 'platform=iOS Simulator,name=iPhone 17 Pro'`. Push itself can only be tried
+with a signed build on a real phone.
 
 Analytics (optional) follows [ANALYTICS.md](../docs/ANALYTICS.md). Simulator and demo
 builds never send events.

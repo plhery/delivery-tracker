@@ -1,5 +1,5 @@
 import XCTest
-@testable import SwissDeliveryTracker
+@testable import PeekDeliveryTracker
 
 final class ParcelLinkTests: XCTestCase {
     private let linkID = "k7Qm2xHd9RtW"

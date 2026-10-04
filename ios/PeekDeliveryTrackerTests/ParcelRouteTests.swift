@@ -1,6 +1,6 @@
 import SwiftUI
 import XCTest
-@testable import SwissDeliveryTracker
+@testable import PeekDeliveryTracker
 
 private func city(_ name: String, _ country: String, _ longitude: Double, _ latitude: Double) -> RoutePlace {
     RoutePlace(id: name, name: name, country: country, point: GeoPoint(longitude: longitude, latitude: latitude), isCountry: false)

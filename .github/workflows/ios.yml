@@ -29,13 +29,13 @@ jobs:
       - run: npm run ios:resources -- --check
       - name: Build app and Share Extension
         run: >-
-          xcodebuild -project ios/SwissDeliveryTracker.xcodeproj
-          -scheme SwissDeliveryTracker -sdk iphonesimulator
+          xcodebuild -project ios/PeekDeliveryTracker.xcodeproj
+          -scheme PeekDeliveryTracker -sdk iphonesimulator
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO build
       - name: Run native tests
         run: >-
-          xcodebuild -project ios/SwissDeliveryTracker.xcodeproj
-          -scheme SwissDeliveryTracker
+          xcodebuild -project ios/PeekDeliveryTracker.xcodeproj
+          -scheme PeekDeliveryTracker
           -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest'
           CODE_SIGNING_ALLOWED=NO test
