@@ -8,6 +8,7 @@ const known = (): BrowserRecognition => ({ known: true, lastActivityAt: new Date
   result: { status: 'in_transit', events: [{ time: new Date().toISOString(), description: 'Sorted' }] } });
 beforeEach(async () => {
   vi.resetModules();
+  Reflect.deleteProperty(globalThis, Symbol.for('peek.browserRecognition'));
   lookup.mockReset().mockResolvedValue(known());
   browser = await import('./browserRecognition');
 });
@@ -17,7 +18,10 @@ it('shares duplicate work and consumes fresh history only once', async () => {
   const [left, right] = await Promise.all([browser.recognizeBrowser('fedex', '000000000001'), browser.recognizeBrowser('fedex', '000000000001')]);
   expect(lookup).toHaveBeenCalledOnce();
   expect(left).toEqual(right);
-  expect(browser.takeBrowserHistory('fedex', '000000000001')).toEqual(left.result);
+  // API and background-worker bundles evaluate this module independently.
+  vi.resetModules();
+  const worker = await import('./browserRecognition');
+  expect(worker.takeBrowserHistory('fedex', '000000000001')).toEqual(left.result);
   expect(browser.takeBrowserHistory('fedex', '000000000001')).toBeUndefined();
   await browser.recognizeBrowser('fedex', '000000000001');
   expect(lookup).toHaveBeenCalledOnce();

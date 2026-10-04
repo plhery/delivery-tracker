@@ -8,8 +8,15 @@ export const MAX_BROWSER_RECOGNITIONS = 2;
 const TTL_MS = 5 * 60_000;
 const FAILURE_TTL_MS = 30_000;
 const MAX_ENTRIES = 500;
-const cache = new Map<string, { at: number; answer?: BrowserRecognition }>();
-const pending = new Map<string, { controller: AbortController; users: number; promise: Promise<BrowserRecognition> }>();
+interface BrowserRecognitionState {
+  cache: Map<string, { at: number; answer?: BrowserRecognition }>;
+  pending: Map<string, { controller: AbortController; users: number; promise: Promise<BrowserRecognition> }>;
+}
+// Next compiles the API and instrumentation worker into different module instances.
+const stateKey = Symbol.for('peek.browserRecognition');
+const processScope = globalThis as typeof globalThis & { [stateKey]?: BrowserRecognitionState };
+const shared: BrowserRecognitionState = processScope[stateKey] ??= { cache: new Map(), pending: new Map() };
+const { cache, pending } = shared;
 let registry: ReturnType<typeof createAdapterRegistry> | undefined;
 
 function remember(key: string, answer?: BrowserRecognition) {
