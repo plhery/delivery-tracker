@@ -223,6 +223,8 @@ struct ParcelDetailView: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(branding.ink.opacity(0.75))
                     .accessibilityLabel(localizer.text("link.shareAria"))
+                    // Alerts need an account: a parcel followed without one has no bell.
+                    if !store.isGuest {
                     Button {
                         if opensAlerts {
                             showingAlerts = true
@@ -244,6 +246,7 @@ struct ParcelDetailView: View {
                     .disabled(working)
                     .accessibilityLabel(localizer.text(opensAlerts ? "email.parcel.open"
                         : parcel.notificationsMuted ? "detail.unmute" : "detail.mute"))
+                    }
                 }
                 if placed {
                     // Room for the route engraved behind this part of the card.

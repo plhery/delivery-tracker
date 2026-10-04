@@ -1002,5 +1002,7 @@
   "alerts.email.title": "An email when it’s delivered",
   "alerts.email.body": "Sign in, and Peek writes to the address you sign in with.",
   "email.off.askTitle": "Turn off delivery emails?",
-  "email.off.askBody": "Peek will stop emailing you when a parcel is delivered. Your notifications stay as they are."
+  "email.off.askBody": "Peek will stop emailing you when a parcel is delivered. Your notifications stay as they are.",
+  "native.guest.kept": "On this iPhone only, for now.",
+  "sample.tag": "Sample"
 }

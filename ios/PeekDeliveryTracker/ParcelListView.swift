@@ -4,11 +4,21 @@ import UIKit.UIGestureRecognizerSubclass
 
 struct ParcelListView: View {
     @EnvironmentObject private var localizer: Localizer
+    @EnvironmentObject private var session: SessionStore
+    @EnvironmentObject private var store: ParcelStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selection: Int
+    /// Set once this iPhone has followed a parcel without an account: the first screen has done its work.
+    @AppStorage("sdt.native.firstParcel.v1") private var started = false
+    @State private var firstParcel: FirstParcelRequest?
+    @State private var adding = false
+
+    /// Nobody is signed in and nothing was ever followed here: the first screen stands over the deliveries.
+    private var showsFirstOpen: Bool { session.isGuest && !started }
 
     var body: some View {
         TabView(selection: $selection) {
-            DeliveryListView(isSelected: selection == 0)
+            DeliveryListView(isSelected: selection == 0, firstParcel: $firstParcel, adding: $adding)
                 .tag(0)
                 .tabItem {
                     Label(localizer.text("native.deliveries"), systemImage: "shippingbox.fill")
@@ -20,11 +30,26 @@ struct ParcelListView: View {
                     Label(ExperimentalCopy(localizer: localizer).passport, systemImage: "book.closed.fill")
                 }
 
-            FriendsView()
+            Group {
+                if session.isGuest { FriendsSignedOutView() } else { FriendsView() }
+            }
                 .tag(2)
                 .tabItem { Label(localizer.text("friends.title"), systemImage: "person.2.fill") }
         }
         .tint(Brand.ink)
+        .accessibilityHidden(showsFirstOpen)
+        .overlay {
+            if showsFirstOpen {
+                FirstOpenView(covered: adding) { firstParcel = $0 }
+                    // It lifts away, and the deliveries under it show the parcel that just came in.
+                    .transition(.asymmetric(insertion: .identity, removal: .move(edge: .top).combined(with: .opacity)))
+            }
+        }
+        .animation(reduceMotion ? nil : .smooth(duration: 0.55), value: showsFirstOpen)
+        // The sheet that added the parcel closes first: the list is then seen receiving it.
+        .onChange(of: session.isGuest && !adding && !store.parcels.isEmpty, initial: true) { _, followed in
+            if followed { started = true }
+        }
         .sensoryFeedback(.selection, trigger: selection)
         .onChange(of: selection) { _, tab in
             DeliveryAnalytics.shared.view(tab == 1 ? "passport" : tab == 2 ? "friends" : "deliveries")
@@ -119,6 +144,9 @@ struct DeliveriesFoot: View {
 
 private struct DeliveryListView: View {
     let isSelected: Bool
+    /// What the first screen asked for; this list owns the sheet that adds a parcel.
+    @Binding var firstParcel: FirstParcelRequest?
+    @Binding var adding: Bool
     @EnvironmentObject private var store: ParcelStore
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
@@ -144,6 +172,7 @@ private struct DeliveryListView: View {
     @State private var sitePage: SitePage?
     @State private var archivedExpanded = false
     @State private var sharedDraft: SharedParcelDraft?
+    @State private var scanning = false
     @State private var toast: ListToast?
     @State private var actionError: String?
     @State private var pull = PullToRefreshModel()
@@ -187,13 +216,14 @@ private struct DeliveryListView: View {
         .onChange(of: archivedExpanded) { _, open in if open { DeliveryAnalytics.shared.action("archive-open") } }
         .sensoryFeedback(.success, trigger: parcelBurstID) { _, next in next != nil }
         .fullScreenCover(isPresented: $showingAdd, onDismiss: {
+            scanning = false
             if let id = addedParcelID, scenePhase == .active {
                 if !visibleParcels.contains(where: { $0.id == id }) { clearFilters() }
                 revealParcelID = id
             }
             addedParcelID = nil
         }) {
-            AddParcelView(draft: sharedDraft, onOpenParcel: { parcelID in
+            AddParcelView(draft: sharedDraft, scanning: scanning, onOpenParcel: { parcelID in
                 showingAdd = false
                 path = [parcelID]
             }, onAdded: { id in
@@ -201,6 +231,12 @@ private struct DeliveryListView: View {
             })
                 .environmentObject(store)
                 .environmentObject(localizer)
+        }
+        .onChange(of: showingAdd) { _, showing in adding = showing }
+        .onChange(of: firstParcel) { _, request in
+            guard let request else { return }
+            firstParcel = nil
+            add(request)
         }
         .sheet(isPresented: $showingFilters) {
             ParcelFilterView(
@@ -301,6 +337,8 @@ private struct DeliveryListView: View {
                                 .id(parcel.id)
                         }
                     }
+                    // Someone following parcels without an account is offered one, once and quietly.
+                    if session.isGuest, !store.parcels.isEmpty, !hasCustomView { DeviceAccountRow() }
                     ForEach(layout.sections) { section in sectionContent(section, next: layout.next) }
                     // The foot ends the list once there is one: the first load shows its own message.
                     if !(store.loading && store.parcels.isEmpty) {
@@ -448,12 +486,7 @@ private struct DeliveryListView: View {
     @ViewBuilder private func listEmptyState(_ layout: DeliveryListLayout) -> some View {
         if !store.loading {
             if store.parcels.isEmpty {
-                VStack(spacing: 18) {
-                    ContentUnavailableView(localizer.text("app.emptyTitle"), systemImage: "shippingbox",
-                        description: Text(localizer.text("app.emptyDescription")))
-                    Button(localizer.text("app.addParcel")) { sharedDraft = nil; showingAdd = true }
-                        .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
-                }.frame(maxWidth: .infinity).padding(.vertical, 32)
+                DeliveriesEmptyState(onAdd: add)
             } else if layout.visible.isEmpty {
                 ContentUnavailableView {
                     Label(localizer.text("view.noResultsTitle"), systemImage: "magnifyingglass")
@@ -772,6 +805,17 @@ private struct DeliveryListView: View {
         statusFilter = .all
         carrierFilter = nil
         sort = .priority
+    }
+
+    /// Opens the sheet that adds a parcel, the way the person asked for it.
+    private func add(_ request: FirstParcelRequest) {
+        scanning = request == .scan
+        if case .paste(let text) = request, let pasted = text.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty {
+            sharedDraft = SharedParcelDraft(trackingInput: String(pasted.prefix(2000)))
+        } else {
+            sharedDraft = nil
+        }
+        showingAdd = true
     }
 
     private func consumeSharedDraft() {

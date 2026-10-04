@@ -504,7 +504,7 @@ private struct FriendDetailView: View {
     }
 }
 
-private struct FriendsPostagePair: View {
+struct FriendsPostagePair: View {
     var body: some View { HStack(spacing: -8) { FriendAvatarView(name: "A", tint: ExperimentalPalette.transit, surface: ExperimentalPalette.transitSurface).frame(width: 70, height: 85).rotationEffect(.degrees(-9)); FriendAvatarView(name: "M").frame(width: 70, height: 85).rotationEffect(.degrees(12)).offset(y: 12) }.padding(10).accessibilityHidden(true) }
 }
 

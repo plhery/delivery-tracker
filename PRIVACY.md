@@ -141,8 +141,8 @@ unconfigured self-hosted deployments do not collect.
 You can follow a parcel without signing in. The service then stores its
 tracking number, the carrier, a postcode or tracking link if the carrier needs
 one, the tracking history, and a link to the parcel. No account, email address
-or name is stored. A name you give the parcel stays in your browser and in the
-part of a link after `#`, which browsers do not send to the service.
+or name is stored. A name you give the parcel stays in your browser or in the iPhone
+app, and in the part of a link after `#`, which is not sent to the service.
 
 Your device keeps a key that shows it made the lookup; the service stores only
 a hash of that key. Anyone who has the link can see the parcel's status and
@@ -151,7 +151,7 @@ Only the device holding the key sees the full number, can forget the parcel,
 and can keep it after signing in. The postcode or tracking link you entered is
 never shown through a link.
 
-Your browser keeps a list of the parcels you followed or opened this way: each
+Your browser, or the iPhone app, keeps a list of the parcels you followed or opened this way: each
 link, its key if this device made the lookup, the name you gave it and the last
 tracking history it showed, so the parcel is still there offline. The list
 stays on the device until the parcel is forgotten or kept in an account.

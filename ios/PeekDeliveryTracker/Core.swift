@@ -198,6 +198,7 @@ final class Localizer: ObservableObject {
                 return text("native.error.serviceFailed", ["status": status])
             }
         }
+        if error is DeviceLookupsSpent { return text("peek.dailyLimit") }
         if let error = error as? AuthenticationError {
             switch error {
             case .notConfigured:

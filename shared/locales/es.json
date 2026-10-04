@@ -1002,5 +1002,7 @@
   "alerts.email.title": "Un correo al entregarse",
   "alerts.email.body": "Inicia sesión y Peek escribe a la dirección con la que inicias sesión.",
   "email.off.askTitle": "¿Desactivar los correos de entrega?",
-  "email.off.askBody": "Peek dejará de escribirte cuando se entregue un paquete. Tus notificaciones no cambian."
+  "email.off.askBody": "Peek dejará de escribirte cuando se entregue un paquete. Tus notificaciones no cambian.",
+  "native.guest.kept": "Solo en este iPhone, por ahora.",
+  "sample.tag": "Ejemplo"
 }

@@ -368,6 +368,7 @@ struct AccountView: View {
     @State private var showingShareSheet = false
     @State private var confirmingDeletion = false
     @State private var confirmingDemoReset = false
+    @State private var confirmingForget = false
     @State private var confirmation = ""
     @State private var errorMessage: String?
     @State private var showingHomePage = false
@@ -378,24 +379,29 @@ struct AccountView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     profile
                     SettingsGroup(title: localizer.text("native.deliveries")) {
-                        NavigationLink {
-                            NotificationSettingsView(embedded: true)
-                        } label: {
-                            SettingsRow(title: localizer.text("settings.deliveryUpdates"), symbol: "bell", value: notificationSummary, chevron: true)
+                        // Alerts and Live Activities are kept up to date by pushes, which need an account.
+                        if !store.isGuest {
+                            NavigationLink {
+                                NotificationSettingsView(embedded: true)
+                            } label: {
+                                SettingsRow(title: localizer.text("settings.deliveryUpdates"), symbol: "bell", value: notificationSummary, chevron: true)
+                            }
+                            .buttonStyle(.plain)
+                            settingsDivider
                         }
-                        .buttonStyle(.plain)
-                        settingsDivider
                         Toggle(isOn: Binding(get: { store.deliveryWidgetEnabled }, set: { store.setDeliveryWidgetEnabled($0) })) {
                             SettingsRow(title: localizer.text("widget.settingTitle"), symbol: "rectangle.3.group", detail: localizer.text("widget.settingDescription"), padded: false)
                         }
                         .padding(15)
                         .accessibilityIdentifier("settings.widgets")
-                        settingsDivider
-                        Toggle(isOn: Binding(get: { store.deliveryLiveActivitiesEnabled }, set: { store.setDeliveryLiveActivitiesEnabled($0) })) {
-                            SettingsRow(title: localizer.text("liveActivity.settingTitle"), symbol: "wave.3.right", detail: localizer.text("liveActivity.settingDescription"), padded: false)
+                        if !store.isGuest {
+                            settingsDivider
+                            Toggle(isOn: Binding(get: { store.deliveryLiveActivitiesEnabled }, set: { store.setDeliveryLiveActivitiesEnabled($0) })) {
+                                SettingsRow(title: localizer.text("liveActivity.settingTitle"), symbol: "wave.3.right", detail: localizer.text("liveActivity.settingDescription"), padded: false)
+                            }
+                            .padding(15)
+                            .accessibilityIdentifier("settings.liveActivities")
                         }
-                        .padding(15)
-                        .accessibilityIdentifier("settings.liveActivities")
                     }
                     .tint(settingsGreen)
                     if let error = store.deliveryLiveActivityError {
@@ -455,6 +461,12 @@ struct AccountView: View {
         .sheet(isPresented: $showingShareSheet) {
             if let exportURL { ActivityShareSheet(items: [exportURL]) }
         }
+        .alert(forgetQuestion, isPresented: $confirmingForget) {
+            Button(localizer.text("common.cancel"), role: .cancel) {}
+            Button(localizer.text("door.recents.forget.yes"), role: .destructive) {
+                run { try await store.forgetDeviceParcels() }
+            }
+        }
         .alert(localizer.text("native.resetDemoQuestion"), isPresented: $confirmingDemoReset) {
             Button(localizer.text("common.cancel"), role: .cancel) {}
             Button(localizer.text("native.resetDemo")) {
@@ -490,7 +502,14 @@ struct AccountView: View {
         .presentationDragIndicator(.visible)
     }
 
-    private var accountTitle: String { localizer.text(store.isDemo ? "settings.demoData" : "settings.accountData") }
+    private var accountTitle: String {
+        localizer.text(store.isDemo ? "settings.demoData" : store.isGuest ? "peek.onThisDevice" : "settings.accountData")
+    }
+
+    /// "Forget this parcel?", or how many.
+    private var forgetQuestion: String {
+        localizer.text("door.recents.forget.many", ["count": store.parcels.count])
+    }
 
     private var notificationSummary: String {
         guard store.notificationsEnabledOnDevice else { return localizer.text("settings.off") }
@@ -498,7 +517,31 @@ struct AccountView: View {
         return localizer.text(NotificationPreset.matching(preferences.enabledStages).titleKey)
     }
 
-    private var profile: some View {
+    @ViewBuilder private var profile: some View {
+        if store.isGuest { signInOffer } else { account }
+    }
+
+    /// Nobody is signed in: what an account adds, and the way to one.
+    private var signInOffer: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(localizer.text("link.account.title")).font(.headline)
+                Text(localizer.text("link.keep.body")).font(.subheadline).foregroundStyle(.secondary)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            Button { dismiss(); session.showSignIn() } label: {
+                FirstParcelPrimaryLabel(title: localizer.text("arrival.signInTitle"), symbol: nil)
+            }
+            .buttonStyle(TactileButtonStyle())
+            .accessibilityIdentifier("settings.signIn")
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Brand.paper, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Brand.separator.opacity(0.3), lineWidth: 0.75) }
+    }
+
+    private var account: some View {
         HStack(spacing: 11) {
             Text(accountInitial)
                 .font(.caption.weight(.semibold))
@@ -516,7 +559,8 @@ struct AccountView: View {
     private var accountPage: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Text(session.user?.email ?? localizer.text("app.demo")).font(.subheadline).foregroundStyle(.secondary)
+                Text(store.isGuest ? localizer.text("native.guest.kept") : session.user?.email ?? localizer.text("app.demo"))
+                    .font(.subheadline).foregroundStyle(.secondary)
                 SettingsGroup(title: localizer.text("settings.yourData")) {
                     Button {
                         run { exportURL = try await store.exportAccount(); showingShareSheet = true }
@@ -534,6 +578,15 @@ struct AccountView: View {
                         settingsDivider
                         Button { session.showWelcome(); dismiss() } label: {
                             SettingsRow(title: localizer.text("native.exitDemo"))
+                        }
+                    }
+                } else if store.isGuest {
+                    if !store.parcels.isEmpty {
+                        SettingsGroup {
+                            Button { confirmingForget = true } label: {
+                                SettingsRow(title: localizer.text("door.recents.forgetAll"))
+                            }
+                            .accessibilityIdentifier("settings.forgetAll")
                         }
                     }
                 } else {

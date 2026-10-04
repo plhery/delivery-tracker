@@ -58,6 +58,7 @@ final class ParcelStore: ObservableObject {
     private let api: DeliveryAPIClient
     private let liveActivityRevocations: LiveActivityRevocations
     private let demo: DemoRepository
+    private let device: DeviceParcels
     private let demoShares = DemoParcelShares()
     private let shareNotes = ParcelShareNotes()
     private let deliveryWidgetStore: DeliveryWidgetSharedStore?
@@ -96,7 +97,8 @@ final class ParcelStore: ObservableObject {
     private let demoNotificationsKey = "sdt.demoNotificationsEnabled"
     private static let installationIDKey = "sdt.installationID.v1"
 
-    init(configuration: AppConfiguration = .current, session: SessionStore, localizer: Localizer, transport: URLSession = .shared) {
+    init(configuration: AppConfiguration = .current, session: SessionStore, localizer: Localizer, transport: URLSession = .shared,
+         device: DeviceParcels? = nil) {
         self.configuration = configuration
         self.session = session
         self.localizer = localizer
@@ -108,6 +110,7 @@ final class ParcelStore: ObservableObject {
         liveActivityRevocations = LiveActivityRevocations(configuration: configuration, transport: transport)
         api = DeliveryAPIClient(configuration: configuration, session: session, transport: transport)
         demo = DemoRepository()
+        self.device = device ?? DeviceParcels(client: configuration.mode == .api ? .api(configuration: configuration, transport: transport) : nil)
         deliveryWidgetEnabled = deliveryWidgetStore?.isEnabled ?? true
         deliveryLiveActivitiesEnabled = deliveryWidgetStore?.liveActivitiesEnabled ?? true
         deliveryLiveActivityRegistrationRemovalPending = !deliveryLiveActivitiesEnabled
@@ -150,7 +153,7 @@ final class ParcelStore: ObservableObject {
         let saved = reopening ? session.user.flatMap { cache.load(userID: $0.id) } : nil
         showingSavedParcels = saved != nil
         // Open on content: the saved list, or the demo box, instead of an empty frame.
-        parcels = saved ?? (session.isDemo ? demo.list() : [])
+        parcels = saved ?? (session.isDemo ? demo.list() : session.isGuest ? device.list() : [])
         undoParcel = nil
         loading = session.isAuthenticated && parcels.isEmpty
         refreshing = false
@@ -168,9 +171,14 @@ final class ParcelStore: ObservableObject {
     }
 
     var isDemo: Bool { session.isDemo }
+    /// Nobody is signed in: the parcels are the ones this iPhone follows itself.
+    var isGuest: Bool { session.isGuest }
+    /// Whether tracking without an account works at all: a build without a server only has its demo.
+    var tracksWithoutAccount: Bool { configuration.mode == .api }
 
     func detectCarrier(trackingNumber: String) async throws -> CarrierDetectionResponse {
-        try await api.detectCarrier(trackingNumber: trackingNumber)
+        if isGuest { return try await device.detect(trackingNumber: trackingNumber) }
+        return try await api.detectCarrier(trackingNumber: trackingNumber)
     }
     var activeCount: Int { parcels.filter(\.isActive).count }
     var isSynchronizing: Bool {
@@ -233,10 +241,18 @@ final class ParcelStore: ObservableObject {
         if authenticationRequired { authenticationRequired = false }
         if usingCachedData { usingCachedData = false }
         guard session.isAuthenticated else {
-            if !parcels.isEmpty { parcels = [] }
             if loading { loading = false }
+            guard isGuest else {
+                if !parcels.isEmpty { parcels = [] }
+                return
+            }
+            await load()
+            guard (try? session.checkGeneration(generation)) != nil else { return }
+            beginDevicePolling()
             return
         }
+        if !isDemo { await claimDeviceParcels() }
+        guard (try? session.checkGeneration(generation)) != nil else { return }
         await load(showSpinner: true)
         guard (try? session.checkGeneration(generation)) != nil else { return }
         await refreshNotificationState()
@@ -263,10 +279,13 @@ final class ParcelStore: ObservableObject {
             // The launch loads the preferences itself. A return reads them again: the email
             // can be switched off outside the app, from a link in an email.
             if returning && !isDemo { Task { await refreshNotificationPreferences() } }
+        } else if active && isGuest {
+            Task { await load() }
         }
     }
 
     func load(showSpinner: Bool = false) async {
+        if isGuest { await loadDeviceParcels(); return }
         guard session.isAuthenticated else { return }
         let generation = session.generation
         let revision = mutationRevision
@@ -333,6 +352,11 @@ final class ParcelStore: ObservableObject {
         let parcel: Parcel
         if isDemo {
             parcel = try demo.add(request)
+        } else if isGuest {
+            parcel = try await device.add(request)
+            try session.checkGeneration(generation)
+            // Its carrier answers in a moment: ask again soon.
+            beginDevicePolling()
         } else {
             let response = try await api.add(request)
             parcel = response.package
@@ -366,6 +390,7 @@ final class ParcelStore: ObservableObject {
         return ParcelShareModel.Client(
             current: { [self] in
                 if isDemo { return demoShares.link(for: id) }
+                if isGuest { return try await device.share(id: id) }
                 let generation = session.generation
                 let link = try await api.parcelShare(id: id)
                 try session.checkGeneration(generation)
@@ -373,6 +398,10 @@ final class ParcelStore: ObservableObject {
             },
             share: { [self] settings in
                 if isDemo { return demoShares.share(id, showNumber: settings.showNumber, gift: settings.gift) }
+                if isGuest {
+                    guard let link = try await device.setShare(id: id, showNumber: settings.showNumber, gift: settings.gift) else { throw DeliveryAPIError.invalidResponse }
+                    return link
+                }
                 let generation = session.generation
                 let link = try await api.shareParcel(id: id, ShareParcelRequest(showNumber: settings.showNumber, gift: settings.gift))
                 try session.checkGeneration(generation)
@@ -380,6 +409,7 @@ final class ParcelStore: ObservableObject {
             },
             stop: { [self] in
                 if isDemo { demoShares.stop(id); return }
+                if isGuest { _ = try await device.setShare(id: id, showNumber: false, gift: false, shared: false); return }
                 let generation = session.generation
                 try await api.stopSharingParcel(id: id)
                 try session.checkGeneration(generation)
@@ -390,8 +420,8 @@ final class ParcelStore: ObservableObject {
     func rename(_ parcel: Parcel, label: String) async throws {
         let generation = session.generation
         let cleaned = label.trimmingCharacters(in: .whitespacesAndNewlines)
-        let updated = isDemo
-            ? try demo.rename(id: parcel.id, label: cleaned)
+        let updated = isDemo ? try demo.rename(id: parcel.id, label: cleaned)
+            : isGuest ? try device.rename(id: parcel.id, label: cleaned)
             : try await api.rename(id: parcel.id, label: cleaned)
         try session.checkGeneration(generation)
         upsert(updated)
@@ -416,6 +446,14 @@ final class ParcelStore: ObservableObject {
                 trackingURL: cleanedURL,
                 dpdPostcode: cleanedPostcode
             )
+        } else if isGuest {
+            // A new lookup takes the old one's place, under a new id.
+            _ = try await device.changeCarrier(id: parcel.id, carrier: carrier, trackingURL: cleanedURL, dpdPostcode: cleanedPostcode)
+            try session.checkGeneration(generation)
+            mutationRevision += 1
+            parcels = device.list()
+            beginDevicePolling()
+            return
         } else {
             let response = try await api.changeCarrier(
                 id: parcel.id,
@@ -433,6 +471,8 @@ final class ParcelStore: ObservableObject {
 
     func setMuted(_ parcel: Parcel, muted: Bool) async throws {
         let generation = session.generation
+        // A parcel followed without an account has no alerts to mute.
+        guard !isGuest else { return }
         let updated = isDemo
             ? try demo.setMuted(id: parcel.id, muted: muted)
             : try await api.setMuted(id: parcel.id, muted: muted)
@@ -460,6 +500,7 @@ final class ParcelStore: ObservableObject {
         upsert(updated)
         do {
             if isDemo { try demo.archive(id: parcel.id) }
+            else if isGuest { _ = try device.setArchived(id: parcel.id, true) }
             else { try await api.archive(id: parcel.id) }
             try session.checkGeneration(generation)
         } catch {
@@ -475,8 +516,8 @@ final class ParcelStore: ObservableObject {
 
     func restore(_ parcel: Parcel) async throws {
         let generation = session.generation
-        let restored = isDemo
-            ? try demo.restore(id: parcel.id)
+        let restored = isDemo ? try demo.restore(id: parcel.id)
+            : isGuest ? try device.setArchived(id: parcel.id, false)
             : try await api.restore(id: parcel.id)
         try session.checkGeneration(generation)
         upsert(restored)
@@ -488,6 +529,8 @@ final class ParcelStore: ObservableObject {
         if isDemo {
             try demo.permanentlyDelete(id: parcel.id)
             demoShares.stop(parcel.id)
+        } else if isGuest {
+            try await device.forget(id: parcel.id)
         } else {
             try await api.permanentlyDelete(id: parcel.id)
         }
@@ -513,6 +556,15 @@ final class ParcelStore: ObservableObject {
         if isDemo {
             parcels = demo.refreshAll()
             refreshing = false
+            return .completed(Parcel.trackingChanged(from: before, to: parcels) ? .updated : .unchanged)
+        }
+        if isGuest {
+            var trouble: Error?
+            do { try await device.refresh(all: true) } catch { trouble = error }
+            guard generation == session.generation else { throw CancellationError() }
+            parcels = device.list()
+            refreshing = false
+            if let trouble { return .completed(.failed(localizer.errorMessage(trouble))) }
             return .completed(Parcel.trackingChanged(from: before, to: parcels) ? .updated : .unchanged)
         }
         let jobIDs: [UUID]
@@ -554,6 +606,10 @@ final class ParcelStore: ObservableObject {
         if isDemo {
             try session.checkGeneration(generation)
             upsert(try demo.refresh(id: parcel.id))
+        } else if isGuest {
+            try await device.refresh(only: parcel.id)
+            try session.checkGeneration(generation)
+            parcels = device.list()
         } else {
             try await api.refresh(id: parcel.id)
             try session.checkGeneration(generation)
@@ -563,10 +619,10 @@ final class ParcelStore: ObservableObject {
 
     func exportAccount() async throws -> URL {
         let data: Data
-        if isDemo {
+        if isDemo || isGuest {
             data = try JSONEncoder.deliveryTracker.encode(DemoExport(
                 exportedAt: DateParser.isoString(Date()),
-                mode: "demo",
+                mode: isDemo ? "demo" : "device",
                 packages: parcels
             ))
         } else {
@@ -594,6 +650,15 @@ final class ParcelStore: ObservableObject {
         undoParcel = nil
         await endAllDeliveryLiveActivities()
         parcels = demo.list()
+    }
+
+    /// Forgets every parcel followed on this iPhone without an account, here and on the service.
+    func forgetDeviceParcels() async throws {
+        guard isGuest else { return }
+        let generation = session.generation
+        defer { if generation == session.generation, isGuest { mutationRevision += 1; parcels = device.list() } }
+        try await device.forgetAll()
+        undoParcel = nil
     }
 
     func deleteAccount(confirmation: String) async throws {
@@ -759,6 +824,8 @@ final class ParcelStore: ObservableObject {
     }
 
     func loadNotificationPreferences() async {
+        // Alerts belong to an account.
+        guard !isGuest else { return }
         let saves = notificationPreferenceSaves
         do {
             let loaded = isDemo
@@ -857,7 +924,7 @@ final class ParcelStore: ObservableObject {
 
     private func publishDeliveryWidget() {
         let snapshot: DeliveryWidgetSnapshot?
-        if deliveryWidgetEnabled && session.isAuthenticated {
+        if deliveryWidgetEnabled && (session.isAuthenticated || isGuest) {
             let ordered = ParcelOrganizer.visible(
                 parcels,
                 query: "",
@@ -917,6 +984,8 @@ final class ParcelStore: ObservableObject {
 
     private func updateDeliveryLiveActivities(parcels: [Parcel]) async {
         guard !Task.isCancelled else { return }
+        // A Live Activity is kept up to date by pushes, which need an account.
+        guard !isGuest else { return }
         let activities = Activity<DeliveryActivityAttributes>.activities
         guard deliveryLiveActivitiesEnabled else {
             await endAllDeliveryLiveActivities()
@@ -1309,6 +1378,51 @@ final class ParcelStore: ObservableObject {
                 guard !Task.isCancelled, let self else { return }
                 if self.isActive { await self.load(showSpinner: false) }
             }
+        }
+    }
+
+    /// Brings the device's own parcels up to date, quietly: trouble leaves the list as it is.
+    private func loadDeviceParcels() async {
+        let generation = session.generation
+        try? await device.refresh()
+        guard generation == session.generation, isGuest, pendingMutations.isEmpty else { return }
+        let next = device.list()
+        if next != parcels { parcels = next } else { publishDeliverySurfaces() }
+    }
+
+    /// Asks again while the list is on screen: soon and a few times while a parcel waits for its
+    /// carrier's first answer, then at the pace of the signed-in list.
+    private func beginDevicePolling() {
+        pollingTask?.cancel()
+        pollingTask = Task { [weak self] in
+            var round = 0
+            while !Task.isCancelled {
+                guard let waiting = self?.device.isWaiting else { return }
+                let soon = waiting && round < 6
+                try? await Task.sleep(for: .seconds(soon ? 2 * pow(1.5, Double(round)) : 30))
+                guard !Task.isCancelled, let self, self.isGuest else { return }
+                round = soon ? round + 1 : 0
+                if self.isActive { await self.loadDeviceParcels() }
+            }
+        }
+    }
+
+    /// The parcels followed on this iPhone before signing in join the account, under the names
+    /// they had here. The device lets go of each one the account now has.
+    private func claimDeviceParcels() async {
+        let claims = device.claims
+        guard session.user != nil, !claims.isEmpty else { return }
+        let generation = session.generation
+        for start in stride(from: 0, to: claims.count, by: 20) {
+            let batch = Array(claims[start..<min(start + 20, claims.count)])
+            guard let response = try? await api.claimParcels(ClaimParcelsRequest(links: batch)),
+                  generation == session.generation else { return }
+            for result in response.results where result.outcome == .kept {
+                // What was archived here stays archived there.
+                if let id = result.packageID, device.isArchived(linkID: result.id) { try? await api.archive(id: id) }
+            }
+            // A parcel the account has no room for stays on the device.
+            device.release(Set(response.results.filter { $0.outcome != .quota }.map(\.id)))
         }
     }
 

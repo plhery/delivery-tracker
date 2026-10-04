@@ -321,7 +321,7 @@ private struct WelcomeView: View {
 }
 
 /// The mark beside the name and its tagline, where the name stands alone.
-private struct PeekLockup: View {
+struct PeekLockup: View {
     @EnvironmentObject private var localizer: Localizer
     @ScaledMetric(relativeTo: .subheadline) private var nameSize: CGFloat = 16
     @ScaledMetric(relativeTo: .caption2) private var taglineSize: CGFloat = 10

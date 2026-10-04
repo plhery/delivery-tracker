@@ -50,7 +50,7 @@ struct ParcelLinkSheet: View {
     /// A gift keeps the sheet to itself; so does a link that shows nothing.
     private var title: String {
         switch links.phase {
-        case .shown(let response): response.gift == .wrapped || response.gift == .opened ? "" : localizer.text("link.shared")
+        case .shown(let response): links.isSample || response.gift == .wrapped || response.gift == .opened ? "" : localizer.text("link.shared")
         case .stopped: ""
         case .loading, .unavailable, .failed: localizer.text("link.shared")
         }
@@ -81,6 +81,7 @@ struct ParcelLinkSheet: View {
                 if let failure = links.refreshFailure {
                     note(localizer.text(failure.messageKey))
                 }
+                if links.isSample { note(localizer.text("sample.note")) }
                 if wrapped {
                     GiftSurprise()
                 } else if gift == .opened {

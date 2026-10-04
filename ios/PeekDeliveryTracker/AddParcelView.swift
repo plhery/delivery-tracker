@@ -5,6 +5,8 @@ import VisionKit
 struct AddParcelView: View {
     let onOpenParcel: (UUID) -> Void
     let onAdded: (UUID) -> Void
+    /// Opens on the camera, for someone who asked to scan a label.
+    private let scanning: Bool
 
     @EnvironmentObject private var store: ParcelStore
     @EnvironmentObject private var localizer: Localizer
@@ -36,7 +38,8 @@ struct AddParcelView: View {
         case deliveryPostcode
     }
 
-    init(draft: SharedParcelDraft?, onOpenParcel: @escaping (UUID) -> Void = { _ in }, onAdded: @escaping (UUID) -> Void = { _ in }) {
+    init(draft: SharedParcelDraft?, scanning: Bool = false, onOpenParcel: @escaping (UUID) -> Void = { _ in }, onAdded: @escaping (UUID) -> Void = { _ in }) {
+        self.scanning = scanning
         self.onOpenParcel = onOpenParcel
         self.onAdded = onAdded
         _label = State(initialValue: draft?.label ?? "")
@@ -128,9 +131,10 @@ struct AddParcelView: View {
             .task {
                 guard !didFocusTracking else { return }
                 didFocusTracking = true
-                // Wait for the full-screen presentation before opening the keyboard.
+                // Wait for the full-screen presentation before opening the keyboard, or the camera.
                 do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
-                focusedField = .tracking
+                if scanning && scannerAvailable { showingScanner = true }
+                else { focusedField = .tracking }
             }
             .onChange(of: resolvedCarrier, initial: true) { _, carrier in
                 prepareRequiredDetails(for: carrier)

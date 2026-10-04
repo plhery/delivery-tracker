@@ -37,6 +37,8 @@ enum AuthenticationState {
         switch self {
         case .signedIn(let user): user.id.uuidString
         case .demo: "demo"
+        // Nobody is signed in: the parcels this iPhone follows itself.
+        case .welcome: "device"
         default: nil
         }
     }
@@ -127,6 +129,12 @@ final class SessionStore: ObservableObject {
 
     var isDemo: Bool {
         if case .demo = state { return true }
+        return false
+    }
+
+    /// Nobody is signed in, and the app shows the parcels this iPhone follows without an account.
+    var isGuest: Bool {
+        if case .welcome = state { return true }
         return false
     }
 

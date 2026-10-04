@@ -1002,5 +1002,7 @@
   "alerts.email.title": "Eine E-Mail bei Zustellung",
   "alerts.email.body": "Melde dich an, und Peek schreibt an die Adresse, mit der du dich anmeldest.",
   "email.off.askTitle": "Zustell-E-Mails ausschalten?",
-  "email.off.askBody": "Peek schreibt dir dann nicht mehr, wenn ein Paket zugestellt wird. Deine Benachrichtigungen bleiben, wie sie sind."
+  "email.off.askBody": "Peek schreibt dir dann nicht mehr, wenn ein Paket zugestellt wird. Deine Benachrichtigungen bleiben, wie sie sind.",
+  "native.guest.kept": "Vorerst nur auf diesem iPhone.",
+  "sample.tag": "Beispiel"
 }

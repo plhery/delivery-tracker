@@ -2,7 +2,8 @@
 
 Peek on the iPhone is a native SwiftUI app (not a web view) for iOS 18+, with a Share
 extension, Home Screen widgets and Live Activities. It uses Liquid Glass on iOS 26 and
-materials on older versions. It talks to the same authenticated `/api` as the web app.
+materials on older versions. It talks to the same `/api` as the web app: signed in, or without an account through the
+public parcel links, whose owner keys it keeps in the keychain.
 
 ## Run the demo
 

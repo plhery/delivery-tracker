@@ -1002,5 +1002,7 @@
   "alerts.email.title": "E-mail po dostarczeniu",
   "alerts.email.body": "Zaloguj się, a Peek napisze na adres, którym się logujesz.",
   "email.off.askTitle": "Wyłączyć e-maile o dostarczeniu?",
-  "email.off.askBody": "Peek przestanie pisać, gdy przesyłka zostanie dostarczona. Powiadomienia zostają bez zmian."
+  "email.off.askBody": "Peek przestanie pisać, gdy przesyłka zostanie dostarczona. Powiadomienia zostają bez zmian.",
+  "native.guest.kept": "Na razie tylko na tym iPhonie.",
+  "sample.tag": "Przykład"
 }

@@ -1002,5 +1002,7 @@
   "alerts.email.title": "Un’e-mail alla consegna",
   "alerts.email.body": "Accedi e Peek scrive all’indirizzo con cui accedi.",
   "email.off.askTitle": "Disattivare le e-mail di consegna?",
-  "email.off.askBody": "Peek non ti scriverà più quando un pacco viene consegnato. Le notifiche non cambiano."
+  "email.off.askBody": "Peek non ti scriverà più quando un pacco viene consegnato. Le notifiche non cambiano.",
+  "native.guest.kept": "Per ora, solo su questo iPhone.",
+  "sample.tag": "Esempio"
 }

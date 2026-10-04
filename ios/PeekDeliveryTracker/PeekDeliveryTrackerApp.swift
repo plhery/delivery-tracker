@@ -70,9 +70,10 @@ struct RootView: View {
             switch session.state {
             case .loading:
                 LaunchView()
-            case .welcome, .unconfigured, .signedOut:
+            case .unconfigured, .signedOut:
                 ArrivalView()
-            case .demo, .signedIn:
+            // Nobody is signed in: the deliveries this iPhone follows itself, under the first screen until there is one.
+            case .welcome, .demo, .signedIn:
                 ParcelListView(selection: $selectedTab)
             }
             }
@@ -108,7 +109,7 @@ struct RootView: View {
             }
         }
         .task(id: sessionIdentity + (invitation.isPresenting ? "-invitation" : "")) {
-            guard session.isAuthenticated else {
+            guard session.isAuthenticated || session.isGuest else {
                 switch session.state {
                 case .loading: break
                 default: parcels.clearDeliverySurfaces()

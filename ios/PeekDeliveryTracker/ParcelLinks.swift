@@ -180,6 +180,8 @@ final class ParcelLinkStore: ObservableObject {
     /// An answer the sheet shows instead of closing: already followed, or no room.
     @Published private(set) var claim: ParcelLinkClaim?
     @Published private(set) var arrival: Arrival?
+    /// The sheet shows a made-up parcel: nothing is read, and there is nothing to keep.
+    @Published private(set) var isSample = false
 
     private let defaults: UserDefaults
     private let read: Reader?
@@ -211,6 +213,7 @@ final class ParcelLinkStore: ObservableObject {
 
     func open(_ link: ParcelLinkRoute) {
         generation += 1
+        isSample = false
         route = link
         presentationID = UUID()
         phase = .loading
@@ -218,9 +221,20 @@ final class ParcelLinkStore: ObservableObject {
         claim = nil
     }
 
+    /// Shows a sample parcel to someone with no number at hand, as a link would show a real one.
+    func openSample(_ sample: PublicParcelResponse, name: String) {
+        generation += 1
+        isSample = true
+        route = ParcelLinkRoute(id: sample.link.id, name: name)
+        presentationID = UUID()
+        phase = .shown(sample)
+        refreshFailure = nil
+        claim = nil
+    }
+
     /// Reads the link, again when asked to refresh.
     func load() async {
-        guard let route else { return }
+        guard let route, !isSample else { return }
         guard let read else { gone(); return }
         generation += 1
         let current = generation
