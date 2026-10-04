@@ -38,7 +38,7 @@ const ACTIVE_PACKAGE_SELECT = 'id,user_id,tracking_number,label,carrier,current_
  * mapper reads it, and provider_event_id never reaches a client.
  */
 export const STORED_EVENT_IDENTITIES = 'stored_event_identities';
-const SYNC_EVENT_IDENTITIES = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at,stage,description)`;
+const SYNC_EVENT_IDENTITIES = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at,stage,description,provider_code:raw_data->>provider_code)`;
 
 export class SupabaseError extends Error {
   constructor(

@@ -18,6 +18,8 @@
  *   place; with it, "Your parcel has been delivered successfully" at "Urdorf,
  *   CH". Its scan takes over the row stored at its instant
  *   (`sameInstantIdentities`).
+ * - India Post changes labels for the same coded scan. Its one row at the
+ *   same instant can be updated when the provider code still agrees.
  * - A universal provider copies a carrier's scans while the carrier's own
  *   lookup is down, sometimes in a zone it misread (Ship24 keeps GOFO's Pacific
  *   offset on Eastern clocks). A universal copy of a stored scan is left out of
@@ -39,7 +41,13 @@ import { isRecord, type JsonObject } from './types';
  */
 const SAME_INSTANT_SOURCES: Readonly<Record<string, readonly string[]>> = {
   dpd: ['dpd:', 'unknown:'],
+  'india-post': ['india-post:'],
 };
+
+function providerCode(row: JsonObject): string {
+  const code = row.provider_code ?? (isRecord(row.raw_data) ? row.raw_data.provider_code : undefined);
+  return typeof code === 'string' ? code : '';
+}
 
 function identity(row: JsonObject): string {
   return typeof row.provider_event_id === 'string' ? row.provider_event_id : '';
@@ -84,7 +92,11 @@ export function sameInstantIdentities(
   )));
   for (const [instant, scans] of unmatched) {
     const rows = candidates.get(instant) ?? [];
-    if (scans.length === 1 && rows.length === 1) reused.set(identity(scans[0]!), identity(rows[0]!));
+    if (scans.length !== 1 || rows.length !== 1) continue;
+    // A source with changing labels must still agree on its scan kind.
+    const code = providerCode(scans[0]!);
+    if (sourceCarrierId === 'india-post' && (!code || code.toLowerCase() === 'unknown' || code !== providerCode(rows[0]!))) continue;
+    reused.set(identity(scans[0]!), identity(rows[0]!));
   }
   return reused;
 }

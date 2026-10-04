@@ -13,6 +13,21 @@ const row = (id: string, occurredAt: string, description?: string, stage?: strin
 const pairs = (map: ReadonlyMap<string, string>) => [...map].sort(([left], [right]) => left.localeCompare(right));
 
 describe('same-instant identity reuse', () => {
+  it('updates a reworded coded scan without changing its saved identity', () => {
+    const at = '2026-07-11T18:05:00Z';
+    const incoming = { ...scan('india-post:flight-details', at, 'Flight ZZ0101 departed: FRA → CDG'),
+      raw_data: { provider_code: 'AircraftTakeOff' } };
+    const saved = { ...row('india-post:uplift', at, 'UPLIFT'), provider_code: 'AircraftTakeOff' };
+    expect([...sameInstantIdentities([incoming], [saved], 'india-post')])
+      .toEqual([['india-post:flight-details', 'india-post:uplift']]);
+    for (const code of ['ItemReceived', '', undefined]) {
+      expect(sameInstantIdentities([incoming], [{ ...saved, provider_code: code }], 'india-post').size).toBe(0);
+    }
+    expect(sameInstantIdentities([incoming], [saved, { ...saved, provider_event_id: 'india-post:another' }], 'india-post').size).toBe(0);
+    expect(sameInstantIdentities([incoming], [{ ...saved, provider_event_id: 'other:flight' }], 'india-post').size).toBe(0);
+    expect(sameInstantIdentities([{ ...incoming, raw_data: { provider_code: 'Unknown' } }],
+      [{ ...saved, provider_code: 'Unknown' }], 'india-post').size).toBe(0);
+  });
   it('gives each reworded scan the one stored identity at its instant', () => {
     const stored = [
       row('dpd:unverified-delivered', '2026-07-16T08:12:00+00:00'),

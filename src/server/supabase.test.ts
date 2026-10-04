@@ -72,7 +72,7 @@ describe('guarded tracking writes', () => {
     await user.listPackages();
     await user.listActivePackages();
 
-    const identities = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at,stage,description)`;
+    const identities = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at,stage,description,provider_code:raw_data->>provider_code)`;
     expect(select(serviceRequest, 0).endsWith(`,${identities}`)).toBe(true);
     expect(select(serviceRequest, 1).endsWith(`,${identities}`)).toBe(true);
     // The API's package shape never names provider_event_id, nor when the parcel joined its account.

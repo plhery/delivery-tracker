@@ -2177,10 +2177,33 @@ function eventStore() {
       occurred_at: new Date(String(row.occurred_at)).toISOString().replace('.000Z', '+00:00'),
       stage: row.stage,
       description: row.description,
+      provider_code: (row.raw_data as JsonObject | undefined)?.provider_code,
     })),
     batch: () => (client.applyTrackingSync.mock.calls.at(-1)?.[2] ?? []) as JsonObject[],
   };
 }
+
+it('enriches a saved flight in place instead of storing a second event for notifications', async () => {
+  const store = eventStore();
+  const at = '2026-07-11T20:05:00+02:00';
+  const flight = { time: at, stage: 'in_transit', provider_code: 'AircraftTakeOff' };
+  const result = (description: string, location: string) => ({ status: 'in_transit', current_stage: 'in_transit',
+    last_update: at, last_status_text: description, events: [{ ...flight, description, location }] });
+  const rich = 'Flight ZZ0101 departed: Frankfurt Airport (FRA) → Paris Charles de Gaulle Airport (CDG)';
+  const adapter = { fetch: vi.fn().mockResolvedValueOnce(result('UPLIFT', 'Office - FRA 000000'))
+    .mockResolvedValue(result(rich, 'Frankfurt Airport (FRA), Germany')) };
+  const service = new TrackingSyncService(store.client as unknown as SupabaseServiceClient, adapter, null,
+    () => new Date('2026-07-12T12:00:00Z'));
+  const load = () => ({ id: 'flight-parcel', user_id: 'owner', carrier: 'india-post', tracking_number: 'JN067614884IN',
+    current_stage: 'in_transit', [STORED_EVENT_IDENTITIES]: store.identities() });
+  await service.syncPackage(load());
+  const original = [...store.rows.values()][0]!;
+  await service.syncPackage(load());
+  await service.syncPackage(load());
+  expect(store.rows.size).toBe(1);
+  expect([...store.rows.values()][0]).toMatchObject({ id: original.id, provider_event_id: original.provider_event_id,
+    description: rich, location: 'Frankfurt Airport (FRA), Germany', occurred_at: '2026-07-11T18:05:00Z' });
+});
 
 describe('reworded DPD scans', () => {
   // The fixtures' synthetic number: a DPD reply must name the parcel asked for.
