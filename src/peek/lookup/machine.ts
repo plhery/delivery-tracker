@@ -51,9 +51,9 @@ export interface LookupState {
   /** The text as it stood when typing last paused, or right after a paste. */
   settled: string;
   /**
-   * Whether the visitor wants to go on: `paste` goes straight on only when the
-   * carrier is certain and nothing else is needed, `track` (the button, Enter)
-   * goes on unless something has to be asked first.
+   * Whether the visitor wants to go on: `paste` goes on after carrier recognition,
+   * including an unknown answer, when nothing else is needed. `track` (the button,
+   * Enter) goes on unless something has to be asked first.
    */
   intent: 'none' | 'paste' | 'track';
   /** The number chosen among several in one text. */
@@ -126,7 +126,7 @@ export interface Survey {
   carrier: CarrierId;
   /** Where the carrier comes from. */
   source: 'device' | 'chosen' | 'found' | 'shape' | 'none';
-  /** The carrier is known well enough for a paste to go straight on. */
+  /** The carrier was selected by its shape, recognition or the visitor. */
   certain: boolean;
   /** The inputs to show for the carrier. */
   fields: CarrierInputRequirement[];
@@ -245,7 +245,6 @@ function advance(state: LookupState, device: readonly DeviceParcel[]): LookupSta
     // The carrier only just turned out to want something: the visitor gets to see the field before the lookup goes.
     if (state.offered !== offered) return stop({ offered });
   }
-  if (!track && !found.certain) return stop();
   return { ...state, intent: 'none', trouble: null, job: { type: 'lookup', input: lookupInput(found), carrier: found.carrier } };
 }
 

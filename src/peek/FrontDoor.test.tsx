@@ -168,17 +168,25 @@ describe('FrontDoor', () => {
     await waitFor(() => expect(onTracked).toHaveBeenCalledOnce());
   });
 
-  it('degrades quietly when the carriers cannot be asked: the number waits for Track and is looked up without a carrier', async () => {
+  it('looks up a pasted Express-shaped number without a carrier after recognition finds none', async () => {
+    const number = '0000000046';
+    mocks.detect.mockResolvedValueOnce({ trackingNumber: number, carrier: 'unknown', asked: ['relais-colis', 'tipsa'] });
+    const { user, field } = door();
+    await user.click(field);
+    await user.paste(`DHL Express tracking: ${number}`);
+    await waitFor(() => expect(onTracked).toHaveBeenCalledOnce());
+    expect(mocks.lookup).toHaveBeenCalledExactlyOnceWith({ trackingNumber: number }, expect.any(AbortSignal));
+    expect(mocks.detect).toHaveBeenCalledOnce();
+  });
+
+  it('degrades quietly into a lookup when the carriers cannot be asked about a pasted number', async () => {
     mocks.detect.mockRejectedValueOnce(new ParcelLinkError('burst', { retryAfterSeconds: 30 }));
-    const { user, field, track } = door();
+    const { user, field } = door();
     await user.click(field);
     await user.paste(SHARED);
-    await waitFor(() => expect(document.querySelector('.door-line')).toHaveTextContent('Carrier Peek looks it up when you track'));
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    expect(mocks.lookup).not.toHaveBeenCalled();
-    await user.click(track);
     await waitFor(() => expect(onTracked).toHaveBeenCalledOnce());
-    expect(mocks.lookup).toHaveBeenCalledWith({ trackingNumber: SHARED }, expect.any(AbortSignal));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(mocks.lookup).toHaveBeenCalledExactlyOnceWith({ trackingNumber: SHARED }, expect.any(AbortSignal));
     expect(mocks.detect).toHaveBeenCalledOnce();
   });
 
