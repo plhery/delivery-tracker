@@ -1,6 +1,6 @@
 import { Suspense, useRef } from 'react';
 import { Icon, type IconName } from '../../components/Icon';
-import { Seal } from '../../components/Passport';
+import { Seal } from '../../components/Seal';
 import { PeekMark } from '../../components/PeekMark';
 import { useI18n, type MessageKey } from '../../i18n';
 import { DEMO_PATH } from '../../lib/experience';
