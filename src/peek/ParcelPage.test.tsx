@@ -781,7 +781,7 @@ describe('ParcelPage for the sample parcel', () => {
     expect(mocks.read).toHaveBeenCalledWith(SAMPLE_LINK_ID, expect.anything());
     expect(screen.getByText('Sample parcel')).toBeVisible();
     expect(within(card()).getByText('Moon lamp 🌙')).toBeVisible();
-    expect(document.title).toMatch(/^Moon lamp 🌙 · In transit/);
+    await waitFor(() => expect(document.title).toMatch(/^Moon lamp 🌙 · In transit/));
     expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('1234567899');
     expect(screen.getByRole('button', { name: /^Ping me/ })).toBeVisible();
     expect(screen.getAllByRole('button', { name: 'Share' }).length).toBeGreaterThan(0);
