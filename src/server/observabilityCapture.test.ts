@@ -124,6 +124,12 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(JSON.parse(String(warn.mock.calls.at(-1)?.[0]))).toMatchObject({ event: 'tracking_routing', decision: 'provider_failed',
     provider: '17TRACK', error_type: 'UpstreamHttpError', error_message: expect.stringContaining('429'), upstream_status: 429 });
   warn.mockRestore();
+  const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  reportRoutingEvent('fresher_provider_found', { carrier: 'dhl', provider: 'ParcelsApp', trackingNumber: 'TEST-first' });
+  // The router has already adopted the fresher provider: the log line is the record of it.
+  expect(JSON.parse(String(log.mock.calls.at(-1)?.[0]))).toMatchObject({ event: 'tracking_routing', decision: 'fresher_provider_found',
+    carrier: 'dhl', provider: 'ParcelsApp' });
+  log.mockRestore();
   reportRoutingEvent('carrier_auto_swapped', { carrier: 'dhl', provider: 'ups', trackingNumber: 'TEST-first' });
   reportRoutingEvent('provider_recovered', { carrier: 'dhl', provider: '17TRACK' });
   reportRoutingEvent('carrier_coverage_discovered', { carrier: 'dhl', provider: 'Example Parcel Co' });
@@ -137,6 +143,10 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(swap.exception).toBeUndefined();
   expect(rateLimit).toBeUndefined();
   expect(captured.events.some((event) => event.message === 'Tracking routing: provider_recovered')).toBe(false);
+  expect(captured.events.some((event) => event.message === 'Tracking routing: fresher_provider_found')).toBe(false);
+  expect(swap.breadcrumbs).toEqual(expect.arrayContaining([
+    expect.objectContaining({ category: 'tracking-routing', message: 'fresher_provider_found', data: { provider: 'ParcelsApp' } }),
+  ]));
   // Routing reports only names the catalog does not know, so each is worth an issue.
   expect(captured.events.find((event) => event.message === 'Tracking routing: carrier_coverage_discovered'))
     .toMatchObject({ level: 'warning', tags: { provider: 'Example Parcel Co' } });

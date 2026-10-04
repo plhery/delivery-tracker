@@ -268,7 +268,7 @@ parcel.
 | `carrier_input_needed` | A recognized carrier needs the user's input (the GLS postcode); the parcel asks for it (logs and breadcrumbs only) |
 | `direct_support_opportunity` | Candidate for a dedicated adapter |
 | `carrier_coverage_discovered` | A provider named a carrier the catalog doesn't know |
-| `fresher_provider_found` | Evidence to revisit the default order |
+| `fresher_provider_found` | A shadow check found newer history at another provider and the parcel moved to it (logs and breadcrumbs only). Evidence to revisit the default order |
 | `coverage_contradicted` | A provider disagreed with the carrier's coverage results: `failure_category:history` when one that answered without history has the parcel, `no_history` when one with history does not while another has it (logs and breadcrumbs only). Evidence to rerun the coverage probe |
 | `provider_recovered` | Recovery signal (doesn't auto-resolve issues) |
 
