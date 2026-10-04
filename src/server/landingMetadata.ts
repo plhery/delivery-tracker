@@ -1,17 +1,22 @@
 import 'server-only';
 import type { Metadata } from 'next';
-import { peekPicture } from '../lib/peekPicture';
+import type { Locale } from '../lib/locale';
+import { requestLocale } from './requestLocale';
 import { requestOrigin } from './requestOrigin';
+import { landingTitle, PREVIEW_LOCALES, sitePicture, wordsIn } from './sitePreview';
 
-// The landing's own title is the question it answers; the description says only what the page itself claims.
-const title = 'Peek — Where’s my parcel?';
-const description =
-  'Paste a tracking number, a carrier link or a shipping email and see where your parcel is. 3,500+ carriers, checked every 10 minutes. Open source, no account needed.';
-
-/** The landing's metadata. It names `/` as the page's address, at whichever address the landing shows. */
+/**
+ * The landing's metadata, in the reader's language. The title is the question the page
+ * answers, then what Peek is; the description says only what the page itself claims.
+ * It names `/` as the page's address, at whichever address the landing shows.
+ */
 export async function landingMetadata(): Promise<Metadata> {
   const origin = await requestOrigin();
-  const picture = peekPicture(origin);
+  const locale = await requestLocale();
+  const t = wordsIn(locale);
+  const title = landingTitle(t);
+  const description = t('preview.landing.description');
+  const picture = sitePicture(origin, locale);
   return {
     metadataBase: origin,
     title,
@@ -21,6 +26,7 @@ export async function landingMetadata(): Promise<Metadata> {
       type: 'website',
       url: origin.href,
       siteName: 'Peek',
+      locale: PREVIEW_LOCALES[locale],
       title,
       description,
       images: [picture],
@@ -32,4 +38,21 @@ export async function landingMetadata(): Promise<Metadata> {
       images: [picture.url],
     },
   };
+}
+
+/** What Peek is, for a search engine: a web application at this address, described as the page describes it. */
+export function landingStructuredData(origin: URL, locale: Locale): string {
+  const t = wordsIn(locale);
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: t('app.title'),
+    alternateName: `${t('app.title')} — ${t('app.tagline')}`,
+    url: origin.href,
+    description: t('preview.landing.description'),
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Web, iOS',
+    inLanguage: locale,
+    isAccessibleForFree: true,
+  }).replaceAll('<', '\\u003c');
 }

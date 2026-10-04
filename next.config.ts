@@ -108,12 +108,13 @@ const nextConfig: NextConfig = {
           { key: 'Service-Worker-Allowed', value: '/' },
         ],
       },
-      {
-        source: '/og.png',
+      // The link preview, in each language it is drawn in.
+      ...['', '-de', '-fr', '-it', '-es', '-pt', '-pl'].map((language) => ({
+        source: `/og${language}.png`,
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=3600, must-revalidate' },
         ],
-      },
+      })),
     ];
   },
 };

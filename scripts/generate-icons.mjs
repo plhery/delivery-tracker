@@ -1,6 +1,7 @@
 // Draws the mark in src/brand/mark.json into every icon file, and renders the link preview.
 // Run with: npm run icons
 import { Resvg } from '@resvg/resvg-js';
+import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -58,11 +59,62 @@ await write('public/icons/icon-maskable-512.png', opaque(render(markSvg({ bleed:
 await write('public/icons/apple-touch-icon.png', opaque(render(markSvg({ bleed: true }), 180)));
 await write('ios/PeekDeliveryTracker/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png', opaque(render(markSvg({ bleed: true }), 1024)));
 
-// The preview's text is set in the typeface the invitation card uses, so it renders the same everywhere.
-await write('public/og.png', render(readFileSync(join(root, 'public/og.svg'), 'utf8'), 1200, {
-  font: {
-    fontFiles: [join(root, 'node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf')],
-    loadSystemFonts: false,
-    defaultFontFamily: 'Geist',
-  },
-}));
+// The link preview, once per language. `public/og.svg` is the English drawing; its words are
+// replaced with each language's own. The text is set in the typeface the parcel pictures use,
+// so it renders the same everywhere.
+const LOCALES = ['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'];
+const drawing = readFileSync(join(root, 'public/og.svg'), 'utf8');
+const HEADLINE = /<text [^>]*font-size="104"[^>]*>[\s\S]*?<\/text>/;
+const DETAIL = /<text x="84" y="462"[^>]*>[^<]*<\/text>/;
+const [headlineAttributes] = /font-family="[^"]*"/.exec(drawing);
+/** How wide a line of the face runs, in ems: close enough to choose where a headline breaks. */
+const EM = 0.56;
+const COLUMN = 640;
+
+/** A headline on two lines as large as they fit, or on three when two would be small. */
+function headline(text) {
+  const words = text.split(' ');
+  const splits = (count) => count === 1 ? [[words.join(' ')]] : words.slice(1).flatMap((_, index) => {
+    const head = words.slice(0, index + 1).join(' ');
+    const rest = words.slice(index + 1);
+    return count === 2 ? [[head, rest.join(' ')]] : rest.slice(1).map((__, cut) => [head, rest.slice(0, cut + 1).join(' '), rest.slice(cut + 1).join(' ')]);
+  });
+  const longest = (lines) => Math.max(...lines.map((line) => [...line].length));
+  const best = (count) => splits(Math.min(count, words.length)).reduce((a, b) => longest(b) < longest(a) ? b : a);
+  const two = best(2);
+  const twoSize = Math.min(104, Math.floor(COLUMN / (longest(two) * EM)));
+  const lines = twoSize >= 84 ? two : best(3);
+  const size = lines === two ? twoSize : Math.min(78, Math.floor(COLUMN / (longest(lines) * EM)));
+  return { lines, size };
+}
+
+function previewSvg(locale) {
+  const words = JSON.parse(readFileSync(join(root, `shared/locales/${locale}.json`), 'utf8'));
+  const { lines, size } = headline(words['peek.title']);
+  const leading = size * 1.02;
+  // The detail sits where the English one does under two full lines, and moves with the headline.
+  const first = 182 + size * 0.895;
+  const detail = words['preview.picture.detail'];
+  const detailSize = Math.min(40, Math.floor(COLUMN / ([...detail].length * 0.5)));
+  const detailY = Math.round(first + leading * (lines.length - 1) + 30 + 51 * size / 104);
+  return drawing
+    .replace(/<title id="title">[^<]*<\/title>/, `<title id="title">${words['app.title']} — ${words['peek.title']}</title>`)
+    .replace('>3,500+ carriers<', `>${words['landing.pill.carriers']}<`)
+    .replace(HEADLINE, `<text ${headlineAttributes} font-size="${size}" letter-spacing="${(-size * 0.035).toFixed(2)}" fill="#20251E" stroke="#20251E" stroke-width="${(size * 0.0404).toFixed(1)}" stroke-linejoin="round">\n${lines.map((line, index) => `    <tspan x="80" y="${Math.round(first + leading * index)}">${line}</tspan>`).join('\n')}\n  </text>`)
+    .replace(DETAIL, `<text x="84" y="${detailY}" ${headlineAttributes} font-size="${detailSize}" fill="#526E5B">${detail}</text>`);
+}
+
+const versions = {};
+for (const locale of LOCALES) {
+  const png = render(locale === 'en' ? drawing : previewSvg(locale), 1200, {
+    font: {
+      fontFiles: [join(root, 'node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf')],
+      loadSystemFonts: false,
+      defaultFontFamily: 'Geist',
+    },
+  });
+  await write(`public/og${locale === 'en' ? '' : `-${locale}`}.png`, png);
+  versions[locale] = createHash('sha256').update(png).digest('hex').slice(0, 8);
+}
+// The address of each picture names its contents, so a redrawn one replaces cached copies.
+await write('src/lib/peekPictures.json', `${JSON.stringify(versions, null, 2)}\n`);

@@ -5,6 +5,7 @@ import { createElement } from 'react';
 import { CARRIER_PALETTES, CARRIER_TRUCK, carrierBrand, carrierBrandFamily, carrierDecal, mix, type CarrierPalette, type TruckDecalShape } from '../brand';
 import mark from '../brand/mark.json';
 import type { CarrierInfo } from '../lib/carriers';
+import type { Locale } from '../lib/locale';
 import type { ParcelLinkPreview } from './parcelLinkPreview';
 import { GEIST, writable } from './pictureFont';
 
@@ -123,11 +124,11 @@ function headlineSize(headline: string): number {
  * The picture is drawn without the web: a line its face cannot write is left
  * out, and a status it cannot write gets Peek's own picture.
  */
-export function parcelLinkSocialImage(preview: ParcelLinkPreview, host: string | null): Response {
+export function parcelLinkSocialImage(preview: ParcelLinkPreview, host: string | null, locale: Locale = 'en'): Response {
   const { carrier, steps, gift = false } = preview;
   const written = (text: string | null) => (text && writable(text, GEIST)) || null;
   const headline = written(preview.headline);
-  if (!headline) return genericSocialImage();
+  if (!headline) return genericSocialImage(locale);
   const detail = written(preview.detail);
   const note = written(preview.note ?? null);
   const name = written(carrier && (WORDMARKS[carrierBrandFamily(carrier.id)] ?? carrier.name));
@@ -168,10 +169,11 @@ export function parcelLinkSocialImage(preview: ParcelLinkPreview, host: string |
   );
 }
 
-let generic: Buffer | null = null;
+const generic = new Map<Locale, Buffer>();
 
-/** Peek's own picture, for a link that leads nowhere: the same one the front door shows. */
-export function genericSocialImage(): Response {
-  generic ??= readFileSync(join(process.cwd(), 'public/og.png'));
-  return new Response(new Uint8Array(generic), { headers: { 'Content-Type': 'image/png', ...HEADERS } });
+/** Peek's own picture, for a link that leads nowhere: the same one the front door shows, in the asked language. */
+export function genericSocialImage(locale: Locale = 'en'): Response {
+  const picture = generic.get(locale) ?? readFileSync(join(process.cwd(), `public/og${locale === 'en' ? '' : `-${locale}`}.png`));
+  generic.set(locale, picture);
+  return new Response(new Uint8Array(picture), { headers: { 'Content-Type': 'image/png', ...HEADERS } });
 }

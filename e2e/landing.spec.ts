@@ -76,10 +76,10 @@ test('asks four questions in order, with the field first and the name, the code 
   for (const text of ['Where’s my parcel?', 'Will I know when it moves?', 'Following more than one?', 'Who’s behind Peek?', 'parcel-illustration']) expect(html).toContain(text);
   expect(html).not.toContain('landing-journey__canvas');
   expect(html).not.toContain('parcel-card');
-  expect(html).toContain('<title>Peek — Where’s my parcel?</title>');
+  expect(html).toContain('<title>Peek — Where’s my parcel? Universal Parcel Tracker</title>');
 
   await openLanding(page);
-  await expect(page).toHaveTitle('Peek — Where’s my parcel?');
+  await expect(page).toHaveTitle('Peek — Where’s my parcel? Universal Parcel Tracker');
   await expect(page.locator('.door h1, .door h2:not(.door-device h2)')).toHaveText([
     'Where’s my parcel?', 'Will I know when it moves?', 'Following more than one?', 'Who’s behind Peek?',
   ]);
@@ -108,7 +108,7 @@ test('asks four questions in order, with the field first and the name, the code 
   await expect(footer.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy.html');
   await footer.getByRole('combobox', { name: 'Language' }).selectOption('de');
   await expect(page.getByRole('heading', { level: 2, name: 'Wer steckt hinter Peek?' })).toBeVisible();
-  await expect(page).toHaveTitle('Peek — Wo ist mein Paket?');
+  await expect(page).toHaveTitle('Peek — Wo ist mein Paket? Universelle Paketverfolgung');
 });
 
 test('the field shows what it takes until someone touches it, then never again', async ({ page }) => {

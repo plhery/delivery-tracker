@@ -24,7 +24,7 @@ test('social crawlers and browser-like preview readers receive a parcel card in 
     expect(response.headers()['referrer-policy']).toBe('no-referrer');
     const html = await response.text();
     const head = html.slice(0, html.indexOf('</head>'));
-    expect(head).toContain('property="og:title" content="A friend sent you an invitation"');
+    expect(head).toContain('property="og:title" content="An invitation for you"');
     expect(head).toContain('name="twitter:card" content="summary_large_image"');
     expect(head).toContain(`/api/friends/invite-image?preview=${preview}`);
     expect(head).toMatch(new RegExp(`property="og:url" content="https?://[^"]+/i/${preview}"`));

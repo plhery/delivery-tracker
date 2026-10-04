@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { invitationInitial } from '../lib/invitationInitial';
 import { invitationInitialPath } from '../lib/invitationInitialPath';
+import type { Locale } from '../lib/locale';
 import { GEIST, pictureFont, writable } from './pictureFont';
+import { wordsIn } from './sitePreview';
 
 /** The serif the sender's name is set in. The renderer's own sans is loaded beside it, or it would be lost. */
 const GELASIO = pictureFont('Gelasio', readFileSync(join(process.cwd(), 'public/fonts/gelasio/Gelasio-SemiBoldItalic.ttf')));
@@ -27,8 +29,16 @@ function writtenName(nickname: string | null): string | null {
 }
 
 /** A still of the welcome parcel: the same kraft paper, face and seal. */
-export function invitationSocialImage(nickname: string | null): ImageResponse {
+export function invitationSocialImage(nickname: string | null, locale: Locale = 'en'): ImageResponse {
+  const t = wordsIn(locale);
   const name = writtenName(nickname);
+  // The sentence around the name, as the page splits it; without a name, the invitation alone.
+  const [before = '', after = ''] = t('friends.invitationTitle').split('{{name}}').map((part) => part.trim());
+  const sentence = name
+    ? [...before.split(' ').filter(Boolean).map((word) => ({ word, named: false })), { word: name, named: true }, ...after.split(' ').filter(Boolean).map((word) => ({ word, named: false }))]
+    : t('friends.invitationGeneric').split(' ').map((word) => ({ word, named: false }));
+  const length = sentence.reduce((sum, { word }) => sum + [...word].length + 1, 0);
+  const sentenceSize = length > 52 ? 40 : length > 40 ? 46 : 54;
   const initial = invitationInitial(name);
   const initialPath = invitationInitialPath(initial);
   // An initial with no drawing of its own is set in type, when the faces have it.
@@ -38,17 +48,13 @@ export function invitationSocialImage(nickname: string | null): ImageResponse {
   const sealSize = 28 * parcelScale;
   const sealLeft = (183 - 25) * (360 / 250) - sealSize / 2;
   const sealTop = (234 - 85) * parcelScale - sealSize / 2;
-  const nameLength = [...(name ?? '')].length;
-  const greetingSize = nameLength > 18 ? 34 : nameLength > 12 ? 44 : 54;
   return new ImageResponse(
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#F4F5F1', color: '#26372E', padding: '38px 60px', fontFamily: 'Geist' }}>
       <div style={{ display: 'flex', alignItems: 'center', fontSize: 20, color: '#637568', letterSpacing: 1 }}>PEEK</div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: 1020, height: 160, marginTop: 4, textAlign: 'center', fontWeight: 700, lineHeight: 1.15 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: greetingSize * 0.26, fontSize: greetingSize }}>
-          <span>{name ? 'Your friend' : 'A friend'}</span>
-          {name && <span style={{ fontFamily: 'Gelasio', fontStyle: 'italic', fontWeight: 600 }}>{name}</span>}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'center', columnGap: sentenceSize * 0.26, fontSize: sentenceSize }}>
+          {sentence.map(({ word, named }, index) => <span key={index} style={named ? { fontFamily: 'Gelasio', fontStyle: 'italic', fontWeight: 600 } : undefined}>{word}</span>)}
         </div>
-        <div style={{ display: 'flex', fontSize: 54 }}>sent you an invitation</div>
       </div>
       <div style={{ display: 'flex', position: 'relative', width: 360, height: 300 }}>
       <svg width="360" height="300" viewBox="25 85 250 215" fill="none">
@@ -79,7 +85,7 @@ export function invitationSocialImage(nickname: string | null): ImageResponse {
       </svg>
       {letter && <div style={{ display: 'flex', position: 'absolute', left: sealLeft, top: sealTop, width: sealSize, height: sealSize, alignItems: 'center', justifyContent: 'center', fontSize: 18 * parcelScale, color: '#7C6787', transform: 'rotate(-27deg)', lineHeight: 1 }}>{letter}</div>}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', marginTop: 16, fontSize: 28, color: '#526E5B' }}>Tap to open your parcel →</div>
+      <div style={{ display: 'flex', alignItems: 'center', marginTop: 16, fontSize: 28, color: '#526E5B' }}>{t('preview.invitation.open')}</div>
     </div>,
     {
       width: 1200, height: 630,

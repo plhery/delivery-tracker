@@ -2,15 +2,15 @@ import 'server-only';
 import { clientIp, HttpError } from './api';
 import { invitationPreviewByHash, invitationPreviewById } from './friends';
 import { isInvitationPreviewId } from '../lib/invitationLinkFormat';
+import type { Translate } from '../lib/messages';
 import { captureOperationalError } from './observability';
 import { RateLimiter } from './rateLimit';
 import { serviceClient } from './runtime';
 
 const limiter = new RateLimiter();
-export const invitationDescription = 'Tap to open your invitation on Peek.';
-
-export function invitationTitle(nickname: string | null): string {
-  return nickname ? `Your friend ${nickname} sent you an invitation` : 'A friend sent you an invitation';
+/** The invitation's title: who sent it, when the link may say. */
+export function invitationTitle(nickname: string | null, t: Translate): string {
+  return nickname ? t('friends.invitationTitle', { name: nickname }) : t('friends.invitationGeneric');
 }
 
 export async function invitationSocialNickname(preview: string | string[] | undefined, headers: Headers): Promise<string | null> {

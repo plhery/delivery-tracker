@@ -6,10 +6,7 @@ import { parcelLinkPreview } from './parcelLinkPreview';
 import { isParcelLinkId } from './publicParcels';
 import { requestLocale } from './requestLocale';
 import { requestOrigin } from './requestOrigin';
-
-/** What a link that leads nowhere is called: Peek's own name and sentence, as at the front door. */
-const TITLE = 'Peek — Universal Parcel Tracker';
-const DESCRIPTION = 'Private parcel tracking, with alerts and history synced across your devices.';
+import { siteTitle, wordsIn } from './sitePreview';
 
 /** Where a parcel link's preview image is served. An id that cannot be a link's is not echoed. */
 export function parcelLinkImagePath(linkId: unknown): string {
@@ -42,8 +39,10 @@ export async function parcelLinkMetadata(linkId: unknown): Promise<Metadata> {
   const image = new URL(parcelLinkImagePath(linkId), origin);
   // The image is written in the page's language, whoever fetches it.
   image.searchParams.set('lang', locale);
-  const title = preview?.title ?? TITLE;
-  const description = preview?.description ?? DESCRIPTION;
+  // A link that leads nowhere is called by Peek's own name and sentence.
+  const t = wordsIn(locale);
+  const title = preview?.title ?? siteTitle(t);
+  const description = preview?.description ?? t('preview.site.description');
   return {
     metadataBase: origin,
     title,

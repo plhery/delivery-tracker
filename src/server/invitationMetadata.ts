@@ -2,8 +2,10 @@ import 'server-only';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { isInvitationPreviewId } from '../lib/invitationLinkFormat';
-import { invitationDescription, invitationSocialNickname, invitationTitle } from './invitationSocial';
+import { invitationSocialNickname, invitationTitle } from './invitationSocial';
+import { requestLocale } from './requestLocale';
 import { requestOrigin } from './requestOrigin';
+import { PREVIEW_LOCALES, wordsIn } from './sitePreview';
 
 export async function invitationMetadata(preview: string | string[] | undefined): Promise<Metadata> {
   const nickname = await invitationSocialNickname(preview, await headers());
@@ -16,7 +18,12 @@ export async function invitationMetadata(preview: string | string[] | undefined)
     if (!short) url.searchParams.set('preview', preview);
     image.searchParams.set('preview', preview);
   }
-  const title = invitationTitle(nickname);
+  // The card and its picture are written in the page's language, whoever fetches the picture.
+  const locale = await requestLocale();
+  const t = wordsIn(locale);
+  image.searchParams.set('lang', locale);
+  const title = invitationTitle(nickname, t);
+  const invitationDescription = t('preview.invitation.description');
   return {
     metadataBase: origin,
     title,
@@ -25,7 +32,7 @@ export async function invitationMetadata(preview: string | string[] | undefined)
     referrer: 'no-referrer',
     alternates: { canonical: url.href },
     openGraph: {
-      type: 'website', url: url.href, siteName: 'Peek', title, description: invitationDescription,
+      type: 'website', url: url.href, siteName: 'Peek', locale: PREVIEW_LOCALES[locale], title, description: invitationDescription,
       images: [{ url: image.href, width: 1200, height: 630, type: 'image/png', alt: title }],
     },
     twitter: { card: 'summary_large_image', title, description: invitationDescription, images: [{ url: image.href, alt: title }] },

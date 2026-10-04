@@ -18,13 +18,15 @@ import manifest from '../app/manifest';
 import { generateMetadata as landingAddressMetadata } from '../app/home/page';
 import { generateMetadata } from '../app/page';
 import mark from './brand/mark.json';
+import { SUPPORTED_LOCALES } from './lib/locale';
+import { messagesFor } from './server/requestLocale';
 
 const TITLE = 'Peek — Universal Parcel Tracker';
 const DESCRIPTION =
   'Private parcel tracking, with alerts and history synced across your devices.';
-const LANDING_TITLE = 'Peek — Where’s my parcel?';
+const LANDING_TITLE = 'Peek — Where’s my parcel? Universal Parcel Tracker';
 const LANDING_DESCRIPTION =
-  'Paste a tracking number, a carrier link or a shipping email and see where your parcel is. 3,500+ carriers, checked every 10 minutes. Open source, no account needed.';
+  'Track any parcel in one place: paste a tracking number, a carrier link or a shipping email. 3,500+ carriers, checked every 10 minutes. Open source, no account needed.';
 
 describe('public product metadata', () => {
   it('names the site and the installed PWA Peek, with what it does where the name stands alone', async () => {
@@ -78,6 +80,24 @@ describe('public product metadata', () => {
     expect(twitter?.images).toEqual([`https://delivery.example.test/og.png?v=${digest}`]);
   });
 
+  it('writes the landing and its picture in each of the reader’s languages', async () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      request.language = locale;
+      const words = messagesFor(locale);
+      const file = `og${locale === 'en' ? '' : `-${locale}`}.png`;
+      const digest = createHash('sha256').update(readFileSync(`public/${file}`)).digest('hex').slice(0, 8);
+      const metadata = await generateMetadata();
+      expect(metadata.title).toBe(`Peek — ${words['peek.title']} ${words['app.tagline']}`);
+      expect(metadata.description).toBe(words['preview.landing.description']);
+      // Long enough to say what Peek does, short enough for a search result to show most of it.
+      expect([...words['preview.landing.description']].length).toBeLessThanOrEqual(205);
+      expect(metadata.twitter?.images).toEqual([`https://delivery.example.test/${file}?v=${digest}`]);
+      expect((await layoutMetadata()).description).toBe(words['preview.site.description']);
+    }
+    request.language = 'en';
+    expect(new Set(SUPPORTED_LOCALES.map((locale) => messagesFor(locale)['preview.landing.description'])).size).toBe(SUPPORTED_LOCALES.length);
+  });
+
   it('gives a page that draws no preview of its own Peek’s picture, under the page’s own title', async () => {
     const { metadataBase, openGraph, twitter } = await layoutMetadata();
     const { twitter: landing } = await generateMetadata();
@@ -85,6 +105,7 @@ describe('public product metadata', () => {
     expect(openGraph).toEqual({
       type: 'website',
       siteName: 'Peek',
+      locale: 'en_US',
       images: [{ url: (landing?.images as string[])[0], width: 1_200, height: 630, alt: expect.stringContaining('Where’s my parcel?') }],
     });
     // Without a title or a description here, each page's own are shared.

@@ -4,15 +4,12 @@ import '../src/styles.css';
 import { authConfigFromEnvironment } from '../src/auth/authConfig';
 import { APPEARANCE_BOOTSTRAP } from '../src/lib/appearanceConfig';
 import { ENTRY_HINT_BOOTSTRAP } from '../src/lib/entryHintConfig';
-import { peekPicture } from '../src/lib/peekPicture';
 import { requestLocale } from '../src/server/requestLocale';
 import { requestOrigin } from '../src/server/requestOrigin';
+import { PREVIEW_LOCALES, sitePicture, siteTitle, wordsIn } from '../src/server/sitePreview';
 
 const site: Metadata = {
   applicationName: 'Peek',
-  title: 'Peek — Universal Parcel Tracker',
-  description:
-    'Private parcel tracking, with alerts and history synced across your devices.',
   manifest: '/manifest.webmanifest',
   icons: {
     icon: { url: '/icons/favicon.svg', type: 'image/svg+xml' },
@@ -25,14 +22,21 @@ const site: Metadata = {
   },
 };
 
-/** A page that draws no preview of its own shares Peek's picture, under its own title and description. */
+/**
+ * Peek's name and what it is, in the reader's language. A page that draws no preview of
+ * its own shares Peek's picture, under its own title and description.
+ */
 export async function generateMetadata(): Promise<Metadata> {
   const origin = await requestOrigin();
-  const picture = peekPicture(origin);
+  const locale = await requestLocale();
+  const t = wordsIn(locale);
+  const picture = sitePicture(origin, locale);
   return {
     ...site,
+    title: siteTitle(t),
+    description: t('preview.site.description'),
     metadataBase: origin,
-    openGraph: { type: 'website', siteName: 'Peek', images: [picture] },
+    openGraph: { type: 'website', siteName: 'Peek', locale: PREVIEW_LOCALES[locale], images: [picture] },
     twitter: { card: 'summary_large_image', images: [picture.url] },
   };
 }

@@ -88,7 +88,7 @@ export function FrontDoor({ onTracked, onSample, onSignIn }: {
 
   // The tab asks the page's question, in the reader's language. Whatever follows the landing is the app again.
   useEffect(() => {
-    document.title = `${t('app.title')} — ${t('peek.title')}`;
+    document.title = `${t('app.title')} — ${t('peek.title')} ${t('app.tagline')}`;
     return () => { document.title = `${t('app.title')} — ${t('app.tagline')}`; };
   }, [t]);
 

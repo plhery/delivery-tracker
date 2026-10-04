@@ -18,6 +18,7 @@ function shownHost(request: Request): string | null {
 export async function GET(request: Request, route: { params: Promise<{ linkId: string }> }) {
   const { linkId } = await route.params;
   const language = new URL(request.url).searchParams.get('lang');
-  const preview = await parcelLinkPreview(linkId, request.headers, isLocale(language) ? language : 'en');
-  return preview ? parcelLinkSocialImage(preview, shownHost(request)) : genericSocialImage();
+  const locale = isLocale(language) ? language : 'en';
+  const preview = await parcelLinkPreview(linkId, request.headers, locale);
+  return preview ? parcelLinkSocialImage(preview, shownHost(request), locale) : genericSocialImage(locale);
 }

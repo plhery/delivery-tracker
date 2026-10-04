@@ -728,7 +728,7 @@ describe('FrontDoor: the landing', () => {
       'Where’s my parcel?', 'Will I know when it moves?', 'Following more than one?', 'Who’s behind Peek?',
     ]);
     expect(document.querySelector('.door')).toHaveAttribute('data-view', 'first');
-    expect(document.title).toBe('Peek — Where’s my parcel?');
+    expect(document.title).toBe('Peek — Where’s my parcel? Universal Parcel Tracker');
   });
 
   it('gives the tab back to the app when the landing closes', () => {

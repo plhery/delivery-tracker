@@ -5,9 +5,10 @@
 `mark.json` holds the app's mark: two eyes on a yellow tile, one drawing for every size.
 `PeekMark` draws it on the web; `PeekMarkArtwork.swift` holds the same shapes for the iPhone
 app, its widget and its Share extension, so edit both together. `npm run icons` draws the
-icon files in `public/icons`, the iOS app icon and the link preview `public/og.png` (from
-`public/og.svg`); run it after editing the mark or the preview, then set the `?v=` in
-`src/lib/peekPicture.ts` to the value the metadata test reports.
+icon files in `public/icons`, the iOS app icon and the link previews: `public/og.png` from
+`public/og.svg`, and one `public/og-<language>.png` per other language, with the words of
+`shared/locales`. It also writes their versions to `src/lib/peekPictures.json`. Run it
+after editing the mark, the preview or its words.
 
 `public/og.svg` is drawn by hand: it holds its own copy of the mark, of Pip and of the
 five trucks it shows, so redraw them there when they change. Every page shares this

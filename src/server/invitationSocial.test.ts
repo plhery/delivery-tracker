@@ -6,7 +6,11 @@ import { SupabaseServiceClient } from './supabase';
 import { generateMetadata } from '../../app/invite/page';
 import { generateMetadata as shortMetadata } from '../../app/i/[previewId]/page';
 
-vi.mock('next/headers', () => ({ headers: vi.fn(async () => new Headers({ host: 'delivery.example.test', 'x-forwarded-proto': 'https' })) }));
+const reader = vi.hoisted(() => ({ language: 'en' }));
+vi.mock('next/headers', () => ({
+  headers: vi.fn(async () => new Headers({ host: 'delivery.example.test', 'x-forwarded-proto': 'https', 'accept-language': reader.language })),
+  cookies: vi.fn(async () => ({ get: () => undefined })),
+}));
 
 const code = 'ab'.repeat(16);
 const preview = createHash('sha256').update(code).digest('hex');
@@ -22,7 +26,7 @@ it('renders personalized Open Graph and Twitter metadata using only a read-only 
   const request = vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue(sender);
   const metadata = await generateMetadata({ searchParams: Promise.resolve({ preview }) });
   const url = `https://delivery.example.test/invite?preview=${preview}`;
-  const image = `https://delivery.example.test/api/friends/invite-image?preview=${preview}`;
+  const image = `https://delivery.example.test/api/friends/invite-image?preview=${preview}&lang=en`;
   const title = 'Your friend Paul sent you an invitation';
   expect(metadata).toMatchObject({
     title, robots: { index: false, follow: false }, referrer: 'no-referrer',
@@ -42,7 +46,7 @@ it('renders personalized Open Graph and Twitter metadata using only a read-only 
 it.each([undefined, code, 'bad', [preview, preview]])('uses generic metadata for absent or malformed preview keys: %s', async (value) => {
   const request = vi.spyOn(SupabaseServiceClient.prototype, 'request');
   const metadata = await generateMetadata({ searchParams: Promise.resolve({ preview: value, nickname: 'Spoofed' }) });
-  expect(metadata.title).toBe('A friend sent you an invitation');
+  expect(metadata.title).toBe('An invitation for you');
   expect(JSON.stringify(metadata)).not.toContain('Spoofed');
   expect(metadata.alternates?.canonical).toBe('https://delivery.example.test/invite');
   expect(request).not.toHaveBeenCalled();
@@ -51,7 +55,7 @@ it.each([undefined, code, 'bad', [preview, preview]])('uses generic metadata for
 it('keeps expired, revoked, consumed and unknown invitations generic without breaking the page', async () => {
   vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue([]);
   const metadata = await generateMetadata({ searchParams: Promise.resolve({ preview }) });
-  expect(metadata.title).toBe('A friend sent you an invitation');
+  expect(metadata.title).toBe('An invitation for you');
   expect(metadata.openGraph).toMatchObject({ url: `https://delivery.example.test/invite?preview=${preview}` });
 });
 
@@ -86,7 +90,7 @@ it('uses the same working short key for canonical metadata and invitation action
     title: 'Your friend Paul sent you an invitation',
     description: 'Tap to open your invitation on Peek.',
     alternates: { canonical: `https://delivery.example.test/i/${previewId}` },
-    openGraph: { url: `https://delivery.example.test/i/${previewId}`, images: [{ url: `https://delivery.example.test/api/friends/invite-image?preview=${previewId}` }] },
+    openGraph: { url: `https://delivery.example.test/i/${previewId}`, images: [{ url: `https://delivery.example.test/api/friends/invite-image?preview=${previewId}&lang=en` }] },
   });
   const query = new URL(request.mock.calls[0][0], 'https://database.example').searchParams;
   expect(query.get('preview_id')).toBe(`eq.${previewId}`);
@@ -99,8 +103,23 @@ it('uses the same working short key for canonical metadata and invitation action
 });
 it('treats malformed and unavailable short IDs as generic previews', async () => {
   const request = vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue([]);
-  expect((await shortMetadata({ params: Promise.resolve({ previewId: preview }) })).title).toBe('A friend sent you an invitation');
+  expect((await shortMetadata({ params: Promise.resolve({ previewId: preview }) })).title).toBe('An invitation for you');
   expect(request).not.toHaveBeenCalled();
-  expect((await shortMetadata({ params: Promise.resolve({ previewId: 'Ab7kP2mQ9xR4tY6n' }) })).title).toBe('A friend sent you an invitation');
+  expect((await shortMetadata({ params: Promise.resolve({ previewId: 'Ab7kP2mQ9xR4tY6n' }) })).title).toBe('An invitation for you');
   expect(request).toHaveBeenCalledTimes(1);
+});
+
+it('writes the invitation in the reader’s language, and asks for its picture in it', async () => {
+  vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue(sender);
+  reader.language = 'fr-CH,fr;q=0.9';
+  try {
+    const metadata = await generateMetadata({ searchParams: Promise.resolve({ preview }) });
+    expect(metadata).toMatchObject({
+      title: 'Paul t’a envoyé une invitation',
+      description: 'Touche pour ouvrir ton invitation sur Peek.',
+      openGraph: { locale: 'fr_FR', images: [{ url: `https://delivery.example.test/api/friends/invite-image?preview=${preview}&lang=fr` }] },
+    });
+  } finally {
+    reader.language = 'en';
+  }
 });
