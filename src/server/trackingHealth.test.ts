@@ -42,6 +42,16 @@ describe('tracking health evidence', () => {
     ]);
   });
 
+  it('files a number the carrier does not issue with the missing inputs', async () => {
+    const samples = new Map<string, HealthSample>();
+    await observeTrackingHealth(samples, async () => {
+      healthStepRecorder.lookup({ carrier: 'evri', finalStep: 'direct', outcome: 'invalid_input', errorType: 'InvalidInputError', durationMs: 1, attempts: 1 });
+    });
+    expect([...samples.values()]).toEqual([
+      expect.objectContaining({ kind: 'provider', healthy: true, details: expect.objectContaining({ category: 'input_required', error_type: 'InvalidInputError' }) }),
+    ]);
+  });
+
   it('counts a provider with no history for a new parcel as an answer, and a capture failure as a failure', async () => {
     const samples = new Map<string, HealthSample>();
     const noHistory = new NoHistoryError('Postal Ninja', 'Postal Ninja has no available tracking history');

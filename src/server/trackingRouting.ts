@@ -2,18 +2,18 @@ import 'server-only';
 import { trackingFailureCode } from './trackingFailure';
 
 import { DateTime } from 'luxon';
-import { detectCarrierMatch } from '../lib/carriers';
+import { appInputField, detectCarrierMatch } from '../lib/carriers';
 import { AUTOMATIC_CARRIER_IDS, carrierAdapter, carrierTimezone, requiredRequirements } from './carriers';
 import { normalizeCarrierResult, type CarrierResult } from 'universal-parcel-scraper';
 import { isRecord, type JsonObject } from './types';
 import { priorityUniversalSource, universalPlan, universalSourceBudget } from 'universal-parcel-scraper';
 import type { UniversalSource } from 'universal-parcel-scraper';
-import { isKnownCarrierName } from 'universal-parcel-scraper';
-import { brandCarrierIds, carrierBrand, carrierIdFromName } from 'universal-parcel-scraper';
+import { isKnownCarrierName } from 'universal-parcel-scraper/app';
+import { brandCarrierIds, carrierBrand, carrierIdFromName } from 'universal-parcel-scraper/app';
 import { errorType, reportRoutingEvent } from './observability';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from 'universal-parcel-scraper';
 import { captureDirectLocalHistory, directHistoryNumber, directLocalHistory, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
-import { latestResultTime } from 'universal-parcel-scraper';
+import { latestResultTime } from 'universal-parcel-scraper/app';
 import type { Recognition } from 'universal-parcel-scraper/node';
 import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from 'universal-parcel-scraper';
 
@@ -92,7 +92,8 @@ export function routingFailure(error: unknown): { kind: RoutingFailureKind; retr
     if (kind === 'rate_limited') return { kind: 'rate_limited', retryAfterMs };
     if (kind === 'not_found') return { kind: 'not_found', retryAfterMs: 0 };
     if (kind === 'challenge') return { kind: 'verification', retryAfterMs: 0 };
-    if (kind === 'schema' || kind === 'input_required') return { kind: 'schema', retryAfterMs: 0 };
+    // A number the carrier does not issue waits as a missing input does: no sooner retry can succeed.
+    if (kind === 'schema' || kind === 'input_required' || kind === 'invalid_input') return { kind: 'schema', retryAfterMs: 0 };
     return { kind: 'transport', retryAfterMs };
   }
   let current = error;
@@ -412,7 +413,7 @@ export class TrackingRouter {
       const field = outcomes.find((outcome) => outcome.carrier === needing)?.needsInput;
       if (needing && field) {
         if (state.input_needed?.carrier !== needing) report('carrier_input_needed', needing);
-        state.input_needed = { carrier: needing, field };
+        state.input_needed = { carrier: needing, field: appInputField(field) };
       } else if (outcomes.some((outcome) => outcome.carrier === state.input_needed?.carrier && outcome.status !== 'failed')) {
         // Asked again, it no longer knows the number (or only an old parcel with it).
         delete state.input_needed;

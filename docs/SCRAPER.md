@@ -9,6 +9,9 @@ See [architecture](ARCHITECTURE.md), [routing](ROUTING.md) and [observability](O
 ## Public imports
 
 - `universal-parcel-scraper`: browser-safe catalog, detection and result helpers.
+- `universal-parcel-scraper/app`: browser-safe helpers shaped for this app, such as its
+  parcel view and the clocks its sync uses. The scraper changes them with the app, outside
+  its semver contract.
 - `universal-parcel-scraper/node`: registry, tracking, transport and telemetry interfaces.
 - `universal-parcel-scraper/places`: server-side place resolution.
 - `universal-parcel-scraper/data/*`: published data used by generators.
@@ -19,6 +22,12 @@ The app supplies its browser service and telemetry recorder through `AdapterEnvi
 ([`adapterRegistry.ts`](../src/server/adapterRegistry.ts)). `CarrierTrackingAdapter`
 delegates to `trackCarrier`; the app's router chooses providers and saves their outcomes.
 Commercial universal providers are explicitly enabled by the app.
+
+The scraper calls a carrier's postcode input `postcode`. The app's API, database and
+clients call it `dpdPostcode`, so the app renames it wherever the scraper hands it over:
+the requirements and checked inputs ([`lib/carriers.ts`](../src/lib/carriers.ts),
+[`server/carriers.ts`](../src/server/carriers.ts)), the input a recognised carrier still
+needs ([`trackingRouting.ts`](../src/server/trackingRouting.ts)) and the contract generator.
 
 The scraper validates its own catalog. The app contract generator projects the catalog
 onto the client API, excluding what only retrieval uses: refresh pacing, clocks and the

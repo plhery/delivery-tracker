@@ -20,12 +20,16 @@ describe('public carrier catalog route', () => {
     expect(etag).toMatch(/^"[0-9a-f]{64}"$/);
     const body = await response.json() as {
       version: string;
-      'x-carriers': Record<string, { displayName: string }>;
+      'x-carriers': Record<string, { displayName: string; tracking: { requirements?: { field: string }[] } }>;
     };
     expect(body.version).toBe(`sha256-${etag?.slice(1, -1)}`);
     expect(body['x-carriers']['amazon-logistics']?.displayName).toBe('Amazon Logistics');
     expect(body['x-carriers']['india-post']?.displayName).toBe('India Post');
     expect(body['x-carriers'].unknown).toBeDefined();
+    // Clients fill a carrier's inputs by these names, which are the app's and not the scraper's.
+    const fields = Object.values(body['x-carriers']).flatMap((carrier) => (carrier.tracking.requirements ?? []).map((requirement) => requirement.field));
+    expect([...new Set(fields)].sort()).toEqual(['dpdPostcode', 'trackingUrl']);
+    expect(body['x-carriers'].dpd?.tracking.requirements?.map((requirement) => requirement.field)).toEqual(['dpdPostcode']);
 
     const cached = await GET(
       new NextRequest('https://delivery.example/api/carriers', {

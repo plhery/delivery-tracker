@@ -14,9 +14,10 @@ describe('universal tracking dispatch', () => {
       expect(await adapter.fetch(carrier, number, 'https://untrusted.test')).toMatchObject({ current_stage: 'delivered' });
     }
     expect(spy).toHaveBeenCalledTimes(2);
-    expect(spy).toHaveBeenCalledWith(number, null);
+    // The third argument is the lookup's signal and budget, which the scraper passes on.
+    expect(spy).toHaveBeenCalledWith(number, null, expect.any(Object));
     await adapter.fetch('j-and-t', number, null, '01234');
-    expect(spy).toHaveBeenLastCalledWith(number, '01234');
+    expect(spy).toHaveBeenLastCalledWith(number, '01234', expect.any(Object));
   });
 
   it('dispatches the added regional carriers without falling back to a generic adapter', async () => {

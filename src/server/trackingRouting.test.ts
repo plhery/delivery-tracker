@@ -4,7 +4,7 @@ import { freshnessWindow, RoutingDeferred, routingState, TrackingRouter, type Ro
 import type { JsonObject } from './types';
 import type { CarrierResult } from 'universal-parcel-scraper';
 import * as monitoring from './observability';
-import { universalCarrierHints } from 'universal-parcel-scraper';
+import { universalCarrierHints } from 'universal-parcel-scraper/app';
 import { IndeterminateError, InputRequiredError, NotFoundError } from 'universal-parcel-scraper';
 
 const time = new Date('2026-09-10T12:00:00Z');
@@ -768,6 +768,7 @@ describe('routingFailure with carrier package errors', () => {
     expect(routingFailure(new errors.ChallengeError('UPS'))).toEqual({ kind: 'verification', retryAfterMs: 0 });
     expect(routingFailure(new errors.SchemaError('DHL'))).toEqual({ kind: 'schema', retryAfterMs: 0 });
     expect(routingFailure(new errors.InputRequiredError('Heppner', 'the delivery postcode'))).toEqual({ kind: 'schema', retryAfterMs: 0 });
+    expect(routingFailure(new errors.InvalidInputError('Evri', 'Evri requires a 16-character tracking number'))).toEqual({ kind: 'schema', retryAfterMs: 0 });
     expect(routingFailure(new errors.IndeterminateError('Colisweb'))).toEqual({ kind: 'transport', retryAfterMs: 0 });
     expect(routingFailure(new Error('wrapped', { cause: new errors.NotFoundError('CTT') }))).toEqual({ kind: 'not_found', retryAfterMs: 0 });
     // Errors outside the taxonomy keep the historical status-based classification.

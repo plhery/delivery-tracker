@@ -24,11 +24,14 @@ const answered = new Set(['ok', 'not_found', 'input_required']);
  * before its first scan looked like a provider outage.
  */
 function category(record: StepRecord | LookupRecord): string {
+  // A number the carrier does not issue is an answer too. It is filed with the
+  // missing inputs, the category Postgres already leaves out of the outage rate.
+  const outcome = record.outcome === 'invalid_input' ? 'input_required' : record.outcome;
   let current = record.error;
   for (let depth = 0; current instanceof Error && depth < 8; depth++, current = current.cause) {
-    if (current instanceof CarrierError) return current instanceof NoHistoryError ? 'not_found' : record.outcome;
+    if (current instanceof CarrierError) return current instanceof NoHistoryError ? 'not_found' : outcome;
   }
-  return record.outcome;
+  return outcome;
 }
 function details(record: StepRecord | LookupRecord, outcome: string): JsonObject {
   let status: number | null = null;

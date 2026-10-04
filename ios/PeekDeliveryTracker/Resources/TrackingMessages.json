@@ -283,6 +283,7 @@
   },
   "failures": {
     "input_required": "tracking.failure.input",
+    "invalid_input": "tracking.failure.input",
     "maintenance": "tracking.failure.maintenance",
     "rate_limited": "tracking.failure.rateLimited",
     "challenge": "tracking.failure.challenge",
