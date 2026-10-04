@@ -24,6 +24,7 @@ import { LookupFeedback } from './lookup/LookupFeedback';
 import { countdown } from './lookup/machine';
 import { looksLikeNumber } from './lookup/reading';
 import { useLookup } from './lookup/useLookup';
+import { LookupVerification } from './lookup/LookupVerification';
 import { parcelCode } from './parcelCode';
 import { useRecents } from './recents';
 import { usePeekSession } from './session';
@@ -265,6 +266,7 @@ export function FrontDoor({ onTracked, onSample, onSignIn }: {
             <div className="door-says">
               {firstVisit && !written && <SampleLine beat={beat} />}
               <LookupFeedback lookup={lookup} pointer={pointer} onSignIn={onSignIn} onPickCarrier={() => setPicking(true)} onSuggestion={put} />
+              <LookupVerification active={touched} />
             </div>
           </form>
           <p className="sr-only" role="status">{opening ? t('door.opening') : ''}</p>

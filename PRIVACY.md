@@ -57,6 +57,16 @@ it through Cloudflare, which relays them and sees network metadata such as your
 IP address. Google provides Google sign-in. Resend delivers the service's
 emails, as described under "Emails".
 
+Cloudflare Turnstile checks the browser when you start a new parcel lookup to
+prevent automated abuse. It processes browser and network signals; Peek sends
+only its verification token to Cloudflare, not your parcel inputs. See
+[Cloudflare's Turnstile Privacy Addendum](https://www.cloudflare.com/turnstile-privacy-policy/).
+A successful check produces a proof kept in the current tab for fifteen
+minutes, bound to its network and hostname. Existing parcel pages remain
+readable without a check. Daily account usage counters prevent bulk lookups.
+New requests clear counters older than seven days; deleting the account
+removes its counters.
+
 To get a parcel's history, the service sends its tracking number to the
 carrier. When needed, it also asks other carriers the number could belong to, a
 carrier that takes the parcel over on its way, and universal tracking services

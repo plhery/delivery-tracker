@@ -1148,6 +1148,14 @@ export class SupabaseServiceClient extends SupabaseClient {
     };
   }
 
+  async claimAccountTracking(userId: string, kind: 'lookup' | 'detection', limit: number): Promise<boolean> {
+    const result = await this.request('/rest/v1/rpc/claim_account_tracking', {
+      method: 'POST', body: { p_user_id: userId, p_kind: kind, p_limit: limit },
+    });
+    if (typeof result !== 'boolean') throw new SupabaseError('Supabase did not return the tracking allowance');
+    return result;
+  }
+
   /**
    * Stores a lookup: a new link to a new or already stored one-off parcel.
    * Answers like publicParcel, plus whether the parcel is new.

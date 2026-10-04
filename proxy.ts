@@ -37,6 +37,7 @@ export function proxy(request: NextRequest) {
     connect-src ${connectSources};
     font-src 'self';
     form-action 'self';
+    frame-src https://challenges.cloudflare.com;
     frame-ancestors 'none';
     img-src 'self' blob: data:;
     manifest-src 'self';

@@ -1,4 +1,5 @@
 import { verifyAmazonShippingAddition } from '../../../src/server/amazonShippingEligibility';
+import { claimAccountTracking } from '../../../src/server/accountTrackingBudget';
 import {
   apiRoute,
   HttpError,
@@ -34,6 +35,7 @@ export const GET = apiRoute(async (context) => {
 
 export const POST = apiRoute(async (context) => {
   const values = newPackageValues(await readJsonObject(context.request));
+  await claimAccountTracking(requireService(context), requireUser(context).id, 'lookup');
   await verifyAmazonShippingAddition(values.carrier, values.trackingNumber);
   const client = requireUserClient(context);
   const service = requireService(context);

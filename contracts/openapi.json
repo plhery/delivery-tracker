@@ -3898,6 +3898,9 @@
           },
           "502": {
             "description": "Carrier lookup unavailable"
+          },
+          "429": {
+            "description": "Burst limit or daily account tracking budget reached. Retry-After gives the remaining delay in seconds."
           }
         }
       }
@@ -4082,6 +4085,9 @@
           },
           "503": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
+            "description": "Burst limit or daily account tracking budget reached. Retry-After gives the remaining delay in seconds."
           }
         }
       }
@@ -5143,8 +5149,32 @@
           },
           "429": {
             "description": "Too many detections this minute, or no carrier may be asked for this client or for anyone until the next UTC midnight. Retry-After says when to try again; a lookup works without the answer."
+          },
+          "403": {
+            "description": "Browser verification required before spending lookup budget or contacting providers.",
+            "headers": {
+              "X-Lookup-Verification": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "required"
+                  ]
+                }
+              }
+            }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "X-Lookup-Proof",
+            "in": "header",
+            "required": false,
+            "description": "Short-lived browser proof returned by /api/public/verification. Required for new anonymous work when Turnstile is enabled.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     },
     "/api/public/parcels": {
@@ -5199,8 +5229,32 @@
           },
           "503": {
             "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "description": "Browser verification required before spending lookup budget or contacting providers.",
+            "headers": {
+              "X-Lookup-Verification": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "required"
+                  ]
+                }
+              }
+            }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "X-Lookup-Proof",
+            "in": "header",
+            "required": false,
+            "description": "Short-lived browser proof returned by /api/public/verification. Required for new anonymous work when Turnstile is enabled.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     },
     "/api/public/parcels/{linkId}": {
@@ -5594,6 +5648,99 @@
           },
           "502": {
             "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/api/public/verification": {
+      "get": {
+        "operationId": "lookupVerificationConfiguration",
+        "summary": "Read the browser verification site key; null when disabled",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Runtime browser verification configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "siteKey"
+                  ],
+                  "properties": {
+                    "siteKey": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "verifyLookupBrowser",
+        "summary": "Exchange a single-use Turnstile token for a network- and hostname-bound proof lasting 15 minutes; lookup budgets still apply",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "maxLength": 2048
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Browser proof; expiresAt is Unix time in milliseconds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "proof",
+                    "expiresAt"
+                  ],
+                  "properties": {
+                    "proof": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token"
+          },
+          "403": {
+            "description": "Verification rejected"
+          },
+          "429": {
+            "description": "Rate limited"
+          },
+          "503": {
+            "description": "Verification unavailable"
           }
         }
       }

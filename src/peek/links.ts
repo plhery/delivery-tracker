@@ -37,6 +37,7 @@ import {
 } from './linkModel';
 import { SAMPLE_LINK_ID } from './sample';
 import { readSampleLink, restartSample } from './sampleLink';
+import { forgetLookupProof, getLookupProof, lookupProof, LookupVerificationError } from './lookup/verification';
 
 export * from './linkModel';
 export { createDemoLinks, DEMO_LINKS_STORAGE_KEY } from './demoLinks';
@@ -106,14 +107,31 @@ export function createApiLinks(request: typeof fetch = (input, init) => fetch(in
   const write = (method: string, path: string, body: unknown, signal?: AbortSignal, key?: string | null) => send(path, {
     method, headers: { 'Content-Type': 'application/json', ...keyHeader(key) }, body: JSON.stringify(body),
   }, signal);
-  const post = (path: string, body: unknown, signal?: AbortSignal) => write('POST', path, body, signal);
+  async function protectedPost(path: string, body: unknown, signal?: AbortSignal) {
+    const current = lookupProof();
+    const call = (proof: string | null) => send(path, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...(proof ? { 'X-Lookup-Proof': proof } : {}) },
+      body: JSON.stringify(body),
+    }, signal);
+    const response = await call(current);
+    if (response.status !== 403 || response.headers.get('X-Lookup-Verification') !== 'required') return response;
+    forgetLookupProof(current);
+    const verified = await getLookupProof(signal);
+    if (!verified) throw new LookupVerificationError();
+    const retried = await call(verified);
+    if (retried.status === 403 && retried.headers.get('X-Lookup-Verification') === 'required') {
+      forgetLookupProof(verified);
+      throw new LookupVerificationError();
+    }
+    return retried;
+  }
 
   return {
     mode: 'api',
 
     async detectCarrierPublic(number, signal) {
       const trackingNumber = normalizeTrackingNumber(number);
-      const response = await post('/api/public/detect', { trackingNumber }, signal);
+      const response = await protectedPost('/api/public/detect', { trackingNumber }, signal);
       if (!response.ok) throw await failure(response);
       const result = await answer<ApiCarrierDetectionResponse>(response);
       if (result.trackingNumber !== trackingNumber || !Object.hasOwn(CARRIERS, result.carrier)
@@ -133,7 +151,7 @@ export function createApiLinks(request: typeof fetch = (input, init) => fetch(in
         ...(input.trackingUrl?.trim() ? { trackingUrl: input.trackingUrl.trim() } : {}),
         ...(input.dpdPostcode?.trim() ? { dpdPostcode: input.dpdPostcode.trim() } : {}),
       };
-      const response = await post('/api/public/parcels', body, signal);
+      const response = await protectedPost('/api/public/parcels', body, signal);
       if (!response.ok) throw await failure(response);
       const result = await answer<ApiPublicLookupResponse>(response);
       const view = parcelLinkView(result);

@@ -35,6 +35,7 @@ export type LookupTrouble =
   | { kind: 'daily' }
   | { kind: 'offline' }
   | { kind: 'server' }
+  | { kind: 'verification' }
   /** The server, or the form, refused an input. */
   | { kind: 'validation'; message: MessageKey };
 

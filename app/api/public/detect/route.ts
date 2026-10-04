@@ -1,5 +1,6 @@
 import { apiRoute, clientIp, HttpError, json, readJsonObject, requireService } from '../../../../src/server/api';
 import { detectCarrier } from '../../../../src/server/carrierDetection';
+import { requireLookupProof } from '../../../../src/server/lookupVerification';
 import { recordPublicDetection } from '../../../../src/server/metrics';
 import { claimDetection, secondsUntilUtcMidnight } from '../../../../src/server/publicParcels';
 
@@ -15,6 +16,7 @@ export const runtime = 'nodejs';
 export const POST = apiRoute(async (context) => {
   const body = await readJsonObject(context.request);
   return json(await detectCarrier(body, async () => {
+    requireLookupProof(context.request);
     const now = new Date();
     const allowance = await claimDetection(requireService(context), clientIp(context.request), now);
     if (!allowance.allowed) {

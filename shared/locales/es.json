@@ -1005,5 +1005,7 @@
   "email.off.askBody": "Peek dejará de escribirte cuando se entregue un paquete. Tus notificaciones no cambian.",
   "native.guest.kept": "Solo en este iPhone, por ahora.",
   "sample.tag": "Ejemplo",
-  "native.pasteLead": "Pega un número, un enlace o un correo entero."
+  "native.pasteLead": "Pega un número, un enlace o un correo entero.",
+  "door.verification.title": "Una rápida comprobación",
+  "door.verification.body": "No se pudo completar la verificación. Completa la comprobación si aparece e inténtalo de nuevo. Tu número sigue aquí."
 }

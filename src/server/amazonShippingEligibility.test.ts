@@ -16,6 +16,7 @@ const request = (body: unknown, path = '/api/carriers/detect') => new NextReques
 });
 const context = { params: Promise.resolve({}) };
 beforeEach(() => {
+  vi.spyOn(SupabaseServiceClient.prototype, 'claimAccountTracking').mockResolvedValue(true);
   vi.stubEnv('SUPABASE_URL', 'https://database.example');
   vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', 'test-public');
   vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service');

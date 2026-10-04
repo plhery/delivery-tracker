@@ -29,6 +29,7 @@ beforeEach(() => {
   vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', 'public-key');
   vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
   vi.stubEnv('TRUST_PROXY_HEADERS', 'true');
+  vi.spyOn(SupabaseServiceClient.prototype, 'claimAccountTracking').mockResolvedValue(true);
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
   recognize.mockReset().mockImplementation(knows());
   vi.spyOn(SupabaseAuthenticator.prototype, 'validate').mockResolvedValue({

@@ -1005,5 +1005,7 @@
   "email.off.askBody": "Peek przestanie pisać, gdy przesyłka zostanie dostarczona. Powiadomienia zostają bez zmian.",
   "native.guest.kept": "Na razie tylko na tym iPhonie.",
   "sample.tag": "Przykład",
-  "native.pasteLead": "Wklej numer, link albo całego maila."
+  "native.pasteLead": "Wklej numer, link albo całego maila.",
+  "door.verification.title": "Szybkie sprawdzenie przeglądarki",
+  "door.verification.body": "Nie udało się zakończyć weryfikacji. Wykonaj sprawdzenie, jeśli się pojawi, i spróbuj ponownie. Twój numer nadal tu jest."
 }

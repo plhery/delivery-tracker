@@ -224,6 +224,32 @@ checks the handoff, restarts and finishes the job.
 
 ## Operating
 
+### Browser verification
+
+Create a Cloudflare Turnstile **Managed** widget for the public hostnames, with
+pre-clearance off. Set `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` and
+`TURNSTILE_HOSTNAMES` (comma-separated) at runtime. All three are required
+together; leave them unset to disable verification. Test keys are refused in
+production. Keep the secret out of build arguments and browser configuration.
+
+The lookup form starts verification when used and shows a checkbox only when
+needed. A successful check grants a short-lived proof; existing lookup budgets
+still apply. Only parcel creation and detection that contacts a carrier need
+verification. Saved parcels and shared links remain readable during a
+verification outage. Keep the origin behind the trusted proxy and avoid
+Cloudflare challenge pages on JSON APIs and native app traffic.
+Enforcement applies to every anonymous caller of these endpoints, including
+native clients; user-agent strings and client headers grant no exemption.
+
+Accounts have separate persistent daily budgets for parcel additions and
+carrier detections. Set `ACCOUNT_LOOKUPS_PER_DAY` and
+`ACCOUNT_DETECTIONS_PER_DAY` to tune them; `0` disables that work. Cached and
+local carrier detection does not spend the detection budget.
+
+See [OBSERVABILITY.md](OBSERVABILITY.md) for verification monitoring.
+
+### Service operation
+
 - **Sentry**: set `SENTRY_DSN`, `SENTRY_ENVIRONMENT=production`, an immutable release, and
   keep tracing at 0 unless you mean it. See [OBSERVABILITY.md](OBSERVABILITY.md) for alerts,
   logs and audit queries.

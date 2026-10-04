@@ -5,6 +5,7 @@ import { useTypingPause } from '../../lib/typingPause';
 import { detectCarrierPublic, lookupParcel, ParcelLinkError, parcelLinkErrorKey, type ParcelLookup } from '../links';
 import { useRecents } from '../recents';
 import { openParcelLink } from '../route';
+import { LookupVerificationError } from './verification';
 import {
   initialLookup,
   lookupStep,
@@ -29,6 +30,7 @@ const DEFAULT_RETRY_SECONDS = 60;
 const HAND_OVER_MS = 3_000;
 
 function troubleOf(error: unknown, now: number): LookupTrouble {
+  if (error instanceof LookupVerificationError) return { kind: 'verification' };
   if (!(error instanceof ParcelLinkError)) return { kind: 'server' };
   if (error.kind === 'burst') return { kind: 'burst', until: now + (error.retryAfterSeconds ?? DEFAULT_RETRY_SECONDS) * 1_000 };
   if (error.kind === 'daily' || error.kind === 'offline') return { kind: error.kind };

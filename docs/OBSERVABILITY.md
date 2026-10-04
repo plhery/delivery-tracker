@@ -1,5 +1,11 @@
 # Observability
 
+`lookup_verification` records the outcome and server verification duration,
+without tokens, IP addresses or parcel inputs. Compare rejections and service
+failures with completed public lookups and the API's `403`/`429` rates when
+tuning protection. Client lookup failures remain in the existing parcel-lookup
+analytics event. Configuration belongs in [DEPLOYMENT.md](DEPLOYMENT.md).
+
 Each carrier refresh leaves a trace in three places:
 
 1. **Logs**: one-line JSON describing the control flow, including the tracking number.

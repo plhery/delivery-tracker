@@ -3,11 +3,13 @@ import { emailSettings } from './src/server/email/config';
 import { preloadPlaces } from 'universal-parcel-scraper/places';
 import { installShutdownHandlers } from './src/server/shutdown';
 import { siteHosts } from './src/server/siteHosts';
+import { turnstileSettings } from './src/server/lookupVerification';
 
 // A malformed host setting must stop the deployment, not send visitors elsewhere.
 siteHosts();
 // Nor may incomplete mail settings promise emails the server cannot send.
 emailSettings();
+turnstileSettings();
 // Invalid server-side credentials are a deployment failure. Let initialization
 // fail so an orchestrator cannot mark a process healthy while tracking and
 // notification work is silently disabled.

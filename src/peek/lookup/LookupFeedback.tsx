@@ -194,6 +194,7 @@ export function LookupFeedback({ lookup, pointer, onSignIn, onPickCarrier, onSug
     </DoorNote>}
     {trouble === 'offline' && <DoorNote icon="offline" title={t('offline.title')} urgent><p>{t('door.offline.body')}</p></DoorNote>}
     {trouble === 'server' && <DoorNote icon="refresh" tone="warm" title={t('door.trouble.title')} urgent><p>{t('door.trouble.body')}</p></DoorNote>}
+    {trouble === 'verification' && <DoorNote icon="refresh" tone="warm" title={t('door.verification.title')} urgent><p>{t('door.verification.body')}</p></DoorNote>}
     {state.paste && <DoorNote icon="clipboard" title={t('door.paste.blocked.title')} urgent>
       <p>{t(state.paste === 'empty' ? 'door.paste.empty' : pointer === 'touch' ? 'door.paste.blocked.touch' : 'door.paste.blocked.keys')}</p>
     </DoorNote>}
