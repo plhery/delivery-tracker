@@ -134,6 +134,16 @@ describe('one-off parcels and their links', () => {
     expect(recorded).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/record_account_opened', { method: 'POST', body: {} });
   });
 
+  it('reads when an account\'s apps last read its parcels, for its export', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request').mockResolvedValueOnce([{ last_opened_at: '2026-10-03T21:05:00+00:00' }]).mockResolvedValue([]);
+    await expect(client.accountLastOpened('owner-1')).resolves.toBe('2026-10-03T21:05:00+00:00');
+    expect(params(request.mock.calls[0][0]).get('user_id')).toBe('eq.owner-1');
+    expect(String(request.mock.calls[0][0])).toMatch(/^\/rest\/v1\/account_activity\?/);
+    // An account whose read was never recorded.
+    await expect(client.accountLastOpened('owner-2')).resolves.toBeNull();
+  });
+
   it('queues a one-off parcel\'s check without an owner, behind accounts and the scheduled run', async () => {
     const client = service();
     const request = vi.spyOn(client, 'request').mockResolvedValue([{ id: 'job' }]);

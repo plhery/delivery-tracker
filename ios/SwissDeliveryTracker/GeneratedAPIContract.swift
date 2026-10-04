@@ -981,6 +981,7 @@ enum CarrierDetectionResponseAmazonShippingStatus: String, Codable, CaseIterable
 struct AccountExportAccount: Codable, Equatable, Hashable, Sendable, Identifiable {
     var id: UUID
     var email: String? = nil
+    var lastOpenedAt: String? = nil
 }
 
 enum EventPlacePrecision: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {

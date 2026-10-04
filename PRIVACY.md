@@ -1,6 +1,6 @@
 # Peek privacy notice
 
-Effective: 3 October 2026
+Effective: 4 October 2026
 
 Peek follows parcels, on the web and in its iPhone app. This notice says what
 the official service at peektracker.com processes to do that. Peek does not
@@ -29,6 +29,8 @@ sell personal data, serve advertising, or use advertising analytics.
   emails: the parcel, when it was sent and whether sending worked.
 - The links you make to share a parcel or to follow one without an account, and
   what each link shows.
+- When your apps last loaded your parcels, to within five minutes. It decides
+  how often the service asks carriers about them.
 - A nickname, sharing choices, invitations and connections when you turn on
   Friends.
 - Technical request data processed by the hosting, reverse-proxy, Auth, and mail
@@ -232,7 +234,9 @@ card could still have kept a screenshot or copy.
 ## Retention and control
 
 Parcel data remains until you delete the parcel or the account. Archiving a
-parcel only hides it from the active list and retains its history. Turning off
+parcel only hides it from the active list and retains its history. The time
+your apps last loaded your parcels is overwritten at each visit and deleted
+with the account. Turning off
 Live Activities or signing out removes that installation's ActivityKit tokens;
 disabled browser endpoints, ordinary native device registrations, and delivery
 acknowledgements may remain until account deletion or operational cleanup.

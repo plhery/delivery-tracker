@@ -382,11 +382,16 @@ describe('the account export', () => {
       { packageId: null, sentAt: '2026-09-30T09:00:00+00:00' },
     ];
     const emails = vi.spyOn(SupabaseUserClient.prototype, 'listDeliveryEmails').mockResolvedValue(sent);
+    const opened = vi.spyOn(SupabaseServiceClient.prototype, 'accountLastOpened').mockResolvedValue('2026-10-03T21:05:00+00:00');
     const response = await exportAccount(authenticated('https://delivery.example/api/account/export'), none);
     expect(response.status).toBe(200);
     const exported = await response.json();
     expect(exported.deliveryEmails).toEqual({ enabled: true, sent });
-    expect(exported.account).toEqual({ id: userId, email: 'alex@example.com' });
+    // When the account's apps last read its parcels is read for this account, and no other.
+    expect(exported.account).toEqual({ id: userId, email: 'alex@example.com', lastOpenedAt: '2026-10-03T21:05:00+00:00' });
+    expect(opened).toHaveBeenCalledExactlyOnceWith(userId);
+    expect(Object.keys(contract.components.schemas.AccountExportResponse.properties.account.properties).sort())
+      .toEqual(Object.keys(exported.account).sort());
     expect(emails).toHaveBeenCalledOnce();
     // Every part of the export is one the contract lists.
     const listed = Object.keys(contract.components.schemas.AccountExportResponse.properties);
@@ -398,7 +403,9 @@ describe('the account export', () => {
     signedIn();
     vi.spyOn(SupabaseUserClient.prototype, 'request').mockResolvedValue({ profile: null, ownCard: null, friends: [] });
     vi.spyOn(SupabaseUserClient.prototype, 'listPackages').mockResolvedValue([]);
+    vi.spyOn(SupabaseServiceClient.prototype, 'accountLastOpened').mockResolvedValue(null);
     const exported = await (await exportAccount(authenticated('https://delivery.example/api/account/export'), none)).json();
     expect(exported.deliveryEmails).toEqual({ enabled: null, sent: [] });
+    expect(exported.account.lastOpenedAt).toBeNull();
   });
 });

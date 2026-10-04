@@ -5702,6 +5702,14 @@
                   "null"
                 ],
                 "format": "email"
+              },
+              "lastOpenedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time",
+                "description": "When the account's apps last read its parcels, to within five minutes."
               }
             }
           },

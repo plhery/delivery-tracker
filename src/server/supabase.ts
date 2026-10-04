@@ -818,6 +818,13 @@ export class SupabaseServiceClient extends SupabaseClient {
     })).flatMap((row) => typeof row.id === 'string' ? [row.id] : []);
   }
 
+  /** When the account's apps last read its parcels, as its export shows it; null when no read was recorded. */
+  async accountLastOpened(userId: string): Promise<string | null> {
+    const params = query({ select: 'last_opened_at', user_id: `eq.${userId}`, limit: '1' });
+    const [activity] = rows(await this.request(`/rest/v1/account_activity?${params}`));
+    return typeof activity?.last_opened_at === 'string' ? activity.last_opened_at : null;
+  }
+
   /**
    * One parcel of an account in the shape the API gives its owner, events
    * included. Null when the parcel is gone or belongs to someone else.

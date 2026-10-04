@@ -3827,6 +3827,7 @@ export interface ApiAccountExportResponse {
   "account": {
   "id": string;
   "email": string | null;
+  "lastOpenedAt"?: string | null;
 };
   "packages": Array<ApiPackageRow>;
   "friends"?: ApiFriendsExport;

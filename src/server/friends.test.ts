@@ -4,7 +4,7 @@ import { GET as exportGET } from '../../app/api/account/export/route';
 import { GET, POST } from '../../app/api/friends/route';
 import { GET as activityGET } from '../../app/api/friends/activity/route';
 import { SupabaseAuthenticator } from './auth';
-import { SupabaseError, SupabaseUserClient } from './supabase';
+import { SupabaseError, SupabaseServiceClient, SupabaseUserClient } from './supabase';
 import { friendCard, friendsAction, friendsActionResponse, friendsSnapshot, friendsActivity } from './friends';
 
 const id = '11000000-0000-4000-8000-000000000001';
@@ -59,6 +59,8 @@ describe('Friends privacy boundary', () => {
   it('exports the owner’s profile and connections without copying friends’ statistics', async () => {
     vi.spyOn(SupabaseUserClient.prototype, 'request').mockResolvedValue(snapshot);
     vi.spyOn(SupabaseUserClient.prototype, 'listPackages').mockResolvedValue([]);
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service');
+    vi.spyOn(SupabaseServiceClient.prototype, 'accountLastOpened').mockResolvedValue(null);
     const response = await exportGET(new NextRequest('https://delivery.example/api/account/export', { headers: { Authorization: 'Bearer friends-export-test' } }), { params: Promise.resolve({}) });
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('no-store');

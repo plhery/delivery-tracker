@@ -67,9 +67,9 @@ Key server modules:
 - **Ownership**: every private request needs a valid Supabase token. Reads go through
   PostgREST with that token, so RLS is the final check. Writes use owner-bound database
   functions that re-validate, enforce quotas and can't target another account.
-- **Service role**: used only for scheduled carrier work, push delivery, the delivery
-  email, account deletion, parcels followed without an account and what a parcel link
-  shows. It never reaches the browser.
+- **Service role**: used only for scheduled carrier work, the record of when an account's
+  apps last read its parcels, push delivery, the delivery email, account deletion, parcels
+  followed without an account and what a parcel link shows. It never reaches the browser.
 - **Parcel links**: a parcel followed without an account has no owner and is reached
   through `/p/<id>`. The id (12 symbols, about 70 bits) is the capability to read it.
   - The device that made the lookup also gets an owner key, once; the database keeps its
