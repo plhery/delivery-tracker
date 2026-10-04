@@ -1,0 +1,337 @@
+name: Adopt scraper release
+
+# Moves the app to a Universal Parcel Scraper release and pushes the commit to
+# main. docs/SCRAPER.md describes it and its database gate.
+
+on:
+  repository_dispatch:
+    types: [scraper-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact release. Empty takes the newer of npm's latest and next.
+        required: false
+        type: string
+        default: ''
+      database_ready:
+        description: The migrations this release needs are applied to production. Needs the version.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One adoption at a time. A run in progress always finishes, and every waiting
+# run gets its turn: a run for a release the app already passed ends at once.
+concurrency:
+  group: adopt-scraper
+  cancel-in-progress: false
+  queue: max
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # The only files an adoption changes.
+  ADOPTION_FILES: >-
+    package.json
+    package-lock.json
+    contracts/openapi.json
+    src/generated/apiContract.ts
+    ios/SwissDeliveryTracker/GeneratedAPIContract.swift
+    ios/SwissDeliveryTracker/Resources/CarrierCatalog.json
+    ios/SwissDeliveryTracker/Resources/DetectionGolden.json
+
+jobs:
+  # Runs the release, its dependencies' scripts, the build and the tests. It has
+  # no secret and cannot write to the repository: it hands the adoption to the
+  # push job as a patch.
+  adopt:
+    name: Adopt
+    if: github.repository == 'plhery/delivery-tracker'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      adopt: ${{ steps.target.outputs.adopt }}
+      version: ${{ steps.target.outputs.version }}
+      current: ${{ steps.target.outputs.current }}
+      base: ${{ steps.target.outputs.base }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 26
+
+      # npm scans a release for minutes before it serves it. The scraper
+      # dispatches once npm lists the release; a run started by hand can name
+      # one that is still being scanned.
+      - name: Wait for npm to serve the release
+        id: release
+        env:
+          REQUESTED_VERSION: ${{ github.event.client_payload.version || inputs.version }}
+          DATABASE_READY: ${{ inputs.database_ready == true }}
+        run: |
+          arguments=("--version=$REQUESTED_VERSION")
+          if [ "$DATABASE_READY" = "true" ]; then arguments+=(--database-ready); fi
+          node scripts/adopt-scraper.mjs resolve "${arguments[@]}"
+
+      # main moved during the wait. The adoption is made and validated on main
+      # as it is now, which may already hold the release.
+      - name: Take main as it is now
+        id: target
+        if: steps.release.outputs.adopt == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          git fetch --quiet --depth=1 origin main
+          git checkout --quiet --detach FETCH_HEAD
+          node scripts/adopt-scraper.mjs resolve "--version=$VERSION"
+          echo "base=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - if: steps.target.outputs.adopt == 'true'
+        run: npm ci
+
+      - name: Record what the database enforces today
+        if: steps.target.outputs.adopt == 'true'
+        run: node scripts/adopt-scraper.mjs snapshot "$RUNNER_TEMP/scraper-before.json"
+
+      - name: Install the release
+        id: install
+        if: steps.target.outputs.adopt == 'true'
+        env:
+          VERSION: ${{ steps.target.outputs.version }}
+        run: npm install --save-exact --prefer-online "universal-parcel-scraper@$VERSION"
+
+      # Before regenerating: the contract generator refuses a changed stage
+      # vocabulary without saying what the database needs.
+      - name: Stop when the database must change first
+        id: gate
+        if: steps.target.outputs.adopt == 'true'
+        env:
+          DATABASE_READY: ${{ inputs.database_ready == true }}
+        run: |
+          if [ "$DATABASE_READY" = "true" ]; then
+            node scripts/adopt-scraper.mjs gate "$RUNNER_TEMP/scraper-before.json" --database-ready
+          else
+            node scripts/adopt-scraper.mjs gate "$RUNNER_TEMP/scraper-before.json"
+          fi
+
+      - name: Regenerate the contract and the iPhone resources
+        id: regenerate
+        if: steps.target.outputs.adopt == 'true'
+        run: |
+          npm run contract:generate
+          npm run ios:resources
+
+      # Written before validation, which may leave tracked files changed.
+      - name: Write the adoption as a patch
+        id: patch
+        if: steps.target.outputs.adopt == 'true'
+        run: |
+          read -r -a files <<< "$ADOPTION_FILES"
+          git add -- "${files[@]}"
+          unexpected=$(git status --porcelain | grep -v '^M  ' || true)
+          if [ -n "$unexpected" ]; then
+            echo "::error::The release changed files an adoption does not own."
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+          mkdir "$RUNNER_TEMP/adoption"
+          git diff --cached --binary --full-index > "$RUNNER_TEMP/adoption/adoption.patch"
+
+      # Everything a dependency can break that runs here. Coverage thresholds are
+      # left out: they measure the app's own source. Browser journeys, the iPhone
+      # build and the container are left to CI on the pushed commit.
+      - name: Validate
+        id: validate
+        if: steps.target.outputs.adopt == 'true'
+        env:
+          VERSION: ${{ steps.target.outputs.version }}
+        run: |
+          check() {
+            echo "::group::$*"
+            local status=0
+            "$@" || status=$?
+            echo "::endgroup::"
+            if [ "$status" -ne 0 ]; then
+              {
+                echo "### Validation failed for Universal Parcel Scraper $VERSION"
+                echo
+                echo "\`$*\` failed. Nothing was pushed."
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit "$status"
+            fi
+          }
+          check node scripts/adopt-scraper.mjs peers
+          check npm run lint
+          check npm run typecheck
+          check npm run test:scripts
+          check npm run test:contract
+          check npm run ios:resources -- --check
+          check npm run test:dev
+          check npm test
+          check npm test -- --config vitest.server.config.ts
+          check npm run build
+          check npm run test:deployment
+          check npm run test:pwa
+          check npm audit --omit=dev
+
+      - name: Hand the patch to the push job
+        if: steps.target.outputs.adopt == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: adoption
+          path: ${{ runner.temp }}/adoption/adoption.patch
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
+
+      - name: Summarise a failed step
+        if: failure()
+        env:
+          VERSION: ${{ steps.target.outputs.version }}
+          FAILED: >-
+            ${{ steps.install.outcome == 'failure' && 'npm could not install the release.'
+            || steps.regenerate.outcome == 'failure' && 'The contract or the iPhone resources could not be regenerated.'
+            || steps.patch.outcome == 'failure' && 'The release changed files an adoption does not own.'
+            || '' }}
+        run: |
+          if [ -n "$FAILED" ]; then
+            {
+              echo "### Universal Parcel Scraper $VERSION was not adopted"
+              echo
+              echo "$FAILED Nothing was pushed; the log of the failed step has the details."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # Has the token that writes to main, on a runner where nothing of the release
+  # ever ran: no npm, no node_modules. What the adopt job hands over is data,
+  # accepted only as changes to the files an adoption owns.
+  push:
+    name: Push
+    needs: adopt
+    if: needs.adopt.outputs.adopt == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.adopt.outputs.version }}
+      CURRENT: ${{ needs.adopt.outputs.current }}
+      BASE: ${{ needs.adopt.outputs.base }}
+      DATABASE_READY: ${{ inputs.database_ready == true }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: adoption
+          path: ${{ runner.temp }}/adoption
+
+      # A lockfile or a generated file is never merged: when main changed one
+      # since the validation, the adoption is made again instead.
+      - name: Commit the adoption
+        run: |
+          stop() {
+            echo "$1" > "$RUNNER_TEMP/stopped"
+            echo "::error::$1"
+            exit 1
+          }
+          read -r -a files <<< "$ADOPTION_FILES"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-main\.[0-9]+)?$ && "$BASE" =~ ^[0-9a-f]{40}$ ]] \
+            || stop "The adopt job handed over something else than a release and a commit."
+          git merge-base --is-ancestor "$BASE" HEAD \
+            || stop "The commit the adoption was validated on is not on main."
+          git diff --quiet "$BASE" HEAD -- "${files[@]}" \
+            || stop "main changed a file of the adoption after it was validated."
+          # Into the index only: nothing is written to disk before the check.
+          git apply --cached "$RUNNER_TEMP/adoption/adoption.patch" \
+            || stop "The patch does not apply to main."
+          unexpected=$(git diff --cached --raw --no-renames | awk -F'\t' -v owned="$ADOPTION_FILES" '
+            BEGIN { split(owned, list, " "); for (i in list) own[list[i]] = 1 }
+            !($1 ~ /^:100644 100644 [0-9a-f]+ [0-9a-f]+ M$/ && ($2 in own))')
+          if [ -n "$unexpected" ]; then
+            printf '%s\n' "$unexpected"
+            stop "The patch changes more than the files an adoption owns."
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit --quiet -m "Adopt Universal Parcel Scraper $VERSION"
+          git reset --quiet --hard HEAD
+
+      # The adoption token starts CI on the pushed commit. The workflow token
+      # pushes when it is absent, and then no other workflow runs.
+      - name: Push to main
+        env:
+          PUSH_TOKEN: ${{ secrets.SCRAPER_ADOPTION_TOKEN || github.token }}
+          HAS_ADOPTION_TOKEN: ${{ secrets.SCRAPER_ADOPTION_TOKEN != '' }}
+        run: |
+          credentials=$(printf 'x-access-token:%s' "$PUSH_TOKEN" | base64 | tr -d '\n')
+          echo "::add-mask::$credentials"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $credentials"
+
+          stop() {
+            echo "$1" > "$RUNNER_TEMP/stopped"
+            echo "::error::$1"
+            exit 1
+          }
+          read -r -a files <<< "$ADOPTION_FILES"
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:refs/heads/main; then
+              pushed=true
+              break
+            fi
+            git fetch --quiet origin '+refs/heads/main:refs/remotes/origin/main' \
+              || stop "The push failed and main could not be fetched."
+            if git merge-base --is-ancestor origin/main HEAD; then
+              stop "GitHub refused the push although main had not moved; the log has its answer."
+            fi
+            git diff --quiet HEAD~1 origin/main -- "${files[@]}" \
+              || stop "main changed a file of the adoption after it was validated."
+            echo "main moved; rebasing (attempt $attempt)."
+            if ! git rebase --quiet origin/main; then
+              git rebase --abort
+              stop "main moved and the adoption no longer applies on top of it."
+            fi
+          done
+          if [ "$pushed" != "true" ]; then stop "main kept moving during five attempts."; fi
+
+          {
+            echo "### Adopted Universal Parcel Scraper $VERSION"
+            echo
+            echo "The app was on $CURRENT. Commit $(git rev-parse --short HEAD) is on main."
+            if [ "$(git rev-parse HEAD~1)" != "$BASE" ]; then
+              echo "main moved after the validation, in files the adoption does not change; the two were not validated together."
+            fi
+            if [ "$HAS_ADOPTION_TOKEN" = "true" ]; then
+              echo "It was pushed with SCRAPER_ADOPTION_TOKEN, so CI runs on it."
+            else
+              echo "It was pushed with the workflow token, so no other workflow runs on it: where CI deploys, it is not deployed before the next push."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summarise a failed push
+        if: failure()
+        run: |
+          again="gh workflow run adopt-scraper.yml -f version=$VERSION"
+          if [ "$DATABASE_READY" = "true" ]; then again="$again -f database_ready=true"; fi
+          {
+            echo "### Universal Parcel Scraper $VERSION was not pushed"
+            echo
+            echo "$(cat "$RUNNER_TEMP/stopped" 2>/dev/null || echo 'The log of the failed step has the details.') To try again:"
+            echo
+            echo '```bash'
+            echo "$again"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -8,8 +8,9 @@ const app = manifest('../../package.json');
 const scraper = manifest('../../node_modules/universal-parcel-scraper/package.json');
 
 describe('the scraper dependency', () => {
+  // A release, or a prerelease of the scraper's main branch.
   it('is an exact release, and the one installed', () => {
-    expect(app.dependencies?.['universal-parcel-scraper']).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(app.dependencies?.['universal-parcel-scraper']).toMatch(/^\d+\.\d+\.\d+(-main\.\d+)?$/);
     expect(scraper.version).toBe(app.dependencies?.['universal-parcel-scraper']);
   });
 

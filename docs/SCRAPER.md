@@ -34,16 +34,61 @@ the public registry to check dispatch and the host recorder.
 
 ## Updating the dependency
 
-1. Publish a scraper release.
-2. Set the exact version in `package.json` and update the lockfile. `playwright-core`,
-   `sharp` and `onnxruntime-web` are the scraper's optional peers: keep them on the
-   versions it asks for. npm does not check them here, so
-   [a test](../src/server/scraperDependency.test.ts) does.
-3. Run `npm run contract:generate` and `npm run ios:resources`, then the app's validation.
+`.github/workflows/adopt-scraper.yml` moves the app to a scraper release. The scraper
+repository starts it after each npm publish, stable or prerelease, when it has the
+`SCRAPER_ADOPTION_TOKEN` secret. It is also started by hand:
 
-A new carrier ID also needs a migration that adds it to the database's carrier list,
-applied before the server that offers it. See [deployment](DEPLOYMENT.md).
+```bash
+gh workflow run adopt-scraper.yml                    # the newer of npm's latest and next
+gh workflow run adopt-scraper.yml -f version=1.2.3   # one exact release
+```
+
+It never downgrades. It waits until npm serves the release, pins it, regenerates the
+contract and the iPhone resources, then runs lint, the type check, the tests and the
+production build with its checks. A second job, which runs nothing of the release, pushes
+the result to `main` as one commit. A commit that reached `main` in the meantime is kept
+when it leaves the adoption's files alone; otherwise the run fails and its summary gives
+the command that starts it again.
+
+`playwright-core`, `sharp` and `onnxruntime-web` are the scraper's optional peers. npm does
+not check them here, so [a test](../src/server/scraperDependency.test.ts) does. When a
+release asks for other versions than the app pins, the run fails and names them: move
+those pins and the scraper in one commit by hand, with `npm run contract:generate`,
+`npm run ios:resources` and the app's validation.
+
+`SCRAPER_ADOPTION_TOKEN` is a fine-grained token with read and write access to this
+repository's contents, stored as a secret in both repositories. The scraper starts the
+workflow with it. Here it pushes the commit, so that CI runs on it; where CI deploys
+([deployment](DEPLOYMENT.md)), an adoption needs it to be deployed. Without it here, the
+workflow's own token pushes, and no other workflow runs on the commit.
 
 The scraper's release workflow also publishes versioned HTTP and TRAWL images. TRAWL is
 optional and has its own AGPL licence and matching source archives. Browser-service
 configuration is documented in the scraper repository.
+
+### Database gate
+
+The database keeps its own copy of parts of the catalog, and a migration is applied
+before the server that needs it. So the workflow stops, before pushing anything, when a
+release changes one of these:
+
+- the carrier ids;
+- the inputs a carrier asks for (postcode, tracking URL): for which carrier, required or
+  optional, and their shape;
+- a tracking number that is more than letters and digits;
+- the number shape that marks a Quickpac parcel;
+- the stages;
+- the names of the universal providers.
+
+The run's summary lists each change with the constraints and functions that enforce it.
+Write the migration, apply it to production, then continue with that release:
+
+```bash
+gh workflow run adopt-scraper.yml -f version=1.2.3 -f database_ready=true
+```
+
+`database_ready` vouches for one release, so it is refused without a version.
+
+The gate compares catalog data. Rules written as scraper code, such as URL shapes and the
+Mondial Relay barcode checksum, are outside it. A changed stage also needs the `Stage`
+enum in `contracts/openapi.json` edited by hand.
