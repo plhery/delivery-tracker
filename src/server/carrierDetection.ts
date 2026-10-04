@@ -11,6 +11,8 @@ import { HttpError } from './api';
 import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from 'universal-parcel-scraper';
 import { recordDetection } from './metrics';
 import { logOperationalEvent } from './observability';
+import type { SupabaseServiceClient } from './supabase';
+import { retainDetectionSupport } from './trackingSupport';
 import type { JsonObject } from './types';
 
 /** The Add sheet waits this long for the carriers it asks; the first sync asks again after saving. */
@@ -76,7 +78,12 @@ async function recognize(trackingNumber: string, beforeAsking?: () => Promise<vo
  * may refuse by throwing. It does not run for an answer read from the number's
  * shape or kept from a moment ago.
  */
-export async function detectCarrier(body: JsonObject, beforeAsking?: () => Promise<void>, signal?: AbortSignal): Promise<ApiCarrierDetectionResponse> {
+export async function detectCarrier(
+  body: JsonObject,
+  beforeAsking?: () => Promise<void>,
+  signal?: AbortSignal,
+  supportClient?: SupabaseServiceClient,
+): Promise<ApiCarrierDetectionResponse> {
   if (signal?.aborted) throw new HttpError(499, 'Carrier check cancelled');
   if (typeof body.trackingNumber !== 'string' || body.trackingNumber.length > 80) {
     throw new HttpError(400, 'Invalid tracking number');
@@ -101,5 +108,6 @@ export async function detectCarrier(body: JsonObject, beforeAsking?: () => Promi
     })
     : { trackingNumber, carrier: detected.carrier } satisfies ApiCarrierDetectionResponse;
   recordDetection(answer.carrier !== 'unknown' ? 'high' : detected.confidence);
+  if (supportClient && !signal?.aborted) await retainDetectionSupport(supportClient, answer);
   return answer;
 }

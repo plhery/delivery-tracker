@@ -190,6 +190,9 @@ comes from the scraper's catalog, and the Add sheets show the possible candidate
   before saving; for a carrier picked by hand it only points out the one that has the
   parcel. Several answers ask the user to choose. Automatic detection stays a valid
   choice throughout, and the check never holds the Add button.
+  Detection asks dedicated carriers only. Universal providers run after a parcel lookup
+  or save queues its first sync. An unknown answer still allows an explicit lookup;
+  the front door does not automatically start one for an unconfirmed number.
 - **In routing.** When the filed carrier cannot track the number (no adapter of its own,
   its adapter answered not-found, or an unconfirmed carrier failed and is absent from
   the low-confidence format's candidate list), the router asks

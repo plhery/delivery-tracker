@@ -971,6 +971,22 @@ export class SupabaseServiceClient extends SupabaseClient {
     }));
   }
 
+  async recordTrackingSupportObservation(
+    trackingNumber: string,
+    context: JsonObject,
+    evidence: JsonObject,
+    observedAt: Date,
+    observationKey: string,
+  ): Promise<void> {
+    await this.request('/rest/v1/rpc/record_tracking_support_observation', {
+      method: 'POST', timeoutMs: 3_000,
+      body: {
+        p_tracking_number: trackingNumber, p_context: context, p_evidence: evidence,
+        p_observed_at: observedAt.toISOString(), p_observation_key: observationKey,
+      },
+    });
+  }
+
   async ackTrackingHealth(ids: string[]): Promise<void> {
     await this.request('/rest/v1/rpc/ack_tracking_health', {
       method: 'POST', timeoutMs: 3_000, body: { p_ids: ids },

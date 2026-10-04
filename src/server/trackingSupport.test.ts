@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CarrierResult } from 'universal-parcel-scraper';
-import { trackingSupportContext, trackingSupportEvidence } from './trackingSupport';
+import { retainDetectionSupport, trackingSupportContext, trackingSupportEvidence } from './trackingSupport';
+import { SupabaseServiceClient } from './supabase';
 
 const number = '1Z0000000012345678';
 const parcel = { tracking_number: number, carrier: 'ups' };
@@ -8,6 +9,36 @@ const progress: CarrierResult = {
   status: 'in_transit', current_stage: 'in_transit', last_update: '2026-09-10T11:00:00Z',
   events: [{ time: '2026-09-10T11:00:00Z', description: 'Departed facility', stage: 'in_transit' }],
 };
+
+describe('detection support retention', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('records choices separately from a number nobody recognizes, without direct verification', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const retain = vi.spyOn(client, 'recordTrackingSupportObservation').mockResolvedValue(undefined);
+    await retainDetectionSupport(client, {
+      trackingNumber: '12345678901231', carrier: 'unknown', recognized: ['dpd', 'hermes-de'],
+    });
+    expect(retain).toHaveBeenCalledExactlyOnceWith(
+      '12345678901231', expect.objectContaining({ reasons: ['ambiguous_shape', 'recognition_choice'] }),
+      { outcome: 'detection_choice' }, expect.any(Date), expect.stringMatching(/^detection:/),
+    );
+  });
+
+  it('logs the submitted number and the actual recognition candidates privately', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    vi.spyOn(client, 'recordTrackingSupportObservation').mockResolvedValue(undefined);
+    await retainDetectionSupport(client, {
+      trackingNumber: '0000000046', carrier: 'unknown', asked: ['relais-colis', 'tipsa'], unanswered: ['tipsa'],
+    });
+    expect(JSON.parse(log.mock.calls[0][0])).toMatchObject({
+      event: 'carrier_detection_support', tracking_number: '0000000046', outcome: 'detection_unknown',
+      asked_carriers: 'relais-colis,tipsa', unanswered_carriers: 'tipsa', recognized_carriers: '',
+    });
+  });
+});
 
 describe('tracking support context', () => {
   it('keeps an unknown shape visible even when a carrier was selected manually', () => {

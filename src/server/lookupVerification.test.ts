@@ -130,11 +130,17 @@ describe('lookup verification', () => {
     expect(eligibility).not.toHaveBeenCalled();
   });
 
-  it('keeps local carrier detection available without verification', async () => {
+  it('keeps local carrier detection available without verification and retains an unknown number', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const retain = vi.spyOn(SupabaseServiceClient.prototype, 'recordTrackingSupportObservation').mockResolvedValue(undefined);
     const response = await detect(new NextRequest('https://peek.example/api/public/detect', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trackingNumber: 'TESTPARCEL123456' }),
     }), { params: Promise.resolve({}) });
     expect(response.status).toBe(200);
     expect(fetch).not.toHaveBeenCalled();
+    expect(retain).toHaveBeenCalledExactlyOnceWith(
+      'TESTPARCEL123456', expect.objectContaining({ reasons: ['unknown_shape', 'recognition_unknown'] }),
+      { outcome: 'detection_unknown' }, expect.any(Date), expect.stringMatching(/^detection:/),
+    );
   });
 });

@@ -30,6 +30,7 @@ beforeEach(() => {
   vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
   vi.stubEnv('TRUST_PROXY_HEADERS', 'true');
   vi.spyOn(SupabaseServiceClient.prototype, 'claimAccountTracking').mockResolvedValue(true);
+  vi.spyOn(SupabaseServiceClient.prototype, 'recordTrackingSupportObservation').mockResolvedValue(undefined);
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
   recognize.mockReset().mockImplementation(knows());
   vi.spyOn(SupabaseAuthenticator.prototype, 'validate').mockResolvedValue({
@@ -70,6 +71,47 @@ it('keeps a generic postal number unconfirmed when no direct carrier knows it', 
   expect(await (await request('CE123456785FI')).json()).toEqual({
     trackingNumber: 'CE123456785FI', carrier: 'unknown', asked: ['posti', 'chronopost'],
   });
+});
+
+it('retains an unresolved signed-in submission without creating a parcel', async () => {
+  const response = await request('0000 0000 41');
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ trackingNumber: '0000000041', carrier: 'unknown' });
+  expect(SupabaseServiceClient.prototype.recordTrackingSupportObservation).toHaveBeenCalledExactlyOnceWith(
+    '0000000041', expect.objectContaining({ reasons: ['ambiguous_shape', 'recognition_unknown'] }),
+    { outcome: 'detection_unknown' }, expect.any(Date), expect.stringMatching(/^detection:/),
+  );
+});
+
+it('retains unresolved public submissions even when the detection answer is cached', async () => {
+  const claim = vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance').mockResolvedValue({ allowed: true, scope: null, overallUsed: 1 });
+  const retain = vi.mocked(SupabaseServiceClient.prototype.recordTrackingSupportObservation);
+  for (let index = 0; index < 2; index += 1) {
+    const response = await withoutAccount('0000000042', '198.51.100.70');
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ carrier: 'unknown' });
+  }
+  expect(claim).toHaveBeenCalledOnce();
+  expect(retain).toHaveBeenCalledTimes(2);
+  expect(retain.mock.calls[0][4]).not.toBe(retain.mock.calls[1][4]);
+});
+
+it('does not retain confirmed, invalid or refused detections', async () => {
+  const retain = vi.mocked(SupabaseServiceClient.prototype.recordTrackingSupportObservation);
+  expect((await request('1Z0000000012345678')).status).toBe(200);
+  expect((await request('invalid!')).status).toBe(400);
+  expect((await request('0000000043', false)).status).toBe(401);
+  vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance').mockResolvedValue({ allowed: false, scope: 'bucket', overallUsed: 1 });
+  expect((await withoutAccount('0000000044', '198.51.100.71')).status).toBe(429);
+  expect(retain).not.toHaveBeenCalled();
+});
+
+it('returns the unknown answer when retaining its number fails', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  vi.mocked(SupabaseServiceClient.prototype.recordTrackingSupportObservation).mockRejectedValue(new Error('database unavailable'));
+  const response = await request('0000000045');
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ carrier: 'unknown' });
 });
 
 it('lets the user choose between unrelated carriers that both know the number', async () => {

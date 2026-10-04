@@ -1,6 +1,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { IndeterminateError } from 'universal-parcel-scraper';
 import { detectCarrier } from './carrierDetection';
+import { SupabaseServiceClient } from './supabase';
 
 const mocks = vi.hoisted(() => ({ http: vi.fn(), browser: vi.fn() }));
 vi.mock('./adapterRegistry', () => ({ createAdapterRegistry: () => ({ for: (carrier: string) => ({
@@ -54,7 +55,10 @@ it('does not browser-retry a definite miss, and does not settle on an old reused
 
 it('stops before browser work when the caller cancels the HTTP check', async () => {
   const controller = new AbortController();
+  const client = new SupabaseServiceClient('https://database.example', 'service-key');
+  const retain = vi.spyOn(client, 'recordTrackingSupportObservation').mockResolvedValue(undefined);
   mocks.http.mockImplementation(() => { controller.abort(); return Promise.resolve({ known: false }); });
-  await expect(detectCarrier({ trackingNumber: '000000000014' }, undefined, controller.signal)).rejects.toThrow();
+  await expect(detectCarrier({ trackingNumber: '000000000014' }, undefined, controller.signal, client)).rejects.toThrow();
   expect(mocks.browser).not.toHaveBeenCalled();
+  expect(retain).not.toHaveBeenCalled();
 });

@@ -365,6 +365,22 @@ describe('tracking audit PostgREST client', () => {
     });
   });
 
+  it('retains a detection number through the service-only support function with a bounded wait', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const request = vi.spyOn(client, 'request').mockResolvedValue(null);
+    await client.recordTrackingSupportObservation('0000000047',
+      { reasons: ['recognition_unknown'] }, { outcome: 'detection_unknown' },
+      new Date('2026-01-01T12:00:00Z'), 'detection:test');
+    expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/record_tracking_support_observation', {
+      method: 'POST', timeoutMs: 3_000,
+      body: {
+        p_tracking_number: '0000000047', p_context: { reasons: ['recognition_unknown'] },
+        p_evidence: { outcome: 'detection_unknown' }, p_observed_at: '2026-01-01T12:00:00.000Z',
+        p_observation_key: 'detection:test',
+      },
+    });
+  });
+
   it('records status observations through the service-only function', async () => {
     const client = new SupabaseServiceClient('https://database.example', 'service-key');
     const request = vi.spyOn(client, 'request').mockResolvedValue(null);

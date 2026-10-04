@@ -95,6 +95,12 @@ survive parcel deletion and audit pruning. Repeating an audit write does not cou
 same check twice. Cases retain sightings, fallback counts, detection candidates, the
 last outcome and direct verification evidence.
 
+Unresolved detection requests also retain their normalized number in this backlog,
+including cached answers and choices between carriers, before any parcel is saved.
+Invalid, refused and cancelled checks do not create observations. A failed backlog write
+does not change the detection answer. `carrier_detection_support` logs the number and
+the carriers asked, unanswered or offered as choices.
+
 Review open cases:
 
 ```sql

@@ -1,9 +1,13 @@
 import 'server-only';
 
+import { randomUUID } from 'node:crypto';
 import type { CarrierResult } from 'universal-parcel-scraper';
 import { latestResultTime } from 'universal-parcel-scraper/app';
+import type { ApiCarrierDetectionResponse } from '../generated/apiContract';
 import { detectCarrierMatch } from '../lib/carriers';
 import { directHistoryNumber } from './directLocalHistory';
+import { captureOperationalError, errorType, logOperationalEvent } from './observability';
+import type { SupabaseServiceClient } from './supabase';
 import { directCarrier, hasRoutingProgress } from './trackingRouting';
 import type { JsonObject } from './types';
 
@@ -34,6 +38,34 @@ export function trackingSupportContext(trackingNumber: string, configuredCarrier
     reasons,
     ...(process.env.IMAGE_COMMIT ? { app_version: process.env.IMAGE_COMMIT.slice(0, 100) } : {}),
   };
+}
+
+/** Keep unresolved submissions even when the visitor never saves a parcel. */
+export async function retainDetectionSupport(
+  client: SupabaseServiceClient,
+  answer: ApiCarrierDetectionResponse,
+): Promise<void> {
+  if (answer.carrier !== 'unknown') return;
+  const choice = (answer.recognized?.length ?? 0) > 1;
+  const context = trackingSupportContext(answer.trackingNumber, answer.carrier);
+  context.reasons = [...context.reasons as string[], choice ? 'recognition_choice' : 'recognition_unknown'];
+  const outcome = choice ? 'detection_choice' : 'detection_unknown';
+  logOperationalEvent('carrier_detection_support', {
+    tracking_number: answer.trackingNumber, outcome,
+    asked_carriers: answer.asked?.join(',') ?? '',
+    unanswered_carriers: answer.unanswered?.join(',') ?? '',
+    recognized_carriers: answer.recognized?.join(',') ?? '',
+  });
+  try {
+    await client.recordTrackingSupportObservation(answer.trackingNumber, context, { outcome }, new Date(), `detection:${randomUUID()}`);
+  } catch (error) {
+    logOperationalEvent('tracking_support_write_failed', {
+      operation: 'detection', tracking_number: answer.trackingNumber, error_type: errorType(error),
+    }, 'error');
+    captureOperationalError(error, {
+      component: 'tracking-support', operation: 'detection', trackingNumber: answer.trackingNumber, withoutRequest: true,
+    });
+  }
 }
 
 /** Only accepted progress from this exact number can verify a direct fix. */

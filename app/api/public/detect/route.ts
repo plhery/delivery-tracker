@@ -25,7 +25,7 @@ export const POST = apiRoute(async (context) => {
       throw new HttpError(429, 'No carrier checks are left for today.', { 'Retry-After': String(secondsUntilUtcMidnight(now)) });
     }
     recordPublicDetection('asked');
-  }, context.request.signal));
+  }, context.request.signal, requireService(context)));
 }, {
   authenticated: false,
   capability: true,
