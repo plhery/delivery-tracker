@@ -11,7 +11,7 @@ test.afterEach(async ({ page }) => { expect(errors.get(page)).toEqual([]); });
 
 const frontDoor = (page: Page) => page.getByRole('heading', { level: 1, name: 'Where’s my parcel?' });
 const status = (page: Page) => page.getByRole('heading', { level: 1 });
-const note = (page: Page) => page.getByText('Sample parcel · nothing here is real');
+const note = (page: Page) => page.getByText('Sample parcel', { exact: true });
 const path = (page: Page) => new URL(page.url()).pathname;
 const fits = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 
@@ -76,6 +76,15 @@ test('leads to a parcel of one’s own, to signing in and to the demo deliveries
   await page.goBack();
   await expect(note(page)).toBeVisible();
 
+  // The way back to the landing stands above the card.
+  const homePage = page.getByRole('link', { name: 'Home page' });
+  await expect(homePage).toHaveAttribute('href', '/');
+  await homePage.click();
+  await expect(frontDoor(page)).toBeVisible();
+  expect(path(page)).toBe('/');
+  await page.goBack();
+  await expect(note(page)).toBeVisible();
+
   await page.locator('.peekp-keep').getByRole('button', { name: 'Sign in' }).click();
   await expect(page.locator('.arrival')).toBeVisible();
 });
@@ -85,7 +94,7 @@ test('fits a phone at 320 px, in German and in the dark', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.addInitScript(() => localStorage.setItem('deliveryTrackerLocale', 'de'));
   await page.goto('/sample');
-  await expect(page.getByText('Beispielpaket · nichts hier ist echt')).toBeVisible();
+  await expect(page.getByText('Beispielpaket', { exact: true })).toBeVisible();
   // The sample's own words are in the reader's language too.
   await expect(page.locator('.peekp-card__name')).toHaveText('Mondlampe 🌙');
   await expect(page.getByText('Hat das Sortierzentrum verlassen. Vollmond in Kürze erwartet.')).toBeVisible();

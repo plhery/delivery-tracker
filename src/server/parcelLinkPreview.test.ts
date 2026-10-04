@@ -150,17 +150,17 @@ describe('parcelLinkPreview', () => {
     expect(reported).toHaveBeenLastCalledWith(expect.anything(), { component: 'parcel-links', operation: 'link-preview' });
   });
 
-  it('tells the sample parcel without the database, with the note that nothing in it is real', async () => {
+  it('tells the sample parcel without the database, with the note that it is a sample', async () => {
     const found = vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel');
     const preview = await parcelLinkPreview('sample', new Headers({ 'x-real-ip': '198.51.100.26' }), 'en', NOW);
     expect(preview).toEqual({
-      title: 'Peek — Sample parcel · nothing here is real',
-      description: 'Waiting for a real one? Paste a tracking number, a carrier link or a whole shipping email. No account needed.',
+      title: 'Peek — Sample parcel',
+      description: 'Waiting for a real one? Paste a tracking number or a carrier link, no account needed.',
       headline: 'In transit',
       detail: 'Expected: Sun 4 oct',
       carrier: expect.objectContaining({ id: 'gls-de' }),
       steps: 4,
-      note: 'Sample parcel · nothing here is real',
+      note: 'Sample parcel',
     });
     expect(found).not.toHaveBeenCalled();
   });
@@ -247,11 +247,11 @@ describe('the sample page’s metadata', () => {
     request.headers.set('accept-language', 'fr-CH,fr;q=0.9');
     request.headers.set('x-real-ip', '198.51.100.34');
     const metadata = await sampleMetadata();
-    const title = 'Peek — Colis d’exemple · rien ici n’est réel';
+    const title = 'Peek — Colis d’exemple';
     const picture = 'https://peek.example.test/api/public/parcels/sample/image?lang=fr';
     expect(metadata).toMatchObject({
       title,
-      description: 'Tu en attends un vrai ? Colle un numéro de suivi, un lien de transporteur ou tout un e-mail d’expédition. Pas besoin de compte.',
+      description: 'Tu en attends un vrai ? Colle un numéro de suivi ou un lien de transporteur, pas besoin de compte.',
       alternates: { canonical: 'https://peek.example.test/sample' },
       openGraph: {
         title, url: 'https://peek.example.test/sample', siteName: 'Peek',
@@ -311,7 +311,7 @@ describe('the link preview image', () => {
     const asked = refuseTheWeb();
     const found = vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel');
     const bytes = async (response: Response) => Buffer.from(await response.arrayBuffer());
-    expect((await bytes(parcelLinkSocialImage(preview({ note: 'Sample parcel · nothing here is real' }), null))).equals(await bytes(parcelLinkSocialImage(preview(), null)))).toBe(false);
+    expect((await bytes(parcelLinkSocialImage(preview({ note: 'Sample parcel' }), null))).equals(await bytes(parcelLinkSocialImage(preview(), null)))).toBe(false);
     for (const [index, locale] of SUPPORTED_LOCALES.entries()) {
       const note = translateMessage(locale, 'sample.note', undefined, messagesFor(locale));
       expect(writable(note, GEIST), locale).toBe(note);

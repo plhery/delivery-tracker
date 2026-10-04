@@ -46,7 +46,7 @@ function wordingIn(locale: Locale, now: number): Wording & { now: number } {
   return { t, languageTag: languageTags[locale], now };
 }
 
-/** The sample parcel's preview: its story's beginning, and the note that nothing in it is real. */
+/** The sample parcel's preview: its story's beginning, and the note that it is a sample. */
 function samplePreview(locale: Locale, now: number): ParcelLinkPreview {
   const wording = wordingIn(locale, now);
   const { t } = wording;
@@ -58,7 +58,7 @@ function samplePreview(locale: Locale, now: number): ParcelLinkPreview {
     ...parcelPreviewText(parcel, carrier.name, wording),
     // The page's title and description say what it is, not what the made-up parcel does.
     title: `${t('app.title')} — ${note}`,
-    description: `${t('sample.yours.title')} ${t('landing.lead')}`,
+    description: `${t('sample.yours.title')} ${t('sample.yours.body')}`,
     carrier,
     steps: stage ? stageMeta(stage).progress + 1 : 0,
     note,

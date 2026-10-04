@@ -11,6 +11,7 @@ import { localizedDeliveryWindow, localizedEventDescription, stageLabel, useI18n
 import { trackAction, trackScreen } from '../lib/analytics';
 import { carrierBrand } from '../lib/carrierBrand';
 import { activeTrackingCarrierId, carrierInfo, displayedCarrierId, formatTrackingNumber, tracksAutomatically } from '../lib/carriers';
+import { LANDING_PATH } from '../lib/experience';
 import { focusClickedButton } from '../lib/modal';
 import { parcelDeliveryEstimate, parcelHasCarrierUpdate, parcelIsUnannounced } from '../lib/parcelStatus';
 import { pickupPoint } from '../lib/pickupPoint';
@@ -51,7 +52,7 @@ import {
 import { announceNotice, Toast } from './parcel/Toast';
 import { announceKeepOutcome, onKeepOutcome, usePendingKeep, type KeepOutcome } from './pending';
 import { recentFor, renameParcel } from './recents';
-import { leaveParcelLink, parcelLinkURL, PIP_TRANSITION_NAME } from './route';
+import { leaveParcelLink, openLanding, parcelLinkURL, PIP_TRANSITION_NAME } from './route';
 import { SAMPLE_LINK_ID } from './sample';
 import { usePeekSession } from './session';
 import { useParcelLink, type ParcelLinkState } from './useParcelLink';
@@ -360,6 +361,9 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const summary = [headline, detail].filter(Boolean).join(' · ');
 
   const teaser = abroad && !afterwards && !present && visitor && <PassportTeaser parcel={parcel} origin={abroad} onStart={signInToKeep} />;
+  // The sample's way back to the landing: at its own address for someone signed in, whose `/` is their deliveries.
+  const landingPath = signedIn ? LANDING_PATH : '/';
+  const toLanding = () => { if (signedIn) openLanding(); else leaveParcelLink(); };
   const invitation = sample && <SampleInvitation carrier={displayed} onTrack={onHome} onSignIn={visitor ? signInToKeep : undefined} />;
   const map = (shape: 'card' | 'tile') => <RouteMap route={route} parcel={parcel} stage={stage} shape={shape} pip={figure === 'map' || figure === 'none'} onOpen={openMap} />;
 
@@ -381,7 +385,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
     <div className="peekp-columns" data-beside={beside || undefined}>
       <div className="peekp-column">
         {followed && <AlreadyFollowed name={followed.label || t('common.parcel')} onOpen={() => { trackAction('parcel-link-open-existing'); openDeliveries?.(followed.id); }} />}
-        {sample ? <SampleNote /> : !owner && !present && <SharedWithYou visitor={!signedIn} until={worksUntil} />}
+        {sample ? <SampleNote landingPath={landingPath} onLanding={toLanding} /> : !owner && !present && <SharedWithYou visitor={!signedIn} until={worksUntil} />}
         <LinkCard parcel={parcel} stage={stage} carrier={carrierKnown ? displayed : null} headline={headline} name={name} detail={detail}
           notes={notes} flag={flag} figure={figure} number={number} links={links} settled={entrance === 'reveal' && !checking}
           gift={wrapped ? 'wrapped' : opened ? 'opened' : link.gift ? 'own' : undefined}

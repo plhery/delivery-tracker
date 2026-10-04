@@ -2,14 +2,20 @@ import { Icon } from '../../components/Icon';
 import { useI18n } from '../../i18n';
 import { DEMO_PATH } from '../../lib/experience';
 import type { CarrierInfo } from '../../lib/carriers';
-import { followDemoLink } from '../landing/links';
+import { followDemoLink, followInPlace } from '../landing/links';
 import { Glyph } from './glyphs';
 import { CardStack } from './Keep';
 
-/** Above the sample's card: what the page is, before anything on it is believed. */
-export function SampleNote() {
+/** Above the sample's card: the way back to the landing it is opened from, and what the page is. */
+export function SampleNote({ landingPath, onLanding }: {
+  landingPath: string;
+  onLanding: () => void;
+}) {
   const { t } = useI18n();
-  return <p className="peekp-shared"><Glyph name="info" />{t('sample.note')}</p>;
+  return <div className="peekp-sample">
+    <a className="peekp-textlink" href={landingPath} onClick={(event) => followInPlace(event, onLanding)}><Icon name="back" />{t('app.homePage')}</a>
+    <p className="peekp-shared"><Glyph name="info" />{t('sample.note')}</p>
+  </div>;
 }
 
 /**
@@ -28,7 +34,7 @@ export function SampleInvitation({ carrier, onTrack, onSignIn }: {
     <section className="peekp-yours" aria-labelledby="peekp-yours-title">
       <div>
         <h2 id="peekp-yours-title">{t('sample.yours.title')}</h2>
-        <p>{t('landing.lead')}</p>
+        <p>{t('sample.yours.body')}</p>
       </div>
       <button type="button" className="button button--primary" onClick={onTrack}><Icon name="search" />{t('sample.yours.action')}</button>
     </section>

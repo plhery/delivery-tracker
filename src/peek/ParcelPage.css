@@ -148,6 +148,8 @@ button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
 .peekp-add .peekp-add__error { color: var(--orange-text); font-size: 12.5px; }
 .peekp-shared { display: flex; align-items: center; gap: 8px; margin: 0 4px -2px; color: var(--ink-soft); font-size: 12px; }
 .peekp-shared svg { width: 15px; height: 15px; }
+.peekp-sample { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -8px 4px -6px; }
+.peekp-sample .peekp-shared { margin: 0; }
 .peekp-keeppage { margin: 0 4px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.5; }
 
 /* Notes beside the card. */

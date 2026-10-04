@@ -779,7 +779,7 @@ describe('ParcelPage for the sample parcel', () => {
     openSample();
     expect(await screen.findByRole('heading', { level: 1, name: 'In transit' })).toBeVisible();
     expect(mocks.read).toHaveBeenCalledWith(SAMPLE_LINK_ID, expect.anything());
-    expect(screen.getByText('Sample parcel · nothing here is real')).toBeVisible();
+    expect(screen.getByText('Sample parcel')).toBeVisible();
     expect(within(card()).getByText('Moon lamp 🌙')).toBeVisible();
     expect(document.title).toMatch(/^Moon lamp 🌙 · In transit/);
     expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('1234567899');
@@ -839,7 +839,7 @@ describe('ParcelPage for the sample parcel', () => {
     openSample({ account: 'visitor', signIn });
     await screen.findByRole('heading', { level: 1, name: 'In transit' });
     expect(screen.getByRole('heading', { level: 2, name: 'Waiting for a real one?' })).toBeVisible();
-    expect(screen.getByText('Paste a tracking number, a carrier link or a whole shipping email. No account needed.')).toBeVisible();
+    expect(screen.getByText('Paste a tracking number or a carrier link, no account needed.')).toBeVisible();
     expect(screen.getByRole('heading', { level: 2, name: 'Following more than one?' })).toBeVisible();
 
     // Signing in keeps nothing: there is no parcel to keep.
@@ -862,6 +862,13 @@ describe('ParcelPage for the sample parcel', () => {
     history.replaceState(null, '', '/sample');
     await user.click(screen.getByRole('button', { name: 'Track your parcel' }));
     expect(location.pathname).toBe('/');
+
+    // The way back to the landing, which a visitor finds at `/`.
+    history.replaceState(null, '', '/sample');
+    const homePage = screen.getByRole('link', { name: 'Home page' });
+    expect(homePage).toHaveAttribute('href', '/');
+    await user.click(homePage);
+    expect(location.pathname).toBe('/');
   });
 
   it('offers someone signed in the way back to their deliveries, and no account', async () => {
@@ -870,7 +877,7 @@ describe('ParcelPage for the sample parcel', () => {
     const keep = vi.fn();
     openSample({ account: 'signed-in', signIn: vi.fn(), keep, openDeliveries, deliveries: [] });
     await screen.findByRole('heading', { level: 1, name: 'In transit' });
-    expect(screen.getByText('Sample parcel · nothing here is real')).toBeVisible();
+    expect(screen.getByText('Sample parcel')).toBeVisible();
     expect(screen.queryByRole('heading', { name: 'Following more than one?' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Try the demo' })).not.toBeInTheDocument();
     // A sample is not added to an account.
@@ -878,6 +885,13 @@ describe('ParcelPage for the sample parcel', () => {
     await user.click(screen.getByRole('button', { name: 'Track your parcel' }));
     expect(openDeliveries).toHaveBeenCalledExactlyOnceWith();
     expect(keep).not.toHaveBeenCalled();
+
+    // Their `/` is their deliveries: the landing is at its own address.
+    const homePage = screen.getByRole('link', { name: 'Home page' });
+    expect(homePage).toHaveAttribute('href', '/home');
+    await user.click(homePage);
+    expect(location.pathname).toBe('/home');
+    expect(openDeliveries).toHaveBeenCalledOnce();
   });
 
   it('opens the alerts without the account’s pitch: the sample joins no deliveries', async () => {

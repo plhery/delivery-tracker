@@ -180,7 +180,7 @@ Key server modules:
 | `/` | The landing to a visitor, with the parcels of their device right under the field; the deliveries to someone signed in |
 | `/home` | The landing to anyone. Someone signed in reaches it from the foot of their deliveries or from Settings, and it leads back to `/` |
 | `/p/<id>` | One parcel, to anyone with the link |
-| `/sample` | A made-up parcel on a parcel page, told by the browser: nothing is asked of the server or kept on the device |
+| `/sample` | A made-up parcel on a parcel page, told by the browser: nothing is asked of the server or kept on the device. Its "Home page" link leads back to the landing |
 | `/i/<key>`, `/invite` | A friend invitation ([FRIENDS.md](FRIENDS.md)) |
 | `/demo` | The demo deliveries, kept on the device, to anyone; leaving the demo returns to `/` |
 | `/email/off#t=<token>` | The way out of the delivery email, from the link an email carries. It asks first, then switches the email off (or back on) for the account the token names, without a sign-in. The token stays after the `#` and travels only in the body of that request |

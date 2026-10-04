@@ -16,7 +16,7 @@ const journey = (page: Page) => page.getByRole('img', { name: 'A parcel’s jour
 /** What the field shows itself with: the sample over the placeholder, or nothing. */
 const sample = (page: Page) => page.locator('.door-sample[data-on] .door-sample__text');
 /** The page of the sample parcel Pip opens. */
-const samplePage = (page: Page) => page.getByText('Sample parcel · nothing here is real');
+const samplePage = (page: Page) => page.getByText('Sample parcel', { exact: true });
 const path = (page: Page) => new URL(page.url()).pathname;
 
 async function openLanding(page: Page) {

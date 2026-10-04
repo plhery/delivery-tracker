@@ -81,7 +81,7 @@ describe('PeekRoot', () => {
     await userEvent.setup().click(screen.getByRole('link', { name: 'Open a sample parcel' }));
     await waitFor(() => expect(location.pathname).toBe('/sample'));
     expect(history.length).toBe(entries + 1);
-    expect(screen.getByText('Sample parcel · nothing here is real')).toBeVisible();
+    expect(screen.getByText('Sample parcel')).toBeVisible();
     expect(screen.getByRole('heading', { level: 1, name: 'In transit' })).toBeVisible();
     expect(screen.getByText('Moon lamp 🌙')).toBeVisible();
     // The page opens with the sample the door read: no link is asked for, and no parcel is remembered.
