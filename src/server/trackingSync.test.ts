@@ -348,6 +348,50 @@ describe('fair scheduling', () => {
 });
 
 describe('status observation collection', () => {
+  it('reviews preclassified aggregator wording and pending fallbacks while keeping explicit maps out', () => {
+    const rows = buildEvents({ id: 'package-1', carrier: 'unknown' }, {
+      tracking_provider: 'ParcelsApp',
+      status: 'in_transit', current_stage: 'in_transit',
+      events: [
+        { time: '2026-01-01T12:00:00Z', description: 'Unrecognized carrier message', stage: 'pending', stage_source: 'none' },
+        { time: '2026-01-01T11:00:00Z', description: 'Sorted in regional hub', stage: 'in_transit', stage_source: 'wording:language' },
+        { time: '2026-01-01T10:00:00Z', description: 'Mapped milestone', stage: 'accepted', stage_source: 'carrier_map' },
+        { time: '2026-01-01T09:00:00Z', description: 'Legacy mapped milestone', stage: 'accepted' },
+      ],
+    });
+    expect(rows.map((row) => [row.stage, (row.raw_data as JsonObject).stage_source])).toEqual([
+      ['pending', 'none'], ['in_transit', 'wording:language'], ['accepted', 'carrier_map'], ['accepted', 'carrier_map'],
+    ]);
+    expect(collectStatusObservations(rows, 'unknown').map((observation) => [
+      observation.description_normalized, observation.chosen_stage, observation.stage_source,
+    ])).toEqual([
+      ['unrecognized carrier message', 'pending', 'none'],
+      ['sorted in regional hub', 'in_transit', 'wording:language'],
+    ]);
+  });
+
+  it('preserves summary and local-clock milestone sources when no timestamped scan can be saved', () => {
+    const parcel = { id: 'package-1', carrier: 'unknown', current_stage: 'pending' };
+    const summary = buildEvents(parcel, {
+      status: 'in_transit', current_stage: 'in_transit', current_stage_source: 'wording:provider',
+      last_status_text: 'Sorted in regional hub', last_update: '2026-01-01T11:00:00Z',
+    });
+    expect(collectStatusObservations(summary, 'unknown')).toMatchObject([
+      { chosen_stage: 'in_transit', stage_source: 'wording:provider' },
+    ]);
+    for (const current_stage_source of [undefined, 'wording:provider']) {
+      const observed = buildEvents(parcel, {
+        tracking_provider: 'UPU', status: 'in_transit', current_stage: 'in_transit', current_stage_source,
+        events: [{ local_time: '2026-01-01T11:00:00', description: 'Sorted in regional hub',
+          stage: 'in_transit', stage_source: 'wording:provider', provider_code: 'ZZ1' }],
+      }, undefined, new Date('2026-01-01T12:00:00Z'));
+      expect(observed).toHaveLength(1);
+      expect(collectStatusObservations(observed, 'unknown')).toMatchObject([
+        { provider_code: 'ZZ1', chosen_stage: 'in_transit', stage_source: 'wording:provider' },
+      ]);
+    }
+  });
+
   it('keeps wording no carrier map resolved, deduplicated per carrier and code', () => {
     const rows = buildEvents({ id: 'package-1', carrier: 'ctt' }, {
       status: 'unknown',
@@ -418,6 +462,59 @@ describe('status observation collection', () => {
     ]);
     expect(client.recordTrackingStatusObservations.mock.invocationCallOrder[0])
       .toBeGreaterThan(client.insertEvents.mock.invocationCallOrder[0]);
+  });
+
+  it('persists aggregator observations even when the scraper has already assigned stages', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValue({
+      tracking_provider: 'Ship24', status: 'in_transit', current_stage: 'in_transit',
+      current_stage_source: 'wording:language',
+      events: [
+        { time: '2026-01-01T12:00:00Z', description: 'Unrecognized carrier message', stage: 'pending', stage_source: 'none' },
+        { time: '2026-01-01T11:00:00Z', description: 'Sorted in regional hub', stage: 'in_transit', stage_source: 'wording:language' },
+      ],
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    await expect(service.syncPackage({ id: 'observed', carrier: 'ctt', tracking_number: 'TEST1234' }))
+      .resolves.toMatchObject({ updated: 1 });
+    expect(client.recordTrackingStatusObservations).toHaveBeenCalledWith([
+      expect.objectContaining({ chosen_stage: 'pending', stage_source: 'none' }),
+      expect.objectContaining({ chosen_stage: 'in_transit', stage_source: 'wording:language' }),
+    ]);
+    expect(client.recordTrackingStatusObservations.mock.invocationCallOrder[0])
+      .toBeGreaterThan(client.insertEvents.mock.invocationCallOrder[0]);
+  });
+
+  it('records an entirely unresolved history without advancing the parcel', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValue({
+      tracking_provider: 'Ship24', status: 'pending', current_stage: 'pending', current_stage_source: 'none',
+      events: [{ time: '2026-01-01T12:00:00Z', description: 'Unrecognized carrier message',
+        stage: 'pending', stage_source: 'none' }],
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    await expect(service.syncPackage({ id: 'observed', carrier: 'ctt', tracking_number: 'TEST1234', current_stage: 'pending' }))
+      .resolves.toMatchObject({ waiting: 1, updated: 0, errors: 0 });
+    expect(client.recordTrackingStatusObservations).toHaveBeenCalledWith([
+      expect.objectContaining({ chosen_stage: 'pending', stage_source: 'none' }),
+    ]);
+    expect(client.updatePackage).toHaveBeenCalledWith('observed', expect.objectContaining({ current_stage: 'pending' }));
+  });
+
+  it('reviews unresolved local-clock wording without manufacturing a timeline timestamp', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValue({
+      tracking_provider: 'UPU', status: 'pending', current_stage: 'pending', current_stage_source: 'none',
+      events: [{ local_time: '2026-01-01T12:00:00', description: 'Unrecognized carrier message',
+        stage: 'pending', stage_source: 'none', provider_code: 'ZZ1' }],
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    await expect(service.syncPackage({ id: 'observed', carrier: 'ctt', tracking_number: 'TEST1234', current_stage: 'pending' }))
+      .resolves.toMatchObject({ waiting: 1, updated: 0, errors: 0 });
+    expect(client.insertEvents).not.toHaveBeenCalled();
+    expect(client.recordTrackingStatusObservations).toHaveBeenCalledWith([
+      expect.objectContaining({ provider_code: 'ZZ1', chosen_stage: 'pending', stage_source: 'none' }),
+    ]);
   });
 
   it('swallows an observation write failure and reports it once', async () => {

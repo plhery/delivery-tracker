@@ -285,7 +285,7 @@ export function buildEvents(
       location: location || null,
       occurred_at: occurredAt,
       provider_event_id: identity,
-      raw_data: { ...raw, stage_source: stageSource(declaredStage, description) },
+      raw_data: { ...raw, stage_source: stageSource(declaredStage, description, raw.stage_source) },
     });
   }
   if (rows.length === 0 && current && result.last_status_text) {
@@ -301,7 +301,7 @@ export function buildEvents(
         provider_event_id: providerEventId(carrierId, result.last_update, '', description),
         raw_data: {
           time: result.last_update,
-          stage_source: stageSource(String(result.current_stage ?? ''), description),
+          stage_source: stageSource(String(result.current_stage ?? ''), description, result.current_stage_source),
         },
       });
     }
@@ -354,11 +354,33 @@ export function buildEvents(
         stage_source: stageSource(
           VALID_STAGES.has(declaredCurrent) ? declaredCurrent : String(matchingEvent?.stage ?? ''),
           description,
+          result.current_stage_source ?? matchingEvent?.stage_source,
         ),
       },
     });
   }
   return rows;
+}
+
+// Local-clock scans can need review even though they cannot supply a timed
+// timeline row. Their observation has no persisted sample event until a feed
+// establishes an instant; its identity is only used by the observation lookup.
+function localStatusObservationEvents(parcel: JsonObject, result: CarrierResult, carrierId: string): JsonObject[] {
+  const timezone = resultTimezone(carrierId, result);
+  return (result.events ?? []).flatMap((raw): JsonObject[] => {
+    if (eventTimestamp(raw.time, timezone) || typeof raw.local_time !== 'string' || !raw.local_time
+      || typeof raw.stage_source !== 'string') return [];
+    const description = String(raw.description ?? '').trim();
+    const stage = String(raw.stage ?? '');
+    if (!description || !VALID_STAGES.has(stage)) return [];
+    return [{
+      package_id: parcel.id,
+      stage,
+      description,
+      provider_event_id: providerEventId(carrierId, raw.local_time, String(raw.location ?? ''), description),
+      raw_data: { ...raw, stage_source: stageSource(stage, description, raw.stage_source) },
+    }];
+  });
 }
 
 // One sync reports a bounded sample: repeated wording is already deduplicated
@@ -651,12 +673,13 @@ export class TrackingSyncService {
     carrierId: string,
     context: SyncRunContext,
     reusedIdentities: ReadonlyMap<string, string> = new Map(),
+    localEvents: JsonObject[] = [],
   ): Promise<void> {
     for (const event of events) {
       const raw = isRecord(event.raw_data) ? event.raw_data : {};
       if (typeof raw.stage_source === 'string') recordStatusMapping(carrierId, raw.stage_source);
     }
-    const observations = collectStatusObservations(events, carrierId).map((observation) => {
+    const observations = collectStatusObservations([...events, ...localEvents], carrierId).map((observation) => {
       const stored = reusedIdentities.get(observation.provider_event_id);
       return stored ? { ...observation, provider_event_id: stored } : observation;
     });
@@ -1048,7 +1071,11 @@ export class TrackingSyncService {
         copies_skipped: [...matches.skipped.keys()].filter((id) => persistedIds.has(id)).length,
         atomic_with_package: true,
       });
-      await this.recordStatusObservations(eventsToPersist, sourceCarrierId, context, new Map([...matches.reused, ...matches.skipped]));
+      await this.recordStatusObservations(eventsToPersist, sourceCarrierId, context, new Map([...matches.reused, ...matches.skipped]), [
+        ...(fetched.earlierResult && fetched.earlierCarrierId
+          ? localStatusObservationEvents(parcel, fetched.earlierResult, fetched.earlierCarrierId) : []),
+        ...localStatusObservationEvents(parcel, result, sourceCarrierId),
+      ]);
       const completion = {
         outcome,
         sourceCarrier: sourceCarrierId,

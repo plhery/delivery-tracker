@@ -123,8 +123,12 @@ raw evidence, event identities, timestamps and notification receipts, and recomp
 current stage only when the newest milestone changes.
 
 Each event records its stage source in `tracking_events.raw_data.stage_source`:
-`carrier_map` (explicit adapter stage), `wording:<rule>` (classifier rule that matched), or
-`none` (fallback).
+`carrier_map` (explicit carrier vocabulary or provider-code mapping), `wording:<rule>`
+(classifier rule that matched), or `none` (fallback). The sync preserves the scraper's
+source, including on unresolved `pending` scans and observed milestones. Universal
+wording rules remain eligible for review even when their adapter already assigned a stage.
+Local-clock wording is recorded without a sample timeline event when its instant is
+unresolved. It never creates a timestamped scan just to populate the review queue.
 
 Review, most frequent first:
 
