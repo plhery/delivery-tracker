@@ -644,7 +644,7 @@
   "share.gift.title": "Zapakuj jako prezent",
   "share.gift.note": "Liścik, widoczny po doręczeniu",
   "share.gift.from": "Od",
-  "share.gift.private": "Zostaje w linku, nigdy na serwerach Peek.",
+  "share.gift.private": "Bezpiecznie przechowywane przez Peek; udostępniane dopiero po doręczeniu.",
   "share.works.until": "Działa do {{date}}",
   "share.works.account": "Zachowaj go na dłużej",
   "share.action": "Udostępnij…",

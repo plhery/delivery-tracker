@@ -7509,6 +7509,9 @@
           },
           "alerts": {
             "$ref": "#/components/schemas/ParcelAlerts"
+          },
+          "giftWords": {
+            "$ref": "#/components/schemas/GiftWords"
           }
         }
       },
@@ -7896,6 +7899,9 @@
           "shared": {
             "type": "boolean",
             "description": "False stops the sharing; true resumes it."
+          },
+          "giftWords": {
+            "$ref": "#/components/schemas/GiftWords"
           }
         }
       },
@@ -7966,7 +7972,7 @@
       "ParcelShare": {
         "type": "object",
         "additionalProperties": false,
-        "description": "The link an account shares one of its parcels through. The parcel's name is not part of it: the client adds it after # in the address it copies.",
+        "description": "The link an account shares one of its parcels through, with its protected gift message.",
         "required": [
           "id",
           "showNumber",
@@ -7987,6 +7993,9 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "giftWords": {
+            "$ref": "#/components/schemas/GiftWords"
           }
         }
       },
@@ -8019,6 +8028,42 @@
           },
           "gift": {
             "type": "boolean"
+          },
+          "giftWords": {
+            "$ref": "#/components/schemas/GiftWords"
+          }
+        }
+      },
+      "GiftWords": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Gift contents and message stored with the link. Released only to its owner or after delivery.",
+        "required": [
+          "name",
+          "note",
+          "from"
+        ],
+        "properties": {
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 80
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 280
+          },
+          "from": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 60
           }
         }
       }

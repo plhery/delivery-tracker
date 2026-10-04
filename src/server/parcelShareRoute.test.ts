@@ -108,3 +108,25 @@ it('passes a database failure on as one', async () => {
   vi.spyOn(SupabaseUserClient.prototype, 'sharePackage').mockRejectedValue(new SupabaseError('database down', 503));
   expect((await request(PUT, 'PUT', { gift: true })).status).toBe(502);
 });
+
+
+it('saves and reads a protected gift message through the account sharing route', async () => {
+  const giftWords = { name: 'Trail shoes', note: 'Happy birthday!', from: 'Sam' };
+  const store = vi.spyOn(SupabaseUserClient.prototype, 'sharePackage').mockResolvedValue({ ...share, giftWords, created: false });
+  const response = await request(PUT, 'PUT', { giftWords: { ...giftWords, note: ' Happy\n birthday! ' } });
+  expect(response.status).toBe(200);
+  expect(store).toHaveBeenCalledExactlyOnceWith(packageId, { giftWords });
+  expect((await response.json()).link.giftWords).toEqual(giftWords);
+  vi.spyOn(SupabaseUserClient.prototype, 'packageShare').mockResolvedValue({ ...share, giftWords });
+  expect((await (await request(GET, 'GET')).json()).link.giftWords).toEqual(giftWords);
+});
+
+it('rejects malformed or oversized gift words before any write', async () => {
+  const store = vi.spyOn(SupabaseUserClient.prototype, 'sharePackage');
+  for (const giftWords of [null, [], 'message', {}, { name: null, note: 1, from: null },
+    { name: 'a'.repeat(81), note: null, from: null }, { name: null, note: 'a'.repeat(281), from: null },
+    { name: null, note: null, from: 'a'.repeat(61) }]) {
+    expect((await request(PUT, 'PUT', { giftWords })).status).toBe(400);
+  }
+  expect(store).not.toHaveBeenCalled();
+});

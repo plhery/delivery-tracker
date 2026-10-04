@@ -644,7 +644,7 @@
   "share.gift.title": "Wrap as a gift",
   "share.gift.note": "A note, shown once it’s delivered",
   "share.gift.from": "From",
-  "share.gift.private": "Kept in the link, never on Peek’s servers.",
+  "share.gift.private": "Stored securely by Peek; shared only after delivery.",
   "share.works.until": "Works until {{date}}",
   "share.works.account": "Keep it longer",
   "share.action": "Share…",

@@ -34,8 +34,8 @@ export function parcelLinkURL(id: string, origin = window.location.origin): stri
 }
 
 /**
- * What a link carries after its `#`, which never reaches a server: the
- * parcel's name (`n`), and for a gift a note (`g`) and who it is from (`f`).
+ * A link's words: its public name and protected gift message. Older links
+ * carried all three in the fragment; new gift links fetch them from the server.
  */
 export interface LinkWords {
   name: string | null;
@@ -68,17 +68,10 @@ export function linkNameFromHash(hash: string): string | null {
   return linkWordsFromHash(hash).name;
 }
 
-/**
- * A parcel's address with the words its sharer chose to send along. They go
- * after the `#`, so they reach the recipient's browser and no server.
- */
+/** A parcel's address with an optional public name. Gift messages are never written into URLs. */
 export function parcelShareURL(id: string, words: Partial<LinkWords> = {}, origin = window.location.origin): string {
-  const parts = (Object.entries(WORD_KEYS) as [string, keyof LinkWords][])
-    .map(([key, word]): [string, string | null] => [key, word === 'name' ? cleanParcelName(words.name)
-      : cleanLinkText(words[word], word === 'note' ? MAX_GIFT_NOTE_LENGTH : MAX_GIFT_FROM_LENGTH)])
-    .filter((entry): entry is [string, string] => entry[1] !== null)
-    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`);
-  return parcelLinkURL(id, origin) + (parts.length ? `#${parts.join('&')}` : '');
+  const name = cleanParcelName(words.name);
+  return parcelLinkURL(id, origin) + (name ? `#n=${encodeURIComponent(name)}` : '');
 }
 
 /** The name in the open link's address. The address keeps it: a reload or a share still has it. */

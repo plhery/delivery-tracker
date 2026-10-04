@@ -397,13 +397,13 @@ final class ParcelStore: ObservableObject {
                 return link
             },
             share: { [self] settings in
-                if isDemo { return demoShares.share(id, showNumber: settings.showNumber, gift: settings.gift) }
+                if isDemo { return demoShares.share(id, showNumber: settings.showNumber, gift: settings.gift, giftWords: settings.giftWords) }
                 if isGuest {
-                    guard let link = try await device.setShare(id: id, showNumber: settings.showNumber, gift: settings.gift) else { throw DeliveryAPIError.invalidResponse }
+                    guard let link = try await device.setShare(id: id, showNumber: settings.showNumber, gift: settings.gift, giftWords: settings.giftWords) else { throw DeliveryAPIError.invalidResponse }
                     return link
                 }
                 let generation = session.generation
-                let link = try await api.shareParcel(id: id, ShareParcelRequest(showNumber: settings.showNumber, gift: settings.gift))
+                let link = try await api.shareParcel(id: id, ShareParcelRequest(showNumber: settings.showNumber, gift: settings.gift, giftWords: settings.giftWords))
                 try session.checkGeneration(generation)
                 return link
             },

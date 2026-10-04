@@ -142,8 +142,9 @@ test('a gift stays a surprise until it is delivered, then shows its note and wha
   await sheet.getByRole('button', { name: 'Copy' }).click();
   await expect(sheet.getByText('Link copied')).toBeVisible();
   const link = await copied(page);
-  // The name, the note and the signature travel after the #, which no server sees.
-  expect(link).toMatch(/\/p\/[2-9A-HJ-NP-Za-km-z]{12}#n=Belgian%20chocolate&g=Happy%20birthday.*&f=Sam$/);
+  // Gift words stay with the link and never appear in its address.
+  expect(link).toMatch(/\/p\/[2-9A-HJ-NP-Za-km-z]{12}$/);
+  expect(new URL(link).hash).toBe('');
   await sheet.getByRole('button', { name: 'Close' }).click();
   // The sender keeps the usual page, marked as a gift.
   await expect(page.locator('.peekp-card__gift')).toHaveText('Gift');
@@ -156,8 +157,8 @@ test('a gift stays a surprise until it is delivered, then shows its note and wha
   await expect(recipient.locator('.peekp-card__detail')).toHaveText(/^Arrives today/);
   await expect(recipient.getByText('What’s inside and who sent it stay a surprise until it’s delivered.')).toBeVisible();
   await expect(recipient.locator('.parcel-illustration__ribbon')).toBeVisible();
-  // The browser has the words; the page shows none of them, nor the sender or the number.
-  expect(recipient.url()).toContain('g=Happy%20birthday');
+  // Neither the URL nor the viewer response reveals the message before delivery.
+  expect(new URL(recipient.url()).hash).toBe('');
   await expect(recipient.locator('body')).not.toContainText(/Belgian chocolate|Happy birthday|Chocolaterie|chocolatier|Brussels|DEMOCHOC|Tracking number/i);
   await expect(recipient.locator('body')).not.toContainText(/\bSam\b/);
   await expect(recipient.getByText('Left the sender')).toHaveCount(1);

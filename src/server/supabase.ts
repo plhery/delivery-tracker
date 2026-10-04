@@ -1,5 +1,6 @@
 import 'server-only';
 
+import type { ApiGiftWords } from '../generated/apiContract';
 import { ALL_NOTIFICATION_STAGES } from '../lib/notificationPresets';
 import type { DeliveredTime } from './email/types';
 import { isRecord, type JsonObject } from './types';
@@ -113,13 +114,21 @@ function usageStats(value: unknown): PublicUsageStats {
 }
 
 /** The live link an account shares a parcel through. */
-export interface ParcelShare { id: string; showNumber: boolean; gift: boolean; createdAt: string }
+export interface ParcelShare { id: string; showNumber: boolean; gift: boolean; createdAt: string; giftWords?: ApiGiftWords }
 
 function parcelShare(value: unknown): ParcelShare {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.created_at !== 'string') {
     throw new SupabaseError('Supabase did not return the shared link');
   }
-  return { id: value.id, showNumber: value.show_number === true, gift: value.gift === true, createdAt: value.created_at };
+  const words = value.gift_words;
+  return {
+    id: value.id, showNumber: value.show_number === true, gift: value.gift === true, createdAt: value.created_at,
+    ...(isRecord(words) ? { giftWords: {
+      name: typeof words.name === 'string' ? words.name : null,
+      note: typeof words.note === 'string' ? words.note : null,
+      from: typeof words.from === 'string' ? words.from : null,
+    } } : {}),
+  };
 }
 
 /** A delivered scan claimed for an email: what must be sent now. */
@@ -1190,7 +1199,7 @@ export class SupabaseServiceClient extends SupabaseClient {
   async updateParcelLink(
     linkId: string,
     ownerKeyHash: string,
-    changes: { showNumber?: boolean; gift?: boolean; shared?: boolean },
+    changes: { showNumber?: boolean; gift?: boolean; shared?: boolean; giftWords?: ParcelShare['giftWords'] },
   ): Promise<StoredParcelLink & { transition: 'stopped' | 'started' | null } | null> {
     const result = await this.request('/rest/v1/rpc/update_parcel_link', {
       method: 'POST',
@@ -1200,6 +1209,7 @@ export class SupabaseServiceClient extends SupabaseClient {
         p_show_number: changes.showNumber ?? null,
         p_gift: changes.gift ?? null,
         p_shared: changes.shared ?? null,
+        p_gift_words: changes.giftWords ?? null,
       },
     });
     if (result === null) return null;
@@ -1381,11 +1391,11 @@ export class SupabaseUserClient extends SupabaseClient {
   /** Shares the parcel: makes its link when none is live, else changes what the live one shows. */
   async sharePackage(
     packageId: string,
-    shown: { showNumber?: boolean; gift?: boolean },
+    shown: { showNumber?: boolean; gift?: boolean; giftWords?: ParcelShare['giftWords'] },
   ): Promise<ParcelShare & { created: boolean }> {
     const result = await this.request('/rest/v1/rpc/share_owned_package', {
       method: 'POST',
-      body: { p_package_id: packageId, p_show_number: shown.showNumber ?? null, p_gift: shown.gift ?? null },
+      body: { p_package_id: packageId, p_show_number: shown.showNumber ?? null, p_gift: shown.gift ?? null, p_gift_words: shown.giftWords ?? null },
     }).catch(ownedPackageError);
     return { ...parcelShare(result), created: isRecord(result) && result.created === true };
   }

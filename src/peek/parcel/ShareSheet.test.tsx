@@ -36,7 +36,9 @@ const previewNumber = () => document.querySelector('.peeks-preview__number');
 
 beforeEach(() => {
   mocks.track.mockReset();
-  mocks.update.mockReset().mockImplementation(async (_id: string, _key: string, changes: ParcelLinkChanges) => owned({
+  let current = owned();
+  mocks.update.mockReset().mockImplementation(async (_id: string, _key: string, changes: ParcelLinkChanges) => current = owned({
+    ...current.link,
     ...(typeof changes.showNumber === 'boolean' ? { showNumber: changes.showNumber } : {}),
     ...(typeof changes.gift === 'boolean' ? { gift: changes.gift } : {}),
     ...(typeof changes.shared === 'boolean' ? { shared: changes.shared } : {}),
@@ -155,7 +157,7 @@ describe('the share sheet of a looked-up parcel', () => {
     expect(screen.getByLabelText('Parcel link')).toHaveTextContent(new RegExp(`${LINK_ID}$`));
   });
 
-  it('wraps the parcel as a gift, with an optional note and who it is from in the link’s # part', async () => {
+  it('saves gift words with the owner key before sharing a URL that contains none of them', async () => {
     const share = vi.fn(async () => undefined);
     Object.defineProperty(navigator, 'share', { configurable: true, value: share });
     const user = userEvent.setup();
@@ -163,7 +165,7 @@ describe('the share sheet of a looked-up parcel', () => {
     await user.click(toggle('Wrap as a gift'));
     expect(mocks.update).toHaveBeenCalledExactlyOnceWith(LINK_ID, OWNER_KEY, { gift: true });
     const note = await screen.findByRole('textbox', { name: 'A note, shown once it’s delivered' });
-    expect(note).toHaveAccessibleDescription('Kept in the link, never on Peek’s servers.');
+    expect(note).toHaveAccessibleDescription('Stored securely by Peek; shared only after delivery.');
     // The card is the wrapped parcel now: when it arrives, and nothing about what it is or its number.
     expect(preview('What they’ll see until it’s delivered').getByText('Something’s on its way to you')).toBeVisible();
     expect(previewNumber()).toBeNull();
@@ -173,16 +175,37 @@ describe('the share sheet of a looked-up parcel', () => {
     await user.click(toggle('Show its name'));
     expect(linkNote(LINK_ID).share).toEqual({ name: true, note: 'Happy birthday, Alex!', from: 'Sam' });
     await user.click(screen.getByRole('button', { name: 'Share…' }));
-    expect(share).toHaveBeenCalledWith({ url: `${ADDRESS}#n=New%20sneakers&g=Happy%20birthday%2C%20Alex!&f=Sam` });
-    // Nothing of it went to the server: only the switch did.
-    expect(mocks.update).toHaveBeenCalledTimes(1);
-    expect(JSON.stringify(mocks.update.mock.calls)).not.toMatch(/birthday|Sam|sneakers/);
+    expect(share).toHaveBeenCalledWith({ url: ADDRESS });
+    expect(mocks.update).toHaveBeenLastCalledWith(LINK_ID, OWNER_KEY, {
+      giftWords: { name: 'New sneakers', note: 'Happy birthday, Alex!', from: 'Sam' },
+    });
     // No longer a gift: the note stays on the device, and out of the link.
     await user.click(toggle('Wrap as a gift'));
     await waitFor(() => expect(screen.queryByRole('textbox')).toBeNull());
     expect(screen.getByLabelText('Parcel link')).toHaveTextContent(new RegExp(`${LINK_ID}#n=New%20sneakers$`));
     expect(preview().getByText('New sneakers')).toBeVisible();
     expect(previewNumber()).toHaveTextContent('••• 99');
+  });
+
+  it('waits for the gift message to be saved before copying, and copies nothing if saving fails', async () => {
+    const user = userEvent.setup();
+    const copied = clipboard();
+    let resolve: (view: ParcelLinkView) => void = () => undefined;
+    mocks.update.mockReturnValueOnce(new Promise<ParcelLinkView>((done) => { resolve = done; }));
+    noteLink(LINK_ID, { share: { name: true, note: 'Surprise!', from: 'Sam' } });
+    render(<OwnerSheet initial={owned({ gift: true })} />);
+    expect(screen.getByLabelText('Parcel link')).toHaveTextContent(new RegExp(`${LINK_ID}$`));
+    await user.click(screen.getByRole('button', { name: 'Copy' }));
+    expect(copied).not.toHaveBeenCalled();
+    expect(mocks.update).toHaveBeenCalledExactlyOnceWith(LINK_ID, OWNER_KEY, {
+      giftWords: { name: 'New sneakers', note: 'Surprise!', from: 'Sam' },
+    });
+    resolve(owned({ gift: true }));
+    await waitFor(() => expect(copied).toHaveBeenCalledExactlyOnceWith(ADDRESS));
+    mocks.update.mockRejectedValueOnce(new ParcelLinkError('offline'));
+    await user.click(screen.getByRole('button', { name: 'Copy' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/connection/i);
+    expect(copied).toHaveBeenCalledTimes(1);
   });
 
   it('shares through the system’s sheet, copies where there is none, and says when neither works', async () => {
@@ -347,7 +370,7 @@ describe('the share sheet of an account’s parcel', () => {
     const client = account(link({ showNumber: true, gift: true }));
     const user = userEvent.setup();
     render(<AccountShareSheet parcel={parcel} client={client} onClose={() => undefined} />);
-    expect(await screen.findByLabelText('Parcel link')).toHaveTextContent(`${LINK_ID}#n=New%20sneakers&g=Happy%20birthday!&f=Sam`);
+    expect(await screen.findByLabelText('Parcel link')).toHaveTextContent(LINK_ID);
     expect(toggle('Show the full number')).toBeChecked();
     expect(toggle('Wrap as a gift')).toBeChecked();
     expect(screen.getByRole('textbox', { name: 'From' })).toHaveValue('Sam');

@@ -271,15 +271,15 @@ final class DeviceParcels {
     }
 
     /// Changes what the link shows, resuming its sharing if it was stopped; nil stops it.
-    func setShare(id: UUID, showNumber: Bool, gift: Bool, shared: Bool = true) async throws -> ParcelShare? {
+    func setShare(id: UUID, showNumber: Bool, gift: Bool, shared: Bool = true, giftWords: GiftWords? = nil) async throws -> ParcelShare? {
         guard let client, let entry = entries.first(where: { $0.parcel.id == id }), let key = keys[entry.linkID] else { throw DeliveryAPIError.parcelMissing }
-        let change = shared ? UpdateParcelLinkRequest(showNumber: showNumber, gift: gift, shared: true) : UpdateParcelLinkRequest(shared: false)
+        let change = shared ? UpdateParcelLinkRequest(showNumber: showNumber, gift: gift, shared: true, giftWords: giftWords) : UpdateParcelLinkRequest(shared: false)
         return Self.share(try await client.update(entry.linkID, key, change).link)
     }
 
     private static func share(_ link: ParcelLink) -> ParcelShare? {
         guard link.shared != false else { return nil }
-        return ParcelShare(id: link.id, showNumber: link.showNumber ?? false, gift: link.gift ?? false, createdAt: link.createdAt)
+        return ParcelShare(id: link.id, showNumber: link.showNumber ?? false, gift: link.gift ?? false, createdAt: link.createdAt, giftWords: link.giftWords)
     }
 
     /// Whether any of the device's parcels is archived, for the account that takes them over.

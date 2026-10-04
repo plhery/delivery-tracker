@@ -685,6 +685,16 @@ describe('changing what a lookup shows', () => {
     expect(counted).toHaveBeenCalledExactlyOnceWith('lookup', 'changed');
   });
 
+  it('saves a gift message using only the owner key and returns it to the owner', async () => {
+    const giftWords = { name: 'Trail shoes', note: 'Happy birthday!', from: 'Sam' };
+    const stored = store(null, { gift: true, gift_words: giftWords });
+    const response = await update({ giftWords: { ...giftWords, note: ' Happy\n birthday! ' } });
+    expect(response.status).toBe(200);
+    expect(stored).toHaveBeenCalledExactlyOnceWith(linkId, keyHash, { giftWords });
+    expect((await response.json()).link.giftWords).toEqual(giftWords);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
   it.each([['stopped', false], ['started', true]] as const)('counts sharing %s', async (transition, shared) => {
     const stored = store(transition, { stopped: !shared });
     const counted = vi.spyOn(metrics, 'recordParcelShare');

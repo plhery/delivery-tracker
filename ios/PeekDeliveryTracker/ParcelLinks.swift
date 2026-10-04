@@ -242,7 +242,12 @@ final class ParcelLinkStore: ObservableObject {
             let response = try await read(route.id)
             guard current == generation, !Task.isCancelled else { return }
             refreshFailure = nil
-            if let response { phase = .shown(response) } else { gone() }
+            if let response {
+                if response.gift != .wrapped, let words = response.link.giftWords {
+                    self.route = ParcelLinkRoute(id: route.id, name: words.name, note: words.note, from: words.from)
+                }
+                phase = .shown(response)
+            } else { gone() }
         } catch is ParcelLinkStopped {
             guard current == generation, !Task.isCancelled else { return }
             gone(.stopped)

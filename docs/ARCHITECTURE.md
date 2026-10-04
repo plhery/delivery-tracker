@@ -112,11 +112,10 @@ Key server modules:
   own, at most one live link per parcel. The database functions behind
   `/api/packages/{id}/share` run under the user's token and refuse another account's parcel
   like a missing one. A lookup's owner changes its link with the owner key.
-  - A viewer's answer is the same allow-list for both kinds of link. The server never sends
-    a viewer the parcel's label: a name, a gift note and who a gift is from travel after `#`
-    in the link (`#n=…&g=…&f=…`) and stay in the browser. The share sheet adds them to the
-    link it copies or shares; the page of a gift on its way renders none of them and does
-    not save the name to the device.
+  - A viewer's answer uses the same allow-list for both kinds of link. A public name can
+    travel after `#n=…`. Gift names, messages and signatures are stored with the link,
+    saved before sharing or copying, and sent only to its owner or after delivery. Gift
+    links carry no words in their address. Old links retain the words already in their URL.
   - An account's link is made when its owner shares or copies it, not when the share sheet
     opens.
   - **Gifts**: until the parcel is delivered, a gift's viewer gets no sender, weight, size,

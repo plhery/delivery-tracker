@@ -1,7 +1,6 @@
 import Foundation
 
-/// What a sharer sends along with a parcel's link. It travels after the link's `#` and never
-/// reaches the service.
+/// Gift words are kept by the service until delivery; public names can travel after `#`.
 struct ParcelShareWords: Codable, Equatable, Sendable {
     /// The link carries the parcel's name.
     var name = false
@@ -98,13 +97,14 @@ struct DemoParcelShares {
     }
 
     /// Makes the parcel's link when it has none, else changes what the link shows.
-    func share(_ parcelID: UUID, showNumber: Bool, gift: Bool, now: Date = Date()) -> ParcelShare {
+    func share(_ parcelID: UUID, showNumber: Bool, gift: Bool, giftWords: GiftWords? = nil, now: Date = Date()) -> ParcelShare {
         var links = read()
         var generator = SystemRandomNumberGenerator()
         var link = links[parcelID.uuidString]
             ?? ParcelShare(id: ParcelLinkRoute.madeUpID(using: &generator), showNumber: showNumber, gift: gift, createdAt: DateParser.isoString(now))
         link.showNumber = showNumber
         link.gift = gift
+        if let giftWords { link.giftWords = giftWords }
         links[parcelID.uuidString] = link
         write(links)
         return link
@@ -138,6 +138,7 @@ final class ParcelShareModel: ObservableObject {
     struct Settings: Equatable, Sendable {
         var showNumber = false
         var gift = false
+        var giftWords: GiftWords? = nil
     }
 
     enum Field: Hashable, Sendable { case showNumber, gift }
@@ -168,7 +169,7 @@ final class ParcelShareModel: ObservableObject {
     @Published private var settings = Settings()
     /// Switches on their way to the service: shown at once, and put back if the service refuses.
     @Published private var saving: [Field: Bool] = [:]
-    /// What the link carries after its `#`, as typed.
+    /// The public name and gift message, as typed.
     @Published var words = ParcelShareWords() {
         didSet {
             let limited = words.limited
@@ -205,9 +206,11 @@ final class ParcelShareModel: ObservableObject {
         return ParcelLinkWords(name: words.name ? name : nil, note: gift ? words.note : nil, from: gift ? words.from : nil)
     }
 
+    var savingChanges: Bool { !saving.isEmpty }
+
     /// The address to hand out, once there is a link.
     var address: URL? {
-        link.map { ParcelLinkRoute.address(id: $0.id, words: carried, baseURL: baseURL) }
+        link.map { ParcelLinkRoute.address(id: $0.id, words: shown.gift ? ParcelLinkWords() : carried, baseURL: baseURL) }
     }
 
     /// Reads the parcel's link. Without an answer the sheet offers what it can: sharing makes or finds the link.
@@ -244,7 +247,8 @@ final class ParcelShareModel: ObservableObject {
 
     /// The address to share or copy, with the link made now when there is none. Nil when that failed.
     func addressToHandOut() async -> URL? {
-        if let address { failureKey = nil; return address }
+        guard !loading, !working, !savingChanges else { return nil }
+        if !shown.gift, let address { failureKey = nil; return address }
         guard await create() else { return nil }
         return address
     }
@@ -283,7 +287,14 @@ final class ParcelShareModel: ObservableObject {
         failureKey = nil
         defer { working = false }
         do {
-            adopt(try await client.share(shown))
+            var request = shown
+            if request.gift {
+                let clean = carried
+                request.giftWords = GiftWords(name: clean.name,
+                    note: ParcelLinkWords.clean(clean.note ?? "", limit: ParcelLinkWords.noteLimit),
+                    from: ParcelLinkWords.clean(clean.from ?? "", limit: ParcelLinkWords.fromLimit))
+            }
+            adopt(try await client.share(request))
             return true
         } catch {
             failureKey = Self.failureKey(error)
@@ -298,7 +309,9 @@ final class ParcelShareModel: ObservableObject {
         settings = Settings(showNumber: answer.showNumber, gift: answer.gift)
         guard !known else { return }
         // A link found again carries what this device kept for it; a new one, what was typed for it.
-        if words == ParcelShareWords(), let kept = notes.words(for: parcelID) {
+        if words == ParcelShareWords(), let saved = answer.giftWords {
+            words = ParcelShareWords(name: saved.name != nil, note: saved.note ?? "", from: saved.from ?? "")
+        } else if words == ParcelShareWords(), let kept = notes.words(for: parcelID) {
             remembered = kept
             words = kept
         } else {
@@ -323,5 +336,16 @@ final class ParcelShareModel: ObservableObject {
         case .authenticationExpired: return "native.error.authenticationExpired"
         default: return "share.failed"
         }
+    }
+}
+
+extension GiftWords {
+    private enum WordKeys: String, CodingKey { case name, note, from }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: WordKeys.self)
+        try container.encode(name, forKey: .name)
+        try container.encode(note, forKey: .note)
+        try container.encode(from, forKey: .from)
     }
 }

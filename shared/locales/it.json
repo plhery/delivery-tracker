@@ -644,7 +644,7 @@
   "share.gift.title": "Incarta come regalo",
   "share.gift.note": "Un biglietto, mostrato a consegna avvenuta",
   "share.gift.from": "Da parte di",
-  "share.gift.private": "Resta nel link, mai sui server di Peek.",
+  "share.gift.private": "Conservato in sicurezza da Peek; condiviso solo dopo la consegna.",
   "share.works.until": "Funziona fino al {{date}}",
   "share.works.account": "Tienilo più a lungo",
   "share.action": "Condividi…",

@@ -124,14 +124,13 @@ final class ParcelShareTests: XCTestCase {
         let address = ParcelLinkRoute.address(id: linkID, words: words, baseURL: base)
         // The same escapes as JavaScript's encodeURIComponent, in the order n, g, f.
         XCTAssertEqual(address.absoluteString,
-                       "https://peektracker.com/p/g8Rn3yJe2SuX#n=New%20sneakers%20%F0%9F%91%9F"
-                       + "&g=Happy%20birthday%2C%20Alex!%20(It's%20me)%20%26%20co%20%231%20100%25&f=Sam%20%26%20L%C3%A9a")
+                       "https://peektracker.com/p/g8Rn3yJe2SuX#n=New%20sneakers%20%F0%9F%91%9F")
         // What is written is what is read back.
         XCTAssertEqual(ParcelLinkRoute(url: address, baseURL: base),
-                       ParcelLinkRoute(id: linkID, name: words.name, note: words.note, from: words.from))
+                       ParcelLinkRoute(id: linkID, name: words.name))
         // Words are cleaned on their way out, and empty ones left out.
         XCTAssertEqual(ParcelLinkRoute.address(id: linkID, words: ParcelLinkWords(name: " ", note: "a\nb", from: ""), baseURL: base).absoluteString,
-                       "https://peektracker.com/p/g8Rn3yJe2SuX#g=a%20b")
+                       "https://peektracker.com/p/g8Rn3yJe2SuX")
         // A development site keeps its port; a query never travels.
         XCTAssertEqual(ParcelLinkRoute.address(id: linkID, words: ParcelLinkWords(name: "Lamp"), baseURL: URL(string: "http://localhost:3000")!).absoluteString,
                        "http://localhost:3000/p/g8Rn3yJe2SuX#n=Lamp")
@@ -301,6 +300,7 @@ final class ParcelShareTests: XCTestCase {
                     }
                     link?.showNumber = settings.showNumber
                     link?.gift = settings.gift
+                    if let words = settings.giftWords { link?.giftWords = words }
                     return link!
                 },
                 stop: { [self] in
@@ -340,14 +340,47 @@ final class ParcelShareTests: XCTestCase {
 
         let address = await model.addressToHandOut()
         XCTAssertEqual(service.calls, ["GET", "PUT true true"])
-        XCTAssertEqual(address?.absoluteString, "https://peektracker.com/p/2222222222BA#n=New%20sneakers&g=Enjoy")
+        XCTAssertEqual(address?.absoluteString, "https://peektracker.com/p/2222222222BA")
         XCTAssertEqual(model.address, address)
         XCTAssertEqual(ParcelShareNotes(defaults: defaults).words(for: model.parcelID), ParcelShareWords(name: true, note: "Enjoy", from: ""))
 
         // The same link is handed out from then on.
         let again = await model.addressToHandOut()
         XCTAssertEqual(again, address)
-        XCTAssertEqual(service.calls.count, 2)
+        XCTAssertEqual(service.calls.count, 3)
+        XCTAssertEqual(service.link?.giftWords, GiftWords(name: "New sneakers", note: "Enjoy", from: nil))
+    }
+
+    @MainActor func testGiftCopyWaitsForTheMessageAndFailsWhenItCannotBeSaved() async {
+        let (defaults, suite) = defaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let service = Service()
+        service.link = ParcelShare(id: linkID, showNumber: false, gift: true, createdAt: "2026-10-01T08:00:00.000Z")
+        let model = model(service, defaults: defaults)
+        await model.load()
+        model.words = ParcelShareWords(name: true, note: "Surprise!", from: "Sam")
+        service.gated = true
+        let copy = Task { await model.addressToHandOut() }
+        while service.gate == nil { await Task.yield() }
+        XCTAssertTrue(model.working)
+        XCTAssertNil(model.address?.fragment)
+        service.gate?.resume()
+        service.gate = nil
+        let address = await copy.value
+        XCTAssertNil(address?.fragment)
+        XCTAssertEqual(service.link?.giftWords, GiftWords(name: "New sneakers", note: "Surprise!", from: "Sam"))
+        service.gated = false
+        service.failure = DeliveryAPIError.serviceFailed(502)
+        let failed = await model.addressToHandOut()
+        XCTAssertNil(failed)
+        XCTAssertEqual(model.failureKey, "share.failed")
+    }
+
+    func testEmptyGiftFieldsAreEncodedAsNull() throws {
+        let body = try JSONSerialization.jsonObject(with: JSONEncoder().encode(GiftWords(note: "Enjoy"))) as! [String: Any]
+        XCTAssertTrue(body["name"] is NSNull)
+        XCTAssertTrue(body["from"] is NSNull)
+        XCTAssertEqual(body["note"] as? String, "Enjoy")
     }
 
     @MainActor func testASwitchIsShownAtOnceAndPutBackWhenTheServiceRefuses() async {
@@ -423,11 +456,11 @@ final class ParcelShareTests: XCTestCase {
         model.words.from = " Sam"
         XCTAssertEqual(model.address?.absoluteString, "https://peektracker.com/p/g8Rn3yJe2SuX#n=New%20sneakers")
         await model.set(.gift, to: true)
-        XCTAssertEqual(model.address?.absoluteString, "https://peektracker.com/p/g8Rn3yJe2SuX#n=New%20sneakers&g=Happy%20birthday!&f=Sam")
+        XCTAssertEqual(model.address?.absoluteString, "https://peektracker.com/p/g8Rn3yJe2SuX")
         XCTAssertEqual(model.words.note, "Happy birthday! ", "What is being typed keeps its spaces")
 
         model.words.name = false
-        XCTAssertEqual(model.address?.absoluteString, "https://peektracker.com/p/g8Rn3yJe2SuX#g=Happy%20birthday!&f=Sam")
+        XCTAssertEqual(model.address?.absoluteString, "https://peektracker.com/p/g8Rn3yJe2SuX")
 
         // What is typed stays within what a link may carry.
         model.words.note = String(repeating: "a", count: 300)

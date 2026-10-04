@@ -273,6 +273,24 @@ describe('useParcelLink', () => {
     expect(recentFor(LINK_ID)).toMatchObject({ name: 'trail running shoes' });
   });
 
+  it('reveals server-held words on delivery without ever putting them in the address', async () => {
+    history.replaceState(null, '', `/p/${LINK_ID}`);
+    const words = { name: 'trail running shoes', note: 'Happy birthday!', from: 'Sam' };
+    const underway = testView({ owner: false, stages: ['accepted', 'in_transit'] });
+    const delivered = testView({ owner: false, stages: ['accepted', 'in_transit', 'delivered'] });
+    answers({ ...underway, link: { ...underway.link, gift: true } },
+      { ...delivered, link: { ...delivered.link, gift: true, giftWords: words } });
+    const { result } = renderHook(() => useParcelLink(LINK_ID));
+    await pass(0);
+    expect(result.current.status).toBe('ready');
+    expect(result.current.words).toEqual({ name: null, note: null, from: null });
+    expect(recentFor(LINK_ID)?.name).toBeNull();
+    await act(() => result.current.refresh());
+    expect(result.current.words).toEqual(words);
+    expect(recentFor(LINK_ID)?.name).toBe(words.name);
+    expect(location.hash).toBe('');
+  });
+
   it('shows a gift’s sender everything it carries all along', async () => {
     history.replaceState(null, '', `/p/${LINK_ID}#g=${encodeURIComponent('Happy birthday!')}`);
     const view = testView();

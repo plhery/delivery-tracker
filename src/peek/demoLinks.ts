@@ -40,6 +40,7 @@ interface DemoLink {
   showNumber?: boolean;
   /** The sender, the contents and where it comes from stay hidden from viewers until it is delivered. */
   gift?: boolean;
+  giftWords?: ParcelLinkView['link']['giftWords'];
   /** Sharing was stopped: viewers see nothing, a lookup's owner still does. */
   stopped?: boolean;
   /** The parcel of the demo deliveries this link shares. */
@@ -182,6 +183,7 @@ export function createDemoLinks(
         forgetAt: link.account ? null : forgetAt(link), numberShown, canKeep: numberShown,
         ...(owner ? { showNumber: !!link.showNumber } : {}),
         gift: !!link.gift, shared: !link.stopped,
+        ...((owner || (link.gift && !wrapped)) && link.giftWords ? { giftWords: link.giftWords } : {}),
         // The demo has no push service: a browser's alert is only remembered here.
         alerts: { available: true, vapidPublicKey: null },
       },
@@ -211,7 +213,7 @@ export function createDemoLinks(
   const shared = (links: DemoLinks, packageId: string) =>
     Object.entries(links).find(([, link]) => link.account === packageId && !link.stopped) ?? null;
   const share = (id: string, link: DemoLink): ParcelShare =>
-    ({ id, showNumber: !!link.showNumber, gift: !!link.gift, createdAt: link.createdAt });
+    ({ id, showNumber: !!link.showNumber, gift: !!link.gift, createdAt: link.createdAt, ...(link.giftWords ? { giftWords: link.giftWords } : {}) });
 
   return {
     mode: 'demo',
@@ -303,6 +305,7 @@ export function createDemoLinks(
         ...link,
         ...(typeof changes.showNumber === 'boolean' ? { showNumber: changes.showNumber } : {}),
         ...(typeof changes.gift === 'boolean' ? { gift: changes.gift } : {}),
+        ...(changes.giftWords ? { giftWords: changes.giftWords } : {}),
         ...(typeof changes.shared === 'boolean' ? { stopped: !changes.shared } : {}),
       };
       // Stopping takes the viewers' alerts with it; the owner's stay.
@@ -348,6 +351,7 @@ export function createDemoLinks(
           parcel: { ...parcel, label: '', dpdPostcode: undefined, receiverName: undefined },
           ...(typeof changes.showNumber === 'boolean' ? { showNumber: changes.showNumber } : {}),
           ...(typeof changes.gift === 'boolean' ? { gift: changes.gift } : {}),
+        ...(changes.giftWords ? { giftWords: changes.giftWords } : {}),
         };
         save({ ...links, [id]: link });
         return share(id, link);

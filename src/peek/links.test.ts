@@ -359,6 +359,14 @@ describe('keeping links in an account', () => {
     expect(JSON.parse(String(init!.body))).toEqual({ links: [{ id: ID, key: KEY, label: 'For Mum' }, { id: 'k7Qm2xHd9RtX' }] });
   });
 
+  it('sends and decodes protected gift words on the owner update', async () => {
+    const giftWords = { name: 'Trail shoes', note: 'Enjoy!', from: 'Sam' };
+    const { links, request } = api(json({ ...owner, link: { ...owner.link, giftWords } }));
+    expect((await links.updateParcelLink(ID, KEY, { giftWords })).link.giftWords).toEqual(giftWords);
+    expect(JSON.parse(String(request.mock.calls[0][1]!.body))).toEqual({ giftWords });
+    expect(request.mock.calls[0][0]).not.toContain('Enjoy');
+  });
+
   it('types every way a claim can fail', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(json({ error: 'Parcel names can be at most 80 characters' }, 400))
@@ -378,6 +386,16 @@ describe('sharing a parcel of an account', () => {
   const auth = { userId: 'user-1', getAccessToken: async () => 'token' };
   const parcel = testParcel({ id: 'package/1', label: 'New sneakers' });
   const share = { id: ID, showNumber: true, gift: false, createdAt: '2026-10-02T08:00:00.000Z' };
+
+  it('sends gift words in the authenticated body and keeps them when decoding the shared link', async () => {
+    const giftWords = { name: 'Trail shoes', note: 'Enjoy!', from: 'Sam' };
+    const fetch = vi.fn<typeof globalThis.fetch>().mockImplementation(async () => json({ link: { ...share, gift: true, giftWords } }));
+    vi.stubGlobal('fetch', fetch);
+    const client = createAccountShare(auth);
+    expect((await client.share(parcel, { gift: true, giftWords })).giftWords).toEqual(giftWords);
+    expect(JSON.parse(String(fetch.mock.calls[0][1]!.body))).toEqual({ gift: true, giftWords });
+    expect((await client.current(parcel.id))?.giftWords).toEqual(giftWords);
+  });
 
   it('reads, makes or changes, and stops the link with the signed-in bearer, never sending the name', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>()

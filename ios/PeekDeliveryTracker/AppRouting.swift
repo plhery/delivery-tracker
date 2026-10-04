@@ -86,8 +86,8 @@ enum FriendInvitationLink {
     }
 }
 
-/// What a parcel link carries after its `#`, which never reaches a server: the parcel's name
-/// (`n`), and for a gift a note (`g`) and who it is from (`f`).
+/// A link's public name and gift message. Older links carry them in the fragment;
+/// new gift links read the message from the service after delivery.
 struct ParcelLinkWords: Equatable, Sendable {
     var name: String? = nil
     var note: String? = nil
@@ -161,7 +161,7 @@ struct ParcelLinkWords: Equatable, Sendable {
 }
 
 /// A parcel link, `/p/<id>`. The id is the capability. A name someone gave the parcel, and a
-/// gift's note and signature, travel only after the `#`, which never reaches a server.
+/// gift's note and signature, can be read from older fragments or from the service after delivery.
 struct ParcelLinkRoute: Equatable, Sendable {
     let id: String
     var name: String? = nil
@@ -188,7 +188,7 @@ struct ParcelLinkRoute: Equatable, Sendable {
         self.from = from
     }
 
-    /// The link's address on the site, with the words its sharer sends along after the `#`.
+    /// The link's address on the site, with an optional public name. Gift messages never go in URLs.
     static func address(
         id: String,
         words: ParcelLinkWords = ParcelLinkWords(),
@@ -196,7 +196,7 @@ struct ParcelLinkRoute: Equatable, Sendable {
     ) -> URL {
         var components = URLComponents(url: baseURL.appending(path: "p").appending(path: id), resolvingAgainstBaseURL: false)!
         components.query = nil
-        components.percentEncodedFragment = words.fragment
+        components.percentEncodedFragment = ParcelLinkWords(name: words.name).fragment
         return components.url!
     }
 

@@ -203,7 +203,7 @@ struct ParcelShareSheet: View {
                     .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(TactileButtonStyle())
-            .disabled(model.loading || model.working)
+            .disabled(model.loading || model.working || model.savingChanges)
         }
         .padding(.leading, 16)
         .padding(.trailing, 6)
@@ -297,7 +297,7 @@ struct ParcelShareSheet: View {
             .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(TactileButtonStyle())
-        .disabled(model.working)
+        .disabled(model.working || model.savingChanges)
     }
 
     private func line(_ text: String, symbol: String) -> some View {

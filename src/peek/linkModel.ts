@@ -1,5 +1,6 @@
 import type {
   ApiCarrierDetectionResponse,
+  ApiGiftWords,
   ApiClaimParcelResult,
   ApiParcelAlertPreset,
   ApiParcelAlerts,
@@ -28,11 +29,12 @@ export const PARCEL_ALERT_PRESETS: readonly ParcelAlertPreset[] = ['all', 'impor
 /** The link a signed-in person shares one of their parcels through. */
 export type ParcelShare = ApiParcelShare;
 
-/** What a link's owner can change: whether viewers read the whole number, whether it is a gift, whether it is shared at all. */
+/** What a link's owner can change: number visibility, gift message and wrapping, and whether it is shared. */
 export interface ParcelLinkChanges {
   showNumber?: boolean;
   gift?: boolean;
   shared?: boolean;
+  giftWords?: ApiGiftWords;
 }
 
 /** A browser's push subscription with what it wants to hear about, and in which language. */
@@ -47,7 +49,7 @@ export interface ParcelShareClient {
   /** The parcel's live link, or null while it is not shared. */
   current(parcelId: string): Promise<ParcelShare | null>;
   /** Makes the link when there is none, else changes it. */
-  share(parcel: ParcelWithEvents, changes?: Pick<ParcelLinkChanges, 'showNumber' | 'gift'>): Promise<ParcelShare>;
+  share(parcel: ParcelWithEvents, changes?: Pick<ParcelLinkChanges, 'showNumber' | 'gift' | 'giftWords'>): Promise<ParcelShare>;
   /** The link goes blank for good; sharing again makes a new one. */
   stop(parcelId: string): Promise<void>;
 }
@@ -205,6 +207,7 @@ export function parcelLinkView(response: ApiPublicParcelResponse): ParcelLinkVie
       ...(typeof link.showNumber === 'boolean' ? { showNumber: link.showNumber } : {}),
       canKeep: link.canKeep === true,
       gift: link.gift === true,
+      ...(link.giftWords ? { giftWords: link.giftWords } : {}),
       // Only a link that says it was stopped is: an answer from before sharing could be stopped is a shared one.
       shared: link.shared !== false,
       // A browser can only subscribe with the server's key. Whether the server emails accounts is said only when it does.

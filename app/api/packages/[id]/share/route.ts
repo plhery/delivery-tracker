@@ -40,8 +40,8 @@ async function ownParcel<Answer>(
   }
 }
 
-const shown = ({ id, showNumber, gift, createdAt }: ParcelShare) => ({
-  link: { id, showNumber, gift, createdAt: new Date(createdAt).toISOString() },
+const shown = ({ id, showNumber, gift, createdAt, giftWords }: ParcelShare) => ({
+  link: { id, showNumber, gift, createdAt: new Date(createdAt).toISOString(), ...(giftWords ? { giftWords } : {}) },
 }) satisfies ApiParcelShareResponse;
 
 /** The link the account shares this parcel through, or null. */
@@ -53,8 +53,7 @@ export const GET = apiRoute<PackageParameters>(async (context) => {
 
 /**
  * Shares the parcel: makes its link when none is live, else changes what the
- * live one shows. The parcel's name is not stored with the link; the client
- * adds it to the address it copies, after #.
+ * live one shows, including the gift message kept until delivery.
  */
 export const PUT = apiRoute<PackageParameters>(async (context) => {
   const client = requireUserClient(context);

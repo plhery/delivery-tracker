@@ -245,7 +245,7 @@ describe('one-off parcels and their links', () => {
     ]);
     // A value left out is sent as null: the database keeps what it has.
     expect(request.mock.calls[0][1]).toEqual({ method: 'POST', body: {
-      p_link_id: 'k7Qm2xHd9RtW', p_owner_key_hash: hash, p_show_number: null, p_gift: null, p_shared: false,
+      p_link_id: 'k7Qm2xHd9RtW', p_owner_key_hash: hash, p_show_number: null, p_gift: null, p_shared: false, p_gift_words: null,
     } });
     expect(request.mock.calls[1][1]!.body).toMatchObject({ p_show_number: true, p_gift: false, p_shared: null });
     expect(request.mock.calls[2][1]).toEqual({ method: 'POST', body: {
@@ -295,7 +295,7 @@ describe('one-off parcels and their links', () => {
     expect(request.mock.calls).toEqual([
       ['/rest/v1/rpc/owned_package_share', { method: 'POST', body: { p_package_id: 'package-1' } }],
       ['/rest/v1/rpc/owned_package_share', { method: 'POST', body: { p_package_id: 'package-1' } }],
-      ['/rest/v1/rpc/share_owned_package', { method: 'POST', body: { p_package_id: 'package-1', p_show_number: null, p_gift: false } }],
+      ['/rest/v1/rpc/share_owned_package', { method: 'POST', body: { p_package_id: 'package-1', p_show_number: null, p_gift: false, p_gift_words: null } }],
       ['/rest/v1/rpc/stop_owned_package_share', { method: 'POST', body: { p_package_id: 'package-1' } }],
       ['/rest/v1/rpc/stop_owned_package_share', { method: 'POST', body: { p_package_id: 'package-1' } }],
     ]);

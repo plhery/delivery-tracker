@@ -5,8 +5,8 @@ import { SAMPLE_LINK_ID } from './sample';
 /**
  * What this browser keeps about a parcel link besides the parcel itself: the
  * words its sharer sends along with it, and the alert this browser turned on.
- * None of it is stored on a server: the words travel in the link's `#` part,
- * and the server knows an alert only by the browser's push address.
+ * Gift drafts are saved with the link when shared. Public parcel names can
+ * travel after `#`; alerts are known by the browser's push address.
  */
 export const LINK_NOTES_STORAGE_KEY = 'sdt.peek.linknotes.v1'; // gitleaks:allow -- public localStorage name
 /** Only the latest links can still matter. */

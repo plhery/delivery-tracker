@@ -38,9 +38,7 @@ export interface ParcelLinkState {
   /** The name this device has for the parcel, or the one the link carries. */
   name: string | null;
   /**
-   * What the link carries after its `#`: the name, a gift's note and who it is
-   * from. All empty while the link shows a gift still on its way: the browser
-   * has them, the reader does not see them yet.
+   * The link's public name and protected gift message. Empty for a gift on its way.
    */
   words: LinkWords;
   /** Why the newest read failed; the view then is the last one that worked. */
@@ -139,7 +137,7 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
         const moved = !!earlier && !!result.parcel.expectedDelivery && earlier !== result.parcel.expectedDelivery;
         shown = result;
         // A gift on its way keeps its name to itself: the device does not learn it before the delivery.
-        rememberParcel({ id: linkId, view: result, suggestedName: isWrappedGift(result) ? null : linkWordsFromHash(window.location.hash).name });
+        rememberParcel({ id: linkId, view: result, suggestedName: isWrappedGift(result) ? null : (result.link.giftWords ?? linkWordsFromHash(window.location.hash)).name });
         setAnswer({ view: result, gone: false, trouble: null });
         if (scan || moved) {
           const inBackground = document.hidden;
@@ -214,7 +212,7 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
 
   const view = answer.view ?? (answer.gone ? null : recent?.snapshot ?? null);
   // Until the first answer says what the link is, nothing it carries is shown: it may be a gift.
-  const words = view && !isWrappedGift(view) ? carried : NO_WORDS;
+  const words = view && !isWrappedGift(view) ? view.link.giftWords ?? carried : NO_WORDS;
   return {
     status: answer.gone || (view ? 'ready' : 'loading'),
     view,

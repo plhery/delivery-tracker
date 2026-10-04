@@ -164,6 +164,7 @@ export function createApiLinks(request: typeof fetch = (input, init) => fetch(in
       const body: ApiUpdateParcelLinkRequest = {
         ...(typeof changes.showNumber === 'boolean' ? { showNumber: changes.showNumber } : {}),
         ...(typeof changes.gift === 'boolean' ? { gift: changes.gift } : {}),
+        ...(changes.giftWords ? { giftWords: changes.giftWords } : {}),
         ...(typeof changes.shared === 'boolean' ? { shared: changes.shared } : {}),
       };
       const response = await write('PATCH', `/api/public/parcels/${id}`, body, signal, key);
@@ -195,7 +196,7 @@ function shareLink(value: unknown): ParcelShare | null {
   if (!value || typeof value !== 'object') return null;
   const link = value as Partial<ParcelShare>;
   if (!isParcelLinkId(link.id)) throw new ParcelLinkError('server', { message: 'Unreadable share answer' });
-  return { id: link.id, showNumber: link.showNumber === true, gift: link.gift === true, createdAt: String(link.createdAt ?? '') };
+  return { id: link.id, showNumber: link.showNumber === true, gift: link.gift === true, createdAt: String(link.createdAt ?? ''), ...(link.giftWords ? { giftWords: link.giftWords } : {}) };
 }
 
 /**
@@ -225,6 +226,7 @@ export function createAccountShare(auth: ApiAuth): ParcelShareClient {
       const body: ApiShareParcelRequest = {
         ...(typeof changes.showNumber === 'boolean' ? { showNumber: changes.showNumber } : {}),
         ...(typeof changes.gift === 'boolean' ? { gift: changes.gift } : {}),
+        ...(changes.giftWords ? { giftWords: changes.giftWords } : {}),
       };
       const link = shareLink((await answer<ApiParcelShareResponse>(await call(parcel.id, { method: 'PUT', body: JSON.stringify(body) }))).link);
       if (!link) throw new ParcelLinkError('server', { message: 'Unreadable share answer' });

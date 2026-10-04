@@ -822,6 +822,7 @@ struct ParcelLink: Codable, Equatable, Hashable, Sendable, Identifiable {
     var gift: Bool? = nil
     var shared: Bool? = nil
     var alerts: ParcelAlerts? = nil
+    var giftWords: GiftWords? = nil
 }
 
 struct ParcelNumberHint: Codable, Equatable, Hashable, Sendable {
@@ -930,6 +931,7 @@ struct UpdateParcelLinkRequest: Codable, Equatable, Hashable, Sendable {
     var showNumber: Bool? = nil
     var gift: Bool? = nil
     var shared: Bool? = nil
+    var giftWords: GiftWords? = nil
 }
 
 enum ParcelAlertPreset: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
@@ -960,6 +962,7 @@ struct ParcelShare: Codable, Equatable, Hashable, Sendable, Identifiable {
     var showNumber: Bool
     var gift: Bool
     var createdAt: String
+    var giftWords: GiftWords? = nil
 }
 
 struct ParcelShareResponse: Codable, Equatable, Hashable, Sendable {
@@ -969,6 +972,13 @@ struct ParcelShareResponse: Codable, Equatable, Hashable, Sendable {
 struct ShareParcelRequest: Codable, Equatable, Hashable, Sendable {
     var showNumber: Bool? = nil
     var gift: Bool? = nil
+    var giftWords: GiftWords? = nil
+}
+
+struct GiftWords: Codable, Equatable, Hashable, Sendable {
+    var name: String? = nil
+    var note: String? = nil
+    var from: String? = nil
 }
 
 enum CarrierDetectionResponseAmazonShippingStatus: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {

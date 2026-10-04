@@ -369,6 +369,10 @@ export function publicParcelResponse(found: StoredParcelLink, alerts: ApiParcelA
     // A gift cannot be kept by its recipient before it arrives: its number is not shown.
     canKeep: numberShown,
     gift: link.gift === true,
+    ...((owner || (link.gift === true && !wrapped)) && isRecord(link.gift_words)
+      ? { giftWords: {
+        name: optionalText(link.gift_words.name), note: optionalText(link.gift_words.note), from: optionalText(link.gift_words.from),
+      } } : {}),
     // The stored link's own `shared` says that it belongs to an account: the kind above.
     shared: link.stopped !== true,
     alerts,

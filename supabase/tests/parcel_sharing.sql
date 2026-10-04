@@ -27,7 +27,7 @@ begin
     foreach service_function in array array[
       'public.parcel_link_view(text,text,boolean)',
       'public.public_parcel(text,text,boolean)',
-      'public.update_parcel_link(text,text,boolean,boolean,boolean)',
+      'public.update_parcel_link(text,text,boolean,boolean,boolean,jsonb)',
       'public.add_parcel_link_alert(text,text,text,text,text,text,text)',
       'public.remove_parcel_link_alert(text,text)',
       'public.forget_expired_parcel_links()',
@@ -41,7 +41,7 @@ begin
   end loop;
   foreach account_function in array array[
     'public.owned_package_share(uuid)',
-    'public.share_owned_package(uuid,boolean,boolean)',
+    'public.share_owned_package(uuid,boolean,boolean,jsonb)',
     'public.stop_owned_package_share(uuid)',
     'public.claim_parcel_link(text,text,text)'
   ] loop

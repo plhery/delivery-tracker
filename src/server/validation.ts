@@ -1,5 +1,5 @@
 import { AMAZON_ACCOUNT_MESSAGE, isAmazonTrackingNumber, requiresAmazonAccount } from '../lib/amazon';
-import { CARRIER_IDS, type ApiParcelAlertPreset } from '../generated/apiContract';
+import { CARRIER_IDS, type ApiGiftWords, type ApiParcelAlertPreset } from '../generated/apiContract';
 import { ALERT_PRESET_STAGES, ALL_NOTIFICATION_STAGES } from '../lib/notificationPresets';
 import { createECDH } from 'node:crypto';
 import { HttpError, parseUuid } from './api';
@@ -209,19 +209,33 @@ export function parcelAlert(payload: JsonObject): ParcelAlertValues {
 
 /**
  * The switches of a shared link named in `fields`: each true or false when
- * sent, and at least one of them unless `optional`.
+ * sent, with an optional protected gift message. At least one change is required
+ * unless `optional`.
  */
 export function shareSwitches<Field extends 'showNumber' | 'gift' | 'shared'>(
   payload: JsonObject,
   fields: readonly Field[],
   optional = false,
-): Partial<Record<Field, boolean>> {
-  const switches: Partial<Record<Field, boolean>> = {};
+): Partial<Record<Field, boolean>> & { giftWords?: ApiGiftWords } {
+  const switches: Partial<Record<Field, boolean>> & { giftWords?: ApiGiftWords } = {};
   for (const field of fields) {
     const value = payload[field];
     if (value === undefined) continue;
     if (typeof value !== 'boolean') throw new HttpError(400, `${field} must be true or false`);
-    switches[field] = value;
+    Object.assign(switches, { [field]: value });
+  }
+  if (payload.giftWords !== undefined) {
+    if (!isRecord(payload.giftWords)) throw new HttpError(400, 'giftWords must be an object');
+    const words: ApiGiftWords = { name: null, note: null, from: null };
+    for (const [field, limit] of [['name', 80], ['note', 280], ['from', 60]] as const) {
+      const value = payload.giftWords[field];
+      if (value !== null && (typeof value !== 'string' || codePointLength(value) > limit)) {
+        throw new HttpError(400, `giftWords.${field} must be text of at most ${limit} characters or null`);
+      }
+      words[field] = typeof value === 'string'
+        ? value.replace(/[\p{Cc}\p{Cf}]/gu, ' ').replace(/\s+/g, ' ').trim() || null : null;
+    }
+    switches.giftWords = words;
   }
   if (!optional && Object.keys(switches).length === 0) {
     throw new HttpError(400, `Send ${fields.join(', ')} to change`);

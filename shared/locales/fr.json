@@ -644,7 +644,7 @@
   "share.gift.title": "Emballer en cadeau",
   "share.gift.note": "Un mot, affiché une fois le colis livré",
   "share.gift.from": "De la part de",
-  "share.gift.private": "Gardé dans le lien, jamais sur les serveurs de Peek.",
+  "share.gift.private": "Conservé en sécurité par Peek ; partagé après la livraison.",
   "share.works.until": "Fonctionne jusqu’au {{date}}",
   "share.works.account": "Le garder plus longtemps",
   "share.action": "Partager…",

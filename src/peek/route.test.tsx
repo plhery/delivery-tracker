@@ -72,16 +72,16 @@ describe('the parcel page’s address', () => {
     }
   });
 
-  it('writes the words a sharer sends along after the #, encoded, and nothing when there are none', () => {
+  it('writes only a public name into the URL, never a gift message or signature', () => {
     const origin = 'https://peek.example';
     expect(parcelShareURL(LINK_ID, {}, origin)).toBe(`${origin}/p/${LINK_ID}`);
     expect(parcelShareURL(LINK_ID, { name: null, note: '  ', from: '' }, origin)).toBe(`${origin}/p/${LINK_ID}`);
     const address = parcelShareURL(LINK_ID, { name: ' New sneakers 👟 ', note: 'Happy birthday, Alex! 50% & more #1', from: 'Sam' }, origin);
-    expect(address).toBe(`${origin}/p/${LINK_ID}#n=New%20sneakers%20%F0%9F%91%9F&g=Happy%20birthday%2C%20Alex!%2050%25%20%26%20more%20%231&f=Sam`);
+    expect(address).toBe(`${origin}/p/${LINK_ID}#n=New%20sneakers%20%F0%9F%91%9F`);
     // What is written is what is read back, and no server sees it: it all stands after the #.
-    expect(linkWordsFromHash(new URL(address).hash)).toEqual({ name: 'New sneakers 👟', note: 'Happy birthday, Alex! 50% & more #1', from: 'Sam' });
+    expect(linkWordsFromHash(new URL(address).hash)).toEqual({ name: 'New sneakers 👟', note: null, from: null });
     expect(new URL(address).pathname + new URL(address).search).toBe(`/p/${LINK_ID}`);
-    expect(parcelShareURL(LINK_ID, { from: 'Sam' }, origin)).toBe(`${origin}/p/${LINK_ID}#f=Sam`);
+    expect(parcelShareURL(LINK_ID, { from: 'Sam' }, origin)).toBe(`${origin}/p/${LINK_ID}`);
   });
 
   it('follows the address: opening pushes, back and forward work, leaving returns to the door', async () => {

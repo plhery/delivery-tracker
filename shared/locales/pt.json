@@ -644,7 +644,7 @@
   "share.gift.title": "Embrulhar como presente",
   "share.gift.note": "Uma nota, mostrada depois da entrega",
   "share.gift.from": "De",
-  "share.gift.private": "Fica na ligação, nunca nos servidores do Peek.",
+  "share.gift.private": "Guardado em segurança pelo Peek; partilhado só após a entrega.",
   "share.works.until": "Funciona até {{date}}",
   "share.works.account": "Mantê-la por mais tempo",
   "share.action": "Partilhar…",

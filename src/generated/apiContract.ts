@@ -4365,6 +4365,7 @@ export interface ApiParcelLink {
   "gift"?: boolean;
   "shared"?: boolean;
   "alerts"?: ApiParcelAlerts;
+  "giftWords"?: ApiGiftWords;
 }
 
 export interface ApiParcelNumberHint {
@@ -4457,6 +4458,7 @@ export interface ApiUpdateParcelLinkRequest {
   "showNumber"?: boolean;
   "gift"?: boolean;
   "shared"?: boolean;
+  "giftWords"?: ApiGiftWords;
 }
 
 export type ApiParcelAlertPreset = "all" | "important" | "delivery";
@@ -4481,6 +4483,7 @@ export interface ApiParcelShare {
   "showNumber": boolean;
   "gift": boolean;
   "createdAt": string;
+  "giftWords"?: ApiGiftWords;
 }
 
 export interface ApiParcelShareResponse {
@@ -4490,4 +4493,11 @@ export interface ApiParcelShareResponse {
 export interface ApiShareParcelRequest {
   "showNumber"?: boolean;
   "gift"?: boolean;
+  "giftWords"?: ApiGiftWords;
+}
+
+export interface ApiGiftWords {
+  "name": string | null;
+  "note": string | null;
+  "from": string | null;
 }

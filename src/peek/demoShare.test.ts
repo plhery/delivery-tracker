@@ -100,13 +100,16 @@ describe('sharing in the device demo', () => {
 
   it('unwraps the gift once it is delivered', async () => {
     const { links, id, key, read } = await looked('DEMOCHOC20260001');
-    await links.updateParcelLink(id, key, { gift: true, showNumber: true });
+    const giftWords = { name: 'Chocolates', note: 'Enjoy!', from: 'Sam' };
+    await links.updateParcelLink(id, key, { gift: true, showNumber: true, giftWords });
+    expect((await read(false)).link).not.toHaveProperty('giftWords');
+    expect((await read(true)).link.giftWords).toEqual(giftWords);
     expect((await read(false)).link.numberShown).toBe(false);
     let view: ParcelLinkView = await read(true);
     for (let step = 0; step < 6 && currentStage(view.parcel.events) !== 'delivered'; step += 1) view = await read(true, { advance: true });
     expect(currentStage(view.parcel.events)).toBe('delivered');
     const opened = await read(false);
-    expect(opened.link).toMatchObject({ gift: true, numberShown: true, canKeep: true });
+    expect(opened.link).toMatchObject({ gift: true, numberShown: true, canKeep: true, giftWords });
     expect(opened.parcel.trackingNumber).toBe('DEMOCHOC20260001');
     expect(opened.parcel.senderName).toBe(view.parcel.senderName);
     expect(opened.parcel.events).toEqual(view.parcel.events);

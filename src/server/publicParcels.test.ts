@@ -183,7 +183,7 @@ describe('what a link shows', () => {
       package: { id: 'parcel', tracking_number: 'TESTPARCEL123456', carrier: 'unknown', sync_status: 'ok',
         created_at: '2026-10-02T08:00:00Z', carrier_data: {}, tracking_events: [] },
     }, alerts).link;
-    expect(Object.keys(shown({ owner: true })).sort()).toEqual(Object.keys(link.properties).sort());
+    expect(Object.keys(shown({ owner: true })).sort()).toEqual(Object.keys(link.properties).filter((key) => key !== 'giftWords').sort());
     // Only the owner, who always reads the number, is told what viewers are shown.
     expect(shown({ owner: true, show_number: true })).toMatchObject({ showNumber: true, numberShown: true });
     expect(shown({ owner: true })).toMatchObject({ showNumber: false, numberShown: true });
@@ -483,4 +483,23 @@ describe('whether a link can take alerts', () => {
     vi.stubEnv('EMAIL_FROM', '');
     expect(parcelAlerts(client)).toEqual({ available: false, vapidPublicKey: null, email: false });
   });
+});
+
+
+it('withholds stored gift words from viewers until delivery, including unknown and returned stages', () => {
+  const words = { name: 'Trail shoes', note: 'Happy birthday!', from: 'Sam' };
+  const found = {
+    link: { id: 'k7Qm2xHd9RtW', gift: true, gift_words: words, created_at: '2026-10-02T08:00:00Z' },
+    package: { id: 'parcel', tracking_number: 'TESTPARCEL123456', carrier: 'unknown', sync_status: 'ok',
+      created_at: '2026-10-02T08:00:00Z', carrier_data: {}, tracking_events: [] },
+  };
+  for (const stage of [null, 'pending', 'in_transit', 'out_for_delivery', 'ready_for_pickup', 'returned']) {
+    const answer = publicParcelResponse({ ...found, package: { ...found.package, current_stage: stage } }, alerts);
+    expect(answer.link).not.toHaveProperty('giftWords');
+    expect(JSON.stringify(answer)).not.toMatch(/Trail shoes|birthday|Sam/);
+  }
+  expect(publicParcelResponse({ ...found, package: { ...found.package, current_stage: 'delivered' } }, alerts).link.giftWords).toEqual(words);
+  expect(publicParcelResponse({ ...found, link: { ...found.link, owner: true } }, alerts).link.giftWords).toEqual(words);
+  expect(publicParcelResponse({ ...found, link: { ...found.link, gift: false }, package: { ...found.package, current_stage: 'delivered' } }, alerts).link)
+    .not.toHaveProperty('giftWords');
 });

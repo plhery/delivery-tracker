@@ -209,6 +209,25 @@ final class ParcelLinkTests: XCTestCase {
         XCTAssertNil(store.arrival, "An arrival is announced once")
     }
 
+    @MainActor func testGiftWordsArriveFromTheServiceAfterDelivery() async throws {
+        let (defaults, suite) = defaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var answer = try fixture().publicParcel
+        answer.link.gift = true
+        let store = ParcelLinkStore(defaults: defaults, read: { _ in answer })
+        store.open(ParcelLinkRoute(id: linkID))
+        await store.load()
+        XCTAssertNil(store.route?.name)
+        XCTAssertNil(store.route?.note)
+        XCTAssertNil(store.route?.from)
+        answer.package.trackingEvents[0].stage = .delivered
+        answer.link.giftWords = GiftWords(name: "Trail shoes", note: "Happy birthday!", from: "Sam")
+        await store.load()
+        XCTAssertEqual(store.route?.name, "Trail shoes")
+        XCTAssertEqual(store.route?.note, "Happy birthday!")
+        XCTAssertEqual(store.route?.from, "Sam")
+    }
+
     @MainActor func testOtherOutcomesStayOnTheSheet() async throws {
         let (defaults, suite) = defaults()
         defer { defaults.removePersistentDomain(forName: suite) }
