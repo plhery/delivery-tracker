@@ -7,14 +7,14 @@
 **Universal parcel tracker for iPhone and the web. Open source.**
 
 Paste a tracking number, a carrier link or a whole shipping email.<br>
-Peek finds the carrier, draws the journey on a map and pings you when the parcel moves.
+Peek finds the carrier, draws the journey, pings you when the parcel moves.
 
-<sub>The carriers are read by <a href="https://github.com/plhery/universal-parcel-scraper">Universal Parcel Scraper</a>, the engine next door.</sub>
+<sub>The carriers are read by our engine, <a href="https://github.com/plhery/universal-parcel-scraper">Universal Parcel Scraper</a>.</sub>
 
 [![CI](https://github.com/plhery/delivery-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/plhery/delivery-tracker/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
-[Try it](https://peektracker.com) · [Open a sample parcel](https://peektracker.com/sample) · [Run it locally](#run-it-locally) · [iPhone app](#iphone-app) · [Host your own](#host-your-own)
+[Try it: peektracker.com](https://peektracker.com) · [Run it locally](#run-it-locally) · [iPhone app](#iphone-app) · [Host your own](#host-your-own)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.webp">
