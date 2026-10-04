@@ -55,6 +55,17 @@ final class NativeVerificationTests: XCTestCase {
         }
     }
 
+    func testBackgroundDetectionNeverPresentsWhileTyping() async throws {
+        let server = NativeTestServer()
+        let verifier = NativeVerification(provider: unsupported, present: { _ in XCTFail("Unexpected check while typing"); return "" }, records: [:], save: { _ in })
+        do {
+            _ = try await verifier.send(lookup(), baseURL: base, allowPresentation: false, using: { try await server.send($0) })
+            XCTFail("Expected verification requirement")
+        } catch is NativeVerificationFailed { }
+        let requests = await server.requests
+        XCTAssertFalse(requests.contains { $0.url?.path == "/api/public/verification" })
+    }
+
     func testFailedProofDoesNotLoop() async throws {
         let server = NativeTestServer(rejectProof: true)
         let verifier = NativeVerification(provider: unsupported, present: { _ in "token" }, records: [:], save: { _ in })

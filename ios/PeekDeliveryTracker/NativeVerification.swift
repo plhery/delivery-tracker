@@ -84,7 +84,7 @@ actor NativeVerification {
         } catch { pauseAttestUntil[baseURL.absoluteString] = Date().addingTimeInterval(600) }
     }
 
-    func send(_ original: URLRequest, baseURL: URL, using transport: @escaping Send) async throws -> (Data, HTTPURLResponse) {
+    func send(_ original: URLRequest, baseURL: URL, allowPresentation: Bool = true, using transport: @escaping Send) async throws -> (Data, HTTPURLResponse) {
         await acquire()
         defer { release() }
         try Task.checkCancellation()
@@ -122,7 +122,8 @@ actor NativeVerification {
             }
             pauseAttestUntil[base] = Date().addingTimeInterval(600)
         }
-        guard config.turnstile else { throw NativeVerificationFailed() }
+        // Detection runs while typing; only an explicit lookup may interrupt with a sheet.
+        guard config.turnstile, allowPresentation else { throw NativeVerificationFailed() }
         for name in ["X-App-Attest-Key-Id", "X-App-Attest-Challenge", "X-App-Attest-Assertion"] {
             request.setValue(nil, forHTTPHeaderField: name)
         }
@@ -238,10 +239,12 @@ final class NativeTurnstilePresenter: NSObject, WKScriptMessageHandler, WKNaviga
                 controller.navigationItem.leftBarButtonItem = UIBarButtonItem(title: localizer.text("common.cancel"), style: .plain, target: self, action: #selector(cancel))
                 let nav = UINavigationController(rootViewController: controller)
                 nav.modalPresentationStyle = .pageSheet
-                nav.presentationController?.delegate = self
                 navigation = nav
                 webView = web
-                parent.present(nav, animated: true) { web.load(URLRequest(url: url)) }
+                parent.present(nav, animated: true) {
+                    nav.presentationController?.delegate = self
+                    web.load(URLRequest(url: url))
+                }
                 timeout = Task { [weak self] in
                     try? await Task.sleep(for: .seconds(90))
                     guard !Task.isCancelled else { return }

@@ -74,7 +74,8 @@ lookups instead. No paid Cloudflare account is needed.
 
 New anonymous lookups verify silently with App Attest when the server enables it.
 Otherwise a small Turnstile sheet appears when needed; its proof lasts fifteen
-minutes in memory. Cancelling keeps the form intact. Saved parcels and local
+minutes in memory. Cancelling keeps the form intact. Detection while typing uses an existing proof
+or silent App Attest and never opens the sheet. Saved parcels and local
 carrier detection do not need a check. Debug uses development App Attest keys,
 Release uses production keys; only a separate development server accepts the
 former. Server settings are in [DEPLOYMENT.md](../docs/DEPLOYMENT.md).

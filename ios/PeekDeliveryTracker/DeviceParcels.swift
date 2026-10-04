@@ -45,7 +45,7 @@ struct DeviceParcelClient: Sendable {
                 return (data, response)
             }
             if method == "POST", path == "api/public/parcels" || path == "api/public/detect" {
-                return try await verification.send(request, baseURL: configuration.apiBaseURL, using: perform)
+                return try await verification.send(request, baseURL: configuration.apiBaseURL, allowPresentation: path == "api/public/parcels", using: perform)
             }
             return try await perform(request)
         }
