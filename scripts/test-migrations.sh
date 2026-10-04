@@ -120,6 +120,9 @@ psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/proofread_tracking_stages.sql"
 
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
+  -f "$repo_root/supabase/tests/refined_tracking_stages.sql"
+
+psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/planzer_delivered_wording.sql"
 
 psql "$database_url" -X -v ON_ERROR_STOP=1 \

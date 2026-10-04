@@ -111,6 +111,11 @@ carrier, provider code and normalized description. `count` and `last_seen` grow 
 sightings. It holds no tracking number or account reference. Each refresh records at most
 32 observations, and a failed write never fails the refresh.
 
+Classifier corrections also need guarded migrations for stored events. Completed parcels
+no longer refresh, so parser fixes alone leave their histories unchanged. Repairs preserve
+raw evidence, event identities, timestamps and notification receipts, and recompute the
+current stage only when the newest milestone changes.
+
 Each event records its stage source in `tracking_events.raw_data.stage_source`:
 `carrier_map` (explicit adapter stage), `wording:<rule>` (classifier rule that matched), or
 `none` (fallback).
