@@ -364,7 +364,6 @@ as $$
 declare
   actor_id uuid := auth.uid();
   normalized text := upper(regexp_replace(btrim(coalesce(p_postcode, '')), '[[:space:]]+', ' ', 'g'));
-  changed integer;
 begin
   if actor_id is null or exists (select 1 from auth.users where id = actor_id and is_anonymous) then
     raise exception 'A permanent account is required' using errcode = '42501';
@@ -373,6 +372,13 @@ begin
       or normalized !~ '^[A-Z0-9]+([ -][A-Z0-9]+)*$' then
     raise exception 'Invalid delivery postcode' using errcode = '22023';
   end if;
+  perform 1 from public.packages where id = p_package_id and user_id = actor_id for update;
+  if not found then return false; end if;
+  update public.sync_jobs
+  set state = 'failed', completed_at = now(), lease_until = null,
+      locked_by = null, dedupe_key = null,
+      last_error = 'Superseded because provider input changed.'
+  where package_id = p_package_id and state in ('queued', 'running');
   update public.packages
   set carrier_data = jsonb_set(
         (coalesce(carrier_data, '{}'::jsonb) #- '{routing,provider_input_needed}' #- '{routing,next_check_at}' #- '{routing,failures,ParcelsApp}'),
@@ -380,8 +386,7 @@ begin
       sync_status = 'pending', sync_error = null,
       tracking_generation = gen_random_uuid()
   where id = p_package_id and user_id = actor_id;
-  get diagnostics changed = row_count;
-  return changed = 1;
+  return true;
 end;
 $$;
 revoke all on function public.set_owned_package_provider_postcode(uuid, text) from public, anon;
