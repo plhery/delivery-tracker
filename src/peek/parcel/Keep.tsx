@@ -8,7 +8,7 @@ import { useI18n } from '../../i18n';
 import { carrierBrand } from '../../lib/carrierBrand';
 import { carrierInfo, type CarrierInfo } from '../../lib/carriers';
 import { useSheetDialog } from '../../lib/modal';
-import { countryName } from '../../lib/trackingLocation';
+import { countryName } from 'universal-parcel-scraper/app';
 import type { ParcelWithEvents } from '../../types';
 import { clearPendingKeep, rememberPendingKeep } from '../pending';
 import type { SignInMethods } from '../session';

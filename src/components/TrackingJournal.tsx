@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { localizedCalendarDate } from '../lib/format';
-import { countryFlag, countryName, trackingPlace } from '../lib/trackingLocation';
+import { countryFlag, countryName, trackingPlace } from 'universal-parcel-scraper/app';
 import { localizedEventDescription, stageLabel, useI18n } from '../i18n';
 import { currentEvent, sortEventsDesc } from '../lib/stages';
 import type { TrackingEvent } from '../types';

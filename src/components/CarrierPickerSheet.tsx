@@ -9,7 +9,7 @@ import {
   type CarrierSearchResult,
 } from '../lib/carrierPicker';
 import { useSheetDialog } from '../lib/modal';
-import { countryName } from '../lib/trackingLocation';
+import { countryName } from 'universal-parcel-scraper/app';
 import type { CarrierId } from '../types';
 import { CarrierTruck } from './CarrierMark';
 import { Icon } from './Icon';

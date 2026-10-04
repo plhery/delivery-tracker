@@ -13,7 +13,7 @@ import {
   shapeCarrier,
   usedCarrierIds,
 } from './carrierPicker';
-import { countryName } from './trackingLocation';
+import { countryName } from 'universal-parcel-scraper/app';
 import type { CarrierId } from '../types';
 
 const countryNames = (code: string) => [countryName(code, 'en-CH')];

@@ -3,7 +3,7 @@ import { trackAction } from '../lib/analytics';
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useI18n, type MessageKey } from '../i18n';
 import { formatJourneyDuration, passportStatistics } from '../lib/passport';
-import { countryFlag, countryName } from '../lib/trackingLocation';
+import { countryFlag, countryName } from 'universal-parcel-scraper/app';
 import type { ParcelWithEvents } from '../types';
 import { Icon, type IconName } from './Icon';
 

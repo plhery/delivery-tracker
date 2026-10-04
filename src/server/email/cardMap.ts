@@ -5,7 +5,7 @@ import { projection } from '../../components/map/camera';
 import { layout, mapView, targetCamera, type Insets, type Overlay, type Size } from '../../components/map/layout';
 import { countryPlace, defaultMode, routeFromEvents, type Route } from '../../components/map/route';
 import { countryLabel, geography, loadWorld } from '../../components/map/world';
-import { countryName } from '../../lib/trackingLocation';
+import { countryName } from 'universal-parcel-scraper/app';
 import type { ParcelWithEvents } from '../../types';
 import { GEIST, textWidth, writable } from '../pictureFont';
 

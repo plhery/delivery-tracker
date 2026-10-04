@@ -1,8 +1,8 @@
 import { currentStage } from './stages';
 import type { ParcelWithEvents, Stage } from '../types';
 
-import { trackingLocationCountry } from './trackingLocation';
-export { trackingLocationCountry as firstScanCountry } from './trackingLocation';
+import { trackingLocationCountry } from 'universal-parcel-scraper/app';
+export { trackingLocationCountry as firstScanCountry } from 'universal-parcel-scraper/app';
 
 const stageOrder: Stage[] = ['registered', 'accepted', 'in_transit', 'customs', 'exception', 'out_for_delivery', 'failed_attempt', 'ready_for_pickup', 'delivered', 'returned'];
 

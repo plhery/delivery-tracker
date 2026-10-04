@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useI18n } from '../i18n';
 import { useNear } from '../lib/inView';
 import { useModalDialog } from '../lib/modal';
-import { countryName } from '../lib/trackingLocation';
+import { countryName } from 'universal-parcel-scraper/app';
 import type { ParcelWithEvents, Stage } from '../types';
 import { Icon } from './Icon';
 import { countryLabel, useWorld } from './map/geography';
