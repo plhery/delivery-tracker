@@ -64,8 +64,7 @@ export async function journeyMap(parcel: ParcelWithEvents, languageTag: string, 
     `<path d="${path({ type: 'MultiLineString', coordinates: inView(world.borders) }) ?? ''}" stroke="${surface}" stroke-opacity=".8" stroke-width="${detail === 'fine' ? .8 : .55}"/>`,
     globe > 0 ? `<path d="${path({ type: 'Sphere' }) ?? ''}" stroke="${tone}" stroke-opacity="${(.16 * globe).toFixed(3)}"/>` : '',
     ...overlay.legs.map((leg) => leg.kind === 'remaining' ? `<path d="${leg.d}" stroke="${tone}" stroke-opacity=".45" stroke-width="1.4" stroke-dasharray="3 5"/>`
-      : leg.kind === 'approximate' ? `<path d="${leg.d}" stroke="${tone}" stroke-opacity=".75" stroke-width="1.5" stroke-dasharray=".1 5"/>`
-        : `<path d="${leg.d}" stroke="${tone}" stroke-width="1.8"/>`),
+      : `<path d="${leg.d}" stroke="${tone}" stroke-width="1.8"/>`),
     ...overlay.dots.map(({ x, y, kind }) => {
       const at = `cx="${x.toFixed(1)}" cy="${y.toFixed(1)}"`;
       return kind === 'current' ? `<circle ${at} r="5" fill="${tone}" stroke="#fff" stroke-width="2"/>`

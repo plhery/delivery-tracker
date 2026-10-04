@@ -910,14 +910,9 @@ enum MapPainter {
     static func drawLegs(_ context: inout GraphicsContext, _ overlay: MapOverlay, palette: MapPalette, quiet: Bool = false) {
         for leg in overlay.legs {
             switch leg.kind {
-            case .travelled:
+            case .travelled, .approximate:
                 context.stroke(leg.path, with: .color(palette.route),
                                style: StrokeStyle(lineWidth: quiet ? 0.9 : 1.8, lineCap: .round, lineJoin: .round))
-            case .approximate:
-                var faded = context
-                faded.opacity = 0.75
-                faded.stroke(leg.path, with: .color(palette.route),
-                             style: StrokeStyle(lineWidth: quiet ? 1.1 : 1.5, lineCap: .round, lineJoin: .round, dash: [0.1, 5]))
             case .remaining:
                 context.stroke(leg.path, with: .color(palette.routeMuted),
                                style: StrokeStyle(lineWidth: quiet ? 0.8 : 1.4, lineCap: .round, lineJoin: .round, dash: [3, 5]))

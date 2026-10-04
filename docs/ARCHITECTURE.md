@@ -49,6 +49,7 @@ Key server modules:
   `trackingRouting.ts` decides which source to ask ([ROUTING.md](ROUTING.md)).
 - `eventPlaces.ts` uses the scraper's place resolver to put each scan on the map,
   when the API returns a parcel ([README](https://github.com/plhery/universal-parcel-scraper/blob/main/places/README.md)).
+  Lines between recorded stops are solid; approximate areas have dotted markers.
 - `push.ts` sends Web Push, APNs alerts and Live Activity updates to the parcel owner's
   devices, and Web Push to the alerts of the parcel's links. Each batch of new scans
   announces its newest one, and only when it is the parcel's newest scan: history a carrier

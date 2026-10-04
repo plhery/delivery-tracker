@@ -27,7 +27,6 @@
 .mapOverlay { overflow: visible; pointer-events: none; }
 .leg { fill: none; stroke: var(--map-route); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .leg[data-kind=travelled] { stroke-dasharray: 1; animation: draw 1s var(--ease-out) both; }
-.leg[data-kind=approximate] { stroke-width: 1.5; stroke-dasharray: .1 5; opacity: .75; }
 .leg[data-kind=remaining] { stroke: var(--map-route-muted); stroke-width: 1.4; stroke-dasharray: 3 5; }
 @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 .dot circle { fill: var(--map-route); stroke: var(--map-dot-ring); stroke-width: 1.5; }
@@ -39,7 +38,6 @@
 /* A quiet route belongs to the picture: a thin line and small dots without the bright ring, there at once. Its card pales the ink. */
 .worldMap[data-quiet] .leg { stroke-width: .9; }
 .worldMap[data-quiet] .leg[data-kind=travelled] { animation: none; }
-.worldMap[data-quiet] .leg[data-kind=approximate] { stroke-width: 1.1; }
 .worldMap[data-quiet] .leg[data-kind=remaining] { stroke-width: .8; }
 .worldMap[data-quiet] .dot circle { stroke-width: 1.1; }
 .worldMap[data-quiet] .dot:is([data-kind=current], [data-kind=last-known]) circle { stroke: var(--map-dot-ring); stroke-width: 1.2; }

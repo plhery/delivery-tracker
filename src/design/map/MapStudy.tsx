@@ -199,7 +199,7 @@ const ATLAS: readonly { journey: string; step: number; mode?: MapMode; caption: 
   { journey: 'local', step: 2, caption: 'Close to home · lakes and nearby cities' },
   { journey: 'city', step: 2, caption: 'Across town · the smallest useful area' },
   { journey: 'point', step: 1, caption: 'One place · a dot with its surroundings' },
-  { journey: 'countries', step: 4, caption: 'Countries only · tinted, with a dotted hop' },
+  { journey: 'countries', step: 4, caption: 'Countries only · tinted, with dotted area markers' },
 ];
 
 /** Every distance side by side, in the map's own style. The tiles never change, so they draw once per theme. */
