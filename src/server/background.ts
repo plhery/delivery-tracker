@@ -17,7 +17,7 @@ import { recordParcelAlertRemoved, recordParcelsForgotten, recordPublicLookupUsa
 import { pushServices } from './push';
 import { FriendshipPushService, FriendshipPushWorker } from './friendshipPush';
 import { serviceClient } from './runtime';
-import type { SupabaseServiceClient } from './supabase';
+import { SyncJobLeaseLost, type SupabaseServiceClient } from './supabase';
 import { TrackingSyncService, type SyncSummary } from './trackingSync';
 import type { JsonObject } from './types';
 
@@ -208,7 +208,7 @@ export class SyncJobWorker {
     const heartbeat = setInterval(() => {
       if (renewal || signal.aborted) return;
       renewal = this.service.client.renewSyncJobLease(jobId, this.workerId).then((renewed) => {
-        if (!renewed) throw new Error('Synchronization job lease was lost');
+        if (!renewed) throw new SyncJobLeaseLost();
         this.state.workerHeartbeat = Date.now() / 1_000;
       }).catch((error: unknown) => controller.abort(error)).finally(() => { renewal = null; });
     }, 15_000);
@@ -220,8 +220,13 @@ export class SyncJobWorker {
       let archived = 0;
       if (kind === 'package') {
         const packageId = String(job.package_id ?? '');
-        const parcel = packageId ? await this.service.client.getPackage(packageId) : null;
-        if (!parcel) throw new Error('Package no longer exists');
+        if (!packageId) throw new Error('Package no longer exists');
+        const parcel = await this.service.client.getPackage(packageId);
+        if (!parcel) {
+          // Deleting a parcel deletes its job with it: nothing is left to finish.
+          logOperationalEvent('sync_job_dropped', { job_id: jobId, kind, reason: 'parcel_deleted' });
+          return true;
+        }
         summary = await this.service.syncPackage(parcel, { ...context, trigger: 'package' });
       } else if (kind === 'scheduled') {
         const saved = job.check_in as Partial<ScheduledCheckIn> | null | undefined;
@@ -299,6 +304,10 @@ export class SyncJobWorker {
         await this.releaseOwnedJob();
         return true;
       }
+      if (await this.withdrawn(jobId, kind, error, signal.reason)) {
+        logOperationalEvent('sync_job_dropped', { job_id: jobId, kind, reason: 'job_withdrawn' });
+        return true;
+      }
       finishScheduledSyncCheckIn(scheduledCheckIn, 'error');
       const capturedErrorType = errorType(error);
       this.state.lastError = capturedErrorType;
@@ -318,6 +327,10 @@ export class SyncJobWorker {
           error: 'Tracking refresh failed. Try again.',
         });
       } catch (finishError) {
+        if (await this.withdrawn(jobId, kind, finishError)) {
+          logOperationalEvent('sync_job_dropped', { job_id: jobId, kind, reason: 'job_withdrawn' });
+          return true;
+        }
         logOperationalEvent('sync_job_finish_failed', {
           job_id: jobId,
           error_type: errorType(finishError),
@@ -336,6 +349,20 @@ export class SyncJobWorker {
       this.#ownedJob = null;
     }
     return true;
+  }
+
+  /**
+   * Whether a package job that lost its lease was taken on purpose: its parcel
+   * was deleted, or its carrier changed. When that cannot be read, the lost
+   * lease is reported.
+   */
+  private async withdrawn(jobId: string, kind: string, ...errors: unknown[]): Promise<boolean> {
+    if (kind !== 'package' || !errors.some((error) => error instanceof SyncJobLeaseLost)) return false;
+    try {
+      return await this.service.client.syncJobWithdrawn(jobId);
+    } catch {
+      return false;
+    }
   }
 }
 

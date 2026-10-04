@@ -44,6 +44,13 @@ All tables and views here are service-role only.
 Completed rows are kept for 90 days. Attempts still running after 30 min are marked
 `abandoned` and reported. Deleting a package or account deletes its audit.
 
+A check whose parcel is deleted while it runs, or whose next write finds its carrier
+changed, ends as `superseded`: nothing is saved and no error is reported. A deleted parcel
+takes the check's job and audit rows with it, so the worker drops the job instead of
+finishing it. A carrier change that the worker's lease renewal notices before that write
+stops the check instead: its attempt stays `running`, and is marked `abandoned` and
+reported as above.
+
 `delivery_emails` records what was emailed: one row per parcel claimed for a delivery
 email, with the account, the delivered scan, `status` (`claimed`, `sent`, `failed`,
 `skipped`), a `reason` code, the attempts and the times. It holds no address and none of
@@ -153,6 +160,10 @@ Key JSON events:
   `tracking_status_observation_write_failed`;
 - `sync_claim_failed`, `sync_job_failed`, `sync_job_finish_failed` (by `job_id`). Alert on
   these;
+- `sync_job_dropped` (by `job_id`): a package job had nothing left to finish, with the
+  `reason`: `parcel_deleted` before its check, or `job_withdrawn` when a deletion or a
+  carrier change took the job during it. `tracking_sync_audit_skipped` (by `attempt_id`):
+  an audit write found its rows deleted with the parcel. Neither is a failure;
 - `http_request` (by `request_id`, matching Sentry for server errors). A failed request
   carries `error_class`; a 502 that wraps an upstream failure also names that failure's
   class in `error_cause`;

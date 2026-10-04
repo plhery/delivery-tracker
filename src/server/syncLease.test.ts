@@ -13,6 +13,7 @@ it.each([false, true])('renews a long-running job and stops writes after renewal
   vi.spyOn(client, 'getPackage').mockResolvedValue({ id: 'package' });
   const renew = vi.spyOn(client, 'renewSyncJobLease').mockResolvedValue(!loseLease);
   const finish = vi.spyOn(client, 'finishSyncJob').mockResolvedValue();
+  const withdrawn = vi.spyOn(client, 'syncJobWithdrawn').mockResolvedValue(false);
   const service = new TrackingSyncService(client);
   let context!: SyncRunContext;
   let complete!: (summary: SyncSummary) => void;
@@ -33,6 +34,7 @@ it.each([false, true])('renews a long-running job and stops writes after renewal
   await vi.advanceTimersByTimeAsync(1);
   if (loseLease) expect(finish).not.toHaveBeenCalled();
   else expect(finish).toHaveBeenCalledOnce();
+  expect(withdrawn).toHaveBeenCalledTimes(loseLease ? 1 : 0);
   worker.stop();
   const calls = renew.mock.calls.length;
   await vi.advanceTimersByTimeAsync(60_000);

@@ -52,6 +52,17 @@ export class SupabaseError extends Error {
   }
 }
 
+/**
+ * A worker no longer holds the job it works on: its lease expired, another
+ * worker took it, or the job went with its parcel. The name stays "Error",
+ * which error reports are grouped by.
+ */
+export class SyncJobLeaseLost extends Error {
+  constructor() {
+    super('Synchronization job lease was lost');
+  }
+}
+
 function query(
   entries: ReadonlyArray<readonly [string, string]> | Record<string, string>,
 ): string {
@@ -917,7 +928,7 @@ export class SupabaseServiceClient extends SupabaseClient {
       const started = await this.request('/rest/v1/rpc/start_leased_sync_attempt', {
         method: 'POST', body: { p_attempt_id: attemptId, p_job_id: lease.jobId, p_worker_id: lease.workerId, p_values: values },
       });
-      if (started !== true) throw new Error('Synchronization job lease was lost');
+      if (started !== true) throw new SyncJobLeaseLost();
       return;
     }
     await this.request('/rest/v1/tracking_sync_attempts', {
@@ -1049,7 +1060,7 @@ export class SupabaseServiceClient extends SupabaseClient {
     const saved = await this.request('/rest/v1/rpc/set_sync_job_check_in', {
       method: 'POST', body: { p_job_id: jobId, p_worker_id: workerId, p_check_in: checkIn },
     });
-    if (saved !== true) throw new Error('Synchronization job lease was lost');
+    if (saved !== true) throw new SyncJobLeaseLost();
   }
 
   async finishSyncJob(
@@ -1061,7 +1072,19 @@ export class SupabaseServiceClient extends SupabaseClient {
       method: 'POST', body: { p_job_id: jobId, p_worker_id: workerId,
         p_result: options.result ?? null, p_error: options.error?.slice(0, 500) ?? null },
     });
-    if (finished !== true) throw new Error('Synchronization job lease was lost');
+    if (finished !== true) throw new SyncJobLeaseLost();
+  }
+
+  /**
+   * Whether a job was taken from its worker on purpose: its row went with its
+   * parcel or account, or a carrier change ended it as superseded. A lease that
+   * expired, or that another worker took, is not withdrawn.
+   */
+  async syncJobWithdrawn(jobId: string): Promise<boolean> {
+    const params = query({ select: 'state,last_error', id: `eq.${jobId}`, limit: '1' });
+    const job = rows(await this.request(`/rest/v1/sync_jobs?${params}`, { timeoutMs: 3_000 }))[0];
+    if (!job) return true;
+    return job.state === 'failed' && typeof job.last_error === 'string' && job.last_error.startsWith('Superseded');
   }
 
   async probeReadiness(): Promise<boolean> {

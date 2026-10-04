@@ -11,7 +11,7 @@ import {
 } from './observability';
 import { recordRefresh } from './metrics';
 import { observeTrackingHealth, type HealthSample } from './trackingHealth';
-import type { SupabaseServiceClient } from './supabase';
+import { SupabaseError, type SupabaseServiceClient } from './supabase';
 import type { JsonObject } from './types';
 
 export type SyncTrigger = 'package' | 'scheduled';
@@ -286,6 +286,11 @@ export class TrackingSyncAudit {
     } catch (error) {
       // Shutdown may already have closed the audit and fenced this worker out.
       if (this.context.signal?.aborted) return;
+      // The audit went with its parcel: the row this write refers to is deleted.
+      if (error instanceof SupabaseError && error.code === '23503') {
+        logOperationalEvent('tracking_sync_audit_skipped', { ...this.logContext(), operation });
+        return;
+      }
       logOperationalEvent('tracking_sync_audit_write_failed', {
         ...this.logContext(),
         operation,

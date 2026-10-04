@@ -62,6 +62,95 @@ $$;
 rollback;
 
 begin;
+-- A parcel deleted or reconfigured under its check has nothing left to save:
+-- the worker's write answers false instead of a lost lease.
+delete from public.sync_jobs;
+insert into public.packages (id, user_id, tracking_number, carrier) values
+  ('97000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000001', 'LEASETEST5678', 'ups'),
+  ('97000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000001', 'LEASETEST9012', 'ups');
+
+do $$
+declare
+  owner_id constant uuid := '10000000-0000-0000-0000-000000000001';
+  deleted_id constant uuid := '97000000-0000-0000-0000-000000000005';
+  changed_id constant uuid := '97000000-0000-0000-0000-000000000006';
+  owner_key constant text := repeat('c', 64);
+  leased_write constant regprocedure := 'public.apply_leased_tracking_sync(uuid,text,uuid,uuid,jsonb,jsonb,text[])';
+  job_id uuid;
+  generation uuid;
+  lookup jsonb;
+  one_off_id uuid;
+begin
+  if (select prosecdef or proconfig is distinct from array['search_path=pg_catalog'] from pg_proc where oid = leased_write)
+      or not has_function_privilege('service_role', leased_write, 'execute') then
+    raise exception 'leased write lost its configuration';
+  end if;
+
+  -- Deleted by its account: the job goes with the parcel.
+  insert into public.sync_jobs (user_id, package_id, kind, dedupe_key)
+  values (owner_id, deleted_id, 'package', 'package:' || deleted_id) returning id into job_id;
+  perform public.claim_sync_job('worker-a', 900);
+  select tracking_generation into generation from public.packages where id = deleted_id;
+  if not public.apply_leased_tracking_sync(job_id, 'worker-a', deleted_id, generation, '{"sync_status":"syncing"}') then
+    raise exception 'live owner could not persist';
+  end if;
+  delete from public.packages where id = deleted_id;
+  if exists (select 1 from public.sync_jobs where id = job_id) then raise exception 'deleted parcel kept its job'; end if;
+  if public.apply_leased_tracking_sync(job_id, 'worker-a', deleted_id, generation, '{"sync_status":"waiting"}') then
+    raise exception 'deleted parcel was written';
+  end if;
+  if public.finish_sync_job(job_id, 'worker-a', '{}') then raise exception 'deleted job was finished'; end if;
+
+  -- A lookup forgotten with its key.
+  lookup := public.create_one_off_parcel('LEASETEST3456', 'unknown', null, null, owner_key);
+  one_off_id := (lookup#>>'{package,id}')::uuid;
+  insert into public.sync_jobs (package_id, kind, dedupe_key)
+  values (one_off_id, 'package', 'package:' || one_off_id) returning id into job_id;
+  perform public.claim_sync_job('worker-a', 900);
+  select tracking_generation into generation from public.packages where id = one_off_id;
+  if not public.apply_leased_tracking_sync(job_id, 'worker-a', one_off_id, generation, '{"sync_status":"syncing"}') then
+    raise exception 'live owner could not persist a lookup';
+  end if;
+  if public.forget_parcel_link(lookup#>>'{link,id}', owner_key) <> '{"links":1,"packages":1}' then
+    raise exception 'lookup was not forgotten';
+  end if;
+  if public.apply_leased_tracking_sync(job_id, 'worker-a', one_off_id, generation, '{"sync_status":"waiting"}') then
+    raise exception 'forgotten lookup was written';
+  end if;
+  if public.finish_sync_job(job_id, 'worker-a', '{}') then raise exception 'forgotten job was finished'; end if;
+
+  -- A carrier change ends the job and renews the generation.
+  insert into public.sync_jobs (user_id, package_id, kind, dedupe_key)
+  values (owner_id, changed_id, 'package', 'package:' || changed_id) returning id into job_id;
+  perform public.claim_sync_job('worker-a', 900);
+  select tracking_generation into generation from public.packages where id = changed_id;
+  if not public.apply_leased_tracking_sync(job_id, 'worker-a', changed_id, generation, '{"sync_status":"syncing"}') then
+    raise exception 'live owner could not persist before the carrier change';
+  end if;
+  perform set_config('request.jwt.claim.sub', owner_id::text, true);
+  if not public.change_owned_package_carrier(changed_id, 'fedex') then raise exception 'carrier was not changed'; end if;
+  if not exists (select 1 from public.sync_jobs
+    where id = job_id and state = 'failed' and last_error like 'Superseded%') then
+    raise exception 'carrier change did not end the job as superseded';
+  end if;
+  if public.apply_leased_tracking_sync(job_id, 'worker-a', changed_id, generation, '{"sync_status":"waiting"}') then
+    raise exception 'reconfigured parcel was written';
+  end if;
+  if (select sync_status from public.packages where id = changed_id) <> 'pending' then
+    raise exception 'stale check changed the reconfigured parcel';
+  end if;
+  -- The parcel as it now stands is still fenced from the ended job.
+  select tracking_generation into generation from public.packages where id = changed_id;
+  begin
+    perform public.apply_leased_tracking_sync(job_id, 'worker-a', changed_id, generation, '{"sync_status":"ok"}');
+    raise exception 'ended job could persist';
+  exception when object_not_in_prerequisite_state then null;
+  end;
+end;
+$$;
+rollback;
+
+begin;
 delete from public.sync_jobs;
 insert into public.packages (id, user_id, tracking_number, carrier)
 values ('97000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000001', 'HANDOFFTEST1234', 'ups');
