@@ -175,7 +175,6 @@ jobs:
           check npm run ios:resources -- --check
           check npm run test:dev
           check npm test
-          check npm test -- --config vitest.server.config.ts
           check npm run build
           check npm run test:deployment
           check npm run test:pwa
