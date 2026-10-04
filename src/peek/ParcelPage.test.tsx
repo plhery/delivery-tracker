@@ -159,7 +159,8 @@ describe('ParcelPage', () => {
     rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: view(journey) });
     mocks.read.mockRejectedValue(new ParcelLinkError('offline'));
     open();
-    const banner = await screen.findByText(/^You’re offline\. Showing the update from \d\d:\d\d\.$/);
+    // The scan is six hours old: in the first hours of a day it is yesterday's.
+    const banner = await screen.findByText(/^You’re offline\. Showing the update from (yesterday, )?\d\d:\d\d\.$/);
     expect(banner).toHaveAttribute('role', 'status');
     expect(screen.getByRole('heading', { level: 1, name: 'In transit' })).toBeVisible();
     const marker = within(card()).getByRole('button', { name: 'Offline. Check now' });
