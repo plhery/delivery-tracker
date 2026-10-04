@@ -45,14 +45,13 @@ env:
     ios/PeekDeliveryTracker/Resources/DetectionGolden.json
 
 jobs:
-  # Runs the release, its dependencies' scripts, the build and the tests. It has
-  # no secret and cannot write to the repository: it hands the adoption to the
-  # push job as a patch.
+  # Installs the release and prepares its generated files without secrets or
+  # repository write access. CI tests the final commit before deployment.
   adopt:
     name: Adopt
     if: github.repository == 'plhery/peek-delivery-tracker'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
     outputs:
       adopt: ${{ steps.target.outputs.adopt }}
       version: ${{ steps.target.outputs.version }}
@@ -80,7 +79,7 @@ jobs:
           if [ "$DATABASE_READY" = "true" ]; then arguments+=(--database-ready); fi
           node scripts/adopt-scraper.mjs resolve "${arguments[@]}"
 
-      # main moved during the wait. The adoption is made and validated on main
+      # main moved during the wait. The adoption is prepared on main
       # as it is now, which may already hold the release.
       - name: Take main as it is now
         id: target
@@ -121,6 +120,11 @@ jobs:
             node scripts/adopt-scraper.mjs gate "$RUNNER_TEMP/scraper-before.json"
           fi
 
+      - name: Check the scraper's optional peers
+        id: peers
+        if: steps.target.outputs.adopt == 'true'
+        run: node scripts/adopt-scraper.mjs peers
+
       - name: Regenerate the contract and the iPhone resources
         id: regenerate
         if: steps.target.outputs.adopt == 'true'
@@ -128,7 +132,6 @@ jobs:
           npm run contract:generate
           npm run ios:resources
 
-      # Written before validation, which may leave tracked files changed.
       - name: Write the adoption as a patch
         id: patch
         if: steps.target.outputs.adopt == 'true'
@@ -143,42 +146,6 @@ jobs:
           fi
           mkdir "$RUNNER_TEMP/adoption"
           git diff --cached --binary --full-index > "$RUNNER_TEMP/adoption/adoption.patch"
-
-      # Everything a dependency can break that runs here. Coverage thresholds are
-      # left out: they measure the app's own source. Browser journeys, the iPhone
-      # build and the container are left to CI on the pushed commit.
-      - name: Validate
-        id: validate
-        if: steps.target.outputs.adopt == 'true'
-        env:
-          VERSION: ${{ steps.target.outputs.version }}
-        run: |
-          check() {
-            echo "::group::$*"
-            local status=0
-            "$@" || status=$?
-            echo "::endgroup::"
-            if [ "$status" -ne 0 ]; then
-              {
-                echo "### Validation failed for Universal Parcel Scraper $VERSION"
-                echo
-                echo "\`$*\` failed. Nothing was pushed."
-              } >> "$GITHUB_STEP_SUMMARY"
-              exit "$status"
-            fi
-          }
-          check node scripts/adopt-scraper.mjs peers
-          check npm run lint
-          check npm run typecheck
-          check npm run test:scripts
-          check npm run test:contract
-          check npm run ios:resources -- --check
-          check npm run test:dev
-          check npm test
-          check npm run build
-          check npm run test:deployment
-          check npm run test:pwa
-          check npm audit --omit=dev
 
       - name: Hand the patch to the push job
         if: steps.target.outputs.adopt == 'true'
@@ -196,6 +163,7 @@ jobs:
           VERSION: ${{ steps.target.outputs.version }}
           FAILED: >-
             ${{ steps.install.outcome == 'failure' && 'npm could not install the release.'
+            || steps.peers.outcome == 'failure' && 'The app does not have the optional peer versions this release needs.'
             || steps.regenerate.outcome == 'failure' && 'The contract or the iPhone resources could not be regenerated.'
             || steps.patch.outcome == 'failure' && 'The release changed files an adoption does not own.'
             || '' }}
@@ -236,7 +204,7 @@ jobs:
           path: ${{ runner.temp }}/adoption
 
       # A lockfile or a generated file is never merged: when main changed one
-      # since the validation, the adoption is made again instead.
+      # since preparation, the adoption is made again instead.
       - name: Commit the adoption
         run: |
           stop() {
@@ -248,9 +216,9 @@ jobs:
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-main\.[0-9]+)?$ && "$BASE" =~ ^[0-9a-f]{40}$ ]] \
             || stop "The adopt job handed over something else than a release and a commit."
           git merge-base --is-ancestor "$BASE" HEAD \
-            || stop "The commit the adoption was validated on is not on main."
+            || stop "The commit the adoption was prepared on is not on main."
           git diff --quiet "$BASE" HEAD -- "${files[@]}" \
-            || stop "main changed a file of the adoption after it was validated."
+            || stop "main changed a file of the adoption after it was prepared."
           # Into the index only: nothing is written to disk before the check.
           git apply --cached "$RUNNER_TEMP/adoption/adoption.patch" \
             || stop "The patch does not apply to main."
@@ -266,13 +234,17 @@ jobs:
           git commit --quiet -m "Adopt Universal Parcel Scraper $VERSION"
           git reset --quiet --hard HEAD
 
-      # The adoption token starts CI on the pushed commit. The workflow token
-      # pushes when it is absent, and then no other workflow runs.
+      # The workflow token suppresses downstream workflows. Require the adoption
+      # token so the final commit, including any rebase, is tested before deployment.
       - name: Push to main
         env:
-          PUSH_TOKEN: ${{ secrets.SCRAPER_ADOPTION_TOKEN || github.token }}
-          HAS_ADOPTION_TOKEN: ${{ secrets.SCRAPER_ADOPTION_TOKEN != '' }}
+          PUSH_TOKEN: ${{ secrets.SCRAPER_ADOPTION_TOKEN }}
         run: |
+          if [ -z "$PUSH_TOKEN" ]; then
+            echo 'SCRAPER_ADOPTION_TOKEN is required to start CI on the adoption.' > "$RUNNER_TEMP/stopped"
+            echo '::error::SCRAPER_ADOPTION_TOKEN is required to start CI on the adoption. Nothing was pushed.'
+            exit 1
+          fi
           credentials=$(printf 'x-access-token:%s' "$PUSH_TOKEN" | base64 | tr -d '\n')
           echo "::add-mask::$credentials"
           export GIT_CONFIG_COUNT=1
@@ -297,7 +269,7 @@ jobs:
               stop "GitHub refused the push although main had not moved; the log has its answer."
             fi
             git diff --quiet HEAD~1 origin/main -- "${files[@]}" \
-              || stop "main changed a file of the adoption after it was validated."
+              || stop "main changed a file of the adoption after it was prepared."
             echo "main moved; rebasing (attempt $attempt)."
             if ! git rebase --quiet origin/main; then
               git rebase --abort
@@ -310,14 +282,7 @@ jobs:
             echo "### Adopted Universal Parcel Scraper $VERSION"
             echo
             echo "The app was on $CURRENT. Commit $(git rev-parse --short HEAD) is on main."
-            if [ "$(git rev-parse HEAD~1)" != "$BASE" ]; then
-              echo "main moved after the validation, in files the adoption does not change; the two were not validated together."
-            fi
-            if [ "$HAS_ADOPTION_TOKEN" = "true" ]; then
-              echo "It was pushed with SCRAPER_ADOPTION_TOKEN, so CI runs on it."
-            else
-              echo "It was pushed with the workflow token, so no other workflow runs on it: where CI deploys, it is not deployed before the next push."
-            fi
+            echo "CI validates the final pushed commit before deployment."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summarise a failed push

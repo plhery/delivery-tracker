@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 # One run at a time per branch. On main a run that has started always finishes, so its commit
 # can be deployed; of the pushes that arrive meanwhile, only the newest waits its turn. On a
@@ -16,8 +17,30 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  changes:
+    name: Select test suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      web: ${{ steps.select.outputs.web }}
+      migrations: ${{ steps.select.outputs.migrations }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 26
+      - run: node --test scripts/ci-changes.test.mjs
+      - id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci-changes.mjs ci.yml
+
   checks:
     name: Lint, types and build
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -40,6 +63,8 @@ jobs:
 
   unit:
     name: Unit tests
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -53,6 +78,8 @@ jobs:
 
   migrations:
     name: Supabase migrations and RLS
+    needs: changes
+    if: needs.changes.outputs.migrations == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -77,6 +104,8 @@ jobs:
   # The suite runs on eight runners at once; each one builds the app and takes an eighth of the tests.
   browser:
     name: Browser journeys (${{ matrix.shard }}/8)
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -108,6 +137,8 @@ jobs:
   # values are set as repository variables, the image is also published for the deploy.
   image:
     name: Production image
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -172,8 +203,17 @@ jobs:
   # variables, and the DEPLOY_SSH_* secrets. The iPhone app is tested in its own workflow.
   deploy:
     name: Deploy
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
-    needs: [checks, unit, migrations, browser, image]
+    # always() lets an intentionally skipped SQL suite through; every selected
+    # suite must succeed, and failed or canceled checks cannot deploy.
+    if: >-
+      ${{ always() && !cancelled()
+        && github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+        && needs.changes.result == 'success' && needs.changes.outputs.web == 'true'
+        && needs.checks.result == 'success' && needs.unit.result == 'success'
+        && needs.browser.result == 'success' && needs.image.result == 'success'
+        && (needs.migrations.result == 'success'
+          || (needs.changes.outputs.migrations == 'false' && needs.migrations.result == 'skipped')) }}
+    needs: [changes, checks, unit, migrations, browser, image]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     concurrency:

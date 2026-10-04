@@ -52,12 +52,13 @@ gh workflow run adopt-scraper.yml                    # the newer of npm's latest
 gh workflow run adopt-scraper.yml -f version=1.2.3   # one exact release
 ```
 
-It never downgrades. It waits until npm serves the release, pins it, regenerates the
-contract and the iPhone resources, then runs lint, the type check, the tests and the
-production build with its checks. A second job, which runs nothing of the release, pushes
-the result to `main` as one commit. A commit that reached `main` in the meantime is kept
-when it leaves the adoption's files alone; otherwise the run fails and its summary gives
-the command that starts it again.
+It never downgrades. It waits until npm serves the release, pins it, checks the database
+gate and optional peers, and regenerates the contract and iPhone resources. A second job,
+which runs nothing of the release, pushes the result to `main` as one commit. CI validates
+that final commit before deployment ([deployment](DEPLOYMENT.md)); adoption does not
+repeat the test suites or production build. A commit that reached `main` in the meantime
+is kept when it leaves the adoption's files alone; otherwise the run fails and its summary
+gives the command that starts it again.
 
 `playwright-core`, `sharp` and `onnxruntime-web` are the scraper's optional peers. npm does
 not check them here, so [a test](../src/server/scraperDependency.test.ts) does. When a
@@ -67,9 +68,8 @@ those pins and the scraper in one commit by hand, with `npm run contract:generat
 
 `SCRAPER_ADOPTION_TOKEN` is a fine-grained token with read and write access to this
 repository's contents, stored as a secret in both repositories. The scraper starts the
-workflow with it. Here it pushes the commit, so that CI runs on it; where CI deploys
-([deployment](DEPLOYMENT.md)), an adoption needs it to be deployed. Without it here, the
-workflow's own token pushes, and no other workflow runs on the commit.
+workflow with it. Here it is required to push the commit and start CI. Without it, adoption
+stops without pushing: the workflow's own token would suppress the validation workflows.
 
 The scraper's release workflow also publishes versioned HTTP and TRAWL images. TRAWL is
 optional and has its own AGPL licence and matching source archives. Browser-service

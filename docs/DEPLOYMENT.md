@@ -123,12 +123,22 @@ in the repository:
 - `DEPLOY_SSH_TARGET` (`user@host`), `DEPLOY_SSH_KEY` and `DEPLOY_SSH_KNOWN_HOSTS` as
   secrets.
 
-Once the web checks, the migration tests, the browser tests and the image have passed,
-the workflow runs `deploy <commit>` over SSH on the target and then the smoke test on
-`DEPLOY_URL`. Restrict the key on the host to a command that accepts only that request
-and starts the published image. Runs on `main` go one at a time, so commits are deployed
-in order; of the pushes that arrive during a run, only the newest is tested and deployed
-next. The iPhone app is tested in its own workflow and does not hold a deploy back.
+[Suite selection](../scripts/ci-changes.mjs) compares each target with the nearest
+successful `main` ancestor of that workflow, or with the pull request base. This includes
+changes from canceled and replaced runs. Without a trusted baseline, every suite runs.
+Documentation skips application tests. SQL changes run migration tests; native changes
+run iPhone tests; web changes run web checks, unit tests, browser journeys and the image
+build. Dependencies and shared client data run both web and iPhone tests. Scraper updates
+keep browser journeys because the package supplies browser code too.
+
+For web changes, once all selected checks have passed, the workflow runs `deploy <commit>`
+over SSH on the target and then the smoke test on `DEPLOY_URL`. Intentionally skipped
+migration tests allow deployment; failures and canceled checks block it. Restrict the key
+on the host to a command that accepts only that request and starts the published image.
+Runs on `main` go one at a time; of the pushes that arrive during a run, only the newest
+is tested and deployed next. Documentation, native-only and SQL-only changes do not
+deploy the web image. The iPhone app is tested in its own workflow and does not hold a
+deploy back.
 
 ## Delivery email
 
