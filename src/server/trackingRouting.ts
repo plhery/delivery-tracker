@@ -153,7 +153,8 @@ function foreignHistory(result: CarrierResult, carrier: string, addedAt: unknown
   const newest = latestResultTime(result, 'unknown');
   return newest > 0 && newest < millis(addedAt) - FOREIGN_HISTORY_GAP;
 }
-function directCarrier(carrier: string): boolean {
+/** Whether a carrier has an adapter of its own for the router to ask. */
+export function directCarrier(carrier: string): boolean {
   return AUTOMATIC_CARRIER_IDS.has(carrier) && carrierAdapter(carrier) !== 'universal';
 }
 

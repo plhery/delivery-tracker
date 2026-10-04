@@ -25,6 +25,7 @@ export type SyncStep =
 export type SyncAuditOutcome = 'updated' | 'waiting' | 'error' | 'unsupported' | 'superseded';
 export type SyncAnomalyCode =
   | 'delivered_status_conflict'
+  | 'fallback_without_progress'
   | 'future_event_timestamp'
   | 'invalid_event_timestamp'
   | 'observed_without_timestamp'
@@ -188,7 +189,10 @@ export class TrackingSyncAudit {
     anomalies: SyncAnomalyCode[],
     completion: Omit<SyncAuditCompletion, 'outcome' | 'anomalyCodes' | 'error'>,
   ): void {
-    const alertable = anomalies.filter((code) => code !== 'observed_without_timestamp');
+    // Recorded with the attempt, not alerted: neither is a fault to look into.
+    const alertable = anomalies.filter((code) => (
+      code !== 'observed_without_timestamp' && code !== 'fallback_without_progress'
+    ));
     for (const anomalyCode of alertable) {
       captureSyncAnomaly(anomalyCode, {
         component: 'tracking-sync',

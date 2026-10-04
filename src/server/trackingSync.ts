@@ -37,7 +37,7 @@ import {
 import { isRecord, type JsonObject } from './types';
 import { UniversalTracker } from 'universal-parcel-scraper/node';
 import type { UniversalSource } from 'universal-parcel-scraper';
-import { RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
+import { directCarrier, RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 import { upuHistory } from './upuHistory';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
 import { eventTimestamp, latestResultTime, resultTimezone } from 'universal-parcel-scraper/app';
@@ -465,7 +465,14 @@ export function detectSyncAnomalies(
     anomalies.add('delivered_status_conflict');
   }
   if (previousStage !== 'pending' && !resultHasUpdate(result)) {
-    anomalies.add('progress_disappeared');
+    // A fallback provider that knows less than the source of the saved summary
+    // contradicts nothing while the carrier's own adapter is asked again within
+    // hours. That adapter, or the provider the summary came from, answering
+    // without progress does. So does any provider for a carrier without an
+    // adapter: it keeps the parcel, and the one holding the history is not asked.
+    const savedProvider = isRecord(parcel.carrier_data) ? parcel.carrier_data.tracking_provider : undefined;
+    anomalies.add(typeof result.tracking_provider === 'string' && result.tracking_provider !== savedProvider
+      && directCarrier(String(parcel.carrier)) ? 'fallback_without_progress' : 'progress_disappeared');
   }
   return [...anomalies];
 }
@@ -870,6 +877,9 @@ export class TrackingSyncService {
       const handoff = supportsSwissPostHandoff(String(parcel.tracking_number ?? ''));
       const knownUpdate = hasUpdate || Boolean(handoff && swissPostReady);
       const progressDisappeared = anomalies.includes('progress_disappeared');
+      // A fallback that knows less is no error: what is saved stays, as with an older snapshot.
+      const fallbackWithoutProgress = anomalies.includes('fallback_without_progress');
+      const keepSaved = progressDisappeared || fallbackWithoutProgress;
       // A reworded scan (DPD with and without the postcode) updates its stored row in place,
       // and a scan both a carrier and a universal provider reported is stored once.
       const stored = storedEventIdentities(parcel);
@@ -905,7 +915,7 @@ export class TrackingSyncService {
         || (sameLocalSource && result.summary_only === true && Array.isArray(previousLocalHistory.events) && previousLocalHistory.events.length > 0)
         || (sameLocalSource && directLocalSnapshotIsOlder(previousLocalHistory, result))
       );
-      const preserveSummary = progressDisappeared || olderSnapshot || unprovenUpuSummary || unprovenLocalSummary
+      const preserveSummary = keepSaved || olderSnapshot || unprovenUpuSummary || unprovenLocalSummary
         || (['delivered', 'returned'].includes(previousStage) && selectedStage !== previousStage);
       const carrierData: JsonObject = Object.fromEntries(
         Object.entries(result).filter(([key, value]) => key !== 'events' && value != null),
@@ -913,13 +923,15 @@ export class TrackingSyncService {
       // The saved watermark takes the same correction, so later replies are compared with the carrier's clock.
       const routing = isRecord(result.routing) ? { ...result.routing } : null;
       if (routing) {
-        const watermark = olderSnapshot ? previousEventTime : withoutCopyDrift(
+        // A fallback's scan that is kept out must not make the carrier's next reply look older.
+        const keepWatermark = olderSnapshot || fallbackWithoutProgress;
+        const watermark = keepWatermark ? previousEventTime : withoutCopyDrift(
           Date.parse(String(routing.last_event_at ?? '')), events, stored, matches, { also: [returnedEventTime,
             fetched.earlierResult ? latestResultTime(fetched.earlierResult, fetched.earlierCarrierId ?? sourceCarrierId) : Number.NaN] },
         );
-        const saved = olderSnapshot ? previousRouting.last_event_at : routing.last_event_at;
+        const saved = keepWatermark ? previousRouting.last_event_at : routing.last_event_at;
         if (Number.isFinite(watermark) && Date.parse(String(saved ?? '')) !== watermark) routing.last_event_at = new Date(watermark).toISOString();
-        else if (saved !== undefined) routing.last_event_at = saved;
+        else if (saved !== undefined || keepWatermark) routing.last_event_at = saved;
         carrierData.routing = routing;
       }
       const postalHistory = upuHistory(parcel, result, now);
@@ -943,7 +955,7 @@ export class TrackingSyncService {
       }
       const values: JsonObject = {
         last_synced_at: this.now().toISOString(),
-        sync_status: progressDisappeared ? 'error' : knownUpdate ? 'ok' : 'waiting',
+        sync_status: progressDisappeared ? 'error' : knownUpdate || fallbackWithoutProgress ? 'ok' : 'waiting',
         sync_error: progressDisappeared
           ? 'The carrier temporarily returned no tracking progress. Previous tracking details have been kept.'
           : null,
@@ -993,15 +1005,15 @@ export class TrackingSyncService {
         // A rejected/older summary must not advertise a swap that was not saved.
         values.carrier_data.routing.configured_carrier = carrierId;
       }
-      const outcome = progressDisappeared ? 'error' : knownUpdate ? 'updated' : 'waiting';
-      const eventsToPersist = progressDisappeared || (preserveSummary && (result.tracking_provider === 'UPU' || localOnlyFallback)) ? [] : events;
+      const outcome = progressDisappeared ? 'error' : knownUpdate && !fallbackWithoutProgress ? 'updated' : 'waiting';
+      const eventsToPersist = keepSaved || (preserveSummary && (result.tracking_provider === 'UPU' || localOnlyFallback)) ? [] : events;
       const persistedIds = new Set(eventsToPersist.map((event) => String(event.provider_event_id)));
       const persistedEvents = withIdentities(
         eventsToPersist.filter((event) => !matches.skipped.has(String(event.provider_event_id))), matches.reused,
       );
       operation = 'persist_package';
       await audit.step('persist_package', async () => {
-        await persist(values, persistedEvents, progressDisappeared ? [] : deleteDescriptions);
+        await persist(values, persistedEvents, keepSaved ? [] : deleteDescriptions);
       }, () => ({
         outcome,
         selected_stage: selectedStage,

@@ -67,7 +67,8 @@ earlier attempt, since the parcel joined the account, ended `updated` on another
 | `observed_without_timestamp` | A synthetic observation was needed to change stage (recorded, not alerted) |
 | `terminal_stage_regression` | A delivered/returned parcel moved stage (`exception` excepted) |
 | `delivered_status_conflict` | The provider says delivered but the chosen stage doesn't |
-| `progress_disappeared` | A parcel with progress suddenly has no usable evidence; the last known state is kept |
+| `progress_disappeared` | The carrier's own adapter, the provider the saved summary came from, or any provider when the carrier has no adapter of its own, answers without progress for a parcel that has some; the last known state is kept and the check ends as an error |
+| `fallback_without_progress` | For a carrier with its own adapter, a fallback provider, not the one the saved summary came from, answers without progress for a parcel that has some; the last known state is kept and the check ends as waiting (recorded, not alerted) |
 
 ## Unmapped wording
 
