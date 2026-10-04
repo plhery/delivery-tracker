@@ -666,7 +666,7 @@
   "share.stopped.title": "Dieses Paket wird nicht mehr geteilt",
   "share.stopped.body": "Die Person, die es geteilt hat, hat das Teilen beendet. Wenn es deins ist, füge die Sendungsnummer ein und verfolge es wieder.",
   "alerts.action.ping": "Sag mir Bescheid",
-  "alerts.action.too": "Mir auch Bescheid sagen",
+  "alerts.action.too": "Sag mir auch Bescheid",
   "alerts.action.moves": "Sag mir Bescheid, wenn es sich bewegt",
   "alerts.action.found": "Sag mir Bescheid, wenn es gefunden ist",
   "alerts.title": "Sag mir Bescheid, wenn es ankommt",
