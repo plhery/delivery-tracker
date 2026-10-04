@@ -5171,7 +5171,7 @@
             "name": "X-Lookup-Proof",
             "in": "header",
             "required": false,
-            "description": "Short-lived browser proof returned by /api/public/verification. Required for new anonymous work when Turnstile is enabled.",
+            "description": "Short-lived browser proof returned by /api/public/verification. Required for new anonymous work when Turnstile is enabled, except the native app user-agent when its compatibility exemption is configured.",
             "schema": {
               "type": "string"
             }
@@ -5251,7 +5251,7 @@
             "name": "X-Lookup-Proof",
             "in": "header",
             "required": false,
-            "description": "Short-lived browser proof returned by /api/public/verification. Required for new anonymous work when Turnstile is enabled.",
+            "description": "Short-lived browser proof returned by /api/public/verification. Required for new anonymous work when Turnstile is enabled, except the native app user-agent when its compatibility exemption is configured.",
             "schema": {
               "type": "string"
             }

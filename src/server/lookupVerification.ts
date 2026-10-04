@@ -34,6 +34,9 @@ function signature(secret: string, payload: string, request: Request): Buffer {
 export function requireLookupProof(request: Request): void {
   const settings = turnstileSettings();
   if (!settings) return;
+  // Compatibility only: callers can forge this header. All lookup budgets still apply.
+  if (process.env.TURNSTILE_ALLOW_NATIVE_USER_AGENT === 'true'
+    && /^PeekDeliveryTracker\/\S+ CFNetwork\/\S+ Darwin\/\S+$/.test(request.headers.get('user-agent') ?? '')) return;
   const proof = request.headers.get('x-lookup-proof') ?? '';
   const match = /^(\d{10})\.([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})$/.exec(proof);
   if (match) {

@@ -238,8 +238,12 @@ still apply. Only parcel creation and detection that contacts a carrier need
 verification. Saved parcels and shared links remain readable during a
 verification outage. Keep the origin behind the trusted proxy and avoid
 Cloudflare challenge pages on JSON APIs and native app traffic.
-Enforcement applies to every anonymous caller of these endpoints, including
-native clients; user-agent strings and client headers grant no exemption.
+Set `TURNSTILE_ALLOW_NATIVE_USER_AGENT=true` to keep existing anonymous iPhone
+lookups working without verification. This exempts the app's
+`PeekDeliveryTracker/... CFNetwork/... Darwin/...` user-agent; Safari still
+requires verification. The header can be forged, so this compatibility setting
+leaves a bypass for scrapers. All lookup budgets still apply. The default is
+`false`, which requires verification from every anonymous caller.
 
 Accounts have separate persistent daily budgets for parcel additions and
 carrier detections. Set `ACCOUNT_LOOKUPS_PER_DAY` and

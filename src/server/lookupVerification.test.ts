@@ -16,6 +16,7 @@ beforeEach(() => {
   vi.stubEnv('TURNSTILE_SITE_KEY', 'test-site-key');
   vi.stubEnv('TURNSTILE_SECRET_KEY', 'test-server-secret');
   vi.stubEnv('TURNSTILE_HOSTNAMES', 'peek.example,old.example');
+  vi.stubEnv('TURNSTILE_ALLOW_NATIVE_USER_AGENT', 'false');
   vi.stubEnv('TRUST_PROXY_HEADERS', 'true');
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ success: true, hostname: 'peek.example', action: 'parcel_lookup' })));
 });
@@ -72,6 +73,42 @@ describe('lookup verification', () => {
     expect(result.status).toBe(200);
     expect(result.headers.get('Cache-Control')).toBe('no-store');
     expect(await result.json()).toMatchObject({ proof: expect.any(String), expiresAt: expect.any(Number) });
+  });
+
+  it('exempts the native app only when compatibility is enabled, keeping iPhone browsers protected', () => {
+    const native = request();
+    native.headers.set('User-Agent', 'PeekDeliveryTracker/1 CFNetwork/3860.500.111.2.2 Darwin/25.5.0');
+    expect(() => requireLookupProof(native)).toThrow('verify');
+    vi.stubEnv('TURNSTILE_ALLOW_NATIVE_USER_AGENT', 'true');
+    expect(() => requireLookupProof(native)).not.toThrow();
+    for (const agent of [
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1',
+      'AnotherApp/1 CFNetwork/3860 Darwin/25.5.0',
+      'PeekDeliveryTracker/1',
+      'Mozilla/5.0 PeekDeliveryTracker/1 CFNetwork/3860 Darwin/25.5.0',
+    ]) {
+      const browser = request();
+      browser.headers.set('User-Agent', agent);
+      expect(() => requireLookupProof(browser)).toThrow('verify');
+    }
+  });
+
+  it('still enforces lookup and detection allowances for exempt native requests', async () => {
+    vi.stubEnv('TURNSTILE_ALLOW_NATIVE_USER_AGENT', 'true');
+    const allowance = vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance').mockResolvedValue({ allowed: false, scope: 'bucket', overallUsed: 0 });
+    const create = vi.spyOn(SupabaseServiceClient.prototype, 'createOneOffParcel');
+    const check = vi.spyOn(amazon, 'checkAmazonShipping');
+    for (const [handler, path] of [[lookup, 'parcels'], [detect, 'detect']] as const) {
+      const response = await handler(new NextRequest(`https://peek.example/api/public/${path}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'User-Agent': 'PeekDeliveryTracker/1 CFNetwork/3860 Darwin/25.5.0' },
+        body: JSON.stringify({ trackingNumber: 'FR0000000098', carrier: 'amazon-shipping' }),
+      }), { params: Promise.resolve({}) });
+      expect(response.status).toBe(429);
+      expect(response.headers.get('X-Lookup-Verification')).toBeNull();
+    }
+    expect(allowance).toHaveBeenCalledTimes(2);
+    expect(create).not.toHaveBeenCalled();
+    expect(check).not.toHaveBeenCalled();
   });
 
   it('refuses direct callers before claiming allowances, creating parcels or asking carriers', async () => {
