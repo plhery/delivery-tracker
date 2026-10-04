@@ -205,6 +205,28 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertNil(CarrierRecognition(settledNumber: "").request(for: "", applies: true))
     }
 
+    func testRecognitionAsksDirectCandidatesForGenericPostalNumbers() {
+        let number = "RR123456785FI"
+        let input = catalog.parse(number)
+        XCTAssertEqual(input.carrier, .internationalPost)
+        XCTAssertEqual(input.confidence, .high)
+        XCTAssertEqual(catalog.recognitionCandidates(for: number), [.posti, .chronopost])
+        XCTAssertEqual(catalog.recognitionCandidates(for: "XR123456785TS"), [.chronopost])
+        XCTAssertFalse(catalog.recognitionCandidates(for: "RR123456789FI").contains(.posti))
+        XCTAssertTrue(CarrierRecognition.applies(to: input, amazon: false, demo: false))
+        XCTAssertFalse(CarrierRecognition.applies(to: input, amazon: false, demo: true))
+        XCTAssertFalse(CarrierRecognition.applies(to: input, amazon: true, demo: false))
+
+        var recognition = CarrierRecognition(settledNumber: number)
+        let asked: [CarrierID] = [.posti, .chronopost]
+        XCTAssertEqual(recognition.request(for: number, applies: true), number)
+        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .asking(asked))
+        recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .internationalPost, asked: asked)
+        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .notFound(asked))
+        recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .posti, asked: asked)
+        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .recognized(.posti))
+    }
+
     func testRecognitionAnswersResolveAChoiceOrSayWhatHappened() throws {
         let number = "12345678901"
         let asked: [CarrierID] = [.glsCh, .glsDe]

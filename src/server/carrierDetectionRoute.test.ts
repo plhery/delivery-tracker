@@ -55,6 +55,22 @@ it('offers a carrier that needs a postcode so the sheet can ask for it', async (
   expect(await (await request('12345678901')).json()).toMatchObject({ trackingNumber: '12345678901', carrier: 'gls-ch' });
 });
 
+it.each([
+  ['RR123456785FI', 'posti', ['posti', 'chronopost']],
+  ['XR123456785TS', 'chronopost', ['chronopost']],
+  ['33870000000000001', 'dhl-ecommerce', ['dhl-ecommerce']],
+])('confirms a direct carrier for %s instead of returning the generic shape', async (number, carrier, candidates) => {
+  recognize.mockImplementation(knows(carrier as string));
+  expect(await (await request(number)).json()).toEqual({ trackingNumber: number, carrier, asked: candidates });
+  expect(asked()).toEqual(candidates);
+});
+
+it('keeps a generic postal number unconfirmed when no direct carrier knows it', async () => {
+  expect(await (await request('CE123456785FI')).json()).toEqual({
+    trackingNumber: 'CE123456785FI', carrier: 'unknown', asked: ['posti', 'chronopost'],
+  });
+});
+
 it('lets the user choose between unrelated carriers that both know the number', async () => {
   recognize.mockImplementation(knows('dpd', 'hermes-de'));
   expect(await (await request('12345678901231')).json()).toEqual({
@@ -103,8 +119,8 @@ it.each([
   ['12345678901242', 'brt', ['dpd', 'seur', 'brt', 'ciblex']],
   ['12345678901243', 'seur', ['dpd', 'seur', 'brt', 'ciblex']],
   ['9900002', 'seur', ['seur']],
-  ['1000000000000001', 'tnt', ['tnt', 'correos-express', 'canada-post']],
-  ['1000000000000002', 'correos-express', ['tnt', 'correos-express', 'canada-post']],
+  ['1000000000000001', 'tnt', ['tnt', 'correos-express', 'dhl-ecommerce', 'canada-post']],
+  ['1000000000000002', 'correos-express', ['tnt', 'correos-express', 'dhl-ecommerce', 'canada-post']],
   ['98765432109876543211', 'nz-post', ['nz-post', 'poczta-polska']],
   ['98765432109876543212', 'poczta-polska', ['nz-post', 'poczta-polska']],
   ['1000000000000000000001', 'austrian-post', ['austrian-post']],

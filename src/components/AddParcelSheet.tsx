@@ -15,7 +15,7 @@ import {
   requirementSatisfied,
   tracksAutomatically,
 } from '../lib/carriers';
-import { carrierCheck, carrierChoiceSections, carrierChoiceTags, carrierNameList, shapeCarrier } from '../lib/carrierPicker';
+import { canAskCarrier, carrierCheck, carrierChoiceSections, carrierChoiceTags, carrierNameList, shapeCarrier } from '../lib/carrierPicker';
 import {
   ParcelAlreadyExistsError,
   type CarrierId,
@@ -161,8 +161,7 @@ export function AddParcelSheet({
   const currentVerification = verifiedCarrier?.trackingNumber === normalizedNumber ? verifiedCarrier : undefined;
   // The check keeps running when a carrier is picked by hand meanwhile: its
   // answer then only says when another carrier has the parcel.
-  const recognizable = Boolean(apiAuth) && !amazonNumber && parsedTracking.confidence === 'low'
-    && parsedTracking.carrier === 'unknown';
+  const recognizable = Boolean(apiAuth) && !amazonNumber && canAskCarrier(parsedTracking, normalizedNumber);
   const askedCarriers = (recognizable ? recognitionAskedCarriers(normalizedNumber) : []) as CarrierId[];
   const currentRecognition = recognizable && recognition?.trackingNumber === normalizedNumber ? recognition : undefined;
   const check = carrierCheck({

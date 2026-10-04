@@ -81,9 +81,9 @@ export async function detectCarrier(body: JsonObject, beforeAsking?: () => Promi
     return { trackingNumber, carrier: ['available', 'expired'].includes(amazonShippingStatus) ? 'amazon-shipping' : 'amazon-logistics', amazonShippingStatus };
   }
   const detected = detectCarrierMatch(trackingNumber);
-  // A shape shared by several carriers: ask the ones that can answer cheaply.
+  // Shared shapes and generic postal numbers need a direct carrier to confirm them.
   // Only a carrier that knows the number is returned; the rest stay suggestions.
-  const answer = detected.confidence === 'low' ? await recognize(trackingNumber, beforeAsking)
+  const answer = recognitionCandidates(trackingNumber).length > 0 ? await recognize(trackingNumber, beforeAsking)
     : { trackingNumber, carrier: detected.carrier } satisfies ApiCarrierDetectionResponse;
   recordDetection(answer.carrier !== 'unknown' ? 'high' : detected.confidence);
   return answer;

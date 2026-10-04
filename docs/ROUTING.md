@@ -148,8 +148,8 @@ Post 17TRACK route skip shadow checks.
 
 ## Carrier recognition
 
-A number whose shape fits several carriers is checked with the carriers that can answer
-cheaply ([`carrierRecognition.ts`](../src/server/carrierRecognition.ts)). A carrier
+A number whose shape fits several carriers or only the generic postal carrier is checked
+with the carriers that can answer cheaply ([`carrierRecognition.ts`](../src/server/carrierRecognition.ts)). A carrier
 qualifies when its `carrier.json` declares `tracking.recognition` and its adapter
 implements `recognize()`: plain HTTP, a clean not-found, no browser. Which carriers are
 asked is shared code ([`recognition.ts`](https://github.com/plhery/universal-parcel-scraper/blob/main/core/catalog/recognition.ts));
@@ -158,7 +158,8 @@ detection golden file's `asked` lists. Carriers that only
 answer through a browser (DHL, FedEx, UPS, USPS, DPD France, Mondial Relay, SF Express)
 are left to the universals.
 
-- **Which and in what order.** Low-confidence detection candidates that qualify: the
+- **Which and in what order.** Matching low-confidence rules that qualify, including
+  those hidden by the generic postal detection: the
   carrier a universal named first, then those a `preferred` rule backs (a DPD depot
   range), then the catalog's `recognition.rank`, a hand-set popularity order in which no
   two carriers share a rank, so the server and both apps order them alike. At most five
@@ -179,14 +180,16 @@ are left to the universals.
   parcel. Several answers ask the user to choose. Automatic detection stays a valid
   choice throughout, and the check never holds the Add button.
 - **In routing.** When the filed carrier cannot track the number (no adapter of its own,
-  or its adapter answered not-found; a transient failure does not count, nor does a
-  not-found for a number that carrier already confirmed), the router asks
+  its adapter answered not-found, or an unconfirmed carrier failed and is absent from
+  the low-confidence format's candidate list), the router asks
   before the universals, never another network of the filed carrier's brand, for open
   parcels in their first 30 days outside linked journeys. A carrier that knows the number
   and needs no input gets a full correction lookup, adopted only on real progress on the
   same number, at least as recent as what we have (a pre-advice is not enough), with the
   "Swapped automatically" notice. A carrier that needs the user's input is saved as
   `routing.input_needed`, and the parcel asks the user for it.
+  A transient failure of a matching carrier and failures of an already confirmed carrier
+  do not trigger recognition.
 - **Retries.** Answers are kept in `routing.candidate_probes`, not with the carrier
   failures, so they decide neither the parcel's status, nor the filed carrier's retry, nor
   the health evidence of the check. The next check waits 1, 2, 4, then 6 hours, since a

@@ -161,11 +161,12 @@ struct CarrierRecognition: Equatable, Sendable {
     /// The server's answer for a settled number.
     var answer: CarrierDetectionResponse?
 
-    /// Only a number no carrier claims with confidence is worth asking about. The
+    /// Only a number no direct carrier claims with confidence is worth asking about. The
     /// check keeps running when a carrier is picked by hand meanwhile: its answer
     /// then only says when another carrier has the parcel.
     static func applies(to input: TrackingInputMatch, amazon: Bool, demo: Bool) -> Bool {
-        !demo && !amazon && input.confidence == .low && input.carrier == .unknown
+        !demo && !amazon && ((input.confidence == .low && input.carrier == .unknown)
+            || input.carrier == .internationalPost)
     }
 
     /// The number to ask about: the settled one, while it is still the number in
@@ -182,7 +183,7 @@ struct CarrierRecognition: Equatable, Sendable {
             guard settledNumber == number else { return .idle }
             return asked.isEmpty ? .unasked : .asking(asked)
         }
-        if answer.carrier != .unknown { return .recognized(answer.carrier) }
+        if answer.carrier != .unknown && answer.carrier != .internationalPost { return .recognized(answer.carrier) }
         if let choices = answer.recognized, choices.count > 1 { return .several(choices) }
         let answered = answer.asked ?? []
         if answered.isEmpty { return .unasked }
@@ -356,20 +357,39 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     /// `recognitionAskedCarriers`; the detection golden file keeps them in step.
     func recognitionCandidates(for raw: String) -> [CarrierID] {
         let match = detect(raw)
-        guard match.confidence == .low else { return [] }
+        let unknownPostalCarrier = match.carrier == .internationalPost
+        guard match.confidence == .low || unknownPostalCarrier else { return [] }
+        var candidates = match.candidates
+        var preferred = match.preferred
+        if unknownPostalCarrier {
+            let number = Self.normalize(raw)
+            let printed = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            // The generic postal match already checked S10. Recover low rules
+            // it hid; each carrier still has to confirm the whole identity.
+            let postalMatches = definitions.compactMap { carrier, definition -> (CarrierID, Bool)? in
+                guard let rule = definition.detectionRules.first(where: { rule in
+                    rule.confidence == "low" && (rule.checksum == nil || rule.checksum == "s10")
+                        && Self.matches(number, pattern: rule.pattern)
+                        && (rule.rawPattern.map { Self.matches(printed, pattern: $0) } ?? true)
+                }) else { return nil }
+                return (carrier, rule.preferred == true)
+            }
+            candidates = postalMatches.map { $0.0 }
+            preferred = postalMatches.filter { $0.1 }.map { $0.0 }
+        }
         func rank(_ carrier: CarrierID) -> Int? { definitions[carrier]?.tracking.recognitionRank }
         // A preferred carrier that cannot be asked (DPD France) keeps its brand's
         // other networks out: DPD's guest API also answers for DPD France parcels.
-        let shadowed = Set(match.preferred.filter { rank($0) == nil }.compactMap(Self.networkBrand))
-        let eligible = match.candidates.filter { carrier in
+        let shadowed = Set(preferred.filter { rank($0) == nil }.compactMap(Self.networkBrand))
+        let eligible = candidates.filter { carrier in
             guard let definition = definitions[carrier], rank(carrier) != nil,
                   definition.tracking.mode == "automatic", definition.tracking.adapter != "universal" else { return false }
             return Self.networkBrand(carrier).map { !shadowed.contains($0) } ?? true
         }
         // Ranks are unique, so the order does not depend on the catalog's key order.
         let ordered = eligible.sorted { left, right in
-            let leftPreferred = match.preferred.contains(left)
-            if leftPreferred != match.preferred.contains(right) { return leftPreferred }
+            let leftPreferred = preferred.contains(left)
+            if leftPreferred != preferred.contains(right) { return leftPreferred }
             return (rank(left) ?? 0) > (rank(right) ?? 0)
         }
         return Array(ordered.prefix(Self.maximumRecognitions))

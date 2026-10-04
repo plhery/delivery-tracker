@@ -6,7 +6,7 @@
 import type { ApiCarrierDetectionResponse } from '../generated/apiContract';
 import type { Translate } from '../i18n';
 import type { CarrierId } from '../types';
-import { carrierInfo, type CarrierDetection, type CarrierInfo } from './carriers';
+import { carrierInfo, recognitionAskedCarriers, type CarrierDetection, type CarrierInfo } from './carriers';
 
 const LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
 
@@ -189,7 +189,7 @@ export function carrierCheck({ applies, settled, asked, answer }: {
   answer?: ApiCarrierDetectionResponse;
 }): CarrierCheck {
   if (!applies || !settled) return { status: 'idle' };
-  if (answer?.carrier && answer.carrier !== 'unknown') return { status: 'found', carrier: answer.carrier };
+  if (answer?.carrier && answer.carrier !== 'unknown' && answer.carrier !== 'intl-post') return { status: 'found', carrier: answer.carrier };
   if (answer?.recognized && answer.recognized.length > 1) return { status: 'several', carriers: answer.recognized };
   if (asked.length === 0) return { status: 'unasked' };
   if (!answer) return { status: 'asking', asked };
@@ -208,6 +208,15 @@ export function carrierNameList(ids: readonly CarrierId[], locale: string, langu
 export function shapeCarrier(detection: Pick<CarrierDetection, 'carrier' | 'confidence'>): CarrierId | undefined {
   return detection.confidence === 'high' && detection.carrier !== 'unknown' && detection.carrier !== 'intl-post'
     ? detection.carrier : undefined;
+}
+
+/** A postal fallback still needs a direct carrier's answer, even when its format is certain. */
+export function canAskCarrier(
+  detection: Pick<CarrierDetection, 'carrier' | 'confidence'>,
+  number: string,
+): boolean {
+  return (detection.confidence === 'low' && detection.carrier === 'unknown')
+    || (detection.carrier === 'intl-post' && recognitionAskedCarriers(number).length > 0);
 }
 
 export interface CarrierChoiceSection {

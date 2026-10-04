@@ -183,7 +183,12 @@ export const CARRIER_CAPABILITIES = {
         ]
       }
     ],
-    "detectionRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^DOFR\\d{13}HD$",
+        "confidence": "high"
+      }
+    ],
     "aliases": [
       "Cainiao",
       "AliExpress"
@@ -441,7 +446,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "dhl-ecommerce"
+      "adapter": "dhl-ecommerce",
+      "recognitionRank": 23
     },
     "trackingUrlTemplate": "https://www.dhl.com/ch-en/home/tracking.html?tracking-id={trackingNumber}&submit=1",
     "linkRules": [
@@ -1901,7 +1907,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Helsinki",
     "tracking": {
       "mode": "automatic",
-      "adapter": "posti"
+      "adapter": "posti",
+      "recognitionRank": 27
     },
     "linkRules": [
       {
@@ -1911,7 +1918,14 @@ export const CARRIER_CAPABILITIES = {
         "path": "^/(?:[a-z]{2}/)?tracking/([^/?#]+)(?:/[0-9]+)?/?$"
       }
     ],
-    "detectionRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}FI$",
+        "confidence": "low",
+        "checksum": "s10",
+        "preferred": true
+      }
+    ],
     "trackingUrlTemplate": "https://www.posti.fi/en/tracking/{trackingNumber}",
     "countries": [
       "FI"
@@ -3810,6 +3824,30 @@ export const CARRIER_CAPABILITIES = {
       "Express Mail Service",
       "EMS Post"
     ]
+  },
+  "omgo": {
+    "displayName": "OMGO",
+    "aliases": [
+      "OMGO Express"
+    ],
+    "countries": [
+      "CN"
+    ],
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "trackingUrlTemplate": "https://omgoexpress.cn/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^OMGO\\d{13}$",
+        "confidence": "high"
+      }
+    ]
   }
 } as const;
 
@@ -3947,7 +3985,8 @@ export const CARRIER_IDS = [
   "zto",
   "intl-post",
   "unknown",
-  "ems"
+  "ems",
+  "omgo"
 ] as const;
 export type ApiCarrierId = (typeof CARRIER_IDS)[number];
 

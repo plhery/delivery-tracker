@@ -92,11 +92,15 @@ describe('carrier brand', () => {
     }
   });
 
-  it('reserves neutral gray for unknown carriers', () => {
+  it('keeps carriers without a verified brand color neutral', () => {
     const neutral = Object.entries(CARRIER_DEFINITIONS)
       .filter(([, definition]) => definition.color === DEFAULT_CARRIER_COLOR)
-      .map(([id]) => id);
-    expect(neutral).toEqual(['unknown']);
+      .map(([id]) => id).sort();
+    expect(neutral).toEqual(['omgo', 'unknown']);
+    for (const id of neutral) {
+      expect(CARRIER_PALETTES[id]).toBeUndefined();
+      expect(carrierDecal(id)).toBe('default');
+    }
     expect(Object.values(CARRIER_DEFINITIONS).every(({ color }) => HEX.test(color))).toBe(true);
   });
 

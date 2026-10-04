@@ -1,6 +1,6 @@
 import type { MessageKey } from '../../i18n';
 import { isAmazonTrackingNumber, requiresAmazonAccount } from '../../lib/amazon';
-import { carrierCheck, type CarrierCheck } from '../../lib/carrierPicker';
+import { canAskCarrier, carrierCheck, type CarrierCheck } from '../../lib/carrierPicker';
 import {
   carrierRequirements,
   normalizeTrackingNumber,
@@ -163,7 +163,7 @@ export function survey(state: LookupState, device: readonly DeviceParcel[] = [])
   const amazon = Boolean(match) && isAmazonTrackingNumber(normalized);
   const answer = match && state.answer?.trackingNumber === normalized ? state.answer : undefined;
   const settledForAsking = Boolean(match) && state.asked === normalized;
-  const recognizable = Boolean(match) && !amazon && match!.confidence === 'low' && match!.carrier === 'unknown';
+  const recognizable = Boolean(match) && !amazon && canAskCarrier(match!, normalized);
   // A carrier chosen by hand needs no asking; an answer that came before the choice still shows who knows the number.
   const check = carrierCheck({
     applies: recognizable && (state.carrier === 'auto' || answer !== undefined),
@@ -186,7 +186,7 @@ export function survey(state: LookupState, device: readonly DeviceParcel[] = [])
         : state.carrier !== 'auto' ? [state.carrier, 'chosen']
           : check.status === 'found' ? [check.carrier, 'found']
             : shape ? [shape, 'shape'] : ['unknown', 'none'];
-  const certain = source !== 'none' && !(amazon && !shipping);
+  const certain = source !== 'none' && carrier !== 'intl-post' && !(amazon && !shipping);
 
   const requirements = match && !onDevice && carrier !== 'unknown' ? carrierRequirements(carrier, match.trackingNumber) : [];
   const pastedUrl = match && match.carrier === carrier ? match.trackingUrl : undefined;

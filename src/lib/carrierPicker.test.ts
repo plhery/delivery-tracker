@@ -3,6 +3,7 @@ import { carrierInfo, recognitionAskedCarriers, SELECTABLE_CARRIERS } from './ca
 import { translate, type Translate } from '../i18n';
 import {
   alphabetSections,
+  canAskCarrier,
   carrierCheck,
   carrierChoiceSections,
   carrierChoiceTags,
@@ -120,6 +121,7 @@ describe('carrier check', () => {
       applies: true, settled: true, asked, answer: { trackingNumber: number, carrier: 'unknown', ...answer },
     });
     expect(answered({ carrier: 'dpd', asked })).toEqual({ status: 'found', carrier: 'dpd' });
+    expect(answered({ carrier: 'intl-post', asked })).toEqual({ status: 'none', asked });
     expect(answered({ recognized: ['dpd', 'ciblex'], asked })).toEqual({ status: 'several', carriers: ['dpd', 'ciblex'] });
     expect(answered({ asked })).toEqual({ status: 'none', asked });
     // One carrier failing is not "could not check"; every one failing is.
@@ -144,6 +146,14 @@ describe('what a picker beside a number leads with', () => {
     expect(shapeCarrier(shape('ups', 'high'))).toBe('ups');
     expect(shapeCarrier(shape('unknown', 'low'))).toBeUndefined();
     expect(shapeCarrier(shape('intl-post', 'high'))).toBeUndefined();
+  });
+
+  it('asks direct carriers about a postal fallback while preserving concrete offline detection', () => {
+    expect(canAskCarrier(shape('intl-post', 'high'), 'RR123456785FI')).toBe(true);
+    expect(canAskCarrier(shape('intl-post', 'high'), 'XR123456785TS')).toBe(true);
+    expect(canAskCarrier(shape('intl-post', 'high'), 'DEMO4471203')).toBe(false);
+    expect(canAskCarrier(shape('ups', 'high'), '1Z999AA10123456784')).toBe(false);
+    expect(canAskCarrier(shape('unknown', 'low'), '12345678901231')).toBe(true);
   });
 
   it('lists the carriers that know the number, then those it fits, then those used before, each once', () => {

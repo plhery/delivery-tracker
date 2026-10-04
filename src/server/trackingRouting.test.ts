@@ -252,7 +252,7 @@ describe('persistent tracking routing', () => {
       // Newly supported number shapes follow the same popularity order.
       const tnt = setup();
       await tnt.router.fetch(parcel({ tracking_number: '1000000000000001' }), false);
-      expect(asked(tnt.recognize)).toEqual(['tnt', 'correos-express', 'canada-post']);
+      expect(asked(tnt.recognize)).toEqual(['tnt', 'correos-express', 'dhl-ecommerce', 'canada-post']);
       expect(tnt.direct).not.toHaveBeenCalled();
       const austria = setup();
       await austria.router.fetch(parcel({ tracking_number: '1000000000000000000001' }), false);
@@ -262,6 +262,38 @@ describe('persistent tracking routing', () => {
       const other = setup();
       await other.router.fetch(parcel({ tracking_number: 'ZZUNMATCHED0001' }), false);
       expect(other.recognize).not.toHaveBeenCalled();
+    });
+
+    it('confirms Chronopost after a wrong carrier fails with a transport error', async () => {
+      const { router, direct, universal, recognize } = setup();
+      recognize.mockImplementation(knows('chronopost'));
+      direct.mockImplementation(async (_lookup: JsonObject, carrier: string) => {
+        if (carrier === 'dhl') throw new Error('upstream unavailable');
+        return directValue('chronopost');
+      });
+      const result = await router.fetch(parcel({ carrier: 'dhl', tracking_number: 'HL123456789JB',
+        tracking_url: 'https://private.invalid/capability', dpd_postcode: '8000' }), false);
+      expect(asked(recognize)).toEqual(['chronopost']);
+      expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['dhl', 'chronopost']);
+      expect(direct.mock.calls[1][0]).toMatchObject({ tracking_url: null, dpd_postcode: null });
+      expect(result.correction).toEqual({ carrier: 'chronopost', trackingUrl: null, postcode: null });
+      expect(universal).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['RR123456785FI', 'posti', ['posti', 'chronopost']],
+      ['XR123456785TS', 'chronopost', ['chronopost']],
+      ['33870000000000001', 'dhl-ecommerce', ['dhl-ecommerce']],
+      ['505600001', 'tnt', ['tnt']],
+    ])('tracks %s through its confirmed carrier before a provider', async (number, carrier, candidates) => {
+      const { router, direct, universal, recognize } = setup();
+      recognize.mockImplementation(knows(carrier as string));
+      direct.mockResolvedValue(directValue(carrier));
+      const result = await router.fetch(parcel({ carrier: 'intl-post', tracking_number: number }), false);
+      expect(asked(recognize)).toEqual(candidates);
+      expect(direct).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ tracking_number: number }), carrier);
+      expect(result.correction?.carrier).toBe(carrier);
+      expect(universal).not.toHaveBeenCalled();
     });
     it('asks again within hours, outside the carrier failures', async () => {
       const { router, universal, recognize } = setup();
@@ -334,6 +366,15 @@ describe('persistent tracking routing', () => {
       direct.mockRejectedValue(error);
       await router.fetch(parcel({ carrier, tracking_number: trackingNumber, ...overrides }), false);
       expect(asked(recognize)).not.toContain(carrier === 'gls-de' ? 'gls-ch' : 'dpd');
+    });
+
+    it('retains a confirmed carrier even when the number shape points elsewhere', async () => {
+      const { router, direct, recognize } = setup();
+      direct.mockRejectedValue(new Error('upstream unavailable'));
+      await router.fetch(parcel({ carrier: 'dhl', tracking_number: 'HL123456789JB', carrier_data: {
+        routing: state({ configured_carrier: 'dhl', confirmed_carrier: 'dhl', confirmed_number: 'HL123456789JB' }),
+      } }), false);
+      expect(recognize).not.toHaveBeenCalled();
     });
     it('keeps recognition out of the health evidence of a check that reached nobody else', async () => {
       const { router, direct, health, recognize } = setup();

@@ -12,6 +12,31 @@ const apiAuth = { userId: 'test-user', getAccessToken: async () => 'test-token' 
 const carrierLine = (name: RegExp) => screen.getByRole('button', { name });
 
 describe('automatic unknown-carrier lookup', () => {
+  it.each([
+    ['RR123456785FI', 'posti', 'Posti'],
+    ['XR123456785TS', 'chronopost', 'Chronopost'],
+  ] as const)('confirms postal fallback %s with the direct carrier before saving', async (trackingNumber, carrier, name) => {
+    vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber, carrier, asked: [carrier] });
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput={trackingNumber} />);
+    await waitFor(() => expect(lookupCarrier).toHaveBeenCalledWith(trackingNumber, apiAuth, expect.anything()));
+    expect(await screen.findByRole('button', { name: new RegExp(`^${name} has this parcel`) })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^add parcel$/i }));
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ trackingNumber, carrier }));
+  });
+
+  it('preserves the postal fallback when no direct carrier recognizes it', async () => {
+    const trackingNumber = 'RR123456785FI';
+    vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber, carrier: 'intl-post', asked: ['posti', 'chronopost'] });
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput={trackingNumber} />);
+    expect(await screen.findByText('not found yet · we’ll keep checking')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^add parcel$/i }));
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ trackingNumber, carrier: 'intl-post' }));
+  });
+
   it('files a printed PostLogistics reference under its carrier', async () => {
     const onAdd = vi.fn().mockResolvedValue(undefined);
     render(<AddParcelSheet onAdd={onAdd} onClose={vi.fn()} initialTrackingInput="12345678-001" />);

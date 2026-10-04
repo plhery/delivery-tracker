@@ -53,6 +53,30 @@ describe('going on', () => {
 });
 
 describe('asking the carriers', () => {
+  it.each([
+    ['RR123456785FI', 'posti', ['posti', 'chronopost']],
+    ['XR123456785TS', 'chronopost', ['chronopost']],
+  ] as const)('confirms the postal fallback %s through its direct carrier before continuing a paste', (number, carrier, asked) => {
+    const waiting = run([pasted(number)]);
+    expect(waiting.job).toBeNull();
+    expect(survey(waiting)).toMatchObject({ ask: number, carrier: 'intl-post', certain: false,
+      check: { status: 'asking', asked: [...asked] }, need: 'wait' });
+    const found = run([{ type: 'answer', answer: { trackingNumber: number, carrier, asked: [...asked] } }], [], waiting);
+    expect(found.job).toEqual({ type: 'lookup', carrier, input: { trackingNumber: number, carrier } });
+  });
+
+  it('keeps the postal fallback and manual choices when direct recognition finds nothing', () => {
+    const number = 'RR123456785FI';
+    const waiting = run([pasted(number)]);
+    const none = run([{ type: 'answer', answer: { trackingNumber: number, carrier: 'intl-post', asked: ['posti', 'chronopost'] } }], [], waiting);
+    expect(none.job).toBeNull();
+    expect(survey(none)).toMatchObject({ carrier: 'intl-post', certain: false, check: { status: 'none' } });
+    expect(run([track], [], none).job).toEqual({ type: 'lookup', carrier: 'intl-post',
+      input: { trackingNumber: number, carrier: 'intl-post' } });
+    const chosen = run([{ type: 'choose', carrier: 'ups' }, track], [], waiting);
+    expect(chosen.job).toEqual({ type: 'lookup', carrier: 'ups', input: { trackingNumber: number, carrier: 'ups' } });
+  });
+
   it('asks on a paste, on leaving the field and on Track, never on a keystroke or a pause', () => {
     const typing = run([typed(SHARED), rested(SHARED)]);
     expect(survey(typing)).toMatchObject({ ask: null, check: { status: 'idle' } });
