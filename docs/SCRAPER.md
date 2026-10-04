@@ -10,8 +10,8 @@ See [architecture](ARCHITECTURE.md), [routing](ROUTING.md) and [observability](O
 
 - `universal-parcel-scraper`: browser-safe catalog, detection and result helpers.
 - `universal-parcel-scraper/app`: browser-safe helpers shaped for this app, such as its
-  parcel view and the clocks its sync uses. The scraper changes them with the app, outside
-  its semver contract.
+  parcel view, the clocks its sync uses and carrier scan-identity policies. The scraper
+  changes them with the app, outside its semver contract.
 - `universal-parcel-scraper/node`: registry, tracking, transport and telemetry interfaces.
 - `universal-parcel-scraper/places`: server-side place resolution.
 - `universal-parcel-scraper/data/*`: published data used by generators.

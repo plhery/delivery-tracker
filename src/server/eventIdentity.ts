@@ -13,36 +13,17 @@
  * the source that worded it), so a repair that finds rows by recomputing
  * identities from their strings misses it.
  *
- * - DPD returns the same scans at the same instants in two shapes. Without the
- *   delivery postcode (or after DPD rejects it) a scan reads "Delivered" with no
- *   place; with it, "Your parcel has been delivered successfully" at "Urdorf,
- *   CH". Its scan takes over the row stored at its instant
- *   (`sameInstantIdentities`).
- * - India Post changes labels for the same coded scan. Its one row at the
- *   same instant can be updated when the provider code still agrees.
+ * - The scraper opts sources into same-instant matching and declares whether
+ *   their provider codes must agree. A unique matching scan takes over the
+ *   stored row at its instant (`sameInstantIdentities`).
  * - A universal provider copies a carrier's scans while the carrier's own
  *   lookup is down, sometimes in a zone it misread (Ship24 keeps GOFO's Pacific
  *   offset on Eastern clocks). A universal copy of a stored scan is left out of
  *   the batch, and a carrier's scan takes over the universal copy stored while
  *   it was down (`sharedScans`).
  */
+import { sameInstantIdentityPolicy } from 'universal-parcel-scraper/app';
 import { isRecord, type JsonObject } from './types';
-
-/**
- * The sources that opt in, each with the stored identity prefixes its scans
- * may take over. `unknown:` rows are a universal provider's copy of the same
- * scans. Never another carrier's prefix.
- *
- * A universal reply is not listed. When DPD takes over a universal row, the
- * row keeps its `unknown:` identity. The next universal reply finds that
- * identity already stored and rewrites the row in place with its own wording,
- * and the next DPD reply takes it back again. The row's wording follows
- * whichever source answered last, but the scan is stored and announced once.
- */
-const SAME_INSTANT_SOURCES: Readonly<Record<string, readonly string[]>> = {
-  dpd: ['dpd:', 'unknown:'],
-  'india-post': ['india-post:'],
-};
 
 function providerCode(row: JsonObject): string {
   const code = row.provider_code ?? (isRecord(row.raw_data) ? row.raw_data.provider_code : undefined);
@@ -80,8 +61,9 @@ export function sameInstantIdentities(
   sourceCarrierId: string,
 ): Map<string, string> {
   const reused = new Map<string, string>();
-  const prefixes = SAME_INSTANT_SOURCES[sourceCarrierId];
-  if (!prefixes || stored.length === 0) return reused;
+  const policy = sameInstantIdentityPolicy(sourceCarrierId);
+  if (!policy || stored.length === 0) return reused;
+  const prefixes = policy.storedSources.map((source) => `${source}:`);
   const storedIds = new Set(stored.map(identity));
   const claimed = new Set(events.map(identity));
   const unmatched = byInstant(events.filter((event) => (
@@ -95,7 +77,7 @@ export function sameInstantIdentities(
     if (scans.length !== 1 || rows.length !== 1) continue;
     // A source with changing labels must still agree on its scan kind.
     const code = providerCode(scans[0]!);
-    if (sourceCarrierId === 'india-post' && (!code || code.toLowerCase() === 'unknown' || code !== providerCode(rows[0]!))) continue;
+    if (policy.requireProviderCode && (!code || code.toLowerCase() === 'unknown' || code !== providerCode(rows[0]!))) continue;
     reused.set(identity(scans[0]!), identity(rows[0]!));
   }
   return reused;
