@@ -158,4 +158,17 @@ describe('the landing’s own address', () => {
     history.replaceState(null, '', '/home/more');
     expect(renderHook(() => useLandingRoute()).result.current).toBe(false);
   });
+
+  it('counts a language’s address as the landing’s own: a lookup opens the parcel, and Back returns', () => {
+    history.replaceState(null, '', '/de');
+    const { result } = renderHook(() => ({ landing: useLandingRoute(true), link: useParcelLinkRoute() }));
+    expect(result.current).toEqual({ landing: true, link: null });
+    act(() => openParcelLink(LINK_ID));
+    expect(result.current).toEqual({ landing: false, link: LINK_ID });
+    act(() => { history.replaceState(null, '', '/de'); window.dispatchEvent(new PopStateEvent('popstate')); });
+    expect(result.current).toEqual({ landing: true, link: null });
+    // English has no address of its own: `/en` is not the landing.
+    act(() => { history.replaceState(null, '', '/en'); window.dispatchEvent(new PopStateEvent('popstate')); });
+    expect(result.current.landing).toBe(false);
+  });
 });

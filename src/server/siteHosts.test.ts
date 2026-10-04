@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { proxy } from '../../proxy';
+import { config, proxy } from '../../proxy';
+import { ADDRESS_LANGUAGES } from '../lib/locale';
 import { canonicalOrigin, legacyHostRedirect, movedOrigin, requestHost, siteHosts } from './siteHosts';
 
 const moved = { CANONICAL_ORIGIN: 'https://peek.example.test', LEGACY_HOSTS: 'delivery.example.test, old.example.test' } as unknown as NodeJS.ProcessEnv;
@@ -81,6 +82,9 @@ describe('legacyHostRedirect', () => {
     ['/invite?preview=' + 'a'.repeat(64), 'https://peek.example.test/invite?preview=' + 'a'.repeat(64)],
     ['/invite', 'https://peek.example.test/invite'],
     ['/demo', 'https://peek.example.test/demo'],
+    ['/home', 'https://peek.example.test/home'],
+    ['/de', 'https://peek.example.test/de'],
+    ['/pl?utm_source=chat', 'https://peek.example.test/pl?utm_source=chat'],
     ['/privacy.html', 'https://peek.example.test/privacy.html'],
     ['/apiary', 'https://peek.example.test/apiary'],
   ])('sends the page %s to the same address on the canonical origin', (path, target) => {
@@ -168,6 +172,38 @@ describe('the page proxy', () => {
       expect(response.headers.get('location')).toBeNull();
       expect(response.headers.get('content-security-policy')).toContain("default-src 'self'");
     }
+  });
+
+  it('renders a language address as if its language had been chosen, without writing the browser’s cookie', () => {
+    // What the page will read, as the proxy hands it on.
+    const cookieRead = (response: Response) => response.headers.get('x-middleware-request-cookie');
+    for (const language of ADDRESS_LANGUAGES) {
+      const response = page(`https://peek.example.test/${language}`, { headers: { host: 'peek.example.test', cookie: 'sdt.locale=en; other=1', 'accept-language': 'en-GB' } });
+      expect(response.status).toBe(200);
+      expect(cookieRead(response)).toBe(`sdt.locale=${language}; other=1`);
+      expect(response.headers.get('set-cookie')).toBeNull();
+      expect(response.headers.get('content-security-policy')).toContain("default-src 'self'");
+    }
+    expect(cookieRead(page('https://peek.example.test/de', { headers: { host: 'peek.example.test' } }))).toBe('sdt.locale=de');
+    // Every other address reads the browser's own choice, untouched.
+    for (const path of ['/', '/home', '/en', '/xx', '/de/more', '/demo', '/p/k7Qm2xW9bTfR']) {
+      expect(cookieRead(page(`https://peek.example.test${path}`, { headers: { host: 'peek.example.test', cookie: 'sdt.locale=fr' } })), path).toBe('sdt.locale=fr');
+      expect(cookieRead(page(`https://peek.example.test${path}`, { headers: { host: 'peek.example.test' } })), path).toBeNull();
+    }
+  });
+
+  it('always answers a language address itself, a prefetch too', () => {
+    const [pages, languages] = config.matcher;
+    expect(pages.missing).toHaveLength(2);
+    expect(languages).toEqual({ source: `/:language(${ADDRESS_LANGUAGES.join('|')})` });
+  });
+
+  it('sends a language address on a legacy host to the same address on the canonical one', () => {
+    vi.stubEnv('CANONICAL_ORIGIN', 'https://peek.example.test');
+    vi.stubEnv('LEGACY_HOSTS', 'delivery.example.test');
+    const response = page('https://delivery.example.test/de', { headers: { host: 'delivery.example.test' } });
+    expect(response.status).toBe(308);
+    expect(response.headers.get('location')).toBe('https://peek.example.test/de');
   });
 
   it('redirects nothing without the settings', () => {

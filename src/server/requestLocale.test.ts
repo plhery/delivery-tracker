@@ -6,7 +6,7 @@ vi.mock('next/headers', () => ({
   headers: async () => new Headers(request.acceptLanguage ? { 'accept-language': request.acceptLanguage } : {}),
 }));
 
-const { requestLanguage, requestLocale } = await import('./requestLocale');
+const { languageFor, requestLanguage, requestLocale } = await import('./requestLocale');
 
 afterEach(() => {
   request.cookie = undefined;
@@ -45,4 +45,13 @@ it('sends messages only for languages the client does not ship', async () => {
   const polish = await requestLanguage();
   expect(polish.initialLocale).toBe('pl');
   expect(polish.initialMessages?.['app.eyebrow']).toBe((await import('../../shared/locales/pl.json')).default['app.eyebrow']);
+});
+
+it('hands a page the messages of a language it names itself, whatever the request prefers', async () => {
+  request.acceptLanguage = 'en-GB';
+  request.cookie = 'fr';
+  const german = languageFor('de');
+  expect(german.initialLocale).toBe('de');
+  expect(german.initialMessages?.['peek.title']).toBe('Wo ist mein Paket?');
+  expect(languageFor('en')).toEqual({ initialLocale: 'en' });
 });

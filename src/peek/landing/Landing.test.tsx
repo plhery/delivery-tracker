@@ -120,6 +120,34 @@ describe('Landing', () => {
     expect(within(footer).getByRole('combobox', { name: 'Language' })).toHaveValue('en');
   });
 
+  it('moves a language’s address with the language chosen at its foot, to where the landing is in English for this reader', async () => {
+    const user = userEvent.setup();
+    const choose = (language: string) => user.selectOptions(screen.getByRole('combobox', { name: 'Language' }), language);
+    const foot = (account: 'visitor' | 'checking' | 'signed-in') => render(<PeekSessionProvider value={{ account, signIn: vi.fn() }}><LandingFooter /></PeekSessionProvider>);
+
+    // A visitor: English is at `/`, the landing for them.
+    history.replaceState(null, '', '/de');
+    const visitor = foot('visitor');
+    await choose('fr');
+    expect(location.pathname).toBe('/fr');
+    await choose('en');
+    expect(location.pathname).toBe('/');
+    visitor.unmount();
+
+    // Someone signed in has their deliveries at `/`, and a browser with the demo open has the demo there.
+    history.replaceState(null, '', '/pl');
+    const signedIn = foot('signed-in');
+    await choose('en');
+    expect(location.pathname).toBe('/home');
+    signedIn.unmount();
+
+    localStorage.setItem('sdt.web.experience.v1', 'demo');
+    history.replaceState(null, '', '/it');
+    foot('visitor');
+    await choose('en');
+    expect(location.pathname).toBe('/home');
+  });
+
   it('draws its words on the server, and none of the map or the cards', () => {
     const html = renderToString(<Landing onSignIn={onSignIn} />);
     expect(html).toContain('Will I know when it moves?');

@@ -22,7 +22,7 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
 | Path | What |
 | --- | --- |
 | `app/` | App Router pages, route handlers, manifest, service worker, offline page |
-| `proxy.ts` | Per-request CSP nonce and security headers; redirects pages from a host the site has left |
+| `proxy.ts` | Per-request CSP nonce and security headers; redirects pages from a host the site has left; tells a language address its language |
 | `src/` | React client (`components/`, `store/`, `auth/`, `i18n.tsx`) |
 | `src/peek/` | The landing and the parcel page for visitors: the field, parcel link client, this device's parcels, keeping a parcel after sign-in; `landing/` holds the sections below the field |
 | `src/server/` | API helpers, auth, sync worker, routing, push, email, observability |
@@ -179,6 +179,7 @@ Key server modules:
 | --- | --- |
 | `/` | The landing to a visitor, with the parcels of their device right under the field; the deliveries to someone signed in |
 | `/home` | The landing to anyone. Someone signed in reaches it from the foot of their deliveries or from Settings, and it leads back to `/` |
+| `/de`, `/fr`, `/it`, `/es`, `/pt`, `/pl` | The landing in that language to anyone, whatever the browser prefers. English is at `/`, where `/en` leads |
 | `/p/<id>` | One parcel, to anyone with the link |
 | `/sample` | A made-up parcel on a parcel page, told by the browser: nothing is asked of the server or kept on the device. Its "Home page" link leads back to the landing |
 | `/i/<key>`, `/invite` | A friend invitation ([FRIENDS.md](FRIENDS.md)) |
@@ -192,18 +193,36 @@ The server draws the landing at `/` for everyone, because a sign-in lives in the
 storage. A script that runs before the first paint
 ([`entryHintConfig.ts`](../src/lib/entryHintConfig.ts)) marks a browser that holds a
 sign-in, or has the demo open, so it shows the splash instead until its own screen is
-ready. At `/home` the landing shows at once, and the script only keeps "Sign in" out of
-sight for a browser that holds a sign-in. The map and the sample parcels of the landing
-load when their sections come near; a visitor with parcels on the device gets the map at
-once, for the routes on their cards.
+ready. At `/home` and at a language's address the landing shows at once, and the script
+only keeps "Sign in" out of sight for a browser that holds a sign-in. The map and the
+sample parcels of the landing load when their sections come near; a visitor with parcels
+on the device gets the map at once, for the routes on their cards.
+
+`/` answers in the reader's language: the one they chose (the `sdt.locale` cookie), else
+the browser's. A crawler sends neither and reads English, so every other language has an
+address of its own, one page per language under `app/`, written in that language from the
+first byte: `<html lang>`, the words, the title and the link preview.
+
+- The proxy hands the page the address's language in place of the cookie the browser sent
+  ([`proxy.ts`](../proxy.ts)). No other address reads anything a client could not already
+  choose, and the browser's own cookie is not written.
+- In the browser the address's language wins over a saved choice, and a visit saves
+  nothing. The language menu there saves the choice and moves the address with it, without
+  a page load: to `/` for English, or to `/home` where `/` is the reader's deliveries, the
+  demo or the sign-in step. Leaving the address for a parcel keeps the language on screen.
+- A language address counts as the landing's own, like `/home`: someone signed in sees the
+  landing there.
 
 For search engines, `/robots.txt` lets everything be fetched and `/sitemap.xml` lists the
-pages meant to be found: the landing and the privacy notice. The landing's HTML carries
-its title, description and canonical address, and a schema.org description of the site and
-the app ([`landingStructuredData.ts`](../src/server/landingStructuredData.ts)). Parcel
-links, invitations and `/email/off` answer `noindex` in a header; the demo, the sample and
-the offline page say it in the page, and let their links be followed. These addresses are
-written on `CANONICAL_ORIGIN` when it is set ([DEPLOYMENT.md](DEPLOYMENT.md)).
+pages meant to be found: the landing in each language and the privacy notice. Each
+landing's HTML carries its title, description and canonical address, the address of every
+other language (`hreflang`, with `/` for a reader of none of them), and a schema.org
+description of the site and the app
+([`landingStructuredData.ts`](../src/server/landingStructuredData.ts)). `/home` names `/`
+as its canonical address. Parcel links, invitations and `/email/off` answer `noindex` in a
+header; the demo, the sample and the offline page say it in the page, and let their links
+be followed. These addresses are written on `CANONICAL_ORIGIN` when it is set
+([DEPLOYMENT.md](DEPLOYMENT.md)).
 
 ## Data lifecycle
 

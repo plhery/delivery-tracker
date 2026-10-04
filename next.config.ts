@@ -58,6 +58,10 @@ const nextConfig: NextConfig = {
     // Keep production stack traces actionable without exposing browser maps.
     serverSourceMaps: true,
   },
+  async redirects() {
+    // English has no address of its own beside the other languages': its landing is `/`.
+    return [{ source: '/en', destination: '/', permanent: true }];
+  },
   async headers() {
     return [
       {

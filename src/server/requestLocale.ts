@@ -16,15 +16,23 @@ export function messagesFor(locale: Locale): Messages {
   return locale === 'en' ? en : MESSAGES[locale];
 }
 
-/** The language the browser will pick, so server markup is never replaced by a translation. */
+/**
+ * The language the browser will pick, so server markup is never replaced by a
+ * translation. At a language address such as `/de` that is the address's
+ * language: the proxy answers for the cookie there, whatever the browser sent.
+ */
 export async function requestLocale(): Promise<Locale> {
   const chosen = (await cookies()).get(LOCALE_COOKIE)?.value;
   if (isLocale(chosen)) return chosen;
   return detectLocale(acceptedLanguages((await headers()).get('accept-language')));
 }
 
-/** The request's language with its messages; English ships with the client already. */
-export async function requestLanguage(): Promise<{ initialLocale: Locale; initialMessages?: Messages }> {
-  const locale = await requestLocale();
+/** A language with its messages, as a page hands them to the client; English ships with the client already. */
+export function languageFor(locale: Locale): { initialLocale: Locale; initialMessages?: Messages } {
   return locale === 'en' ? { initialLocale: locale } : { initialLocale: locale, initialMessages: MESSAGES[locale] };
+}
+
+/** The request's language with its messages. */
+export async function requestLanguage(): Promise<{ initialLocale: Locale; initialMessages?: Messages }> {
+  return languageFor(await requestLocale());
 }

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { LANDING_PATH } from '../lib/experience';
+import { isLandingPath, LANDING_PATH } from '../lib/experience';
 import { cleanLinkText, MAX_GIFT_FROM_LENGTH, MAX_GIFT_NOTE_LENGTH } from './linkModel';
 import { cleanParcelName } from './recents';
 import { SAMPLE_LINK_ID, SAMPLE_PATH } from './sample';
@@ -106,11 +106,12 @@ export function useParcelLinkRoute(serverId: string | null = null): string | nul
   return useSyncExternalStore(subscribe, current, () => serverId ?? '') || null;
 }
 
-const atLanding = () => window.location.pathname === LANDING_PATH;
+const atLanding = () => isLandingPath(window.location.pathname);
 
 /**
- * Whether the address is the landing's own, where the landing shows to
- * someone signed in too. `serverLanding` says the server rendered that address.
+ * Whether the address is one of the landing's own (`/home`, or a language's
+ * such as `/de`), where the landing shows to someone signed in too.
+ * `serverLanding` says the server rendered such an address.
  */
 export function useLandingRoute(serverLanding = false): boolean {
   return useSyncExternalStore(subscribe, atLanding, () => serverLanding);

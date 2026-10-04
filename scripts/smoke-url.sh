@@ -62,6 +62,10 @@ require_match '/_next/static/[^" ]+\.js' "$workdir/index.html" 'app JavaScript i
 require_match '<meta property="og:image" content="https?://[^" ]+/og\.png(\?[^" ]*)?"' "$workdir/index.html" 'social image metadata is missing or invalid'
 require_match '^cache-control:.*no-store' "$workdir/index.headers" 'the page must not be cached' -Eiq
 
+# A language address answers in its language to a client that asks for none, as a crawler does.
+request "$base_url/de?smoke=$nonce" "$workdir/de.html" "$workdir/de.headers"
+require_match '<html lang="de"' "$workdir/de.html" 'a language address must answer in its language'
+
 request "$base_url/health/live?smoke=$nonce" "$workdir/live.json" "$workdir/live.headers"
 expected_ready=${SMOKE_EXPECT_READY:-true}
 if [[ "$expected_ready" == true ]]; then

@@ -6,9 +6,9 @@ import de from '../shared/locales/de.json';
 import fr from '../shared/locales/fr.json';
 import itMessages from '../shared/locales/it.json';
 import trackingMessages from '../shared/tracking-messages.json';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   detectLocale,
   I18nProvider,
@@ -133,6 +133,111 @@ describe('localization', () => {
     await user.selectOptions(screen.getByLabelText('Language'), 'it');
     expect(document.cookie).toContain('sdt.locale=it');
     expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('it');
+  });
+
+  describe('at a language address', () => {
+    const forgetCookie = () => { document.cookie = 'sdt.locale=; Path=/; Max-Age=0'; };
+    beforeEach(forgetCookie);
+    afterEach(() => { forgetCookie(); history.replaceState(null, '', '/'); });
+    const landing = (englishAddress?: () => string) => render(
+      <I18nProvider initialLocale="de" initialMessages={de}><LanguageControl englishAddress={englishAddress} /><TranslationProbe /></I18nProvider>,
+    );
+
+    it('shows the address’s language whatever was saved, and saves nothing of the visit', () => {
+      window.localStorage.setItem('deliveryTrackerLocale', 'fr');
+      history.replaceState(null, '', '/de');
+      landing();
+      // No waiting: the page is in German when rendering returns, and stays so.
+      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+      expect(screen.getByLabelText('Sprache')).toHaveValue('de');
+      expect(document.documentElement.lang).toBe('de');
+      // The saved choice is still French, for `/` and every other address.
+      expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('fr');
+      expect(document.cookie).toContain('sdt.locale=fr');
+      expect(document.cookie).not.toContain('sdt.locale=de');
+    });
+
+    it('leaves a browser that chose nothing with nothing chosen', () => {
+      history.replaceState(null, '', '/de');
+      landing();
+      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+      expect(window.localStorage.getItem('deliveryTrackerLocale')).toBeNull();
+      expect(document.cookie).not.toContain('sdt.locale');
+    });
+
+    it('saves a language chosen there and moves the address to that language’s, in place', async () => {
+      history.replaceState({ kept: 1 }, '', '/de?utm_source=test#who');
+      const heard = vi.fn();
+      window.addEventListener('popstate', heard);
+      const user = userEvent.setup();
+      landing();
+      const length = history.length;
+
+      await user.selectOptions(screen.getByLabelText('Sprache'), 'fr');
+      expect(screen.getByText('Suivi de colis')).toBeInTheDocument();
+      expect(location.pathname + location.search + location.hash).toBe('/fr?utm_source=test#who');
+      expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('fr');
+      expect(document.cookie).toContain('sdt.locale=fr');
+      // The page stays: no step is added to the history, and what follows the address hears of the move.
+      expect(history.length).toBe(length);
+      expect(history.state).toEqual({ kept: 1 });
+      expect(heard).toHaveBeenCalledTimes(1);
+
+      // English lives at `/`.
+      await user.selectOptions(screen.getByLabelText('Langue'), 'en');
+      expect(screen.getByText('Parcel tracking')).toBeInTheDocument();
+      expect(location.pathname + location.search + location.hash).toBe('/?utm_source=test#who');
+      expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('en');
+      expect(history.length).toBe(length);
+      expect(heard).toHaveBeenCalledTimes(2);
+
+      // `/` is no language's address: a choice made there leaves it where it is, as before.
+      await user.selectOptions(screen.getByLabelText('Language'), 'it');
+      expect(location.pathname).toBe('/');
+      expect(heard).toHaveBeenCalledTimes(2);
+      window.removeEventListener('popstate', heard);
+    });
+
+    it('leads English where the landing is for a reader whose `/` is something else', async () => {
+      history.replaceState(null, '', '/de');
+      const user = userEvent.setup();
+      landing(() => '/home');
+      await user.selectOptions(screen.getByLabelText('Sprache'), 'en');
+      expect(location.pathname).toBe('/home');
+      expect(screen.getByText('Parcel tracking')).toBeInTheDocument();
+    });
+
+    it('follows Back to a language address, and keeps the language on screen when the address is left', async () => {
+      window.localStorage.setItem('deliveryTrackerLocale', 'fr');
+      history.replaceState(null, '', '/de');
+      landing();
+      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+      // A parcel opened from the landing is read in the landing's language.
+      act(() => { history.pushState(null, '', '/sample'); window.dispatchEvent(new PopStateEvent('popstate')); });
+      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+      act(() => { history.replaceState(null, '', '/it'); window.dispatchEvent(new PopStateEvent('popstate')); });
+      expect(await screen.findByText(itMessages['app.eyebrow'])).toBeInTheDocument();
+      expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('fr');
+    });
+
+    it('shows in its menu the language an address brought, after a choice made earlier', async () => {
+      history.replaceState(null, '', '/de');
+      const user = userEvent.setup();
+      landing();
+      await user.selectOptions(screen.getByLabelText('Sprache'), 'fr');
+      expect(screen.getByLabelText('Langue')).toHaveValue('fr');
+      act(() => { history.replaceState(null, '', '/de'); window.dispatchEvent(new PopStateEvent('popstate')); });
+      expect(screen.getByLabelText('Sprache')).toHaveValue('de');
+    });
+
+    it('leaves the address alone everywhere else', async () => {
+      history.replaceState(null, '', '/home');
+      const user = userEvent.setup();
+      render(<I18nProvider><LanguageControl englishAddress={() => '/home'} /><TranslationProbe /></I18nProvider>);
+      await user.selectOptions(screen.getByLabelText('Language'), 'de');
+      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+      expect(location.pathname).toBe('/home');
+    });
   });
 
   it('preserves precise carrier estimates in the recipient timezone', () => {

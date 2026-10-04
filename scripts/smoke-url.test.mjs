@@ -9,7 +9,7 @@ import test from 'node:test';
 const run = promisify(execFile);
 const script = fileURLToPath(new URL('./smoke-url.sh', import.meta.url));
 
-async function smoke(t, { image = 'https://delivery.example/og.png', ready = true, cache = 'no-store', type = 'image/png' } = {}) {
+async function smoke(t, { image = 'https://delivery.example/og.png', ready = true, cache = 'no-store', type = 'image/png', german = 'de' } = {}) {
   const requests = [];
   const server = createServer((request, response) => {
     const path = new URL(request.url, 'http://localhost').pathname;
@@ -17,6 +17,8 @@ async function smoke(t, { image = 'https://delivery.example/og.png', ready = tru
     if (path === '/') {
       response.setHeader('Cache-Control', cache);
       response.end(`<script src="/_next/static/app.js"></script><meta property="og:image" content="${image}"/>`);
+    } else if (path === '/de') {
+      response.end(`<!DOCTYPE html><html lang="${german}"><head></head></html>`);
     } else if (path === '/health' || path === '/health/live') {
       const ok = path === '/health/live' || ready;
       response.statusCode = ok ? 200 : 503;
@@ -37,7 +39,7 @@ async function smoke(t, { image = 'https://delivery.example/og.png', ready = tru
     timeout: 10_000,
   });
   assert.match(stdout, /Origin smoke passed/);
-  assert.deepEqual(requests, ['/', '/health/live', '/health', '/og.png']);
+  assert.deepEqual(requests, ['/', '/de', '/health/live', '/health', '/og.png']);
 }
 
 test('smoke accepts an unversioned social image and a ready origin', (t) => smoke(t));
@@ -47,6 +49,12 @@ test('smoke accepts a versioned social image and the unconfigured CI container',
 test('smoke explains missing social image metadata', async (t) => {
   await assert.rejects(smoke(t, { image: '' }), (error) => {
     assert.match(error.stderr, /social image metadata is missing or invalid/);
+    return true;
+  });
+});
+test('smoke rejects a language address that answers in the language of the request', async (t) => {
+  await assert.rejects(smoke(t, { german: 'en' }), (error) => {
+    assert.match(error.stderr, /a language address must answer in its language/);
     return true;
   });
 });

@@ -224,6 +224,34 @@ describe('ApiApplication', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
   });
 
+  it('shows the landing at a language’s address to someone signed in, like at its own: their deliveries, a lookup and Back', async () => {
+    mocks.auth.status = 'authenticated';
+    mocks.auth.user = USER;
+    history.replaceState(null, '', '/de');
+    const user = userEvent.setup();
+    render(<ApiApplication landingRoute />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Sign in' })).not.toBeInTheDocument();
+    act(() => openParcelLink(LINK_ID));
+    expect(screen.getByText(`Parcel page ${LINK_ID} for signed-in with 0 deliveries`)).toBeVisible();
+    act(() => { history.replaceState(null, '', '/de'); window.dispatchEvent(new PopStateEvent('popstate')); });
+    await user.click(screen.getAllByRole('link', { name: 'My deliveries' })[0]);
+    expect(location.pathname).toBe('/');
+    expect(screen.getByText('owner@example.test')).toBeVisible();
+  });
+
+  it('shows the landing at a language’s address to a visitor whatever the tab was doing, and signs in at `/`', async () => {
+    window.sessionStorage.setItem('sdt.web.experience.v1', 'sign-in');
+    history.replaceState(null, '', '/pl');
+    const user = userEvent.setup();
+    render(<ApiApplication landingRoute />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(screen.queryByText('Configured sign in')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(location.pathname).toBe('/');
+    expect(screen.getByText('Configured sign in')).toBeVisible();
+  });
+
   it('shows the landing at its own address to a visitor too, whatever the tab was doing, and signs in at `/`', async () => {
     // The tab was left at the sign-in step.
     history.replaceState(null, '', '/home');

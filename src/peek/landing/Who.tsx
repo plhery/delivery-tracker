@@ -3,6 +3,8 @@ import { Icon } from '../../components/Icon';
 import { PeekMark } from '../../components/PeekMark';
 import { LanguageControl, useI18n, type MessageKey } from '../../i18n';
 import { trackAction } from '../../lib/analytics';
+import { LANDING_PATH, landingAtRoot } from '../../lib/experience';
+import { usePeekSession } from '../session';
 import { LandingIcon, XLogo } from './glyphs';
 import { AUTHOR_URL, SOURCE_URL } from './links';
 import './Who.css';
@@ -35,10 +37,13 @@ export function Who() {
 /** The foot of the page: the name, the privacy notice, the code, and the language. */
 export function LandingFooter() {
   const { t } = useI18n();
+  const { account } = usePeekSession();
+  // English lives at `/`. Where that is the deliveries, the demo or the sign-in step, the landing in English is at its own address.
+  const englishAddress = () => account === 'visitor' && landingAtRoot() ? '/' : LANDING_PATH;
   return <footer className="landing-footer">
     <span className="landing-footer__name"><PeekMark size={18} />{t('app.title')} · {t('app.tagline')}</span>
     <a href="/privacy.html" onClick={() => trackAction('privacy-open')}>{t('auth.privacyLink')}</a>
     <a href={SOURCE_URL} target="_blank" rel="noopener noreferrer"><LandingIcon name="github" />GitHub</a>
-    <LanguageControl />
+    <LanguageControl englishAddress={englishAddress} />
   </footer>;
 }

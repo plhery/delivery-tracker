@@ -1,5 +1,6 @@
 import { trackAction } from './analytics';
 import { useEffect, useSyncExternalStore } from 'react';
+import { pathLanguage } from './locale';
 
 export type EntryScreen = 'welcome' | 'sign-in' | 'demo';
 /** One name in two stores: the browser remembers the demo, a tab its sign-in step. */
@@ -8,15 +9,15 @@ export const EXPERIENCE_STORAGE_KEY = 'sdt.web.experience.v1'; // gitleaks:allow
 export const DEMO_PATH = '/demo';
 /** The landing's own address. Anyone who opens it sees the landing; at `/`, someone signed in sees their deliveries. */
 export const LANDING_PATH = '/home';
+/** Whether a path is an address of the landing's own: `/home`, or the landing in one language, such as `/de`. */
+export const isLandingPath = (pathname: string) => pathname === LANDING_PATH || pathLanguage(pathname) !== null;
 const DEMO_ARRIVAL_KEY = 'sdt.web.demo-arrival.v1'; // gitleaks:allow -- sessionStorage marker name
 const eventName = 'delivery-experience-change';
 let memoryScreen: EntryScreen | null = null;
 const atDemoAddress = () => window.location.pathname === DEMO_PATH;
-const atLandingAddress = () => window.location.pathname === LANDING_PATH;
-function read(): EntryScreen {
-  // The address decides before anything this browser remembers.
-  if (atDemoAddress()) return 'demo';
-  if (atLandingAddress()) return 'welcome';
+const atLandingAddress = () => isLandingPath(window.location.pathname);
+/** What this browser shows at `/`, whatever address it is at. */
+function remembered(): EntryScreen {
   try {
     // The sign-in step belongs to its tab: it lasts a reload and the trip to a sign-in provider, and ends with the tab.
     if (sessionStorage.getItem(EXPERIENCE_STORAGE_KEY) === 'sign-in') return 'sign-in';
@@ -25,6 +26,14 @@ function read(): EntryScreen {
   } catch { return memoryScreen ?? 'welcome'; }
   return 'welcome';
 }
+function read(): EntryScreen {
+  // The address decides before anything this browser remembers.
+  if (atDemoAddress()) return 'demo';
+  if (atLandingAddress()) return 'welcome';
+  return remembered();
+}
+/** Whether `/` shows a visitor the landing in this browser: not while it has the demo or the sign-in step open. */
+export const landingAtRoot = () => remembered() === 'welcome';
 function subscribe(notify: () => void) {
   const onStorage = () => { memoryScreen = null; notify(); };
   window.addEventListener(eventName, notify);

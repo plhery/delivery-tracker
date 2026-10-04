@@ -5,8 +5,8 @@ import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { RECENTS_STORAGE_KEY } from '../peek/recents';
 import { useEntryHint } from './entryHint';
-import { ENTRY_HINT_BOOTSTRAP, ENTRY_HINT_KEYS, ENTRY_HINT_LANDING_PATH } from './entryHintConfig';
-import { EXPERIENCE_STORAGE_KEY, LANDING_PATH } from './experience';
+import { ENTRY_HINT_BOOTSTRAP, ENTRY_HINT_KEYS, ENTRY_HINT_LANDING_PATHS } from './entryHintConfig';
+import { EXPERIENCE_STORAGE_KEY, isLandingPath, LANDING_PATH } from './experience';
 
 const root = document.documentElement;
 /** Runs the script as the page does, before anything is drawn. */
@@ -21,9 +21,10 @@ beforeEach(() => { localStorage.clear(); sessionStorage.clear(); delete root.dat
 afterEach(() => { localStorage.clear(); sessionStorage.clear(); delete root.dataset.entry; history.replaceState(null, '', '/'); });
 
 describe('the entry hint script', () => {
-  it('reads the names the page’s own stores write, and the landing’s address as the page routes it', () => {
+  it('reads the names the page’s own stores write, and the landing’s addresses as the page routes them', () => {
     expect(ENTRY_HINT_KEYS).toEqual({ experience: EXPERIENCE_STORAGE_KEY, deviceParcels: RECENTS_STORAGE_KEY });
-    expect(ENTRY_HINT_LANDING_PATH).toBe(LANDING_PATH);
+    expect(ENTRY_HINT_LANDING_PATHS).toEqual([LANDING_PATH, '/de', '/fr', '/it', '/es', '/pt', '/pl']);
+    for (const path of ENTRY_HINT_LANDING_PATHS) expect(isLandingPath(path), path).toBe(true);
   });
 
   it('marks nothing for a first visit', () => {
@@ -78,8 +79,8 @@ describe('the entry hint script', () => {
     expect(bootstrap()).toBe('app');
   });
 
-  it('hides only the way to sign in at the landing’s own address, where the landing shows to a saved sign-in too', () => {
-    history.replaceState(null, '', LANDING_PATH);
+  it.each(ENTRY_HINT_LANDING_PATHS)('hides only the way to sign in at %s, where the landing shows to a saved sign-in too', (path) => {
+    history.replaceState(null, '', path);
     expect(bootstrap()).toBeUndefined();
     // The address shows the landing whatever else this browser remembers.
     localStorage.setItem(EXPERIENCE_STORAGE_KEY, 'demo');
@@ -97,10 +98,10 @@ describe('the entry hint script', () => {
 
   it('leaves every other address alone', () => {
     localStorage.setItem(SESSION_KEY, '{"access_token":"a"}');
-    history.replaceState(null, '', '/p/k7Qm2xHd9RtW');
-    expect(bootstrap()).toBeUndefined();
-    history.replaceState(null, '', '/demo');
-    expect(bootstrap()).toBeUndefined();
+    for (const path of ['/p/k7Qm2xHd9RtW', '/demo', '/en', '/de/more', '/home/more', '/xde', '/xx']) {
+      history.replaceState(null, '', path);
+      expect(bootstrap(), path).toBeUndefined();
+    }
   });
 
   it('marks nothing where storage cannot be read', () => {

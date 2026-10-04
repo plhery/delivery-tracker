@@ -16,6 +16,21 @@ export function detectLocale(languages: readonly string[] = []): Locale {
   return 'en';
 }
 
+/** A language whose landing has an address of its own: every one but English, whose landing is `/`. */
+export type AddressLanguage = Exclude<Locale, 'en'>;
+export const ADDRESS_LANGUAGES = SUPPORTED_LOCALES.filter((locale): locale is AddressLanguage => locale !== 'en');
+
+/** The landing's address in a language: `/de` in German, `/` in English. */
+export function languagePath(locale: Locale): string {
+  return locale === 'en' ? '/' : `/${locale}`;
+}
+
+/** The language of a language address, or null at any other address: `/de` is German, `/` and `/en` are no language's own. */
+export function pathLanguage(pathname: string): AddressLanguage | null {
+  const language = pathname.startsWith('/') ? pathname.slice(1) : null;
+  return isLocale(language) && language !== 'en' ? language : null;
+}
+
 /** The browser's languages in its preference order, as sent in Accept-Language. */
 export function acceptedLanguages(header: string | null): string[] {
   return (header ?? '').split(',').map((part) => part.split(';')[0].trim()).filter(Boolean);

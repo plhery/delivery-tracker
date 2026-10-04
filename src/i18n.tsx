@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { detectLocale, isLocale, LOCALE_COOKIE, SUPPORTED_LOCALES, type Locale } from './lib/locale';
+import { detectLocale, isLocale, languagePath, LOCALE_COOKIE, pathLanguage, SUPPORTED_LOCALES, type Locale } from './lib/locale';
 import { languageTags, translateMessage, type MessageKey, type Messages, type Translate } from './lib/messages';
 
 export { detectLocale, SUPPORTED_LOCALES, type Locale };
@@ -87,6 +87,9 @@ function savedLocale(): Locale | null {
   }
 }
 
+/** The language of the address, where the landing has an address per language: there it is the page's language. */
+const addressLanguage = () => pathLanguage(window.location.pathname);
+
 /** Lets the server render the next page in a chosen language. */
 function rememberLocaleCookie(locale: Locale) {
   if (document.cookie.split('; ').includes(`${LOCALE_COOKIE}=${locale}`)) return;
@@ -102,7 +105,8 @@ export function I18nProvider({ children, initialLocale, initialMessages }: {
   // The server renders the language it expects the browser to choose and sends
   // its messages with the page, so hydration starts from the same text. A
   // different saved choice that is already loaded replaces it before the
-  // first paint after hydration.
+  // first paint after hydration. At a language address the address decides:
+  // a saved choice does not replace it, and the visit saves nothing.
   const [language, setLanguage] = useState(() => {
     const locale = initialLocale ?? 'en';
     if (initialMessages) dictionaries.set(locale, initialMessages);
@@ -131,9 +135,20 @@ export function I18nProvider({ children, initialLocale, initialMessages }: {
     const saved = savedLocale();
     if (saved) rememberLocaleCookie(saved);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only preference, applied before paint
-    show(saved ?? initialLocale
+    show(addressLanguage() ?? saved ?? initialLocale
       ?? detectLocale(navigator.languages?.length ? navigator.languages : [navigator.language]));
   }, [initialLocale, show]);
+
+  // Arriving at a language address without a page load, as Back does, shows its language.
+  // Leaving one keeps the language on screen until the next page load.
+  useEffect(() => {
+    const follow = () => {
+      const language = addressLanguage();
+      if (language) show(language);
+    };
+    window.addEventListener('popstate', follow);
+    return () => window.removeEventListener('popstate', follow);
+  }, [show]);
 
   useEffect(() => {
     document.documentElement.lang = language.locale;
@@ -163,10 +178,27 @@ export function useI18n(): I18nValue {
   return useContext(I18nContext);
 }
 
-export function LanguageControl({ className = '' }: { className?: string }) {
+/**
+ * Moves a language address to the landing's address in the language just
+ * chosen, in place: the page stays, and Back leaves it as before.
+ */
+function moveLanguageAddress(path: string) {
+  if (window.location.pathname === path) return;
+  window.history.replaceState(window.history.state, '', `${path}${window.location.search}${window.location.hash}`);
+  // Told the way the browser tells a step in the history, so everything that follows the address hears it.
+  window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
+export function LanguageControl({ className = '', englishAddress }: {
+  className?: string;
+  /** Where a language address leads for English, when `/` is not the landing for this reader. */
+  englishAddress?: () => string;
+}) {
   const { locale, setLocale, t } = useI18n();
-  // Keep the choice selected while its language loads.
+  // Keep the choice selected while its language loads. Once it shows, the page's language is what the menu says:
+  // an address may change it afterwards.
   const [chosen, setChosen] = useState<Locale | null>(null);
+  if (chosen === locale) setChosen(null);
   return (
     <label className={`language-control ${className}`.trim()}>
       <span>{t('language.label')}</span>
@@ -177,6 +209,8 @@ export function LanguageControl({ className = '' }: { className?: string }) {
           const next = event.target.value as Locale;
           setChosen(next);
           setLocale(next);
+          // At a language address the choice is also where the page is: the address follows it.
+          if (addressLanguage()) moveLanguageAddress((next === 'en' ? englishAddress?.() : undefined) ?? languagePath(next));
           trackAction('language-change');
         }}
       >

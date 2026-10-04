@@ -46,6 +46,7 @@ assert.match(worker, /~offline/, 'offline navigations must use the dedicated Nex
 assert.match(worker, /["']?revision["']?:["'][a-f0-9]{64}["'],["']?url["']?:["']\/~offline["']/, 'the offline document must be explicitly precached with a build revision');
 assert.match(worker, /["']?revision["']?:["'][a-f0-9]{64}["'],["']?url["']?:["']\/["']/, 'the app shell must be precached with the build it loads');
 assert.match(workerSource, /matchPrecache\('\/'\)/, 'app launches must open the precached shell');
+assert.match(workerSource, /request\.mode === 'navigate' && url\.pathname === '\/',/, 'only `/` opens from the precached shell: a language address is the page the server wrote');
 assert.doesNotMatch(worker, /["']\/(?:fonts\/|auth-emails\/|og\.(?:png|svg))/, 'server-only public files must not be downloaded by browsers');
 assert.doesNotMatch(worker, /\/_next\/static\/chunks\/(?:(?:framework|main|polyfills)-[0-9a-f]+\.js|app\/api\/)/, 'chunks the App Router never loads must not be precached');
 assert.match(worker, /\/_next\/static\/chunks\/main-app-[0-9a-f]+\.js/, 'the App Router entry must stay precached');

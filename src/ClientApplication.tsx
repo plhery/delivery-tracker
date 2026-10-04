@@ -42,7 +42,7 @@ interface ApplicationProps {
   parcelLinkId?: string | null;
   /** The server rendered the demo's address, `/demo`. */
   demoRoute?: boolean;
-  /** The server rendered the landing's own address, `/home`. */
+  /** The server rendered one of the landing's own addresses: `/home`, or a language's such as `/de`. */
   landingRoute?: boolean;
   /** The server has mail settings: it emails accounts when a parcel is delivered. */
   deliveryEmails?: boolean;

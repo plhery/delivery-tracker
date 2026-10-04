@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import type { Metadata } from 'next';
 import { isValidElement, type ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -24,7 +25,7 @@ import robots from '../app/robots';
 import sitemap from '../app/sitemap';
 import { metadata as offlineMetadata } from '../app/~offline/page';
 import mark from './brand/mark.json';
-import { SUPPORTED_LOCALES } from './lib/locale';
+import { ADDRESS_LANGUAGES, SUPPORTED_LOCALES } from './lib/locale';
 import { messagesFor } from './server/requestLocale';
 
 const TITLE = 'Peek — Universal Parcel Tracker';
@@ -33,6 +34,13 @@ const DESCRIPTION =
 const LANDING_TITLE = 'Peek — Where’s my parcel? Universal Parcel Tracker';
 const LANDING_DESCRIPTION =
   'Track any parcel in one place: paste a tracking number, a carrier link or a shipping email. 3,500+ carriers, checked every 10 minutes. Open source, no account needed.';
+/** The page of a language's address, as the router finds it. */
+const languagePage = (language: string) => import(`../app/${language}/page.tsx`) as Promise<{ default: () => ReactElement; generateMetadata: () => Promise<Metadata> }>;
+/** The landing in every language, as each of its addresses names them. */
+const alternates = (origin: string) => ({
+  en: `${origin}/`, de: `${origin}/de`, fr: `${origin}/fr`, it: `${origin}/it`, es: `${origin}/es`, pt: `${origin}/pt`, pl: `${origin}/pl`,
+  'x-default': `${origin}/`,
+});
 
 afterEach(() => { vi.unstubAllEnvs(); });
 
@@ -77,7 +85,7 @@ describe('public product metadata', () => {
       metadataBase: new URL('https://delivery.example.test/'),
       title: LANDING_TITLE,
       description: LANDING_DESCRIPTION,
-      alternates: { canonical: 'https://delivery.example.test/' },
+      alternates: { canonical: 'https://delivery.example.test/', languages: alternates('https://delivery.example.test') },
       openGraph: {
         siteName: 'Peek',
         title: LANDING_TITLE,
@@ -92,13 +100,56 @@ describe('public product metadata', () => {
 
   it('names `/` as the landing’s address at the landing’s own address too', async () => {
     expect(await landingAddressMetadata()).toEqual(await generateMetadata());
-    expect((await landingAddressMetadata()).alternates).toEqual({ canonical: 'https://delivery.example.test/' });
+    expect((await landingAddressMetadata()).alternates?.canonical).toBe('https://delivery.example.test/');
+  });
+
+  it.each(ADDRESS_LANGUAGES)('writes the landing at /%s in that language, whatever the browser prefers, and names that address', async (language) => {
+    request.language = 'en-GB,en;q=0.9';
+    const words = messagesFor(language);
+    const title = `Peek — ${words['peek.title']} ${words['app.tagline']}`;
+    const description = words['preview.landing.description'];
+    const address = `https://delivery.example.test/${language}`;
+    const { default: LanguageLandingPage, generateMetadata: languageMetadata } = await languagePage(language);
+    const metadata = await languageMetadata();
+    expect(metadata).toMatchObject({
+      title,
+      description,
+      alternates: { canonical: address, languages: alternates('https://delivery.example.test') },
+      openGraph: { url: address, title, description, locale: expect.stringMatching(new RegExp(`^${language}_[A-Z]{2}$`)) },
+      twitter: { title, description },
+    });
+    expect(metadata.robots).toBeUndefined();
+
+    // The page itself: German words at the German address, shown to someone signed in too.
+    const { text, application } = await structuredData(LanguageLandingPage());
+    expect(JSON.parse(text)['@graph'][1]).toMatchObject({ url: address, inLanguage: language, description });
+    expect(application.props).toMatchObject({ landingRoute: true, initialLocale: language, initialMessages: words });
+  });
+
+  it('names every language’s address, and `/` for a reader of none, at each of the landing’s addresses', async () => {
+    vi.stubEnv('CANONICAL_ORIGIN', 'https://peek.example.test');
+    const everywhere = alternates('https://peek.example.test');
+    expect(Object.keys(everywhere)).toEqual([...SUPPORTED_LOCALES, 'x-default']);
+    expect((await generateMetadata()).alternates).toEqual({ canonical: 'https://peek.example.test/', languages: everywhere });
+    for (const language of ADDRESS_LANGUAGES) {
+      expect((await (await languagePage(language)).generateMetadata()).alternates).toEqual({ canonical: `https://peek.example.test/${language}`, languages: everywhere });
+    }
+  });
+
+  it('has a page for each language’s address and for nothing else that short: any other one-part address is no route at all', () => {
+    // A route for any one-part address would answer an unknown one itself, with a page only the browser draws.
+    const routes = readdirSync('app', { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+    expect(routes.filter((name) => name.includes('['))).toEqual([]);
+    expect(routes.filter((name) => /^[a-z]{2}$/.test(name)).sort()).toEqual([...ADDRESS_LANGUAGES].sort());
+    for (const language of ADDRESS_LANGUAGES) expect(existsSync(`app/${language}/page.tsx`), language).toBe(true);
+    // English is at `/`: `/en` is a redirect, not a page.
+    expect(existsSync('app/en')).toBe(false);
   });
 
   it('names the landing on the canonical origin when one is configured, whichever host answered', async () => {
     vi.stubEnv('CANONICAL_ORIGIN', 'https://peek.example.test');
     const metadata = await generateMetadata();
-    expect(metadata.alternates).toEqual({ canonical: 'https://peek.example.test/' });
+    expect(metadata.alternates?.canonical).toBe('https://peek.example.test/');
     expect(metadata.openGraph).toMatchObject({ url: 'https://peek.example.test/' });
     // What the page loads still comes from the host that answered.
     expect(metadata.metadataBase).toEqual(new URL('https://delivery.example.test/'));
@@ -133,12 +184,29 @@ describe('public product metadata', () => {
   });
 
   it('lists the pages meant to be found, on the canonical origin when one is configured', async () => {
-    expect(await sitemap()).toEqual([{ url: 'https://delivery.example.test/' }, { url: 'https://delivery.example.test/privacy.html' }]);
+    const local = alternates('https://delivery.example.test');
+    expect(await sitemap()).toEqual([
+      ...SUPPORTED_LOCALES.map((locale) => ({ url: local[locale], alternates: { languages: local } })),
+      { url: 'https://delivery.example.test/privacy.html' },
+    ]);
     vi.stubEnv('CANONICAL_ORIGIN', 'https://peek.example.test');
     const entries = await sitemap();
-    expect(entries.map(({ url }) => url)).toEqual(['https://peek.example.test/', 'https://peek.example.test/privacy.html']);
+    expect(entries.map(({ url }) => url)).toEqual([
+      'https://peek.example.test/', 'https://peek.example.test/de', 'https://peek.example.test/fr', 'https://peek.example.test/it',
+      'https://peek.example.test/es', 'https://peek.example.test/pt', 'https://peek.example.test/pl', 'https://peek.example.test/privacy.html',
+    ]);
+    // Each language's landing names all of them, itself included, and `/` for a reader of none.
+    for (const entry of entries.slice(0, -1)) expect(entry.alternates?.languages).toEqual(alternates('https://peek.example.test'));
     // No date is claimed for a page whose last change nobody recorded.
     for (const entry of entries) expect(entry).not.toHaveProperty('lastModified');
+  });
+
+  it('writes a sitemap that stays well-formed whatever host a request names', async () => {
+    const { headers } = await import('next/headers');
+    vi.mocked(headers).mockResolvedValueOnce(new Headers({ host: 'a&b"c.example.test', 'x-forwarded-proto': 'https' }));
+    const [first] = await sitemap();
+    expect(first.url).toBe('https://a&amp;b&quot;c.example.test/');
+    expect(JSON.stringify(first.alternates)).not.toMatch(/&(?!amp;|quot;)|\\"c/);
   });
 
   it('keeps the demo and the offline page out of search results, with their links followed', async () => {

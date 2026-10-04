@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { trackAction } from './analytics';
-import { DEMO_PATH, EXPERIENCE_STORAGE_KEY, LANDING_PATH, endSignInStep, useDemoAddress, useEntryExperience } from './experience';
+import { DEMO_PATH, EXPERIENCE_STORAGE_KEY, LANDING_PATH, endSignInStep, isLandingPath, landingAtRoot, useDemoAddress, useEntryExperience } from './experience';
 
 vi.mock('./analytics', () => ({ trackAction: vi.fn() }));
 
@@ -85,6 +85,30 @@ describe('the entry experience', () => {
     // Staying at the landing is no step to take.
     act(() => result.current.navigate('welcome'));
     expect(location.pathname).toBe(LANDING_PATH);
+  });
+
+  it('shows the landing at a language’s address as at its own, and opens every other step at `/`', () => {
+    for (const path of ['/home', '/de', '/fr', '/it', '/es', '/pt', '/pl']) expect(isLandingPath(path), path).toBe(true);
+    for (const path of ['/', '/en', '/demo', '/sample', '/de/more', '/xx']) expect(isLandingPath(path), path).toBe(false);
+    localStorage.setItem(EXPERIENCE_STORAGE_KEY, 'demo');
+    history.replaceState(null, '', '/de');
+    const { result } = renderHook(() => useEntryExperience());
+    expect(result.current.screen).toBe('welcome');
+    act(() => result.current.navigate('sign-in'));
+    expect(location.pathname).toBe('/');
+    expect(result.current.screen).toBe('sign-in');
+  });
+
+  it('tells whether `/` is the landing for a visitor: not while the demo or the sign-in step is open', () => {
+    expect(landingAtRoot()).toBe(true);
+    // The address the browser is at changes nothing of what `/` shows.
+    history.replaceState(null, '', '/de');
+    localStorage.setItem(EXPERIENCE_STORAGE_KEY, 'demo');
+    expect(landingAtRoot()).toBe(false);
+    localStorage.setItem(EXPERIENCE_STORAGE_KEY, 'welcome');
+    expect(landingAtRoot()).toBe(true);
+    sessionStorage.setItem(EXPERIENCE_STORAGE_KEY, 'sign-in');
+    expect(landingAtRoot()).toBe(false);
   });
 
   it('leaves the demo’s address for `/` when the demo is left', () => {
