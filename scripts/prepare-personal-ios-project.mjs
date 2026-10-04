@@ -24,11 +24,13 @@ const replacements = [
   ],
   ['APS_ENVIRONMENT = development; ', '', 1],
   ['APS_ENVIRONMENT = production; ', '', 1],
+  ['APP_ATTEST_ENVIRONMENT = development; ', '', 1],
+  ['APP_ATTEST_ENVIRONMENT = production; ', '', 1],
   ['CODE_SIGN_ENTITLEMENTS = PeekDeliveryTracker/PeekDeliveryTracker.entitlements; ', '', 2],
   ['CODE_SIGN_ENTITLEMENTS = DeliveryWidgetExtension/DeliveryWidgetExtension.entitlements; ', '', 2],
   [
     'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.SwissDeliveryTracker;',
-    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.SwissDeliveryTracker.Personal; SDT_APPLE_AUTH_ENABLED = NO;',
+    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.SwissDeliveryTracker.Personal; SDT_APPLE_AUTH_ENABLED = NO; SDT_APP_ATTEST_ENABLED = NO;',
     2,
   ],
   [

@@ -57,15 +57,23 @@ it through Cloudflare, which relays them and sees network metadata such as your
 IP address. Google provides Google sign-in. Resend delivers the service's
 emails, as described under "Emails".
 
-Cloudflare Turnstile checks the browser when you start a new parcel lookup to
+Cloudflare Turnstile checks the browser or an in-app verification sheet when you start a new parcel lookup to
 prevent automated abuse. It processes browser and network signals; Peek sends
 only its verification token to Cloudflare, not your parcel inputs. See
 [Cloudflare's Turnstile Privacy Addendum](https://www.cloudflare.com/turnstile-privacy-policy/).
 A successful check produces a proof kept in the current tab for fifteen
-minutes, bound to its network and hostname. Existing parcel pages remain
+minutes (in memory on the iPhone), bound to its network and hostname. Existing parcel pages remain
 readable without a check. Daily account usage counters prevent bulk lookups.
 New requests clear counters older than seven days; deleting the account
 removes its counters.
+
+When enabled for paid Apple builds, App Attest verifies the app without a browser
+check. Apple attests a key held on the device; Peek stores its public key,
+identifier, assertion counter and last-use time to prevent replay and limit
+anonymous lookups. New key registrations remove keys unused for ninety days and
+their usage counters. New verified requests clear daily counters older than
+seven days and expired challenges. Keys are not linked to accounts or parcel
+inputs. Turnstile remains available when App Attest cannot be used.
 
 To get a parcel's history, the service sends its tracking number to the
 carrier. When needed, it also asks other carriers the number could belong to, a

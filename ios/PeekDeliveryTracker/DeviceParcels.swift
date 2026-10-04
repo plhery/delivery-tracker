@@ -27,7 +27,7 @@ struct DeviceParcelClient: Sendable {
     var update: @Sendable (_ linkID: String, _ key: String, UpdateParcelLinkRequest) async throws -> PublicParcelResponse
     var detect: @Sendable (_ trackingNumber: String) async throws -> CarrierDetectionResponse
 
-    static func api(configuration: AppConfiguration, transport: URLSession = .shared) -> DeviceParcelClient {
+    static func api(configuration: AppConfiguration, transport: URLSession = .shared, verification: NativeVerification = .shared) -> DeviceParcelClient {
         @Sendable func send(_ path: String, method: String, key: String? = nil, body: Data? = nil) async throws -> (Data, HTTPURLResponse) {
             var request = URLRequest(url: configuration.apiBaseURL.appending(path: path),
                                      cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 30)
@@ -39,9 +39,15 @@ struct DeviceParcelClient: Sendable {
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 request.httpBody = body
             }
-            let (data, response) = try await transport.data(for: request)
-            guard let response = response as? HTTPURLResponse else { throw DeliveryAPIError.invalidResponse }
-            return (data, response)
+            let perform: NativeVerification.Send = { request in
+                let (data, response) = try await transport.data(for: request)
+                guard let response = response as? HTTPURLResponse else { throw DeliveryAPIError.invalidResponse }
+                return (data, response)
+            }
+            if method == "POST", path == "api/public/parcels" || path == "api/public/detect" {
+                return try await verification.send(request, baseURL: configuration.apiBaseURL, using: perform)
+            }
+            return try await perform(request)
         }
         @Sendable func failure(_ data: Data, _ response: HTTPURLResponse) -> Error {
             let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any]

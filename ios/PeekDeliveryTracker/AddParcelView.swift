@@ -826,6 +826,8 @@ struct AddParcelView: View {
                 )
                 onAdded(parcel.id)
                 dismiss()
+            } catch is CancellationError {
+                saving = false
             } catch {
                 if let apiError = error as? DeliveryAPIError,
                    case .duplicateTracking(let packageID) = apiError {

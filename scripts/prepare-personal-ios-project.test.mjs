@@ -24,7 +24,8 @@ describe('Personal Team Xcode project preparation', () => {
       transformed,
       /CODE_SIGN_ENTITLEMENTS = (?:PeekDeliveryTracker|DeliveryWidgetExtension)\//,
     );
-    assert.doesNotMatch(transformed, /APS_ENVIRONMENT =/);
+    assert.doesNotMatch(transformed, /APS_ENVIRONMENT =|APP_ATTEST_ENVIRONMENT =/);
+    assert.equal(transformed.split("SDT_APP_ATTEST_ENABLED = NO;").length - 1, 2);
     assert.doesNotMatch(transformed, /com.apple.SignInWithApple/);
     // Associated Domains: the capability is recorded as SafariKeychain, and its
     // entitlement lives only in the file the Personal Team build no longer signs with.

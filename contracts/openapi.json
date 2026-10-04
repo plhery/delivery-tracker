@@ -5153,7 +5153,7 @@
             "description": "Too many detections this minute, or no carrier may be asked for this client or for anyone until the next UTC midnight. Retry-After says when to try again; a lookup works without the answer."
           },
           "403": {
-            "description": "Browser verification required before spending lookup budget or contacting providers.",
+            "description": "Browser or native verification required before spending lookup budget or contacting providers.",
             "headers": {
               "X-Lookup-Verification": {
                 "schema": {
@@ -5175,6 +5175,42 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Native-Verification",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Updated native clients set 1 to require verification even while legacy user-agent compatibility is enabled."
+          },
+          {
+            "in": "header",
+            "name": "X-App-Attest-Key-Id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Registered Apple App Attest key identifier. Supply all three App Attest headers together instead of a browser proof."
+          },
+          {
+            "in": "header",
+            "name": "X-App-Attest-Challenge",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fresh single-use assertion challenge from /api/public/native/challenge."
+          },
+          {
+            "in": "header",
+            "name": "X-App-Attest-Assertion",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Base64 CBOR assertion signing SHA256 of the UTF-8 payload native-request-v1, challenge, HTTP method, URL pathname, and lowercase SHA256 hex of the exact request body, separated by newlines."
           }
         ]
       }
@@ -5233,7 +5269,7 @@
             "$ref": "#/components/responses/ApiError"
           },
           "403": {
-            "description": "Browser verification required before spending lookup budget or contacting providers.",
+            "description": "Browser or native verification required before spending lookup budget or contacting providers.",
             "headers": {
               "X-Lookup-Verification": {
                 "schema": {
@@ -5255,6 +5291,42 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Native-Verification",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Updated native clients set 1 to require verification even while legacy user-agent compatibility is enabled."
+          },
+          {
+            "in": "header",
+            "name": "X-App-Attest-Key-Id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Registered Apple App Attest key identifier. Supply all three App Attest headers together instead of a browser proof."
+          },
+          {
+            "in": "header",
+            "name": "X-App-Attest-Challenge",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fresh single-use assertion challenge from /api/public/native/challenge."
+          },
+          {
+            "in": "header",
+            "name": "X-App-Attest-Assertion",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Base64 CBOR assertion signing SHA256 of the UTF-8 payload native-request-v1, challenge, HTTP method, URL pathname, and lowercase SHA256 hex of the exact request body, separated by newlines."
           }
         ]
       }
@@ -5745,6 +5817,202 @@
             "description": "Verification unavailable"
           }
         }
+      }
+    },
+    "/api/public/native/verification": {
+      "get": {
+        "operationId": "nativeVerificationConfiguration",
+        "summary": "Read native verification configuration",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "App Attest app ID is null when disabled; Turnstile indicates the hosted fallback is available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "appAttestAppId",
+                    "turnstile"
+                  ],
+                  "properties": {
+                    "appAttestAppId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "turnstile": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "registerNativeAttestation",
+        "summary": "Register an App Attest key against an attestation challenge",
+        "security": [],
+        "responses": {
+          "204": {
+            "description": "Key registered without resetting its existing counter"
+          },
+          "403": {
+            "description": "Invalid or replayed attestation"
+          },
+          "503": {
+            "description": "App Attest unavailable"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "keyId",
+                  "challenge",
+                  "attestation"
+                ],
+                "properties": {
+                  "keyId": {
+                    "type": "string",
+                    "minLength": 44,
+                    "maxLength": 44
+                  },
+                  "challenge": {
+                    "type": "string"
+                  },
+                  "attestation": {
+                    "type": "string",
+                    "maxLength": 14000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/native/challenge": {
+      "post": {
+        "operationId": "nativeVerificationChallenge",
+        "summary": "Create a network, hostname, key and purpose bound challenge valid for two minutes",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Fresh challenge; expiresAt is Unix time in milliseconds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "challenge",
+                    "expiresAt"
+                  ],
+                  "properties": {
+                    "challenge": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid challenge request"
+          },
+          "503": {
+            "description": "App Attest unavailable"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "keyId",
+                  "purpose"
+                ],
+                "properties": {
+                  "keyId": {
+                    "type": "string",
+                    "minLength": 44,
+                    "maxLength": 44
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "enum": [
+                      "attestation",
+                      "assertion"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/native/turnstile": {
+      "get": {
+        "operationId": "nativeTurnstilePage",
+        "summary": "Host the Turnstile WKWebView bridge; token returned to peekVerification message handler for exchange through the native transport",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Non-cacheable HTML with a nonce-based Content Security Policy",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Turnstile unavailable"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en",
+                "fr",
+                "de",
+                "it",
+                "es",
+                "pt",
+                "pl"
+              ]
+            }
+          }
+        ]
       }
     }
   },

@@ -1007,5 +1007,6 @@
   "sample.tag": "Przykład",
   "native.pasteLead": "Wklej numer, link albo całego maila.",
   "door.verification.title": "Szybkie sprawdzenie przeglądarki",
-  "door.verification.body": "Nie udało się zakończyć weryfikacji. Wykonaj sprawdzenie, jeśli się pojawi, i spróbuj ponownie. Twój numer nadal tu jest."
+  "door.verification.body": "Nie udało się zakończyć weryfikacji. Wykonaj sprawdzenie, jeśli się pojawi, i spróbuj ponownie. Twój numer nadal tu jest.",
+  "native.verification.title": "Krótka weryfikacja"
 }

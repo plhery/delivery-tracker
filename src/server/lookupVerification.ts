@@ -4,6 +4,8 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { clientIp, clientNetwork, HttpError } from './api';
 import { logOperationalEvent } from './observability';
 import { requestHostname } from './siteHosts';
+import { verifyNativeRequest } from './nativeVerification';
+import type { SupabaseServiceClient } from './supabase';
 
 const PROOF_SECONDS = 15 * 60;
 const ACTION = 'parcel_lookup';
@@ -36,6 +38,7 @@ export function requireLookupProof(request: Request): void {
   if (!settings) return;
   // Compatibility only: callers can forge this header. All lookup budgets still apply.
   if (process.env.TURNSTILE_ALLOW_NATIVE_USER_AGENT === 'true'
+    && !request.headers.has('x-native-verification')
     && /^PeekDeliveryTracker\/\S+ CFNetwork\/\S+ Darwin\/\S+$/.test(request.headers.get('user-agent') ?? '')) return;
   const proof = request.headers.get('x-lookup-proof') ?? '';
   const match = /^(\d{10})\.([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})$/.exec(proof);
@@ -47,6 +50,16 @@ export function requireLookupProof(request: Request): void {
     if (expires > now && expires <= now + PROOF_SECONDS && received.length === expected.length && timingSafeEqual(received, expected)) return;
   }
   throw new HttpError(403, 'Please verify your browser and try again.', { 'X-Lookup-Verification': 'required' });
+}
+
+/** Native assertions count the installation before the shared IP and global budgets. */
+export async function verifyLookupRequest(request: Request, service: SupabaseServiceClient) {
+  if (!turnstileSettings()) return;
+  if (['x-app-attest-key-id', 'x-app-attest-challenge', 'x-app-attest-assertion'].some((header) => request.headers.has(header))) {
+    await verifyNativeRequest(request, service);
+    return;
+  }
+  requireLookupProof(request);
 }
 
 /** Only the single-use Cloudflare token is exchanged; parcel inputs never go to Siteverify. */

@@ -60,7 +60,7 @@ nowhere.
    or change them to your own.
 3. Create the App Group, set `SDT_APP_GROUP_IDENTIFIER` in `Shared.xcconfig`, and enable
    it on all three targets.
-4. Enable Push Notifications and Associated Domains on the app id.
+4. Enable Push Notifications, Associated Domains and App Attest on the app id.
 5. Create an APNs key and set `APNS_TEAM_ID`, `APNS_KEY_ID`, `APNS_PRIVATE_KEY` and
    `APNS_BUNDLE_ID` on the server. The bundle id must match the installed app.
 
@@ -68,7 +68,16 @@ nowhere.
 allow App Groups, push or Associated Domains there, so the widget can't read parcels, Live
 Activities don't update while the app is closed, and links open in the browser first: the
 invitation page then offers "Open in the iOS app". Sign in with Apple also needs a paid
-team ([AUTHENTICATION.md](../docs/AUTHENTICATION.md)).
+team ([AUTHENTICATION.md](../docs/AUTHENTICATION.md)). App Attest also needs a
+paid team. The Personal Team project disables it and uses Turnstile for anonymous
+lookups instead. No paid Cloudflare account is needed.
+
+New anonymous lookups verify silently with App Attest when the server enables it.
+Otherwise a small Turnstile sheet appears when needed; its proof lasts fifteen
+minutes in memory. Cancelling keeps the form intact. Saved parcels and local
+carrier detection do not need a check. Debug uses development App Attest keys,
+Release uses production keys; only a separate development server accepts the
+former. Server settings are in [DEPLOYMENT.md](../docs/DEPLOYMENT.md).
 
 ## Notifications, widgets, Live Activities
 

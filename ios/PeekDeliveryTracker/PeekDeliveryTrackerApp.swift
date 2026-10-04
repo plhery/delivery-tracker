@@ -188,6 +188,10 @@ struct RootView: View {
                 await parcels.forwardNativePushToken(token, language: localizer.language)
             }
         }
+        .task {
+            let config = AppConfiguration.current
+            if config.mode == .api { await NativeVerification.shared.prepare(baseURL: config.apiBaseURL) }
+        }
         .task(id: "\(sessionIdentity)-\(localizer.language.rawValue)") {
             await session.saveEmailLanguage(localizer.language)
         }

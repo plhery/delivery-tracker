@@ -1007,5 +1007,6 @@
   "sample.tag": "Sample",
   "native.pasteLead": "Paste a number, a link or a whole email.",
   "door.verification.title": "A quick browser check",
-  "door.verification.body": "Verification could not finish. Complete the check if it appears, then try again. Your number is still here."
+  "door.verification.body": "Verification could not finish. Complete the check if it appears, then try again. Your number is still here.",
+  "native.verification.title": "A quick check"
 }

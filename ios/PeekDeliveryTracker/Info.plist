@@ -53,6 +53,8 @@
 	<true/>
 	<key>SDTAPIBaseURL</key>
 	<string>$(SDT_API_BASE_URL)</string>
+	<key>SDTAppAttestEnabled</key>
+	<string>$(SDT_APP_ATTEST_ENABLED)</string>
 	<key>SDTAppGroupIdentifier</key>
 	<string>$(SDT_APP_GROUP_IDENTIFIER)</string>
 	<key>SDTEmailOTPEnabled</key>

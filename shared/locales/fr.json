@@ -1007,5 +1007,6 @@
   "sample.tag": "Exemple",
   "native.pasteLead": "Colle un numéro, un lien ou tout un e-mail.",
   "door.verification.title": "Une vérification rapide",
-  "door.verification.body": "La vérification n’a pas abouti. Effectuez le contrôle s’il apparaît, puis réessayez. Votre numéro est toujours là."
+  "door.verification.body": "La vérification n’a pas abouti. Effectuez le contrôle s’il apparaît, puis réessayez. Votre numéro est toujours là.",
+  "native.verification.title": "Une petite vérification"
 }

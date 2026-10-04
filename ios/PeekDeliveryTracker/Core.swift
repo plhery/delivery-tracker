@@ -170,6 +170,7 @@ final class Localizer: ObservableObject {
     }
 
     func errorMessage(_ error: Error) -> String {
+        if error is NativeVerificationFailed { return text("door.verification.body") }
         if let error = error as? DeliveryAPIError {
             switch error {
             case .authenticationExpired:

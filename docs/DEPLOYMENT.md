@@ -242,8 +242,25 @@ Set `TURNSTILE_ALLOW_NATIVE_USER_AGENT=true` to keep existing anonymous iPhone
 lookups working without verification. This exempts the app's
 `PeekDeliveryTracker/... CFNetwork/... Darwin/...` user-agent; Safari still
 requires verification. The header can be forged, so this compatibility setting
-leaves a bypass for scrapers. All lookup budgets still apply. The default is
+leaves a bypass for scrapers. Updated apps opt into verification even while this
+setting is enabled. Turn it off once older installations have been replaced.
+All lookup budgets still apply. The default is
 `false`, which requires verification from every anonymous caller.
+
+Native builds signed with a free Personal Team use the hosted Turnstile check
+and keep its proof in memory. Apple App Attest needs paid Developer membership.
+For paid builds, enable App Attest on the app identifier and set
+`APP_ATTEST_APP_ID` to the App ID prefix and bundle identifier separated by a
+period. Leave it unset for the free fallback. Production accepts production
+attestations only. A separate development server can set
+`APP_ATTEST_ALLOW_DEVELOPMENT=true`; production refuses that setting.
+
+App Attest registers the installation's public key, then signs each anonymous
+lookup or provider detection with a fresh challenge and the exact request body.
+The server rejects replayed challenges and counters. Set `NATIVE_LOOKUPS_PER_DAY`
+and `NATIVE_DETECTIONS_PER_DAY` for installation budgets; `0` disables that work.
+Network and global budgets still apply. Apple outages and unsupported devices
+use Turnstile. Signed-in requests use account budgets.
 
 Accounts have separate persistent daily budgets for parcel additions and
 carrier detections. Set `ACCOUNT_LOOKUPS_PER_DAY` and

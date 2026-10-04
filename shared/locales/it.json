@@ -1007,5 +1007,6 @@
   "sample.tag": "Esempio",
   "native.pasteLead": "Incolla un numero, un link o un’intera email.",
   "door.verification.title": "Una rapida verifica del browser",
-  "door.verification.body": "La verifica non è stata completata. Esegui il controllo se appare, poi riprova. Il tuo numero è ancora qui."
+  "door.verification.body": "La verifica non è stata completata. Esegui il controllo se appare, poi riprova. Il tuo numero è ancora qui.",
+  "native.verification.title": "Una rapida verifica"
 }

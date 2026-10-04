@@ -33,7 +33,7 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  serverExternalPackages: ['universal-parcel-scraper', 'playwright-core', 'onnxruntime-web'],
+  serverExternalPackages: ['universal-parcel-scraper', 'playwright-core', 'onnxruntime-web', 'node-app-attest', 'cbor'],
   // OCR runs in a file-backed worker outside Next's import graph. Include its
   // model and Node WASM runtime so the standalone server can start it locally.
   outputFileTracingIncludes: {

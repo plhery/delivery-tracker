@@ -11,6 +11,8 @@
 		<string>$(SDT_ASSOCIATED_DOMAIN)</string>
 		<string>$(SDT_ASSOCIATED_DOMAIN_LEGACY)</string>
 	</array>
+	<key>com.apple.developer.devicecheck.appattest-environment</key>
+	<string>$(APP_ATTEST_ENVIRONMENT)</string>
 	<key>aps-environment</key>
 	<string>$(APS_ENVIRONMENT)</string>
 	<key>com.apple.security.application-groups</key>

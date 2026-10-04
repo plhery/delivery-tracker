@@ -1,6 +1,7 @@
 // Safe checked-in defaults. Copy Local.xcconfig.example to Local.xcconfig to
 // connect the app to a Supabase-backed production deployment.
 SDT_USE_API = NO
+SDT_APP_ATTEST_ENABLED = YES
 SDT_API_BASE_URL = https:/$()/peektracker.com
 // Hosts the site answered on before, separated by spaces. The app opens their
 // parcel links and invitations too; it calls and shares the API host only.

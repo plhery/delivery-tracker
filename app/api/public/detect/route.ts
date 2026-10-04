@@ -1,6 +1,6 @@
 import { apiRoute, clientIp, HttpError, json, readJsonObject, requireService } from '../../../../src/server/api';
 import { detectCarrier } from '../../../../src/server/carrierDetection';
-import { requireLookupProof } from '../../../../src/server/lookupVerification';
+import { verifyLookupRequest } from '../../../../src/server/lookupVerification';
 import { recordPublicDetection } from '../../../../src/server/metrics';
 import { claimDetection, secondsUntilUtcMidnight } from '../../../../src/server/publicParcels';
 
@@ -14,9 +14,10 @@ export const runtime = 'nodejs';
  * past them the answer is a refusal, and the lookup works without it.
  */
 export const POST = apiRoute(async (context) => {
+  const verificationRequest = context.request.clone();
   const body = await readJsonObject(context.request);
   return json(await detectCarrier(body, async () => {
-    requireLookupProof(context.request);
+    await verifyLookupRequest(verificationRequest, requireService(context));
     const now = new Date();
     const allowance = await claimDetection(requireService(context), clientIp(context.request), now);
     if (!allowance.allowed) {
@@ -27,5 +28,6 @@ export const POST = apiRoute(async (context) => {
   }, context.request.signal));
 }, {
   authenticated: false,
+  capability: true,
   publicRateLimit: { limit: 20, window: 60, onLimited: () => recordPublicDetection('limited_burst') },
 });

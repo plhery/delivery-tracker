@@ -1007,5 +1007,6 @@
   "sample.tag": "Beispiel",
   "native.pasteLead": "Füge eine Nummer, einen Link oder eine ganze E-Mail ein.",
   "door.verification.title": "Eine kurze Browserprüfung",
-  "door.verification.body": "Die Prüfung konnte nicht abgeschlossen werden. Schließe sie ab, falls sie angezeigt wird, und versuche es erneut. Deine Nummer bleibt erhalten."
+  "door.verification.body": "Die Prüfung konnte nicht abgeschlossen werden. Schließe sie ab, falls sie angezeigt wird, und versuche es erneut. Deine Nummer bleibt erhalten.",
+  "native.verification.title": "Eine kurze Überprüfung"
 }

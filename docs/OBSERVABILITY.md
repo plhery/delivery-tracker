@@ -5,6 +5,9 @@ without tokens, IP addresses or parcel inputs. Compare rejections and service
 failures with completed public lookups and the API's `403`/`429` rates when
 tuning protection. Client lookup failures remain in the existing parcel-lookup
 analytics event. Configuration belongs in [DEPLOYMENT.md](DEPLOYMENT.md).
+`native_verification` records attestation or assertion outcomes and device budget
+limits, without key identifiers, challenges, assertions or parcel inputs. Verification, anonymous lookup and detection endpoints omit the incoming request
+from error reports because their headers can carry verification credentials.
 
 Each carrier refresh leaves a trace in three places:
 

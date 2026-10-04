@@ -1,5 +1,5 @@
 import { verifyAmazonShippingAddition } from '../../../../src/server/amazonShippingEligibility';
-import { requireLookupProof } from '../../../../src/server/lookupVerification';
+import { verifyLookupRequest } from '../../../../src/server/lookupVerification';
 import { apiRoute, clientIp, json, readJsonObject, requireService } from '../../../../src/server/api';
 import { wakeSyncWorker } from '../../../../src/server/background';
 import { rememberLookupCountry } from '../../../../src/server/lookupCountry';
@@ -25,9 +25,10 @@ export const runtime = 'nodejs';
  */
 export const POST = apiRoute(async (context) => {
   const service = requireService(context);
+  const verificationRequest = context.request.clone();
   // The name stays on the device: only the number, the carrier and its inputs are read.
   const values = newPackageValues({ ...await readJsonObject(context.request), label: '' });
-  requireLookupProof(context.request);
+  await verifyLookupRequest(verificationRequest, service);
 
   const now = new Date();
   const allowance = await claimLookup(service, clientIp(context.request), now);
@@ -58,6 +59,7 @@ export const POST = apiRoute(async (context) => {
   return json({ ...publicParcelResponse(created, parcelAlerts(service)), key } satisfies ApiPublicLookupResponse, 201);
 }, {
   authenticated: false,
+  capability: true,
   serviceRequired: true,
   publicRateLimit: {
     limit: 6, window: 60, bucket: 'public-lookup', onLimited: () => recordPublicLookup('limited_burst'),
