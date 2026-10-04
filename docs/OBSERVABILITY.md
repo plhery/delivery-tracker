@@ -158,8 +158,12 @@ Key JSON events:
 - `tracking_sync_started`, `tracking_sync_step`, `tracking_sync_completed` (by `attempt_id`);
 - `tracking_sync_audit_write_failed`, `tracking_sync_audit_maintenance_failed`,
   `tracking_status_observation_write_failed`;
-- `sync_claim_failed`, `sync_job_failed`, `sync_job_finish_failed` (by `job_id`). Alert on
-  these;
+- `sync_claim_failed`: the sync worker could not claim a job, with its `failure_count` and
+  `failing_for_ms`, how long claims have been failing. A database restart leaves a few of
+  them. Alert when they repeat for two minutes (`failing_for_ms` of 120000 or more).
+  `sync_claim_recovered` follows with the first claim that works again and says how long
+  the streak lasted;
+- `sync_job_failed`, `sync_job_finish_failed` (by `job_id`). Alert on these;
 - `sync_job_dropped` (by `job_id`): a package job had nothing left to finish, with the
   `reason`: `parcel_deleted` before its check, or `job_withdrawn` when a deletion or a
   carrier change took the job during it. `tracking_sync_audit_skipped` (by `attempt_id`):
@@ -205,6 +209,13 @@ so every cause is visible.
   alerts. Avoid "more than 0 times in 5 minutes" rules: they fire on every failed check.
 - **Incidents**: carrier and provider outages open once, with a recovery event, from
   thresholds computed in Postgres. See [ops/sentry](../ops/sentry/README.md).
+- **Database outages**: when the database does not answer (`database_code:unreachable`), or
+  its gateway answers 502, 503 or 504, the sync worker's claims, the scheduler and the
+  friendship notifications keep it in the logs. The sync worker reports it once its claims
+  have failed for two minutes, and again each time the outage has doubled. A claim the
+  database refuses is also reported at once. The scheduler and the friendship
+  notifications report refusals only. Work that is running when the database goes away
+  still reports its own failed writes.
 - **Allowances without an account**: `component:public-allowance` warns once a day when
   an overall allowance is 80% used, and reports an error when it is used up: every visitor
   without an account is then refused until midnight UTC. One issue per allowance and

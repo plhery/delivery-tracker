@@ -205,8 +205,9 @@ checks the handoff, restarts and finishes the job.
 - **Sentry**: set `SENTRY_DSN`, `SENTRY_ENVIRONMENT=production`, an immutable release, and
   keep tracing at 0 unless you mean it. See [OBSERVABILITY.md](OBSERVABILITY.md) for alerts,
   logs and audit queries.
-- **Logs** are one-line JSON. Alert on `sync_claim_failed`, `sync_job_failed` and
-  `sync_job_finish_failed`. They contain tracking numbers, so restrict access.
+- **Logs** are one-line JSON. Alert on `sync_job_failed` and `sync_job_finish_failed`, and
+  on `sync_claim_failed` once it repeats for two minutes (its `failing_for_ms`). They
+  contain tracking numbers, so restrict access.
 - **API limits** per account: 12 sync requests per 5 min, 240 reads per minute, 60 other
   writes per minute. Keep an edge rate limiter too, since unauthenticated OTP traffic needs
   it.

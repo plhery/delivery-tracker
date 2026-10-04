@@ -6,9 +6,11 @@ import { DateTime } from 'luxon';
 import {
   beginScheduledSyncCheckIn,
   captureOperationalError,
+  databaseUnavailable,
   errorType,
   finishScheduledSyncCheckIn,
   logOperationalEvent,
+  shouldReportOutage,
   shouldReportRepeatedFailure,
   type ScheduledCheckIn,
 } from './observability';
@@ -78,6 +80,8 @@ export class SyncJobWorker {
   #running = false;
   #timer: NodeJS.Timeout | null = null;
   #consecutiveClaimFailures = 0;
+  #claimFailingSince: number | null = null;
+  #claimReportedAfterMs: number | null = null;
   #activeJob: AbortController | null = null;
   #claim: Promise<JsonObject | null> | null = null;
   #ownedJob: string | null = null;
@@ -161,22 +165,38 @@ export class SyncJobWorker {
       job = await this.#claim;
     } catch (error) {
       this.#consecutiveClaimFailures += 1;
+      this.#claimFailingSince ??= Date.now();
+      const failingForMs = Date.now() - this.#claimFailingSince;
       this.state.lastError = errorType(error);
       logOperationalEvent('sync_claim_failed', {
         error_type: this.state.lastError,
         failure_count: this.#consecutiveClaimFailures,
+        failing_for_ms: failingForMs,
         retry_in_ms: workerPollDelay(this.pollIntervalMs, this.#consecutiveClaimFailures),
       }, 'error');
-      if (shouldReportRepeatedFailure(this.#consecutiveClaimFailures)) {
+      // A database that restarts is back within seconds: only a streak that lasts is an
+      // outage. A refusal does not heal by waiting, so it is also reported at once.
+      const outage = shouldReportOutage(failingForMs, this.#claimReportedAfterMs);
+      if (outage) this.#claimReportedAfterMs = failingForMs;
+      if (outage || (!databaseUnavailable(error) && shouldReportRepeatedFailure(this.#consecutiveClaimFailures))) {
         captureOperationalError(error, {
           component: 'sync-worker',
           operation: 'claim_job',
           failureCount: this.#consecutiveClaimFailures,
+          durationMs: failingForMs,
         });
       }
       return false;
     }
     this.#claim = null;
+    if (this.#claimFailingSince !== null) {
+      logOperationalEvent('sync_claim_recovered', {
+        failure_count: this.#consecutiveClaimFailures,
+        failing_for_ms: Date.now() - this.#claimFailingSince,
+      });
+      this.#claimFailingSince = null;
+      this.#claimReportedAfterMs = null;
+    }
     this.#consecutiveClaimFailures = 0;
     this.state.workerHeartbeat = Date.now() / 1_000;
     if (!job) return false;
@@ -408,11 +428,14 @@ class ScheduledSync {
       logOperationalEvent('scheduled_sync_enqueue_failed', {
         error_type: capturedErrorType,
       }, 'error');
-      captureOperationalError(error, {
-        component: 'sync-scheduler',
-        operation: 'enqueue_scheduled_job',
-        trigger: 'scheduled',
-      });
+      // The worker reports a database that stays unreachable. A refusal is reported here.
+      if (!databaseUnavailable(error)) {
+        captureOperationalError(error, {
+          component: 'sync-scheduler',
+          operation: 'enqueue_scheduled_job',
+          trigger: 'scheduled',
+        });
+      }
     }
     if (!this.#stopped) this.schedule(secondsUntilNextSync() * 1_000);
   }

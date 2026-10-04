@@ -27,7 +27,8 @@ import {
   publicSupabaseOrigin,
   serviceClient,
 } from './runtime';
-import { SupabaseClient } from './supabase';
+import { databaseUnavailable } from './observability';
+import { SupabaseClient, type SupabaseError } from './supabase';
 import {
   deleteLiveActivityDevice,
   deleteLiveActivityUpdateToken,
@@ -1027,6 +1028,31 @@ describe('outbound request boundaries', () => {
     });
     fetcher.mockRejectedValueOnce(new Error('offline'));
     await expect(client.request('/rest/v1/packages')).rejects.toThrow('unreachable');
+  });
+
+  it('reads a database that did not answer, or whose answer was cut off, as unreachable', async () => {
+    const client = new SupabaseClient('https://supabase.example', 'service-key');
+    const fetcher = vi.spyOn(globalThis, 'fetch');
+    const offline = new Error('offline');
+    const cut = new TypeError('terminated');
+    fetcher.mockRejectedValueOnce(offline);
+    fetcher.mockResolvedValueOnce(new Response(new ReadableStream({
+      pull(controller) { controller.error(cut); },
+    }), { status: 200 }));
+    for (const cause of [offline, cut]) {
+      const failure = await client.request('/rest/v1/packages').catch((error: unknown) => error);
+      expect(failure).toMatchObject({
+        name: 'SupabaseError', message: 'The delivery database is unreachable', code: 'unreachable', cause,
+      });
+      expect((failure as SupabaseError).status).toBeUndefined();
+      expect(databaseUnavailable(failure)).toBe(true);
+    }
+    fetcher.mockResolvedValueOnce(new Response(JSON.stringify({ message: 'upstream' }), { status: 503 }));
+    const gateway = await client.request('/rest/v1/packages').catch((error: unknown) => error);
+    expect(gateway).toMatchObject({ status: 503, code: undefined });
+    expect(databaseUnavailable(gateway)).toBe(true);
+    fetcher.mockResolvedValueOnce(new Response(JSON.stringify({ code: '55000' }), { status: 500 }));
+    expect(databaseUnavailable(await client.request('/rest/v1/packages').catch((error: unknown) => error))).toBe(false);
   });
 });
 

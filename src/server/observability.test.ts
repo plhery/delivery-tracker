@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  databaseUnavailable,
   errorType,
   logOperationalEvent,
   operationalErrorMetadata,
   parseSampleRate,
   resolveSentryRelease,
+  shouldReportOutage,
   shouldReportRepeatedFailure,
 } from './observability';
 import { UpstreamHttpError } from 'universal-parcel-scraper/node';
@@ -63,6 +65,41 @@ describe('observability configuration', () => {
   it('reports early repeats and then powers of two to prevent alert floods', () => {
     expect([1, 2, 3, 4, 5, 8, 16].filter(shouldReportRepeatedFailure))
       .toEqual([1, 2, 3, 4, 8, 16]);
+  });
+
+  it('reports an outage once it has lasted two minutes, then each time it has doubled', () => {
+    expect([0, 10_000, 119_999].some((failingFor) => shouldReportOutage(failingFor, null))).toBe(false);
+    expect(shouldReportOutage(120_000, null)).toBe(true);
+    expect(shouldReportOutage(180_000, 123_000)).toBe(false);
+    expect(shouldReportOutage(245_999, 123_000)).toBe(false);
+    expect(shouldReportOutage(246_000, 123_000)).toBe(true);
+    expect(shouldReportOutage(Number.NaN, null)).toBe(false);
+    expect(shouldReportOutage(Number.POSITIVE_INFINITY, null)).toBe(false);
+  });
+
+  it('tells a database that does not answer from one that refuses', () => {
+    expect(databaseUnavailable(new SupabaseError('The delivery database is unreachable', undefined, 'unreachable'))).toBe(true);
+    for (const status of [502, 503, 504]) {
+      expect(databaseUnavailable(new SupabaseError(`Supabase POST request failed (${status})`, status))).toBe(true);
+    }
+    // A copy of the class from another bundle is recognised by its name.
+    const copy = Object.assign(new Error('Supabase POST request failed (503)'), { name: 'SupabaseError', status: 503 });
+    expect(databaseUnavailable(copy)).toBe(true);
+
+    for (const refusal of [
+      new SupabaseError('Supabase POST request failed (500)', 500, '55000'),
+      new SupabaseError('Supabase POST request failed (500)', 500),
+      new SupabaseError('Supabase POST request failed (400)', 400, '42804'),
+      new SupabaseError('Supabase POST request failed (401)', 401),
+      new SupabaseError('Supabase POST request failed (404)', 404, 'PGRST202'),
+      new SupabaseError('The durable sync job could not be queued'),
+      Object.assign(new Error('gateway'), { status: 503, code: 'unreachable' }),
+      new Error('offline'),
+      'unreachable',
+      null,
+    ]) {
+      expect(databaseUnavailable(refusal)).toBe(false);
+    }
   });
 
   it('does not treat an arbitrary exception name as telemetry metadata', () => {

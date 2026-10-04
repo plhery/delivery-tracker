@@ -411,6 +411,30 @@ export function shouldReportRepeatedFailure(failureCount: number): boolean {
     && (failureCount <= 3 || (failureCount & (failureCount - 1)) === 0);
 }
 
+const OUTAGE_REPORT_AFTER_MS = 120_000;
+
+/**
+ * Whether a failure streak has become an outage to report: once it has lasted
+ * two minutes, then each time it has doubled since the last report.
+ * `lastReportedAfterMs` is how long the streak had lasted at that report.
+ */
+export function shouldReportOutage(failingForMs: number, lastReportedAfterMs: number | null): boolean {
+  if (!Number.isFinite(failingForMs) || failingForMs < OUTAGE_REPORT_AFTER_MS) return false;
+  return lastReportedAfterMs === null || failingForMs >= lastReportedAfterMs * 2;
+}
+
+/**
+ * The database did not answer, or its gateway answered for it (502, 503, 504):
+ * what a restart looks like, and what waiting heals. A 500 is the database's
+ * own answer to a failed statement and counts as a refusal.
+ */
+export function databaseUnavailable(error: unknown): boolean {
+  // By name: the build's bundles each hold their own copy of the error class.
+  if (!(error instanceof Error) || error.name !== 'SupabaseError') return false;
+  const details = error as Error & { status?: unknown; code?: unknown };
+  return details.code === 'unreachable' || details.status === 502 || details.status === 503 || details.status === 504;
+}
+
 function zurichHour(now: Date): number {
   return Number(new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',

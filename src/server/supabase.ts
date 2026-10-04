@@ -187,6 +187,7 @@ export class SupabaseClient {
     if (options.prefer) headers.set('Prefer', options.prefer);
 
     let response: Response;
+    let text: string;
     try {
       response = await fetch(`${this.url}${path}`, {
         method,
@@ -196,13 +197,14 @@ export class SupabaseClient {
         redirect: 'error',
         signal: AbortSignal.timeout(options.timeoutMs ?? this.timeoutMs),
       });
+      text = await response.text();
     } catch (error) {
-      throw new SupabaseError('The delivery database is unreachable', undefined, undefined, {
+      // No answer, or one cut off before its end. The code tells it from a refusal.
+      throw new SupabaseError('The delivery database is unreachable', undefined, 'unreachable', {
         cause: error,
       });
     }
 
-    const text = await response.text();
     let payload: unknown = null;
     if (text) {
       try {

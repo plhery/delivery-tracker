@@ -9,7 +9,7 @@ import pl from '../../shared/locales/pl.json';
 import type { NativePushNotificationService, WebPushNotificationService, PushSummary } from './push';
 import type { SupabaseServiceClient } from './supabase';
 import type { JsonObject } from './types';
-import { captureOperationalError, logOperationalEvent, errorType } from './observability';
+import { captureOperationalError, databaseUnavailable, logOperationalEvent, errorType } from './observability';
 
 const copy = { en, fr, de, it, es, pt, pl };
 export function friendshipNotification(row: JsonObject): { web: JsonObject; native: JsonObject } {
@@ -74,7 +74,8 @@ export class FriendshipPushWorker {
     try { await this.service.dispatch(); }
     catch (error) {
       logOperationalEvent('friendship_notification_failed', { error_type: errorType(error) }, 'error');
-      captureOperationalError(error, { component: 'friendship-notifications', operation: 'dispatch' });
+      // The sync worker reports a database that stays unreachable.
+      if (!databaseUnavailable(error)) captureOperationalError(error, { component: 'friendship-notifications', operation: 'dispatch' });
     } finally { this.running = false; if (!this.stopped) this.schedule(15_000); }
   }
 }

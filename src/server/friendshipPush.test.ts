@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FriendshipPushService, FriendshipPushWorker, friendshipNotification } from './friendshipPush';
+import * as observability from './observability';
+import { SupabaseError } from './supabase';
 import type { JsonObject } from './types';
 
 const friendID = '11111111-1111-4111-8111-111111111111';
@@ -64,5 +66,23 @@ describe('friendship receipts', () => {
     worker.wake(); await vi.advanceTimersByTimeAsync(30_000); expect(dispatch).toHaveBeenCalledOnce();
     finish(); await vi.advanceTimersByTimeAsync(15_001); expect(dispatch).toHaveBeenCalledTimes(2);
     worker.stop(); await vi.advanceTimersByTimeAsync(60_000); expect(dispatch).toHaveBeenCalledTimes(2);
+  });
+  it('leaves a database that does not answer to the sync worker, and reports a refusal', async () => {
+    vi.useFakeTimers();
+    const logged = vi.spyOn(observability, 'logOperationalEvent').mockImplementation(() => undefined);
+    const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const refusal = new SupabaseError('Supabase POST request failed (404)', 404, 'PGRST202');
+    const dispatch = vi.fn()
+      .mockRejectedValueOnce(new SupabaseError('The delivery database is unreachable', undefined, 'unreachable'))
+      .mockRejectedValueOnce(refusal).mockResolvedValue({});
+    const worker = new FriendshipPushWorker({ dispatch } as never);
+    worker.start();
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(logged).toHaveBeenCalledExactlyOnceWith('friendship_notification_failed', { error_type: 'SupabaseError' }, 'error');
+    expect(report).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(15_000);
+    worker.stop();
+    expect(logged).toHaveBeenCalledTimes(2);
+    expect(report).toHaveBeenCalledExactlyOnceWith(refusal, { component: 'friendship-notifications', operation: 'dispatch' });
   });
 });
