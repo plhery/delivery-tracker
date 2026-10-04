@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { ClientApplication } from '../../src/ClientApplication';
+import { AccountClientApplication } from '../../src/AccountClientApplication';
 import { emailConfigured } from '../../src/server/email/config';
 import { invitationMetadata } from '../../src/server/invitationMetadata';
 import { requestLanguage } from '../../src/server/requestLocale';
@@ -11,5 +11,5 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
 export default async function InvitationPage() {
   await connection();
-  return <ClientApplication invitationRoute deliveryEmails={emailConfigured()} {...await requestLanguage()} />;
+  return <AccountClientApplication invitationRoute deliveryEmails={emailConfigured()} {...await requestLanguage()} />;
 }

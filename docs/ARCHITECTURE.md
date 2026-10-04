@@ -224,6 +224,13 @@ header; the demo, the sample and the offline page say it in the page, and let th
 be followed. These addresses are written on `CANONICAL_ORIGIN` when it is set
 ([DEPLOYMENT.md](DEPLOYMENT.md)).
 
+The landing comes without the code of the account's screens (the deliveries, signing in,
+an invitation, the demo): it is fetched when one of them is about to show
+([`accountCode.ts`](../src/accountCode.ts)). A browser the script marked, or one that
+holds a sign-in at any address, asks for it as its page loads, and comes alive with it.
+The demo's and an invitation's addresses bring the code along. Every page loads all the
+stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
+
 ## Data lifecycle
 
 - **Adding a parcel** writes it through the user's RLS client and queues a job with the

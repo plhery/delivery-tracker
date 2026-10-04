@@ -1,31 +1,13 @@
-import { useCallback, useEffect, useMemo, type ComponentProps } from 'react';
-import App from './App';
+import { useMemo } from 'react';
+import { accountCode } from './accountCode';
 import { useAuth } from './auth/AuthContext';
-import { ArrivalScreen } from './components/ArrivalScreen';
 import { ParcelIllustration } from './components/Icon';
 import { useEntryHint } from './lib/entryHint';
-import { endSignInStep, useDemoAddress, useEntryExperience } from './lib/experience';
-import { createDemoRepo } from './store/demoRepo';
-import { deleteAccount, downloadAccountExport, exportAccount } from './lib/account';
-import {
-  disablePushNotifications,
-  unsubscribePushNotificationsLocally,
-} from './lib/pushNotifications';
-import { browserStorage, clearApiCache, createApiRepo } from './store/apiRepo';
-import { ParcelsProvider } from './store/ParcelsContext';
+import { useDemoAddress, useEntryExperience } from './lib/experience';
 import { useI18n } from './i18n';
 import { usePendingInvitation } from './lib/friendInvites';
-import { createFriendsClient } from './lib/friends';
-import { restoreRequestedParcel } from './lib/requestedParcel';
-import { FriendInvitation } from './components/FriendInvitation';
-import { useParcels } from './store/ParcelsContext';
-import { FriendsActivityProvider } from './components/FriendsActivity';
-import type { ApiAuth } from './lib/apiClient';
-import { KeepPendingParcel } from './peek/KeepPending';
-import { BringAlongParcels } from './peek/parcel/BringAlong';
 import { PeekRoot } from './peek/PeekRoot';
-import { keepParcelLink } from './peek/pending';
-import { leaveParcelLink, openLanding, useLandingRoute, useParcelLinkRoute } from './peek/route';
+import { useLandingRoute, useParcelLinkRoute } from './peek/route';
 import type { PeekSession } from './peek/session';
 import { useVisitorSession } from './peek/visitor';
 
@@ -47,9 +29,15 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
   const invitation = usePendingInvitation(invitationRoute);
   const linkId = useParcelLinkRoute(parcelLinkId);
   const landingAddress = useLandingRoute(landingRoute);
-  const visitor = useVisitorSession(auth.status === 'loading' ? 'checking' : 'visitor');
+  // The demo's address shows the demo to anyone at once, a parcel's the parcel, the landing's the landing; elsewhere the
+  // landing is a visitor's first screen. Everything else is the account's: its code is fetched when it is about to show.
+  const landingFor = (restoring: boolean) => landingAddress || (!linkId && !invitation.pending && experience.screen === 'welcome' && !restoring);
+  const code = accountCode.useCode(demoAddress || auth.status === 'authenticated' || !(linkId || landingFor(false)));
+  // Someone signed in whose screens are still on their way waits as while the sign-in was being restored.
+  const status = auth.status === 'authenticated' && !code ? 'loading' : auth.status;
+  const visitor = useVisitorSession(status === 'loading' ? 'checking' : 'visitor');
   // A browser that holds a sign-in says so before the first paint: it waits for its deliveries, not at the landing.
-  const restoring = useEntryHint(auth.status !== 'loading') === 'app';
+  const restoring = useEntryHint(status !== 'loading') === 'app';
   // On a parcel page a visitor signs in without leaving it; the ways to do so come from here.
   const visitorSession = useMemo<PeekSession>(() => ({
     ...visitor,
@@ -59,156 +47,23 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
     },
     deliveryEmails,
   }), [visitor, deliveryEmails, auth.status, auth.googleEnabled, auth.appleEnabled, auth.emailOtpEnabled, auth.signInWithGoogle, auth.signInWithApple, auth.sendCode, auth.verifyCode]);
-  const demoRepo = useMemo(() => createDemoRepo(), []);
-  const signOut = auth.signOut;
-  const navigate = experience.navigate;
-  const storage = browserStorage();
-  const userId = auth.user?.id;
-  const sessionAuth = useMemo(
-    () => userId ? {
-      userId,
-      getAccessToken: auth.getAccessToken,
-      signal: auth.signal,
-    } : undefined,
-    [userId, auth.getAccessToken, auth.signal],
-  );
-  const handleSignOut = useCallback(async () => {
-    if (sessionAuth) {
-      void disablePushNotifications(sessionAuth).catch(() => undefined);
-      clearApiCache(storage, sessionAuth.userId);
+  const waiting = <div className="auth-loading" role="status"><ParcelIllustration /><span>{t('auth.loading')}</span></div>;
+  if (!demoAddress) {
+    // A parcel's address shows the parcel to anyone at once, while a saved sign-in is still being restored.
+    // Without one, a visitor arrives at the front door: the server draws it for everyone, since it cannot see a saved
+    // sign-in, and so does a browser that holds none while it makes sure.
+    // The landing's own address shows it to anyone at once, like a parcel's.
+    const landing = landingFor(status === 'loading' && restoring);
+    if (status !== 'authenticated' && (linkId || landing)) {
+      return <>
+        <PeekRoot session={visitorSession} serverLinkId={parcelLinkId} />
+        {/* For the browser that does hold a sign-in: what it shows, in place of the landing, until the page is live. */}
+        {landing && !landingAddress && status === 'loading' && <div className="auth-loading entry-splash" aria-hidden="true"><ParcelIllustration /><span>{t('auth.loading')}</span></div>}
+      </>;
     }
-    const completion = signOut();
-    navigate('welcome');
-    await completion;
-  }, [sessionAuth, signOut, storage, navigate]);
-  const apiAuth = useMemo(
-    () => sessionAuth ? {
-      ...sessionAuth,
-      onAuthenticationFailure: handleSignOut,
-    } : undefined,
-    [sessionAuth, handleSignOut],
-  );
-  const handleExport = useCallback(async () => {
-    if (!apiAuth) return;
-    const result = await exportAccount(apiAuth);
-    apiAuth.signal?.throwIfAborted();
-    downloadAccountExport(result);
-  }, [apiAuth]);
-  const handleDelete = useCallback(async (confirmation: string) => {
-    if (!apiAuth) return;
-    await deleteAccount(apiAuth, confirmation);
-    apiAuth.signal?.throwIfAborted();
-    void unsubscribePushNotificationsLocally().catch(() => undefined);
-    clearApiCache(storage, apiAuth.userId);
-    await signOut();
-    navigate('welcome');
-  }, [apiAuth, signOut, storage, navigate]);
-  const repo = useMemo(
-    () => apiAuth ? createApiRepo(
-      30_000,
-      1_000,
-      storage,
-      apiAuth,
-    ) : null,
-    [apiAuth, storage],
-  );
-  const friendsClient = useMemo(() => createFriendsClient(false, apiAuth), [apiAuth]);
-  // Signed in after a round trip to a sign-in provider: the parcel the address asked for before it opens now.
-  useEffect(() => {
-    if (!userId) return;
-    endSignInStep();
-    restoreRequestedParcel();
-  }, [userId]);
-  const invitationProps: ComponentProps<typeof FriendInvitation> = {
-    invitation, onDismiss: () => { invitation.clear(); if (!auth.user) experience.navigate('welcome'); },
-    configured: auth.status !== 'unconfigured', googleEnabled: auth.googleEnabled, appleEnabled: auth.appleEnabled, emailOtpEnabled: auth.emailOtpEnabled,
-    signInWithGoogle: auth.signInWithGoogle, signInWithApple: auth.signInWithApple, sendCode: auth.sendCode, verifyCode: auth.verifyCode,
-  };
-  // Someone signed in has the landing at its own address; a visitor's is `/`, where leaving the demo leads.
-  const demo = <ParcelsProvider key="demo" repo={demoRepo}>
-    <App onExitDemo={() => experience.navigate('welcome')} onOpenLanding={auth.user ? openLanding : () => experience.navigate('welcome')} />
-  </ParcelsProvider>;
-  // The demo's address shows the demo to anyone at once, signed in or not. Leaving the demo returns to `/`.
-  if (demoAddress) return demo;
-  // A parcel's address shows the parcel to anyone at once, while a saved sign-in is still being restored.
-  // Without one, a visitor arrives at the front door: the server draws it for everyone, since it cannot see a saved
-  // sign-in, and so does a browser that holds none while it makes sure.
-  // The landing's own address shows it to anyone at once, like a parcel's.
-  const landing = landingAddress || (!linkId && !invitation.pending && experience.screen === 'welcome' && !(auth.status === 'loading' && restoring));
-  if (auth.status !== 'authenticated' && (linkId || landing)) {
-    return <>
-      <PeekRoot session={visitorSession} serverLinkId={parcelLinkId} />
-      {/* For the browser that does hold a sign-in: what it shows, in place of the landing, until the page is live. */}
-      {landing && !landingAddress && auth.status === 'loading' && <div className="auth-loading entry-splash" aria-hidden="true"><ParcelIllustration /><span>{t('auth.loading')}</span></div>}
-    </>;
+    if (status === 'loading') return waiting;
   }
-  if (auth.status === 'loading') {
-    return <div className="auth-loading" role="status"><ParcelIllustration /><span>{t('auth.loading')}</span></div>;
-  }
-  if (auth.status === 'unconfigured' || auth.status === 'anonymous') {
-    if (invitation.pending) return <FriendInvitation key={invitation.pending.code ?? 'invalid'} {...invitationProps} />;
-    if (experience.screen === 'demo') return demo;
-    return (
-      <ArrivalScreen
-        screen="sign-in"
-        onNavigate={visitor.leaveSignIn}
-        configured={auth.status !== 'unconfigured'}
-        googleEnabled={auth.googleEnabled}
-        appleEnabled={auth.appleEnabled}
-        emailOtpEnabled={auth.emailOtpEnabled}
-        signInWithGoogle={auth.signInWithGoogle}
-        signInWithApple={auth.signInWithApple}
-        sendCode={auth.sendCode}
-        verifyCode={auth.verifyCode}
-      />
-    );
-  }
-  if (!repo) return null;
-  return (
-    <FriendsActivityProvider key={auth.user?.id} auth={apiAuth!} paused={!!invitation.pending}>
-    <ParcelsProvider key={auth.user?.id} repo={repo}>
-      <KeepPendingParcel auth={apiAuth!} />
-      {linkId || landingAddress ? <SignedInPeek auth={apiAuth!} email={auth.user?.email} serverLinkId={parcelLinkId} />
-        : invitation.pending ? <AuthenticatedInvitation key={invitation.pending.code ?? 'invalid'} {...invitationProps} client={friendsClient} /> : <><App
-        accountEmail={auth.user?.email ?? t('native.account')}
-        onSignOut={handleSignOut}
-        onExportAccount={handleExport}
-        onDeleteAccount={handleDelete}
-        onOpenLanding={openLanding}
-        apiAuth={apiAuth}
-      /><BringAlongParcels auth={apiAuth!} /></>}
-    </ParcelsProvider>
-    </FriendsActivityProvider>
-  );
-}
-
-function AuthenticatedInvitation(props: ComponentProps<typeof FriendInvitation>) {
-  const { parcels } = useParcels();
-  return <FriendInvitation {...props} parcels={parcels} />;
-}
-
-/**
- * A parcel page opened by someone signed in: it can join their deliveries
- * without leaving the page. The landing at its own address shows them the way
- * back to their deliveries.
- */
-function SignedInPeek({ auth, email, serverLinkId }: { auth: ApiAuth; email?: string; serverLinkId: string | null }) {
-  const { parcels, loading, retryLoad } = useParcels();
-  const session = useMemo<PeekSession>(() => ({
-    account: 'signed-in',
-    email,
-    signIn: () => undefined,
-    async keep(linkId) {
-      const outcome = await keepParcelLink(linkId, auth);
-      if (outcome.outcome === 'kept' || outcome.outcome === 'already') void retryLoad();
-      return outcome;
-    },
-    deliveries: loading ? undefined : parcels,
-    openDeliveries: (parcelId) => {
-      leaveParcelLink(parcelId ? `/?parcel=${encodeURIComponent(parcelId)}` : '/');
-      // The deliveries open at their top, wherever on the page the way to them stood.
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    },
-  }), [auth, email, parcels, loading, retryLoad]);
-  return <PeekRoot session={session} serverLinkId={serverLinkId} />;
+  if (!code) return waiting;
+  return <code.ApiAccount auth={auth} experience={experience} invitation={invitation} demoAddress={demoAddress} linkId={linkId}
+    landingAddress={landingAddress} parcelLinkId={parcelLinkId} leaveSignIn={visitor.leaveSignIn} />;
 }

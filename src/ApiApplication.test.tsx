@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiApplication } from './ApiApplication';
+import './test/accountCode';
 import { onKeepOutcome, pendingKeep, rememberPendingKeep, type KeepOutcome } from './peek/pending';
 import { forgetAllRecents, recentFor, rememberParcel, renameParcel } from './peek/recents';
 import { openParcelLink } from './peek/route';

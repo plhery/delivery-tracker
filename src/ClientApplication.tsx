@@ -1,26 +1,23 @@
 'use client';
 
+import './cascade';
 import { startAnalytics } from './lib/analytics';
 import { useEffect, useMemo } from 'react';
-import App from './App';
+import { accountCode } from './accountCode';
 import { ApiApplication } from './ApiApplication';
 import { AuthProvider } from './auth/AuthContext';
 import { authConfigFromEnvironment } from './auth/authConfig';
-import { I18nProvider, type Locale, type Messages } from './i18n';
+import { I18nProvider, useI18n, type Locale, type Messages } from './i18n';
 import { isDemoBuild } from './lib/buildMode';
 import { enableAppBadgeClearing } from './lib/pushNotifications';
 import { checkForUpdatesOnResume, enablePwaLiveReload, registerPwaServiceWorker } from './lib/pwaUpdates';
 import { createDemoRepo } from './store/demoRepo';
-import { ParcelsProvider } from './store/ParcelsContext';
 import { AppearanceProvider } from './lib/appearance';
 import { useEntryHint } from './lib/entryHint';
 import { useDemoAddress, useEntryExperience } from './lib/experience';
 import { MovedHost } from './lib/movedHost';
-import { ArrivalScreen } from './components/ArrivalScreen';
-import { FriendInvitation } from './components/FriendInvitation';
+import { ParcelIllustration } from './components/Icon';
 import { usePendingInvitation } from './lib/friendInvites';
-import { KeepPendingInDemo } from './peek/KeepPending';
-import { BringAlongInDemo } from './peek/parcel/BringAlong';
 import { PeekRoot } from './peek/PeekRoot';
 import { useLandingRoute, useParcelLinkRoute } from './peek/route';
 import { useVisitorSession } from './peek/visitor';
@@ -59,6 +56,8 @@ export function ClientApplication({ movedTo, ...props }: ApplicationProps & {
 }
 
 function Application({ invitationRoute = false, parcelLinkId = null, demoRoute = false, landingRoute = false, deliveryEmails = false, initialLocale, initialMessages }: ApplicationProps) {
+  // A browser that will open on the account's screens comes alive with their code in hand.
+  accountCode.useEarly();
   const demoRepo = useMemo(
     () => isDemoBuild ? createDemoRepo() : null,
     [],
@@ -104,6 +103,7 @@ export function DemoApplication({ repo, invitationRoute = false, parcelLinkId = 
   demoRoute?: boolean;
   landingRoute?: boolean;
 }) {
+  const { t } = useI18n();
   const invitation = usePendingInvitation(invitationRoute);
   const experience = useEntryExperience(demoRoute);
   const demoAddress = useDemoAddress(demoRoute);
@@ -112,24 +112,12 @@ export function DemoApplication({ repo, invitationRoute = false, parcelLinkId = 
   const session = useVisitorSession('visitor');
   // Without accounts the page knows who is looking as soon as it is live.
   useEntryHint(true);
-  const signIn = { configured: false, googleEnabled: false, emailOtpEnabled: false, sendCode: async () => undefined, verifyCode: async () => undefined };
-
   // A parcel's address shows the parcel, and the landing's the landing, whatever this browser was doing before.
-  if (linkId || landingAddress || (!invitation.pending && experience.screen === 'welcome')) {
-    return <PeekRoot session={session} serverLinkId={parcelLinkId} />;
-  }
-  // The demo's address shows the demo; an invitation waiting in this tab comes back after it.
-  if (invitation.pending && !demoAddress) {
-    return <FriendInvitation key={invitation.pending.code ?? 'invalid'} invitation={invitation}
-      onDismiss={() => { invitation.clear(); experience.navigate('welcome'); }} {...signIn} />;
-  }
-  if (experience.screen === 'demo') {
-    return <ParcelsProvider repo={repo}>
-      <KeepPendingInDemo repo={repo} />
-      {/* Without accounts the landing is at `/`: its link leaves the demo for it. */}
-      <App onExitDemo={() => experience.navigate('welcome')} onOpenLanding={() => experience.navigate('welcome')} />
-      <BringAlongInDemo repo={repo} />
-    </ParcelsProvider>;
-  }
-  return <ArrivalScreen screen="sign-in" onNavigate={session.leaveSignIn} {...signIn} />;
+  const peek = Boolean(linkId || landingAddress || (!invitation.pending && experience.screen === 'welcome'));
+  // The rest is the account's: an invitation, the demo deliveries, the sign-in step. Its code is fetched when one is about to show.
+  const code = accountCode.useCode(!peek);
+
+  if (peek) return <PeekRoot session={session} serverLinkId={parcelLinkId} />;
+  if (!code) return <div className="auth-loading" role="status"><ParcelIllustration /><span>{t('auth.loading')}</span></div>;
+  return <code.DemoAccount repo={repo} experience={experience} invitation={invitation} demoAddress={demoAddress} leaveSignIn={session.leaveSignIn} />;
 }

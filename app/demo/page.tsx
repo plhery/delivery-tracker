@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { ClientApplication } from '../../src/ClientApplication';
+import { AccountClientApplication } from '../../src/AccountClientApplication';
 import { translateMessage } from '../../src/lib/messages';
 import { emailConfigured } from '../../src/server/email/config';
 import { messagesFor, requestLanguage, requestLocale } from '../../src/server/requestLocale';
@@ -22,5 +22,5 @@ export async function generateMetadata(): Promise<Metadata> {
 /** The demo deliveries, for anyone: nothing here needs an account or leaves the device. */
 export default async function DemoPage() {
   await connection();
-  return <ClientApplication demoRoute deliveryEmails={emailConfigured()} {...await requestLanguage()} />;
+  return <AccountClientApplication demoRoute deliveryEmails={emailConfigured()} {...await requestLanguage()} />;
 }
