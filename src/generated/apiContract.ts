@@ -965,6 +965,10 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       },
       {
+        "pattern": "^870\\d{11,12}$",
+        "confidence": "high"
+      },
+      {
         "pattern": "^[A-Z0-9]{2}\\d{11}$",
         "confidence": "low"
       },

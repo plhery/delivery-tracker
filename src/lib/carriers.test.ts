@@ -765,15 +765,15 @@ describe('carrier detection', () => {
     // and https://forum.quechoisir.org/arnaque-par-rue-du-commerce-je-demande-justice-t22371.html (8G45061126689)
     expect(detectCarrier('8U01130342039')).toBe('la-poste');
     expect(detectCarrier('8G45061126689')).toBe('la-poste');
-    // MERCHANT EXAMPLES, Fnac Darty 6A families route with La Poste; bare 14-digit
-    // merchant numbers stay ambiguous and need carrier confirmation.
+    // MERCHANT EXAMPLES, Fnac Darty 6A and numeric tracked-mail families.
     // Source: https://marketplace.fnacdarty.com/s/article/Dois-je-obligatoirement-renseigner-un-num%C3%A9ro-de-suivi-tracking-pour-ma-commande?language=fr_BE
     expect(detectCarrier('6A62957360897')).toBe('la-poste');
     expect(detectCarrier('6A61031888418')).toBe('la-poste');
     for (const number of ['87000918244878', '87000918635108']) {
       const match = detectCarrierMatch(number);
-      expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
+      expect(match).toMatchObject({ carrier: 'la-poste', confidence: 'high' });
     }
+    expect(detectCarrier('870012345678901')).toBe('la-poste');
   });
 
   it('landmark-global — Landmark Global', () => {

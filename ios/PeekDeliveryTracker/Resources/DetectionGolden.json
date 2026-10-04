@@ -2677,40 +2677,26 @@
   },
   {
     "input": "87000918244878",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "la-poste",
+    "confidence": "high",
     "candidates": [
-      "dpd",
-      "ciblex",
-      "hermes-de",
-      "seur",
-      "brt",
-      "delhivery"
-    ],
-    "asked": [
-      "dpd",
-      "seur",
-      "brt",
-      "hermes-de",
-      "ciblex"
+      "la-poste"
     ]
   },
   {
     "input": "87000918635108",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "la-poste",
+    "confidence": "high",
     "candidates": [
-      "dpd",
-      "ciblex",
-      "seur",
-      "brt",
-      "delhivery"
-    ],
-    "asked": [
-      "dpd",
-      "seur",
-      "brt",
-      "ciblex"
+      "la-poste"
+    ]
+  },
+  {
+    "input": "870012345678901",
+    "carrier": "la-poste",
+    "confidence": "high",
+    "candidates": [
+      "la-poste"
     ]
   },
   {
