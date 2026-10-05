@@ -177,3 +177,36 @@ test('closes when the page is pulled down from its top, and scrolls when it is n
   await expect(page).not.toHaveURL(/parcel=/);
   await expect(page.locator('.app')).not.toHaveAttribute('inert');
 });
+
+test('is carried off sideways too, even when scrolled, and its header holds still past the top', async ({ page, browserName, isMobile }) => {
+  test.skip(browserName !== 'chromium' || !isMobile, 'Real Chromium touch input');
+  await demo(page, 'none');
+  const client = await page.context().newCDPSession(page);
+  const drag = async (dx: number, dy: number) => {
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 200, y: 420 }] });
+    for (let step = 1; step <= 10; step++) {
+      await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 200 + dx * step / 10, y: 420 + dy * step / 10 }] });
+      await page.waitForTimeout(30);
+    }
+    await page.waitForTimeout(150);
+  };
+  const lift = () => client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  const card = page.locator('.parcel-card:not(.parcel-card--hero)').first();
+  const parcelName = await card.locator('.parcel-card__label').innerText();
+  await card.click();
+  const detail = page.getByRole('dialog', { name: parcelName, exact: true });
+  await expect.poll(() => detail.evaluate((element) => element.getAnimations().length)).toBe(0);
+  // Pulled past its top, the page has no give: the header stays where it is.
+  await expect(detail).toHaveCSS('overscroll-behavior-y', 'none');
+  await detail.evaluate((element) => { element.scrollTop = 200; });
+  // A short way to the side it settles back, still scrolled; further, it closes.
+  await drag(-60, 4);
+  expect((await detail.boundingBox())!.x).toBeLessThan(-20);
+  await lift();
+  await expect(detail).toHaveCSS('transform', 'none');
+  expect(await detail.evaluate((element) => element.scrollTop)).toBe(200);
+  await drag(170, 6);
+  await lift();
+  await expect(detail).toHaveCount(0);
+  await expect(page).not.toHaveURL(/parcel=/);
+});

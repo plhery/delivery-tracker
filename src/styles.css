@@ -336,7 +336,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 
 
 /* A shipment opens as a full page on a phone and a focused paper panel on desktop. */
-.detail { position: fixed; inset: 0; z-index: 40; margin: 0 auto; width: 100%; max-width: 740px; height: 100dvh; background: var(--canvas); overflow-y: auto; overscroll-behavior: contain; animation: detail-arrive .32s var(--spring) both; box-shadow: 0 0 0 100vmax rgb(15 22 15 / 28%); padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+.detail { position: fixed; inset: 0; z-index: 40; margin: 0 auto; width: 100%; max-width: 740px; height: 100dvh; background: var(--canvas); overflow-y: auto; overscroll-behavior: none; animation: detail-arrive .32s var(--spring) both; box-shadow: 0 0 0 100vmax rgb(15 22 15 / 28%); padding-bottom: max(28px, env(safe-area-inset-bottom)); }
 .detail--from-card { animation: none; }
 .detail__header { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; min-height: 76px; gap: 12px; padding: max(12px, env(safe-area-inset-top)) 24px 12px; background: var(--canvas); border-bottom: 1px solid var(--line); }
 .detail__header > span { font-size: 13px; color: var(--ink-soft); }

@@ -372,7 +372,7 @@ describe('pulling the page down', () => {
     expect(named('detail-pull-settle')).toHaveLength(1);
   });
 
-  it('leaves the touch alone when the page is scrolled, busy, pulled sideways or upwards, or in a field, on any screen', () => {
+  it('leaves the touch alone when the page is scrolled, busy, pulled askew or upwards, or in a field, on any screen', () => {
     const scrolled = setup({ scrolled: 40, withCard: false });
     expect(pull(scrolled.page, [[0, 60]])[0].defaultPrevented).toBe(false);
     bound!.release();
@@ -380,7 +380,7 @@ describe('pulling the page down', () => {
     expect(pull(busy.page, [[0, 60]])[0].defaultPrevented).toBe(false);
     bound!.release();
     const { page, field } = setup({ withCard: false });
-    expect(pull(page, [[60, 30]])[0].defaultPrevented).toBe(false);
+    expect(pull(page, [[40, 40]])[0].defaultPrevented).toBe(false);
     expect(pull(page, [[0, -60]])[0].defaultPrevented).toBe(false);
     expect(pull(field, [[0, 60]])[0].defaultPrevented).toBe(false);
     page.setAttribute('inert', '');
@@ -407,6 +407,39 @@ describe('pulling the page down', () => {
       touch(page, 'touchmove', { x: 200, y: 380 }, { cancelable: false, after: 200 });
       expect(named('detail-pull-settle')).toHaveLength(2);
     });
+  });
+
+  it('is carried off to either side too, from wherever it is scrolled, and closes far enough or on a flick', () => {
+    const right = setup({ scrolled: 300, withCard: false });
+    const [first, second] = pull(right.page, [[40, 4], [180, 10]], false);
+    expect(first.defaultPrevented).toBe(true);
+    expect(second.defaultPrevented).toBe(true);
+    const [, x, , scale] = /translate\(([-\d.]+)px, ([-\d.]+)px\) scale\(([\d.]+)\)/.exec(right.page.style.transform)!.map(Number);
+    // The touched point follows the finger: 172 px to the right, after the slop.
+    expect(x + 200 * scale).toBeCloseTo(372, 0);
+    touch(right.page, 'touchend', undefined, { after: 300 });
+    expect(named('detail-pull-settle')).toHaveLength(0);
+    expect(animations.some((animation) => animation.target === right.page && animation.options.fill === 'forwards')).toBe(true);
+    bound!.release();
+    animations = [];
+    // To the left, a short way: it settles back; a flick closes.
+    const left = setup({ withCard: false });
+    pull(left.page, [[-30, 0], [-70, 5]]);
+    expect(named('detail-pull-settle')).toHaveLength(1);
+    bound!.release();
+    animations = [];
+    const flicked = setup({ withCard: false });
+    pull(flicked.page, [[-20, 0], [-50, 0], [-90, 2]], true, 16);
+    expect(named('detail-pull-settle')).toHaveLength(0);
+    expect(animations.some((animation) => animation.target === flicked.page && animation.options.fill === 'forwards')).toBe(true);
+    bound!.release();
+    animations = [];
+    // A part that scrolls sideways keeps the finger.
+    const { page, inside } = setup({ withCard: false });
+    inside.style.overflowX = 'auto';
+    Object.defineProperties(inside, { scrollWidth: { value: 500 }, clientWidth: { value: 200 } });
+    expect(pull(inside, [[80, 0]])[0].defaultPrevented).toBe(false);
+    expect(page.style.transform).toBe('');
   });
 
   it('settles back, however far it was pulled, when the system takes the touch away', () => {

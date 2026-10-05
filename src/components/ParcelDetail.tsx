@@ -292,7 +292,8 @@ export function ParcelDetail({
   }
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
-    if (event.isPrimary === false) {
+    // A finger carries the page off itself, from anywhere on it; this is the edge swipe of other pointers.
+    if (event.isPrimary === false || event.pointerType === 'touch') {
       swipeStart.current = null;
       return;
     }

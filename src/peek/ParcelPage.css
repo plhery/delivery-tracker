@@ -8,7 +8,7 @@
 /* A page opened from the front door lies over it and scrolls on its own; it moves and scales from its top left corner
    when it leaves or returns to its card. */
 .sheet-backdrop.peekp-backdrop { display: block; padding: 0; z-index: 40; }
-.peekp-over { position: fixed; inset: 0; height: 100dvh; overflow-y: auto; overscroll-behavior: contain; background: var(--canvas); transform-origin: 0 0; outline: none; }
+.peekp-over { position: fixed; inset: 0; height: 100dvh; overflow-y: auto; overscroll-behavior: none; background: var(--canvas); transform-origin: 0 0; outline: none; }
 .peekp-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 64px; padding: max(10px, env(safe-area-inset-top)) 16px 6px 20px; }
 .peekp-home { min-height: 44px; padding: 0; border-radius: 12px; background: transparent; }
 .peekp-header .peek-lockup__tagline { display: none; }

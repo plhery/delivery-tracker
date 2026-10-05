@@ -229,7 +229,7 @@ export interface CardDialog {
 
 /**
  * A page that opens out of a card and returns to it. Under a finger, pulling it down from its
- * top carries it along: let go far or fast enough and it closes.
+ * top or to either side carries it along: let go far or fast enough and it closes.
  */
 export function bindCardDialog(page: HTMLElement, options: {
   origin?: CardOrigin | null;
@@ -247,7 +247,7 @@ export function bindCardDialog(page: HTMLElement, options: {
   let pose = REST;
   let flight: Flight | null = null;
   let stopWatching = () => {};
-  let touch: { id: number; x: number; y: number; claimed: boolean; left: number; top: number; height: number; pull: number; dim: string; samples: { time: number; x: number; y: number }[] } | null = null;
+  let touch: { id: number; x: number; y: number; claimed: boolean; side: -1 | 0 | 1; left: number; top: number; width: number; height: number; pull: number; dim: string; samples: { time: number; x: number; y: number }[] } | null = null;
   let suppressClickUntil = 0;
 
   const parts = (): Parts => ({ anchor: options.anchor?.(), header: options.header?.(), worded: options.worded?.() });
@@ -361,15 +361,17 @@ export function bindCardDialog(page: HTMLElement, options: {
     if (touch?.claimed) { touchEnd(event, true); return; }
     touch = null;
     if (event.touches.length !== 1 || closing || !options.canPull()) return;
-    if (page.scrollTop > 0 || page.hasAttribute('inert') || !arrived()) return;
+    if (page.hasAttribute('inert') || !arrived()) return;
     const target = event.target instanceof Element ? event.target : null;
     if (!target || target.closest('input, textarea, select, [contenteditable], dialog')) return;
     // Nested scrolling surfaces keep their own gestures.
     for (let node: Element | null = target; node && node !== page; node = node.parentElement) {
-      if (node.scrollHeight > node.clientHeight && /auto|scroll/.test(getComputedStyle(node).overflowY)) return;
+      const style = getComputedStyle(node);
+      if (node.scrollHeight > node.clientHeight && /auto|scroll/.test(style.overflowY)) return;
+      if (node.scrollWidth > node.clientWidth && /auto|scroll/.test(style.overflowX)) return;
     }
     const point = event.touches[0];
-    touch = { id: point.identifier, x: point.clientX, y: point.clientY, claimed: false, left: 0, top: 0, height: 0, pull: 0, dim: '', samples: [] };
+    touch = { id: point.identifier, x: point.clientX, y: point.clientY, claimed: false, side: 0, left: 0, top: 0, width: 0, height: 0, pull: 0, dim: '', samples: [] };
   };
 
   const touchMove = (event: TouchEvent) => {
@@ -380,11 +382,16 @@ export function bindCardDialog(page: HTMLElement, options: {
     const dy = point.clientY - touch.y;
     if (!touch.claimed) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) < SLOP) return;
-      if (dy <= 0 || Math.abs(dx) > dy * 0.8 || page.scrollTop > 0 || !event.cancelable) { touch = null; return; }
+      // Sideways the page can be carried off wherever it is scrolled; downwards only from its top.
+      const sideways = Math.abs(dx) > Math.abs(dy) * 1.25;
+      const downwards = dy > 0 && Math.abs(dx) <= dy * 0.8 && page.scrollTop <= 0;
+      if ((!sideways && !downwards) || !event.cancelable) { touch = null; return; }
       const bounds = page.getBoundingClientRect();
       touch.claimed = true;
+      touch.side = sideways ? (dx > 0 ? 1 : -1) : 0;
       touch.left = bounds.left;
       touch.top = bounds.top;
+      touch.width = bounds.width;
       touch.height = bounds.height;
       page.style.animation = 'none';
       page.style.willChange = 'transform';
@@ -396,14 +403,17 @@ export function bindCardDialog(page: HTMLElement, options: {
     if (!event.cancelable) { touchEnd(event, true); return; }
     event.preventDefault();
     // Measured from the end of the slop, so the page never jumps when the pull begins.
-    const pull = touch.pull = Math.max(0, dy - SLOP);
-    const share = Math.min(1, pull / (touch.height * 0.55));
+    const { side } = touch;
+    const pull = touch.pull = Math.max(0, (side ? dx * side : dy) - SLOP);
+    const share = Math.min(1, pull / (side ? touch.width * 0.9 : touch.height * 0.55));
     const scale = 1 - 0.24 * share;
+    // The other way the finger moves counts for less, and not at all until the pull is under way.
+    const across = (side ? dy : dx) * 0.7 * Math.min(1, pull / 90);
     // The page shrinks around the finger, which keeps hold of the point it touched.
     const next = {
       ...REST,
-      x: dx * 0.7 * Math.min(1, pull / 90) + (touch.x - touch.left) * (1 - scale),
-      y: pull + (touch.y - touch.top) * (1 - scale),
+      x: (side ? pull * side : across) + (touch.x - touch.left) * (1 - scale),
+      y: (side ? across : pull) + (touch.y - touch.top) * (1 - scale),
       scale,
       radius: Math.min(PULLED_RADIUS, pull / 2.5) / scale,
     };
@@ -427,8 +437,10 @@ export function bindCardDialog(page: HTMLElement, options: {
     const span = last && first ? (last.time - first.time) / 1000 : 0;
     const pace = (distance: number) => span > 0 ? Math.max(-MAX_SPEED, Math.min(MAX_SPEED, distance / span)) : 0;
     const speed = last && first ? { x: pace(last.x - first.x), y: pace(last.y - first.y) } : { x: 0, y: 0 };
-    // Far enough and not on its way back up, or thrown downwards.
-    const away = ended.pull > Math.min(150, ended.height * 0.2) ? speed.y > -150 : speed.y > 550 && ended.pull > 18;
+    // Far enough and not on its way back, or thrown the way it was pulled.
+    const along = ended.side ? speed.x * ended.side : speed.y;
+    const far = ended.side ? Math.min(120, ended.width * 0.3) : Math.min(150, ended.height * 0.2);
+    const away = ended.pull > far ? along > -150 : along > 550 && ended.pull > 18;
     if (away && !taken) close(speed);
     else if (!page.animate || matches(STILL)) {
       clear();
