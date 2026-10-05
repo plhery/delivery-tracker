@@ -2,6 +2,7 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { I18nProvider, loadMessages } from '../../i18n';
 import { scroll, stubIntersections } from '../../test/intersections';
 import { PeekSessionProvider } from '../session';
 import { Landing } from './Landing';
@@ -118,6 +119,30 @@ describe('Landing', () => {
     expect(within(footer).getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy.html');
     expect(within(footer).getByRole('link', { name: 'GitHub' })).toHaveAttribute('target', '_blank');
     expect(within(footer).getByRole('combobox', { name: 'Language' })).toHaveValue('en');
+  });
+
+  it('names what else its author makes last, each at its address for the reader’s language', async () => {
+    const sites = () => within(screen.getByRole('contentinfo')).getAllByRole('link').slice(-2);
+    const english = render(<LandingFooter />);
+    expect(screen.getByRole('contentinfo').lastElementChild).toHaveTextContent('By the creator of X Horoscope and UnfollowMonkey');
+    expect(sites().map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
+      ['X Horoscope', 'https://x-horoscope.com/en/x'], ['UnfollowMonkey', 'https://unfollow-monkey.com/en'],
+    ]);
+    // Followed links that open beside the page and tell the site where the visit came from.
+    for (const link of sites()) {
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener');
+    }
+    english.unmount();
+
+    const french = render(<I18nProvider initialLocale="fr" initialMessages={await loadMessages('fr')}><LandingFooter /></I18nProvider>);
+    expect(screen.getByRole('contentinfo').lastElementChild).toHaveTextContent('Par le créateur de X Horoscope et d’UnfollowMonkey');
+    expect(sites().map((link) => link.getAttribute('href'))).toEqual(['https://x-horoscope.com/fr/x', 'https://unfollow-monkey.com/fr']);
+    french.unmount();
+
+    // X Horoscope has no Polish: its English page is linked.
+    render(<I18nProvider initialLocale="pl" initialMessages={await loadMessages('pl')}><LandingFooter /></I18nProvider>);
+    expect(sites().map((link) => link.getAttribute('href'))).toEqual(['https://x-horoscope.com/en/x', 'https://unfollow-monkey.com/pl']);
   });
 
   it('moves a language’s address with the language chosen at its foot, to where the landing is in English for this reader', async () => {

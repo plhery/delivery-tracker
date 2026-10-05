@@ -1,10 +1,17 @@
 import type { MouseEvent } from 'react';
+import type { Locale } from '../../i18n';
 import { DEMO_PATH } from '../../lib/experience';
 
 export { SOURCE_URL } from '../../lib/source';
 
 /** Who makes Peek, on X. */
 export const AUTHOR_URL = 'https://x.com/plhery';
+
+/** What else its author makes, each at its own address for the reader's language. X Horoscope has no Polish. */
+export const OTHER_SITES = {
+  horoscope: { name: 'X Horoscope', address: (locale: Locale) => `https://x-horoscope.com/${locale === 'pl' ? 'en' : locale}/x` },
+  monkey: { name: 'UnfollowMonkey', address: (locale: Locale) => `https://unfollow-monkey.com/${locale}` },
+} as const;
 
 /** A public build-time address, taken only when it is a secure link. */
 export function publicLink(value: string | undefined): string | null {

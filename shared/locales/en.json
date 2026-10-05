@@ -382,6 +382,7 @@
   "landing.who.forgets.body": "Without an account, a parcel is forgotten 30 days after it arrives.",
   "landing.who.github": "View on GitHub",
   "landing.who.x": "@plhery on X",
+  "landing.footer.maker": "By the creator of {{horoscope}} and {{monkey}}",
   "language.de": "Deutsch",
   "language.en": "English",
   "language.fr": "Français",

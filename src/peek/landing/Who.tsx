@@ -6,7 +6,7 @@ import { trackAction } from '../../lib/analytics';
 import { LANDING_PATH, landingAtRoot } from '../../lib/experience';
 import { usePeekSession } from '../session';
 import { LandingIcon, XLogo } from './glyphs';
-import { AUTHOR_URL, SOURCE_URL } from './links';
+import { AUTHOR_URL, OTHER_SITES, SOURCE_URL } from './links';
 import './Who.css';
 
 const FACTS: readonly { icon: ReactNode; title: MessageKey; body: MessageKey }[] = [
@@ -34,9 +34,9 @@ export function Who() {
   </section>;
 }
 
-/** The foot of the page: the name, the privacy notice, the code, and the language. */
+/** The foot of the page: the name, the privacy notice, the code, the language, and what else its author makes. */
 export function LandingFooter() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { account } = usePeekSession();
   // English lives at `/`. Where that is the deliveries, the demo or the sign-in step, the landing in English is at its own address.
   const englishAddress = () => account === 'visitor' && landingAtRoot() ? '/' : LANDING_PATH;
@@ -45,5 +45,13 @@ export function LandingFooter() {
     <a href="/privacy.html" onClick={() => trackAction('privacy-open')}>{t('auth.privacyLink')}</a>
     <a href={SOURCE_URL} target="_blank" rel="noopener noreferrer"><LandingIcon name="github" />GitHub</a>
     <LanguageControl englishAddress={englishAddress} />
+    {/* The sentence is cut around the two names, which are the links. No `noreferrer`: each site may see that the visit came from Peek. */}
+    <p className="landing-footer__maker">
+      {t('landing.footer.maker').split(/\{\{(horoscope|monkey)\}\}/).map((part, index) => {
+        if (index % 2 === 0) return part;
+        const site = OTHER_SITES[part as keyof typeof OTHER_SITES];
+        return <a key={part} href={site.address(locale)} target="_blank" rel="noopener">{site.name}</a>;
+      })}
+    </p>
   </footer>;
 }
