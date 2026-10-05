@@ -687,6 +687,7 @@
     "candidates": [
       "dpd-fr",
       "la-poste",
+      "ukrposhta",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -958,6 +959,7 @@
     "candidates": [
       "dpd-fr",
       "la-poste",
+      "ukrposhta",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -1142,6 +1144,7 @@
     "candidates": [
       "dpd-fr",
       "la-poste",
+      "ukrposhta",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -1551,6 +1554,7 @@
     "candidates": [
       "dpd-fr",
       "la-poste",
+      "ukrposhta",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -1593,6 +1597,7 @@
     "candidates": [
       "dpd-fr",
       "la-poste",
+      "ukrposhta",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -2706,6 +2711,7 @@
     "confidence": "low",
     "candidates": [
       "la-poste",
+      "ukrposhta",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -2821,6 +2827,7 @@
     "confidence": "low",
     "candidates": [
       "la-poste",
+      "ukrposhta",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -3967,6 +3974,7 @@
     "confidence": "low",
     "candidates": [
       "la-poste",
+      "ukrposhta",
       "correos-chile",
       "delhivery",
       "yunda",
@@ -4026,6 +4034,7 @@
     "confidence": "low",
     "candidates": [
       "la-poste",
+      "ukrposhta",
       "correos-chile",
       "delhivery",
       "yunda",
@@ -4689,6 +4698,7 @@
     "confidence": "low",
     "candidates": [
       "la-poste",
+      "ukrposhta",
       "correos-chile",
       "delhivery",
       "yunda"

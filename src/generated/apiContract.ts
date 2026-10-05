@@ -2342,7 +2342,12 @@ export const CARRIER_CAPABILITIES = {
         ]
       }
     ],
-    "detectionRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{13}$",
+        "confidence": "low"
+      }
+    ],
     "trackingUrlTemplate": "https://track.ukrposhta.ua/en/?barcode={trackingNumber}",
     "countries": [
       "UA"
