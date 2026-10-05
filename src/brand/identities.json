@@ -14,21 +14,37 @@
   "an-post": {},
   "aramex": {},
   "asendia": {},
-  "australia-post": {},
+  "australia-post": {
+    "decal": "australia-post"
+  },
   "austrian-post": {
     "palette": {
       "accent": "#1a1a1a",
       "brand-light": "#1a1a1a"
-    }
+    },
+    "decal": "austrian-post"
   },
   "blue-dart": {},
-  "bpost": {},
+  "bpost": {
+    "decal": "bpost"
+  },
   "bring-posten": {},
-  "brt": {},
+  "brt": {
+    "decal": "dpd"
+  },
   "c-chez-vous": {},
-  "canada-post": {},
+  "canada-post": {
+    "decal": "canada-post",
+    "palette": {
+      "truck": "#ffffff",
+      "edge": "#0f4c9c",
+      "accent": "#e4002b"
+    }
+  },
   "canpar": {},
-  "china-post": {},
+  "china-post": {
+    "decal": "china-post"
+  },
   "chronopost": {
     "decal": "chronopost",
     "palette": {
@@ -51,13 +67,15 @@
     "palette": {
       "accent": "#002e6d",
       "brand-light": "#002e6d"
-    }
+    },
+    "decal": "correos"
   },
   "correos-spain": {
     "palette": {
       "accent": "#002e6d",
       "brand-light": "#002e6d"
-    }
+    },
+    "decal": "correos"
   },
   "ctt": {},
   "ctt-express": {},
@@ -87,7 +105,13 @@
   "dpd": {
     "decal": "dpd"
   },
+  "dpd-de": {
+    "family": "dpd"
+  },
   "dpd-fr": {
+    "family": "dpd"
+  },
+  "dpd-uk": {
     "family": "dpd"
   },
   "dtdc": {},
@@ -98,6 +122,9 @@
     "palette": {
       "accent": "#53efef"
     }
+  },
+  "evri-uk": {
+    "family": "evri"
   },
   "fedex": {
     "palette": {
@@ -129,8 +156,12 @@
   },
   "gofo": {},
   "heppner": {},
-  "hermes": {},
-  "hermes-de": {},
+  "hermes": {
+    "decal": "hermes"
+  },
+  "hermes-de": {
+    "decal": "hermes"
+  },
   "hongkong-post": {},
   "india-post": {
     "decal": "india-post",
@@ -142,7 +173,8 @@
     "palette": {
       "accent": "#1d1d1d",
       "brand-light": "#1d1d1d"
-    }
+    },
+    "decal": "inpost"
   },
   "intl-post": {},
   "j-and-t": {},
@@ -172,6 +204,9 @@
   "mrw": {},
   "nacex": {},
   "ninja-van": {},
+  "nova-poshta": {
+    "decal": "nova-poshta"
+  },
   "nz-post": {},
   "old-dominion": {},
   "ontrac": {},
@@ -197,7 +232,12 @@
     "decal": "quickpac"
   },
   "relais-colis": {},
-  "royal-mail": {},
+  "royal-mail": {
+    "decal": "royal-mail",
+    "palette": {
+      "accent": "#fdda24"
+    }
+  },
   "seur": {},
   "sf-express": {},
   "shipup": {},
@@ -226,7 +266,9 @@
       "accent": "#ff4f00"
     }
   },
-  "tnt": {},
+  "tnt": {
+    "decal": "tnt"
+  },
   "ukrposhta": {
     "palette": {
       "accent": "#0e2f4b",
@@ -249,12 +291,20 @@
     },
     "decal": "ups"
   },
-  "usps": {},
+  "usps": {
+    "decal": "usps",
+    "palette": {
+      "truck": "#ffffff",
+      "edge": "#004b87",
+      "accent": "#004b87"
+    }
+  },
   "yamato": {
     "palette": {
       "accent": "#141414",
       "brand-light": "#141414"
-    }
+    },
+    "decal": "yamato"
   },
   "yanwen": {},
   "yto": {},

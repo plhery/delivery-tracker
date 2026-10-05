@@ -86,7 +86,7 @@ and [`truck.json`](truck.json).
 | Decal (carriers) | Mark | Reference |
 | --- | --- | --- |
 | `fedex` | Orange forward arrow on purple | [fedex.com](https://www.fedex.com/) |
-| `dpd` (`dpd`, `dpd-fr`) | White parcel cube on red | [dpd.com](https://www.dpd.com/) |
+| `dpd` (`dpd`, `dpd-fr`, `dpd-de`, `dpd-uk`, `brt`) | White parcel cube on red; BRT's own logo carries the same cube | [dpd.com](https://www.dpd.com/), [brt.it](https://www.brt.it/) |
 | `amazon` (`amazon-logistics`, `amazon-shipping`) | Orange smile on a dark truck | [shipping.amazon.com](https://shipping.amazon.com/) |
 | `japan-post` | White postal mark on red | [post.japanpost.jp](https://www.post.japanpost.jp/) |
 | `swiss-post` (Swiss Post, Swiss Post Cargo, PostLogistics) | Red Swiss cross and black P on yellow | [Swiss Post brand](https://site.post.ch/en/about-us/company/the-brand-swiss-post) |
@@ -96,3 +96,16 @@ and [`truck.json`](truck.json).
 | `india-post` | Two gold flight lines on red; gold `#fedb01` from the SVG | [official logo SVG](https://www.indiapost.gov.in/images/home/logo/indiapostlogo.svg) |
 | `mondial-relay` | Burgundy badge with a white person and pink parcel; colours are sampled approximations | [brand announcement (PDF)](https://storage.mondialrelay.fr/Mondial%20Relay%20transforme%20sa%20marque%20avec%20Dragon%20Rouge.pdf) |
 | `postnl` (`spring-gds`) | White crown on orange; the catalog shows this historical id as PostNL | [PostNL media kit](https://newsroom.postnl.nl/en-NL/assets/237879/) |
+| `usps` | Blue slanted box with a white eagle's head on a white truck, above the fleet's red and blue stripes; the red is an approximation | [usps.com](https://www.usps.com/) |
+| `royal-mail` | Gold arched crown with its cross on red; the gold is an approximation | [royalmail.com](https://www.royalmail.com/) |
+| `canada-post` | Red oval with a white wing between two blue bars, on a white truck; the blue is an approximation | [canadapost-postescanada.ca](https://www.canadapost-postescanada.ca/) |
+| `australia-post` | White P in a ring on red | [auspost.com.au](https://auspost.com.au/) |
+| `tnt` | Three white rings on orange, each around its letter in plain strokes | [tnt.com](https://www.tnt.com/express/en_gb/site/home.html) |
+| `correos` (`correos-spain`, `correos-express`) | Blue crowned post horn on yellow | [correos.es](https://www.correos.es/) |
+| `yamato` | Black cat on yellow | [kuronekoyamato.co.jp](https://www.kuronekoyamato.co.jp/) |
+| `china-post` | White winged character on green | [chinapost.com.cn](https://www.chinapost.com.cn/) |
+| `inpost` | Black crescent and rays of the sun on yellow | [inpost.pl](https://inpost.pl/) |
+| `bpost` | White swoosh on red | [bpost.be](https://www.bpost.be/) |
+| `austrian-post` | Black outline of the horn and its mouthpiece on yellow | [post.at](https://www.post.at/) |
+| `hermes` (`hermes-de`, `hermes`) | White wing of speed lines on blue | [myhermes.de](https://www.myhermes.de/) |
+| `nova-poshta` | White arrows pointing four ways on red | [novaposhta.ua](https://novaposhta.ua/) |

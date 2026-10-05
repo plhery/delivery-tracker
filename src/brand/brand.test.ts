@@ -46,6 +46,7 @@ describe('carrier brand', () => {
   it.each([
     ['dhl-ecommerce', 'dhl'], ['dpd-fr', 'dpd'], ['amazon-shipping', 'amazon-logistics'],
     ['swiss-post-cargo', 'swiss-post'], ['postlogistics', 'swiss-post'],
+    ['dpd-de', 'dpd'], ['dpd-uk', 'dpd'], ['evri-uk', 'evri'],
   ])('shares %s branding with %s', (id, owner) => {
     expect(carrierBrandFamily(id)).toBe(owner);
     expect(carrierDecal(id)).toBe(carrierDecal(owner));
@@ -53,7 +54,11 @@ describe('carrier brand', () => {
   });
 
   it('keeps the new SVG paths identical to their native outlines', () => {
-    for (const name of ['ups', 'fedex', 'dpd', 'amazon', 'japan-post', 'swiss-post', 'quickpac', 'la-poste', 'chronopost', 'india-post', 'mondial-relay', 'postnl'] as const) {
+    for (const name of [
+      'ups', 'fedex', 'dpd', 'amazon', 'japan-post', 'swiss-post', 'quickpac', 'la-poste', 'chronopost', 'india-post',
+      'mondial-relay', 'postnl', 'usps', 'royal-mail', 'canada-post', 'australia-post', 'tnt', 'correos', 'yamato',
+      'china-post', 'inpost', 'bpost', 'austrian-post', 'hermes', 'nova-poshta',
+    ] as const) {
       for (const shape of CARRIER_TRUCK.decals[name]) {
         if (shape.type === 'circle') {
           expect(shape.cx - shape.r).toBeGreaterThanOrEqual(CARRIER_TRUCK.body.x);

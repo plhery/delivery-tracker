@@ -12,7 +12,12 @@ describe('carrier mark', () => {
     expect(container.innerHTML).toBe(markup[id]);
   });
 
-  it.each(['ups', 'fedex', 'dpd', 'dpd-fr', 'amazon-logistics', 'amazon-shipping', 'japan-post', 'dhl-ecommerce', 'swiss-post', 'quickpac', 'la-poste', 'chronopost', 'india-post', 'mondial-relay', 'spring-gds', 'swiss-post-cargo', 'postlogistics'] as const)(
+  it.each([
+    'ups', 'fedex', 'dpd', 'dpd-fr', 'amazon-logistics', 'amazon-shipping', 'japan-post', 'dhl-ecommerce', 'swiss-post',
+    'quickpac', 'la-poste', 'chronopost', 'india-post', 'mondial-relay', 'spring-gds', 'swiss-post-cargo', 'postlogistics',
+    'usps', 'royal-mail', 'canada-post', 'australia-post', 'tnt', 'correos-spain', 'correos-express', 'yamato', 'china-post',
+    'inpost', 'bpost', 'austrian-post', 'hermes', 'hermes-de', 'nova-poshta', 'brt', 'dpd-de', 'dpd-uk',
+  ] as const)(
     'renders the declared decoration for %s', (id) => {
       const { container } = render(<CarrierMark carrier={carrierInfo(id)} />);
       const paths = [...container.querySelectorAll('svg > path')].map(path => path.getAttribute('d'));
