@@ -40,6 +40,8 @@ contract. Brand palettes, decals and truck geometry live in `src/brand`;
 Parser, detection and live-provider tests belong to the scraper. App tests replay synthetic
 `CarrierResult` fixtures to exercise routing, event identities and persistence, and use
 the public registry to check dispatch and the host recorder.
+Fallback input and persistence scenarios supply provider plans explicitly so they can
+exercise each provider independently of coverage ordering.
 
 ## Updating the dependency
 

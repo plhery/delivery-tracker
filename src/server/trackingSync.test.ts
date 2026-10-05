@@ -33,6 +33,10 @@ import { UniversalTrackingError } from 'universal-parcel-scraper/node';
 import { UpstreamHttpError } from 'universal-parcel-scraper/node';
 import { NOOP_RECORDER } from 'universal-parcel-scraper/node';
 import { IndeterminateError, NotFoundError, SchemaError } from 'universal-parcel-scraper';
+import * as scraper from 'universal-parcel-scraper';
+
+// Keep the published plan configurable without changing the scraper's other exports.
+vi.mock(import('universal-parcel-scraper'), async importOriginal => ({ ...await importOriginal() }));
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -570,7 +574,10 @@ function fakeClient(packages: JsonObject[] = []) {
 }
 
 describe('TrackingSyncService', () => {
-  it('carries the country hint through provider lookup and later direct recovery', async () => {
+  it.each(['ParcelsApp', 'Ship24'] as const)('carries the country hint through %s lookup and later direct recovery', async (provider) => {
+    vi.spyOn(scraper, 'universalPlan').mockReturnValue({
+      sources: [provider], carrier: null, tier: () => 'unknown', rank: () => 0,
+    });
     const client = { ...fakeClient(),
       acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
       finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
@@ -582,16 +589,21 @@ describe('TrackingSyncService', () => {
     let now = new Date('2026-09-10T12:00:00Z');
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
     await service.syncPackage(parcel);
-    expect(adapter.fetchUniversal).toHaveBeenCalledWith('ParcelsApp', 'TEST1234', expect.any(Number), null, 'Europe/Berlin', 'FR');
+    expect(adapter.fetchUniversal).toHaveBeenCalledExactlyOnceWith(provider, 'TEST1234', expect.any(Number), null, 'Europe/Berlin', 'FR');
     const saved = client.updatePackage.mock.calls.at(-1)![1];
     expect(saved.carrier_data.lookup_country_hint).toBe('FR');
     expect(saved.carrier_data.destination_country).toBeUndefined();
     now = new Date('2026-09-10T13:00:00Z');
     await service.syncPackage({ ...parcel, ...saved });
     expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.lookup_country_hint).toBe('FR');
+    expect(adapter.fetch).toHaveBeenCalledTimes(2);
+    expect(adapter.fetchUniversal).toHaveBeenCalledTimes(1);
   });
 
-  it('clears the displayed universal provider after successful direct recovery', async () => {
+  it.each(['ParcelsApp', 'Ship24'] as const)('clears the displayed %s provider after successful direct recovery', async (provider) => {
+    vi.spyOn(scraper, 'universalPlan').mockReturnValue({
+      sources: [provider], carrier: null, tier: () => 'unknown', rank: () => 0,
+    });
     const client = { ...fakeClient(),
       acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
       finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
@@ -604,11 +616,13 @@ describe('TrackingSyncService', () => {
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
     await service.syncPackage(parcel);
     const saved = client.updatePackage.mock.calls.at(-1)![1];
-    expect(saved.carrier_data.tracking_provider).toBe('ParcelsApp');
+    expect(saved.carrier_data.tracking_provider).toBe(provider);
     now = new Date('2026-09-10T13:00:00Z');
     await service.syncPackage({ ...parcel, ...saved });
     expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.tracking_provider).toBeUndefined();
     expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.active_tracking_carrier).toBe('dhl');
+    expect(adapter.fetch).toHaveBeenCalledTimes(2);
+    expect(adapter.fetchUniversal).toHaveBeenCalledTimes(1);
   });
 
   it('atomically persists a verified correction and retains its timestamp on later syncs', async () => {

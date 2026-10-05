@@ -6,6 +6,10 @@ import type { CarrierResult } from 'universal-parcel-scraper';
 import * as monitoring from './observability';
 import { universalCarrierHints } from 'universal-parcel-scraper/app';
 import { IndeterminateError, InputRequiredError, NotFoundError } from 'universal-parcel-scraper';
+import * as scraper from 'universal-parcel-scraper';
+
+// Keep the published plan configurable without changing the scraper's other exports.
+vi.mock(import('universal-parcel-scraper'), async importOriginal => ({ ...await importOriginal() }));
 
 const time = new Date('2026-09-10T12:00:00Z');
 const history = (stamp = '2026-09-10T11:00:00Z'): CarrierResult => ({ status: 'in_transit', current_stage: 'in_transit',
@@ -232,7 +236,10 @@ describe('persistent tracking routing', () => {
     expect(universal.mock.calls.map(([source]) => source)).toEqual(['Ship24', 'ParcelsApp']);
     expect(result.result).toMatchObject({ tracking_provider: 'Ship24', routing: { preferred_provider: 'Ship24' } });
   });
-  it('records original direct failure before a successful fallback', async () => {
+  it.each(['ParcelsApp', 'Ship24'] as const)('records original direct failure before a successful %s fallback', async (provider) => {
+    vi.spyOn(scraper, 'universalPlan').mockReturnValue({
+      sources: [provider], carrier: null, tier: () => 'unknown', rank: () => 0,
+    });
     const { router, direct, universal } = setup();
     direct.mockRejectedValue(new Error('upstream token SECRET'));
     universal.mockImplementation(async () => {
@@ -240,7 +247,7 @@ describe('persistent tracking routing', () => {
       return history();
     });
     const result = await router.fetch(parcel({ carrier: 'dhl' }), false);
-    expect(result.result.routing).toMatchObject({ preferred_provider: 'ParcelsApp' });
+    expect(result.result.routing).toMatchObject({ preferred_provider: provider });
     expect(JSON.stringify(vi.mocked(monitoring.reportRoutingEvent).mock.calls)).not.toContain('SECRET');
   });
   it.each(['unknown'])('uses universals for %s and still keeps the user selection', async (carrier) => {
@@ -745,17 +752,20 @@ describe('persistent tracking routing', () => {
     await router.fetch(parcel({ carrier: 'dpd' }), false);
     expect(universal).toHaveBeenCalledWith('ParcelsApp', 'TEST1234', expect.any(Number), null, 'Europe/Zurich');
   });
-  it('gives universal providers the confirmed carrier\'s zone when the parcel carrier keeps UTC', async () => {
+  it.each(['ParcelsApp', 'Ship24'] as const)('gives %s the confirmed carrier\'s zone when the parcel carrier keeps UTC', async (provider) => {
+    vi.spyOn(scraper, 'universalPlan').mockReturnValue({
+      sources: [provider], carrier: null, tier: () => 'unknown', rank: () => 0,
+    });
     const { router, direct, universal } = setup(); direct.mockRejectedValue(new Error('carrier down'));
     const confirmed = (number: string) => ({ routing: state({ configured_carrier: 'asendia', confirmed_carrier: 'dpd', confirmed_number: number }) });
     await router.fetch(parcel({ carrier: 'asendia', carrier_data: confirmed('TEST1234') }), false);
-    expect(universal).toHaveBeenLastCalledWith('ParcelsApp', 'TEST1234', expect.any(Number), null, 'Europe/Zurich');
+    expect(universal).toHaveBeenLastCalledWith(provider, 'TEST1234', expect.any(Number), null, 'Europe/Zurich');
     // A route confirmed for another number says nothing about this one.
     await router.fetch(parcel({ carrier: 'asendia', carrier_data: confirmed('OTHER123') }), false);
-    expect(universal).toHaveBeenLastCalledWith('ParcelsApp', 'TEST1234', expect.any(Number), null, null);
+    expect(universal).toHaveBeenLastCalledWith(provider, 'TEST1234', expect.any(Number), null, null);
     // The parcel carrier's own zone still comes first.
     await router.fetch(parcel({ carrier: 'dhl', carrier_data: { routing: state({ configured_carrier: 'dhl', confirmed_carrier: 'dpd-fr', confirmed_number: 'TEST1234' }) } }), false);
-    expect(universal).toHaveBeenLastCalledWith('ParcelsApp', 'TEST1234', expect.any(Number), null, 'Europe/Berlin');
+    expect(universal).toHaveBeenLastCalledWith(provider, 'TEST1234', expect.any(Number), null, 'Europe/Berlin');
   });
   it.each([
     // Quickpac reports Swiss wall time without an offset; the stored events read it in Zurich.
