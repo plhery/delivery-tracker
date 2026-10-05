@@ -187,6 +187,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^DOFR\\d{13}HD$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^CNG\\d{14}$",
+        "confidence": "low"
       }
     ],
     "aliases": [
@@ -541,7 +545,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       },
       {
-        "pattern": "^[KJV]\\d{10}$",
+        "pattern": "^[HJKV]\\d{10}$",
         "confidence": "low"
       }
     ],
@@ -814,6 +818,11 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^\\d{14}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{14}[0-9A-Z]$",
+        "confidence": "low",
+        "checksum": "dpd"
       }
     ],
     "aliases": [
@@ -1953,6 +1962,10 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low",
         "checksum": "s10",
         "preferred": true
+      },
+      {
+        "pattern": "^JJFI\\d{17}$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://www.posti.fi/en/tracking/{trackingNumber}",
@@ -1974,6 +1987,10 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{16}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{23}$",
         "confidence": "low"
       }
     ],
@@ -2143,7 +2160,15 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
+        "pattern": "^000010\\d{16}$",
+        "confidence": "low"
+      },
+      {
         "pattern": "^00\\d{20}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^00\\d{20}001$",
         "confidence": "high"
       }
     ],
@@ -3468,6 +3493,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^NV(?:SG|MY|PH|ID|TH|VN)[A-Z0-9]{8,20}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^NJVTT\\d{11}$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://www.ninjavan.co/en-my/tracking?id={trackingNumber}",
@@ -3698,7 +3727,7 @@ export const CARRIER_CAPABILITIES = {
     "displayName": "Correos",
     "color": "#ffcd00",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Madrid",
     "tracking": {
       "mode": "automatic",
       "adapter": "correos-spain"
@@ -3719,18 +3748,25 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       },
       {
-        "pattern": "^[PD][A-Z][A-Z0-9]{4}\\d{16}[A-Z]$",
-        "confidence": "high"
+        "pattern": "^(?:[PD][A-Z]|CD)[A-Z0-9]{4}\\d{16}[A-Z]$",
+        "confidence": "high",
+        "checksum": "correos-spain"
       },
       {
         "pattern": "^[A-Z]{2}\\d{9}ES$",
         "confidence": "high",
         "checksum": "s10"
+      },
+      {
+        "pattern": "^[PD][A-Z][A-Z0-9]{4}\\d{9}[A-Z]$",
+        "confidence": "high",
+        "checksum": "correos-spain"
       }
     ],
     "trackingUrlTemplate": "https://www.correos.es/es/es/herramientas/localizador/envios/detalle?tracking-number={trackingNumber}",
     "aliases": [
       "Correos España",
+      "Correos de España",
       "Correos y Telégrafos",
       "Sociedad Estatal Correos y Telégrafos"
     ],
@@ -3840,6 +3876,14 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^JD\\d{10}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^JX\\d{10}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^J[A-Z]\\d{10}$",
         "confidence": "low"
       }
     ],
@@ -3964,7 +4008,12 @@ export const CARRIER_CAPABILITIES = {
         ]
       }
     ],
-    "detectionRules": []
+    "detectionRules": [
+      {
+        "pattern": "^3A5V\\d{9}$",
+        "confidence": "high"
+      }
+    ]
   },
   "dpd-de": {
     "displayName": "DPD Germany",
@@ -4016,6 +4065,11 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^\\d{14}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{14}[0-9A-Z]$",
+        "confidence": "low",
+        "checksum": "dpd"
       }
     ]
   },
@@ -4051,6 +4105,11 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^\\d{14}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{14}[0-9A-Z]$",
+        "confidence": "low",
+        "checksum": "dpd"
       }
     ]
   },
@@ -4156,6 +4215,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^INTLCM\\d{8,20}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^CRIN\\d{14}$",
+        "confidence": "low"
       }
     ]
   },
