@@ -1684,7 +1684,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "royal-mail"
     },
     "linkRules": [
       {
