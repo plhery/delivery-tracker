@@ -623,6 +623,27 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertFalse(CarrierCatalog.isValidS10("RA123456789CH"))
     }
 
+    func testNumericChecksumSchemes() {
+        for number in ["1234567891", "0000000070"] {
+            XCTAssertTrue(CarrierCatalog.isValidDhlExpressWaybill(number))
+        }
+        for number in ["1234567890", "1234567897", "123456789", "12345678910", "1234567891\n", "123 4567891"] {
+            XCTAssertFalse(CarrierCatalog.isValidDhlExpressWaybill(number))
+        }
+        for number in ["123456782", "123456785", "000000005", "000000080"] {
+            XCTAssertTrue(CarrierCatalog.isValidTntConsignmentNumber(number))
+        }
+        for number in ["123456789", "12345678", "1234567850", "123456785\n", "1234-56785"] {
+            XCTAssertFalse(CarrierCatalog.isValidTntConsignmentNumber(number))
+        }
+        for number in ["12345678901234567890", "00000000000000000017"] {
+            XCTAssertTrue(CarrierCatalog.isValidPocztaPolskaBarcode(number))
+        }
+        for number in ["12345678901234567891", "1234567890123456789", "123456789012345678900", "12345678901234567890\n"] {
+            XCTAssertFalse(CarrierCatalog.isValidPocztaPolskaBarcode(number))
+        }
+    }
+
     func testPostlogisticsPrintedReferenceAndTrackingLink() throws {
         let printed = "12345678-001"
         let compact = "12345678001"

@@ -469,6 +469,9 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
                 if rule.checksum == "s10" && !Self.isValidS10(number) { continue }
                 if rule.checksum == "hermes" && !Self.isValidHermesParcelNumber(number) { continue }
                 if rule.checksum == "gls" && !Self.isValidGlsParcelNumber(number) { continue }
+                if rule.checksum == "dhl-express" && !Self.isValidDhlExpressWaybill(number) { continue }
+                if rule.checksum == "tnt" && !Self.isValidTntConsignmentNumber(number) { continue }
+                if rule.checksum == "poczta-polska" && !Self.isValidPocztaPolskaBarcode(number) { continue }
                 matches.append((carrier, rule.confidence == "high" ? .high : .low, rule.preferred == true))
                 break
             }
@@ -771,6 +774,30 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         let digits = value.compactMap(\.wholeNumberValue)
         let sum = digits[0..<11].reversed().enumerated().reduce(1) { $0 + $1.element * ($1.offset % 2 == 0 ? 3 : 1) }
         return (10 - sum % 10) % 10 == digits[11]
+    }
+
+    static func isValidDhlExpressWaybill(_ value: String) -> Bool {
+        guard value.count == 10, matches(value, pattern: "^[0-9]{10}$"),
+              let serial = Int(value.prefix(9)), let check = value.last?.wholeNumberValue else { return false }
+        return serial % 7 == check
+    }
+
+    static func isValidTntConsignmentNumber(_ value: String) -> Bool {
+        guard value.count == 9, matches(value, pattern: "^[0-9]{9}$"),
+              let serial = Int(value.prefix(8)), let check = value.last?.wholeNumberValue else { return false }
+        if serial % 7 == check { return true }
+        let digits = value.compactMap(\.wholeNumberValue)
+        let weights = [8, 6, 4, 2, 3, 5, 9, 7]
+        let sum = weights.enumerated().reduce(0) { $0 + digits[$1.offset] * $1.element }
+        let digit = 11 - sum % 11
+        return (digit == 11 ? 5 : digit == 10 ? 0 : digit) == check
+    }
+
+    static func isValidPocztaPolskaBarcode(_ value: String) -> Bool {
+        guard value.count == 20, matches(value, pattern: "^[0-9]{20}$") else { return false }
+        let digits = value.compactMap(\.wholeNumberValue)
+        let sum = digits[0..<19].enumerated().reduce(0) { $0 + $1.element * ($1.offset % 2 == 0 ? 3 : 1) }
+        return (10 - sum % 10) % 10 == digits[19]
     }
 
     static func isValidS10(_ raw: String) -> Bool {
