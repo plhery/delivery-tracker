@@ -473,6 +473,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
                 if rule.checksum == "tnt" && !Self.isValidTntConsignmentNumber(number) { continue }
                 if rule.checksum == "poczta-polska" && !Self.isValidPocztaPolskaBarcode(number) { continue }
                 if rule.checksum == "correos-spain" && !Self.isValidCorreosSpainCheckLetter(number) { continue }
+                if rule.checksum == "dpd" && !Self.isValidDpdParcelNumber(number) { continue }
                 matches.append((carrier, rule.confidence == "high" ? .high : .low, rule.preferred == true))
                 break
             }
@@ -807,6 +808,20 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         guard value.count > 1, let last = value.last else { return false }
         let sum = value.dropLast().unicodeScalars.reduce(0) { $0 + Int($1.value) }
         return letters[sum % letters.count] == last
+    }
+
+    /// DPD parcel labels: fourteen digits and the ISO/IEC 7064 MOD 37,36 check character printed after them.
+    static func isValidDpdParcelNumber(_ value: String) -> Bool {
+        guard value.count == 15, matches(value, pattern: "^[0-9]{14}[0-9A-Z]$") else { return false }
+        let alphabet = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        var remainder = 36
+        for digit in value.prefix(14).compactMap(\.wholeNumberValue) {
+            remainder += digit
+            if remainder > 36 { remainder -= 36 }
+            remainder *= 2
+            if remainder > 36 { remainder -= 37 }
+        }
+        return alphabet[(37 - remainder) % 36] == value.last
     }
 
     static func isValidS10(_ raw: String) -> Bool {
