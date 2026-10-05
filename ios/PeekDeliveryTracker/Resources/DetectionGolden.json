@@ -838,6 +838,28 @@
     ]
   },
   {
+    "input": "100000000001",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "dpd-fr",
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "purolator",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express"
+    ],
+    "asked": [
+      "colis-prive"
+    ]
+  },
+  {
     "input": "1000478495775",
     "carrier": "unknown",
     "confidence": "low",
@@ -1337,6 +1359,28 @@
     ]
   },
   {
+    "input": "142062960271",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "dpd-fr",
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "purolator",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express"
+    ],
+    "asked": [
+      "colis-prive"
+    ]
+  },
+  {
     "input": "1595193512495",
     "carrier": "unknown",
     "confidence": "low",
@@ -1741,6 +1785,30 @@
       "gls-ch",
       "gls-de",
       "postlogistics"
+    ]
+  },
+  {
+    "input": "20710517491331",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dpd",
+      "relais-colis",
+      "ciblex",
+      "hermes-de",
+      "seur",
+      "brt",
+      "delhivery",
+      "dpd-de",
+      "dpd-uk",
+      "nova-poshta"
+    ],
+    "asked": [
+      "dpd",
+      "seur",
+      "brt",
+      "hermes-de",
+      "relais-colis"
     ]
   },
   {
@@ -2334,6 +2402,18 @@
     ]
   },
   {
+    "input": "3A5V609829713",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
+    "input": "3A5V721250488",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
     "input": "3SA5210528875",
     "carrier": "spring-gds",
     "confidence": "high",
@@ -2920,6 +3000,29 @@
   },
   {
     "input": "59000000000001",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dpd",
+      "relais-colis",
+      "ciblex",
+      "seur",
+      "brt",
+      "delhivery",
+      "dpd-de",
+      "dpd-uk",
+      "nova-poshta"
+    ],
+    "asked": [
+      "dpd",
+      "seur",
+      "brt",
+      "relais-colis",
+      "ciblex"
+    ]
+  },
+  {
+    "input": "59001766134310",
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
@@ -4537,6 +4640,18 @@
     ]
   },
   {
+    "input": "CRIN26062320118472",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
+    "input": "CRIN26082718020483",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
     "input": "CV000562646ES",
     "carrier": "unknown",
     "confidence": "low",
@@ -5011,6 +5126,15 @@
     ],
     "asked": [
       "hermes-de"
+    ]
+  },
+  {
+    "input": "H00RVA0538924343",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "evri",
+      "evri-uk"
     ]
   },
   {
@@ -5766,6 +5890,14 @@
   },
   {
     "input": "PH000000000001",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "spx-ph"
+    ]
+  },
+  {
+    "input": "PH2542959127193",
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
@@ -6661,6 +6793,14 @@
     "confidence": "high",
     "candidates": [
       "yunexpress"
+    ]
+  },
+  {
+    "input": "YT660296803GB",
+    "carrier": "royal-mail",
+    "confidence": "high",
+    "candidates": [
+      "royal-mail"
     ]
   },
   {

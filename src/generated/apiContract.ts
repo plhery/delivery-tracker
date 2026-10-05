@@ -3951,7 +3951,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "cne"
     },
     "trackingUrlTemplate": "https://www.cne.com/en/track?no={trackingNumber}",
     "linkRules": [
@@ -4172,9 +4172,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Asia/Manila",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "lbc-express"
     },
-    "trackingUrlTemplate": "https://www.lbcexpress.com/track/?tracking_no={trackingNumber}",
     "linkRules": [
       {
         "domains": [
