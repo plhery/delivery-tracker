@@ -29,7 +29,10 @@ export type CarrierDecal = 'default' | 'dhl' | 'ups' | 'fedex' | 'dpd' | 'amazon
   | 'usps' | 'royal-mail' | 'canada-post' | 'australia-post' | 'tnt' | 'correos' | 'yamato'
   | 'china-post' | 'inpost' | 'bpost' | 'austrian-post' | 'hermes' | 'nova-poshta' | 'korea-post'
   | 'nz-post' | 'poczta-polska' | 'ukrposhta' | 'correios-br' | 'ctt' | 'sf-express' | 'ninja-van'
-  | 'hongkong-post' | 'thailand-post' | 'bring' | 'packeta';
+  | 'hongkong-post' | 'thailand-post' | 'bring' | 'packeta' | 'gls' | 'evri' | 'postnord' | 'poste-italiane'
+  | 'aramex' | 'j-and-t' | 'aliexpress' | 'zto' | 'yto' | 'sto' | 'yunda' | 'jd-logistics' | 'ems' | 'seur'
+  | 'mrw' | 'nacex' | 'purolator' | 'parcelforce' | 'posti' | 'an-post' | 'delhivery' | 'blue-dart' | 'dtdc'
+  | 'sagawa' | 'ontrac' | 'estafeta' | 'pos-malaysia' | 'four-px' | 'planzer' | 'tipsa' | 'gofo' | 'dachser';
 
 /** How one property is mixed out of the carrier's catalog color. */
 export interface BrandDerivationStep {

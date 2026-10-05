@@ -36,11 +36,11 @@ describe('carrier brand', () => {
     expect(carrierBrand('not-a-color').truck).toBe(FALLBACK_BRAND_COLOR);
   });
 
-  it('gives the GLS countries one family, one palette and no livery', () => {
+  it('gives the GLS countries one family, one palette and one livery', () => {
     const gls = ['gls-ch', 'gls-de', 'gls-fr'];
     expect(gls.map(carrierBrandFamily)).toEqual(['gls', 'gls', 'gls']);
     expect(gls.map((id) => CARRIER_PALETTES[id])).toEqual(gls.map(() => CARRIER_PALETTES['gls-ch']));
-    expect(gls.map(carrierDecal)).toEqual(['default', 'default', 'default']);
+    expect(gls.map(carrierDecal)).toEqual(['gls', 'gls', 'gls']);
   });
 
   it.each([
@@ -59,7 +59,10 @@ describe('carrier brand', () => {
       'mondial-relay', 'postnl', 'usps', 'royal-mail', 'canada-post', 'australia-post', 'tnt', 'correos', 'yamato',
       'china-post', 'inpost', 'bpost', 'austrian-post', 'hermes', 'nova-poshta', 'korea-post', 'nz-post',
       'poczta-polska', 'ukrposhta', 'correios-br', 'ctt', 'sf-express', 'ninja-van', 'hongkong-post', 'thailand-post',
-      'bring', 'packeta',
+      'bring', 'packeta', 'gls', 'evri', 'postnord', 'poste-italiane', 'aramex', 'j-and-t', 'aliexpress', 'zto', 'yto',
+      'sto', 'yunda', 'jd-logistics', 'ems', 'seur', 'mrw', 'nacex', 'purolator', 'parcelforce', 'posti', 'an-post',
+      'delhivery', 'blue-dart', 'dtdc', 'sagawa', 'ontrac', 'estafeta', 'pos-malaysia', 'four-px', 'planzer', 'tipsa',
+      'gofo', 'dachser',
     ] as const) {
       for (const shape of CARRIER_TRUCK.decals[name]) {
         if (shape.type === 'circle') {

@@ -1,5 +1,7 @@
 {
-  "aliexpress": {},
+  "aliexpress": {
+    "decal": "aliexpress"
+  },
   "amazon-logistics": {
     "decal": "amazon",
     "palette": {
@@ -11,8 +13,12 @@
   "amazon-shipping": {
     "family": "amazon-logistics"
   },
-  "an-post": {},
-  "aramex": {},
+  "an-post": {
+    "decal": "an-post"
+  },
+  "aramex": {
+    "decal": "aramex"
+  },
   "asendia": {},
   "australia-post": {
     "decal": "australia-post"
@@ -24,7 +30,9 @@
     },
     "decal": "austrian-post"
   },
-  "blue-dart": {},
+  "blue-dart": {
+    "decal": "blue-dart"
+  },
   "bpost": {
     "decal": "bpost"
   },
@@ -86,8 +94,12 @@
   "ctt-express": {
     "decal": "ctt"
   },
-  "dachser": {},
-  "delhivery": {},
+  "dachser": {
+    "decal": "dachser"
+  },
+  "delhivery": {
+    "decal": "delhivery"
+  },
   "delivengo": {},
   "dhl": {
     "palette": {
@@ -121,14 +133,21 @@
   "dpd-uk": {
     "family": "dpd"
   },
-  "dtdc": {},
+  "dtdc": {
+    "decal": "dtdc"
+  },
   "ecoscooting": {},
-  "ems": {},
-  "estafeta": {},
+  "ems": {
+    "decal": "ems"
+  },
+  "estafeta": {
+    "decal": "estafeta"
+  },
   "evri": {
     "palette": {
       "accent": "#53efef"
-    }
+    },
+    "decal": "evri"
   },
   "evri-uk": {
     "family": "evri"
@@ -139,7 +158,9 @@
     },
     "decal": "fedex"
   },
-  "four-px": {},
+  "four-px": {
+    "decal": "four-px"
+  },
   "geodis": {},
   "gls-ch": {
     "family": "gls",
@@ -153,7 +174,8 @@
       "truck": "#1634a7",
       "edge": "#1634a7",
       "accent": "#ffcf00"
-    }
+    },
+    "decal": "gls"
   },
   "gls-de": {
     "family": "gls"
@@ -161,7 +183,9 @@
   "gls-fr": {
     "family": "gls"
   },
-  "gofo": {},
+  "gofo": {
+    "decal": "gofo"
+  },
   "heppner": {},
   "hermes": {
     "decal": "hermes"
@@ -186,11 +210,15 @@
     "decal": "inpost"
   },
   "intl-post": {},
-  "j-and-t": {},
+  "j-and-t": {
+    "decal": "j-and-t"
+  },
   "japan-post": {
     "decal": "japan-post"
   },
-  "jd-logistics": {},
+  "jd-logistics": {
+    "decal": "jd-logistics"
+  },
   "korea-post": {
     "decal": "korea-post"
   },
@@ -212,8 +240,12 @@
       "brand-dark": "#f5a9bb"
     }
   },
-  "mrw": {},
-  "nacex": {},
+  "mrw": {
+    "decal": "mrw"
+  },
+  "nacex": {
+    "decal": "nacex"
+  },
   "ninja-van": {
     "decal": "ninja-van"
   },
@@ -224,29 +256,44 @@
     "decal": "nz-post"
   },
   "old-dominion": {},
-  "ontrac": {},
+  "ontrac": {
+    "decal": "ontrac"
+  },
   "paack": {},
   "packeta": {
     "decal": "packeta"
   },
-  "parcelforce": {},
-  "planzer": {},
+  "parcelforce": {
+    "decal": "parcelforce"
+  },
+  "planzer": {
+    "decal": "planzer"
+  },
   "poczta-polska": {
     "decal": "poczta-polska"
   },
-  "pos-malaysia": {},
+  "pos-malaysia": {
+    "decal": "pos-malaysia"
+  },
   "poste-italiane": {
     "palette": {
       "accent": "#0047bb",
       "brand-light": "#0047bb"
-    }
+    },
+    "decal": "poste-italiane"
   },
-  "posti": {},
+  "posti": {
+    "decal": "posti"
+  },
   "postlogistics": {
     "family": "swiss-post"
   },
-  "postnord": {},
-  "purolator": {},
+  "postnord": {
+    "decal": "postnord"
+  },
+  "purolator": {
+    "decal": "purolator"
+  },
   "quickpac": {
     "decal": "quickpac"
   },
@@ -257,14 +304,14 @@
       "accent": "#fdda24"
     }
   },
-  "seur": {},
+  "sagawa": {
+    "decal": "sagawa"
+  },
+  "seur": {
+    "decal": "seur"
+  },
   "sf-express": {
-    "decal": "sf-express",
-    "palette": {
-      "truck": "#231815",
-      "edge": "#000000",
-      "accent": "#ffffff"
-    }
+    "decal": "sf-express"
   },
   "shipup": {},
   "singapore-post": {},
@@ -273,7 +320,9 @@
   "spring-gds": {
     "decal": "postnl"
   },
-  "sto": {},
+  "sto": {
+    "decal": "sto"
+  },
   "sunyou": {},
   "swiss-post": {
     "decal": "swiss-post",
@@ -292,7 +341,8 @@
   "tipsa": {
     "palette": {
       "accent": "#ff4f00"
-    }
+    },
+    "decal": "tipsa"
   },
   "tnt": {
     "decal": "tnt"
@@ -336,13 +386,18 @@
     "decal": "yamato"
   },
   "yanwen": {},
-  "yto": {},
+  "yto": {
+    "decal": "yto"
+  },
   "yunda": {
     "palette": {
       "accent": "#393838",
       "brand-light": "#393838"
-    }
+    },
+    "decal": "yunda"
   },
   "yunexpress": {},
-  "zto": {}
+  "zto": {
+    "decal": "zto"
+  }
 }

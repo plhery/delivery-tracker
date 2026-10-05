@@ -6,8 +6,9 @@ and [`truck.json`](truck.json).
 
 - Colours are small UI accents, not print specifications. They come from the carrier's logo SVG or
   website palette unless marked approximate.
-- No logo files are bundled, fetched or committed. Decals are simplified marks drawn locally from
-  polygons, segments and circles, not wordmark reproductions.
+- No logo files are bundled, fetched or committed. Decals are drawn locally from polygons, segments
+  and circles: simplified marks, and names set in the app's own single-stroke letters, not in the
+  carrier's lettering.
 - Carriers missing from these tables have no recorded source.
 
 ## Colours
@@ -115,9 +116,41 @@ and [`truck.json`](truck.json).
 | `ukrposhta` | Navy horn with its bell opening upwards on yellow | [ukrposhta.ua](https://www.ukrposhta.ua/en) |
 | `correios-br` | Gold arrow and blue arrow, interlocked, on yellow; the gold is an approximation | [correios.com.br](https://www.correios.com.br/) |
 | `ctt` (`ctt`, `ctt-express`) | White horseman with his horn on red | [ctt.pt](https://www.ctt.pt/) |
-| `sf-express` | White ring around its two letters in plain strokes, on the logo's black | [sf-express.com](https://www.sf-express.com/chn/en/) |
+| `sf-express` | The logo's black roundel, with a white ring around its two letters, on red | [sf-express.com](https://www.sf-express.com/chn/en/) |
 | `ninja-van` | Black hooded face in a white ring on red | [ninjavan.co](https://www.ninjavan.co/) |
 | `hongkong-post` | White hummingbird and its wing on green | [hongkongpost.hk](https://www.hongkongpost.hk/en/home/index.html) |
 | `thailand-post` | Envelope folded into a dart, in blue, white and grey on red; the blue and grey are approximations | [international.thailandpost.com](https://international.thailandpost.com/) |
 | `bring` (`bring-posten`) | Ring in a white half and a grey half on green; the grey is an approximation | [bring.com](https://www.bring.com/) |
 | `packeta` | White taped box drawn as a solid on red; the greys are approximations | [packeta.com](https://www.packeta.com/) |
+| `gls` (`gls-ch`, `gls-de`, `gls-fr`) | White letters and the yellow dot on blue | [gls-group.com](https://gls-group.com/) |
+| `evri` (`evri`, `evri-uk`) | Cyan letters on navy | [evri.com](https://www.evri.com/) |
+| `postnord` | White lowercase name on blue | [postnord.com](https://www.postnord.com/) |
+| `poste-italiane` | Blue name on two lines, the first one heavier, on yellow | [poste.it](https://www.poste.it/) |
+| `aramex` | White lowercase name on red | [aramex.com](https://www.aramex.com/) |
+| `j-and-t` | White slanted letters above the word EXPRESS on red | [jtexpress.ph](https://www.jtexpress.ph/) |
+| `aliexpress` | White name above a smile on red | [aliexpress.com](https://www.aliexpress.com/) |
+| `zto` | White slanted letters on blue | [zto.com](https://www.zto.com/) |
+| `yto` | White letters on purple, the T in pink; the pink is an approximation | [yto.net.cn](https://www.yto.net.cn/) |
+| `sto` | White letters in a rounded frame on orange | [sto.cn](https://www.sto.cn/) |
+| `yunda` | Dark smiling face under a star on yellow | [yundaex.com](https://www.yundaex.com/) |
+| `jd-logistics` | White letters JDL on red | [jingdonglogistics.com](https://www.jingdonglogistics.com/) |
+| `ems` | White slanted letters behind three orange lines on navy; the orange is an approximation | [ems.post](https://www.ems.post/) |
+| `seur` | White letters behind a pale bar and a red block on blue; both colours are approximations | [seur.com](https://www.seur.com/) |
+| `mrw` | White slanted letters over a red line on navy; the red is an approximation | [mrw.es](https://www.mrw.es/) |
+| `nacex` | White slanted letters on orange | [nacex.es](https://www.nacex.es/) |
+| `purolator` | White slanted name on red | [purolator.com](https://www.purolator.com/) |
+| `parcelforce` | White name on two lines on dark red | [parcelforce.com](https://www.parcelforce.com/) |
+| `posti` | White lowercase name on orange | [posti.fi](https://www.posti.fi/) |
+| `an-post` | White lowercase name stacked on two lines on green | [anpost.com](https://www.anpost.com/) |
+| `delhivery` | White capitals on red | [delhivery.com](https://www.delhivery.com/) |
+| `blue-dart` | White capitals on two lines on blue | [bluedart.com](https://www.bluedart.com/) |
+| `dtdc` | White slanted letters over a red line on navy; the red is an approximation | [dtdc.com](https://www.dtdc.com/) |
+| `sagawa` | White capitals on blue | [sagawa-exp.co.jp](https://www.sagawa-exp.co.jp/) |
+| `ontrac` | White name on red | [ontrac.com](https://www.ontrac.com/) |
+| `estafeta` | White slanted lowercase name on red | [estafeta.com](https://www.estafeta.com/) |
+| `pos-malaysia` | White letters POS on red, the O a disc pointing forward | [pos.com.my](https://www.pos.com.my/) |
+| `four-px` | White slanted 4PX on orange | [4px.com](https://www.4px.com/) |
+| `planzer` | White capitals on red | [planzer.ch](https://www.planzer.ch/) |
+| `tipsa` | White capitals between four orange corners on navy | [tip-sa.com](https://www.tip-sa.com/) |
+| `gofo` | White capitals on orange | [gofo.com](https://www.gofo.com/us/) |
+| `dachser` | Blue capitals on a yellow panel across a blue truck; the yellow is an approximation | [dachser.com](https://www.dachser.com/) |

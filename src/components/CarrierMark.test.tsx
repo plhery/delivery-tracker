@@ -18,7 +18,10 @@ describe('carrier mark', () => {
     'usps', 'royal-mail', 'canada-post', 'australia-post', 'tnt', 'correos-spain', 'correos-express', 'yamato', 'china-post',
     'inpost', 'bpost', 'austrian-post', 'hermes', 'hermes-de', 'nova-poshta', 'brt', 'dpd-de', 'dpd-uk',
     'korea-post', 'nz-post', 'poczta-polska', 'ukrposhta', 'correios-br', 'ctt', 'ctt-express', 'sf-express', 'ninja-van',
-    'hongkong-post', 'thailand-post', 'bring-posten', 'packeta',
+    'hongkong-post', 'thailand-post', 'bring-posten', 'packeta', 'gls-ch', 'gls-de', 'gls-fr', 'evri', 'evri-uk',
+    'postnord', 'poste-italiane', 'aramex', 'j-and-t', 'aliexpress', 'zto', 'yto', 'sto', 'yunda', 'jd-logistics', 'ems',
+    'seur', 'mrw', 'nacex', 'purolator', 'parcelforce', 'posti', 'an-post', 'delhivery', 'blue-dart', 'dtdc', 'sagawa',
+    'ontrac', 'estafeta', 'pos-malaysia', 'four-px', 'planzer', 'tipsa', 'gofo', 'dachser',
   ] as const)(
     'renders the declared decoration for %s', (id) => {
       const { container } = render(<CarrierMark carrier={carrierInfo(id)} />);
