@@ -212,7 +212,9 @@
   "gofo": {
     "decal": "gofo"
   },
-  "heppner": {},
+  "heppner": {
+    "decal": "heppner"
+  },
   "hermes": {
     "decal": "hermes"
   },
@@ -234,6 +236,9 @@
       "brand-light": "#1d1d1d"
     },
     "decal": "inpost"
+  },
+  "intelcom": {
+    "decal": "intelcom"
   },
   "intl-post": {},
   "j-and-t": {
@@ -355,7 +360,13 @@
   "sf-express": {
     "decal": "sf-express"
   },
-  "shipup": {},
+  "shipup": {
+    "decal": "shipup",
+    "palette": {
+      "accent": "#1e4530",
+      "brand-light": "#1e4530"
+    }
+  },
   "singapore-post": {
     "decal": "singapore-post"
   },

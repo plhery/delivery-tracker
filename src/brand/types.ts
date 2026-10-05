@@ -36,7 +36,7 @@ export type CarrierDecal = 'default' | 'dhl' | 'ups' | 'fedex' | 'dpd' | 'amazon
   | 'asendia' | 'colis-prive' | 'ciblex' | 'colisweb' | 'uniuni' | 'yunexpress' | 'canpar' | 'relais-colis'
   | 'singapore-post' | 'geodis' | 'lbc-express' | 'spx' | 'ekart' | 'xpressbees' | 'cne' | 'yanwen'
   | 'sunyou' | 'speedx' | 'spee-dee' | 'speedpak' | 'the-courier-guy' | 'landmark-global' | 'old-dominion'
-  | 'paack' | 'c-chez-vous' | 'ecoscooting' | 'correos-chile';
+  | 'paack' | 'c-chez-vous' | 'ecoscooting' | 'correos-chile' | 'intelcom' | 'shipup' | 'heppner';
 
 /** How one property is mixed out of the carrier's catalog color. */
 export interface BrandDerivationStep {

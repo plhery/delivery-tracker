@@ -15,6 +15,7 @@ and [`truck.json`](truck.json).
 
 | Carrier | Source |
 | --- | --- |
+| `aliexpress` | [aliexpress.com](https://www.aliexpress.com/) (sampled from the site icon) |
 | `an-post` | [anpost.com](https://www.anpost.com/) |
 | `aramex` | [aramex.com](https://www.aramex.com/) |
 | `asendia` | [asendia.com](https://www.asendia.com/) |
@@ -43,9 +44,11 @@ and [`truck.json`](truck.json).
 | `estafeta` | [estafeta.com](https://www.estafeta.com/) |
 | `evri` | [evri.com](https://www.evri.com/) |
 | `four-px` | [4px.com](https://www.4px.com/) (sampled from the site icon) |
+| `geodis` | [geodis.com](https://geodis.com/) (sampled from the site icon) |
 | `gofo` | [gofo.com](https://www.gofo.com/us/) |
 | `hongkong-post` | [hongkongpost.hk](https://www.hongkongpost.hk/en/home/index.html) |
 | `inpost` | [inpost.pl](https://inpost.pl/) |
+| `intelcom` | [dragonflyshipping.ca](https://dragonflyshipping.ca/) (sampled from the site icon) |
 | `j-and-t` | [jtexpress.ph](https://www.jtexpress.ph/) |
 | `japan-post` | [post.japanpost.jp](https://www.post.japanpost.jp/) |
 | `jd-logistics` | [jingdonglogistics.com](https://www.jingdonglogistics.com/) |
@@ -68,10 +71,12 @@ and [`truck.json`](truck.json).
 | `royal-mail` | [royalmail.com](https://www.royalmail.com/) |
 | `seur` | [seur.com](https://www.seur.com/) |
 | `sf-express` | [sf-express.com](https://www.sf-express.com/chn/en/) |
+| `shipup` | [shipup.co](https://www.shipup.co/) (sampled from the site icon) |
 | `singapore-post` | [singpost.com](https://www.singpost.com/) |
 | `spee-dee` | [speedeedelivery.com](https://speedeedelivery.com/) |
 | `speedx` | [speedx.io](https://speedx.io/) |
 | `sto` | [sto.cn](https://www.sto.cn/) |
+| `sunyou` | [sunyou.hk](https://www.sunyou.hk/) (sampled from the site icon) |
 | `thailand-post` | [international.thailandpost.com](https://international.thailandpost.com/) |
 | `the-courier-guy` | [thecourierguy.co.za](https://www.thecourierguy.co.za/) (approximate) |
 | `tipsa` | [tip-sa.com](https://www.tip-sa.com/) |
@@ -174,7 +179,7 @@ and [`truck.json`](truck.json).
 | `xpressbees` | Two initials on orange, the second in black | [xpressbees.com](https://www.xpressbees.com/) |
 | `cne` | White slanted letters in a frame on red | [cne.com](https://www.cne.com/) |
 | `yanwen` | White capitals on green | [yw56.com.cn](https://www.yw56.com.cn/) |
-| `sunyou` | White initials over a curve on orange | [sunyou.hk](https://www.sunyou.hk/) |
+| `sunyou` | White slanted initials under a white and a blue arc on green | [sunyou.hk](https://www.sunyou.hk/) |
 | `speedx` | X of one white and one pale stroke on blue | [speedx.io](https://speedx.io/) |
 | `spee-dee` | White name on two lines on red | [speedeedelivery.com](https://speedeedelivery.com/) |
 | `speedpak` | White name on two lines on orange | [orangeconnex.com](https://www.orangeconnex.com/) |
@@ -185,3 +190,6 @@ and [`truck.json`](truck.json).
 | `c-chez-vous` | White capital C on pink | [cchezvous.fr](https://www.cchezvous.fr/) |
 | `ecoscooting` | White stopwatch and a green leaf on blue | [ecoscooting.com](https://www.ecoscooting.com/) |
 | `correos-chile` | White wing of three strokes on red | [correos.cl](https://www.correos.cl/) |
+| `intelcom` | White bars rounding into a D on teal | [dragonflyshipping.ca](https://dragonflyshipping.ca/) |
+| `shipup` | Dark green S on lime | [shipup.co](https://www.shipup.co/) |
+| `heppner` | Green figure with its arms raised on blue | [heppner-group.com](https://www.heppner-group.com/) |

@@ -66,7 +66,7 @@ describe('carrier brand', () => {
       'asendia', 'colis-prive', 'ciblex', 'colisweb', 'uniuni', 'yunexpress', 'canpar', 'relais-colis',
       'singapore-post', 'geodis', 'lbc-express', 'spx', 'ekart', 'xpressbees', 'cne', 'yanwen', 'sunyou', 'speedx',
       'spee-dee', 'speedpak', 'the-courier-guy', 'landmark-global', 'old-dominion', 'paack', 'c-chez-vous',
-      'ecoscooting', 'correos-chile',
+      'ecoscooting', 'correos-chile', 'intelcom', 'shipup', 'heppner',
     ] as const) {
       for (const shape of CARRIER_TRUCK.decals[name]) {
         if (shape.type === 'circle') {

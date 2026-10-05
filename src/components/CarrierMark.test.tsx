@@ -25,7 +25,7 @@ describe('carrier mark', () => {
     'asendia', 'colis-prive', 'ciblex', 'colisweb', 'uniuni', 'yunexpress', 'canpar', 'relais-colis',
     'singapore-post', 'geodis', 'lbc-express', 'spx-ph', 'ekart', 'xpressbees', 'cne', 'yanwen', 'sunyou', 'speedx',
     'spee-dee', 'speedpak', 'the-courier-guy', 'landmark-global', 'old-dominion', 'paack', 'c-chez-vous',
-    'ecoscooting', 'correos-chile', 'delivengo',
+    'ecoscooting', 'correos-chile', 'delivengo', 'intelcom', 'shipup', 'heppner',
   ] as const)(
     'renders the declared decoration for %s', (id) => {
       const { container } = render(<CarrierMark carrier={carrierInfo(id)} />);
