@@ -421,6 +421,29 @@ describe('WorldMap', () => {
     delete (HTMLElement.prototype as Partial<HTMLElement>).setPointerCapture;
   });
 
+  it.each([['pan', 1], ['pinch', 2]])('takes a %s whose fingers land before the map is drawn', async (_gesture, fingers) => {
+    Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', { configurable: true, value: vi.fn() });
+    const onFreeChange = vi.fn();
+    const route = buildRoute([scan(kyoto), scan(leipzig), scan(zurich)]);
+    const { container } = render(<WorldMap route={route} mode="journey" time={time} interactive onFreeChange={onFreeChange} />);
+    const map = screen.getByRole('img');
+    const leg = () => container.querySelector('path[data-kind="travelled"]')?.getAttribute('d');
+    // The first camera comes a frame after the map opens.
+    expect(leg()).toBeUndefined();
+    fireEvent.pointerDown(map, { pointerId: 1, button: 0, clientX: 150, clientY: 150 });
+    if (fingers === 2) fireEvent.pointerDown(map, { pointerId: 2, button: 0, clientX: 250, clientY: 150 });
+    fireEvent.pointerMove(map, { pointerId: 1, clientX: 140, clientY: 150 });
+    // The fingers do not keep the map from being drawn, and nothing has moved yet.
+    await waitFor(() => expect(leg()).toBeTruthy());
+    const opened = leg();
+    expect(onFreeChange).not.toHaveBeenCalledWith(true);
+    fireEvent.pointerMove(map, { pointerId: 1, clientX: 90, clientY: 150 });
+    expect(onFreeChange).toHaveBeenLastCalledWith(true);
+    expect(leg()).not.toBe(opened);
+    fireEvent.pointerUp(map, { pointerId: 1 });
+    delete (HTMLElement.prototype as Partial<HTMLElement>).setPointerCapture;
+  });
+
   it('lets a card peek closer with a pinch, then settles back', async () => {
     Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', { configurable: true, value: vi.fn() });
     const onOpen = vi.fn();

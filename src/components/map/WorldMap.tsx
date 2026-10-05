@@ -76,10 +76,11 @@ export function WorldMap({
   const [moving, setMoving] = useState(false);
   const current = useRef<Camera | null>(null);
   const frame = useRef(0);
-  const drag = useRef<{ x: number; y: number; camera: Camera; id: number } | null>(null);
+  // A gesture keeps the camera it began on. It has none while the fingers are on a map just opened that is not drawn yet.
+  const drag = useRef<{ x: number; y: number; camera: Camera | null; id: number } | null>(null);
   // Fingers on the map, relative to it, and the pinch they make.
   const touches = useRef(new Map<number, [number, number]>());
-  const pinch = useRef<{ distance: number; anchor: [number, number]; camera: Camera } | null>(null);
+  const pinch = useRef<{ distance: number; anchor: [number, number]; camera: Camera | null } | null>(null);
   const pinchedAt = useRef(-Infinity);
   const clip = `map${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 
@@ -179,8 +180,18 @@ export function WorldMap({
     onFreeChange?.(true);
   }
 
+  /** The camera a gesture moves the map from: the one it began on, or the map's first when the fingers landed before it. */
+  function held(gesture: { camera: Camera | null }): Camera | null {
+    if (!gesture.camera && current.current) {
+      gesture.camera = current.current;
+      cancelAnimationFrame(frame.current);
+      setMoving(false);
+    }
+    return gesture.camera;
+  }
+
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
-    if ((!interactive && !peek) || !current.current || event.button > 0) return;
+    if ((!interactive && !peek) || event.button > 0) return;
     touches.current.set(event.pointerId, local(event));
     if (touches.current.size === 2) {
       // A second finger turns a drag into a pinch.
@@ -197,6 +208,8 @@ export function WorldMap({
     }
     // Keep the parcel sheet's edge swipe from treating a pan as "back".
     event.stopPropagation();
+    // A map that is not drawn yet keeps the frame that draws it.
+    if (!current.current) return;
     cancelAnimationFrame(frame.current);
     setMoving(false);
   }
@@ -206,9 +219,11 @@ export function WorldMap({
     const zoom = pinch.current;
     if (zoom && size) {
       event.stopPropagation();
+      const from = held(zoom);
+      if (!from) return;
       const [a, b] = [...touches.current.values()];
       const view = zoomArea(size, insets, shape);
-      const zoomed = zoomCamera(zoom.camera, Math.hypot(a[0] - b[0], a[1] - b[1]) / zoom.distance, zoom.anchor, view.middle, view.viewport);
+      const zoomed = zoomCamera(from, Math.hypot(a[0] - b[0], a[1] - b[1]) / zoom.distance, zoom.anchor, view.middle, view.viewport);
       // The fingers carry the map along as they spread.
       const next: Camera = { ...zoomed, offset: [zoomed.offset[0] + (a[0] + b[0]) / 2 - zoom.anchor[0], zoomed.offset[1] + (a[1] + b[1]) / 2 - zoom.anchor[1]] };
       current.current = next;
@@ -218,13 +233,15 @@ export function WorldMap({
     }
     const start = drag.current;
     if (!start || start.id !== event.pointerId) return;
+    const from = held(start);
+    if (!from) return;
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
     if (!free.current && Math.hypot(dx, dy) < 4) return;
-    const degrees = 180 / Math.PI / start.camera.scale;
+    const degrees = 180 / Math.PI / from.scale;
     const next: Camera = {
-      ...start.camera,
-      center: [start.camera.center[0] - dx * degrees, Math.max(-80, Math.min(80, start.camera.center[1] + dy * degrees))],
+      ...from,
+      center: [from.center[0] - dx * degrees, Math.max(-80, Math.min(80, from.center[1] + dy * degrees))],
     };
     current.current = next;
     setCamera(next);
