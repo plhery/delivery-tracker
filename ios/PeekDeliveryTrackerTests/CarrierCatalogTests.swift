@@ -642,6 +642,12 @@ final class CarrierCatalogTests: XCTestCase {
         for number in ["12345678901234567891", "1234567890123456789", "123456789012345678900", "12345678901234567890\n"] {
             XCTAssertFalse(CarrierCatalog.isValidPocztaPolskaBarcode(number))
         }
+        for number in ["PL00ZZ000000001Z", "PL00ZZ0000000010100000Y"] {
+            XCTAssertTrue(CarrierCatalog.isValidCorreosSpainCheckLetter(number))
+        }
+        for number in ["PL00ZZ000000001A", "PL00ZZ0000000010100000Z", "PL00ZZ000000002Z", "Z", ""] {
+            XCTAssertFalse(CarrierCatalog.isValidCorreosSpainCheckLetter(number))
+        }
         let express = catalog.detect("123 456-7891")
         XCTAssertEqual(express.carrier, .unknown)
         XCTAssertEqual(express.confidence, .low)

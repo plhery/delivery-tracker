@@ -472,6 +472,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
                 if rule.checksum == "dhl-express" && !Self.isValidDhlExpressWaybill(number) { continue }
                 if rule.checksum == "tnt" && !Self.isValidTntConsignmentNumber(number) { continue }
                 if rule.checksum == "poczta-polska" && !Self.isValidPocztaPolskaBarcode(number) { continue }
+                if rule.checksum == "correos-spain" && !Self.isValidCorreosSpainCheckLetter(number) { continue }
                 matches.append((carrier, rule.confidence == "high" ? .high : .low, rule.preferred == true))
                 break
             }
@@ -798,6 +799,14 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         let digits = value.compactMap(\.wholeNumberValue)
         let sum = digits[0..<19].enumerated().reduce(0) { $0 + $1.element * ($1.offset % 2 == 0 ? 3 : 1) }
         return (10 - sum % 10) % 10 == digits[19]
+    }
+
+    /// Correos parcel and expedition codes: the summed character codes before the last letter pick it from the tax-id letter table.
+    static func isValidCorreosSpainCheckLetter(_ value: String) -> Bool {
+        let letters = Array("TRWAGMYFPDXBNJZSQVHLCKE")
+        guard value.count > 1, let last = value.last else { return false }
+        let sum = value.dropLast().unicodeScalars.reduce(0) { $0 + Int($1.value) }
+        return letters[sum % letters.count] == last
     }
 
     static func isValidS10(_ raw: String) -> Bool {
