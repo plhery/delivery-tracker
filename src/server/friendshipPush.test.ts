@@ -16,16 +16,21 @@ afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe('friendship receipts', () => {
   it.each([
-    ['en', 'Alex accepted your invitation'], ['fr-CH', 'Alex a accepté ton invitation'],
-    ['de', 'Alex hat deine Einladung angenommen'], ['it', 'Alex ha accettato il tuo invito'], ['es', 'Alex ha aceptado tu invitación'], ['pt-PT', 'Alex aceitou o teu convite'],
-    ['pl', 'Zaproszenie przyjęte przez Alex'], ['unknown', 'Alex accepted your invitation'],
-  ])('shares localized copy between app and both push channels: %s', (locale, title) => {
+    ['en', 'Alex is in'], ['fr-CH', 'Alex est de la partie'],
+    ['de', 'Alex ist dabei'], ['it', 'Alex è dei nostri'], ['es', 'Alex se apunta'], ['pt-PT', 'Alex juntou-se a ti'],
+    ['pl', 'Alex jest już w Twoim kręgu'], ['unknown', 'Alex is in'],
+  ])('tells both push channels in the device\'s language: %s', (locale, title) => {
     const payload = friendshipNotification({ ...row, locale, email: 'PRIVATE', label: 'PRIVATE', location: 'PRIVATE' });
     expect(payload.web.title).toBe(title);
+    expect(String(payload.web.body).length).toBeGreaterThan(10);
+    expect(payload.web).toMatchObject({ badge: '/icons/badge-96.png' });
     expect(payload.web.data).toEqual({ url: `/?view=friends&friend=${friendID}` });
     expect(payload.native).toMatchObject({ aps: { alert: { title } }, kind: 'friend_accepted', friend_id: friendID });
     expect(JSON.stringify(payload)).not.toContain('PRIVATE');
     expect(payload.native).not.toHaveProperty('parcel_id');
+  });
+  it('writes a nickname as it is', () => {
+    expect(friendshipNotification({ ...row, locale: 'en', nickname: 'A$&B' }).web.title).toBe('A$&B is in');
   });
   it('acknowledges each successful device delivery with its lease', async () => {
     const { service, client, web, native } = fixture([row, { ...row, id: 'native-receipt', subscription_id: null, device_id: 'iphone' }]);

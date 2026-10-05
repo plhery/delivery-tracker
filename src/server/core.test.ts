@@ -749,10 +749,11 @@ describe('native notification boundaries', () => {
     };
 
     expect(web.payload(row)).toMatchObject({
-      body: "Your parcel is on its way. New expected delivery: tomorrow.\nZürich",
+      title: 'On its way',
+      body: 'Coffee grinder · now arriving tomorrow\nZürich',
     });
     expect(web.payload({ ...row, expected_delivery_changed: false })).toMatchObject({
-      body: "Your parcel is on its way. Expected: tomorrow.\nZürich",
+      body: 'Coffee grinder · arriving tomorrow\nZürich',
     });
     expect(notificationExpectedDelivery(
       '2026-08-26 09:00–12:00',
@@ -785,7 +786,7 @@ describe('native notification boundaries', () => {
     const alert = (payload.aps as Record<string, unknown>).alert as Record<string, unknown>;
     const body = String(alert.body);
 
-    expect(body).toMatch(/^Dein Paket ist unterwegs\. Neue voraussichtliche Zustellung: morgen\.\nZ+…$/);
+    expect(body).toMatch(/^Paket · neuer Liefertermin: morgen\nZ+…$/);
     expect([...body].length).toBeLessThanOrEqual(220);
   });
 
@@ -847,7 +848,7 @@ describe('native notification boundaries', () => {
         event: 'end',
         'relevance-score': 1,
         'dismissal-date': now + 1_800,
-        alert: { title: 'Laufschuhe', body: "Dein Paket wurde zugestellt.\nZürich" },
+        alert: { title: 'Angekommen', body: 'Laufschuhe · zugestellt\nZürich' },
         'content-state': {
           parcel: { status: 'Zugestellt', detail: 'Zugestellt', phase: 'delivered' },
         },

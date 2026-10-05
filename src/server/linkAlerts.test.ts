@@ -8,10 +8,12 @@ import {
   DELIVERY_DAY_NOTIFICATION_STAGES,
   IMPORTANT_NOTIFICATION_STAGES,
 } from '../lib/notificationPresets';
+import type { Locale } from '../lib/locale';
 import * as webPresets from '../lib/pushNotifications';
 import * as metrics from './metrics';
 import * as observability from './observability';
 import { CompositePushNotificationService, ParcelLinkAlertService, pushServices, WebPushNotificationService } from './push';
+import { messagesFor } from './requestLocale';
 import { SupabaseServiceClient } from './supabase';
 import type { JsonObject } from './types';
 
@@ -87,7 +89,7 @@ describe('what an alert announces', () => {
     const counted = vi.spyOn(metrics, 'recordParcelAlertSent');
     expect(await alerts.dispatch()).toEqual({ attempted: 1, sent: 1, failed: 0, expired: 0 });
     expect(send).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ event_id: 'customs', endpoint }), expect.objectContaining({
-      body: 'Your parcel is going through customs. We’ll update you when it moves again.\nExample Town',
+      title: 'At customs', body: 'Peek is keeping an eye on it\nExample Town',
     }));
     expect(handled).toHaveBeenCalledExactlyOnceWith('alert-1', ['accepted', 'held', 'customs', 'transit']);
     expect(removed).not.toHaveBeenCalled();
@@ -126,7 +128,7 @@ describe('what an alert announces', () => {
     ]);
     expect(await alerts.dispatch()).toMatchObject({ attempted: 2, sent: 2 });
     expect(send.mock.calls.map(([sent, payload]) => [sent.alert_id, payload?.lang, payload?.title])).toEqual([
-      ['alert-1', 'de', 'Paket-Update'], ['alert-3', 'pl', 'Aktualizacja przesyłki'],
+      ['alert-1', 'de', 'Unterwegs'], ['alert-3', 'pl', 'W drodze'],
     ]);
     expect(handled.mock.calls.map(([alertId]) => alertId)).toEqual(['alert-1', 'alert-2', 'alert-3']);
   });
@@ -144,10 +146,10 @@ describe('what an alert says', () => {
   it('opens the link\'s page and carries neither the parcel\'s name nor its number', () => {
     const payload = alerts.payload(row({ label: 'Sneakers for Ada', tracking_number: 'TESTPARCEL123456', stage: 'delivered' }));
     expect(payload).toEqual({
-      title: 'Parcel update',
-      body: 'Your parcel was delivered at 14:30.\nExample Town',
+      title: 'It’s arrived',
+      body: 'Delivered at 14:30\nExample Town',
       icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      badge: '/icons/badge-96.png',
       tag: `parcel-link-${linkId}`,
       lang: 'en',
       data: { url: `/p/${linkId}` },
@@ -155,7 +157,7 @@ describe('what an alert says', () => {
     expect(JSON.stringify(payload)).not.toMatch(/Sneakers|TESTPARCEL|package-1|alert-1|synthetic/);
   });
 
-  it.each(['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'])('uses the sentences an account gets, in %s', (locale) => {
+  it.each(['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'])('uses the words an account gets for a parcel without a name, in %s', (locale) => {
     for (const stage of ALL_NOTIFICATION_STAGES) {
       const event = row({ locale, stage, expected_delivery: '2026-10-03', timezone: 'Europe/Zurich' });
       const payload = alerts.payload(event);
@@ -166,7 +168,7 @@ describe('what an alert says', () => {
   });
 
   it('reads times in Zurich\'s timezone, as for an account that chose none', () => {
-    expect(alerts.payload(row({ stage: 'delivered', timezone: 'America/New_York' })).body).toMatch(/delivered at 14:30/);
+    expect(alerts.payload(row({ stage: 'delivered', timezone: 'America/New_York' })).body).toMatch(/^Delivered at 14:30/);
   });
 
   it.each(['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'])('announces a gift on its way as one, without the place of the scan, in %s', (locale) => {
@@ -188,8 +190,22 @@ describe('what an alert says', () => {
     expect(alerts.payload(row({ gift: true })).title).toBe('Something’s on its way to you');
     expect(alerts.payload(row({ gift: true, stage: 'delivered', package_stage: 'delivered' })).title).toBe('It’s here');
     // A gift going back is not on its way to anyone.
-    expect(alerts.payload(row({ gift: true, stage: 'returned', package_stage: 'returned' })).title).toBe('Parcel update');
-    expect(alerts.payload(row({ gift: true, stage: 'returned', package_stage: 'returned' })).body).not.toContain('Example Town');
+    expect(alerts.payload(row({ gift: true, stage: 'returned', package_stage: 'returned' })).title).toBe('On its way back');
+    expect(alerts.payload(row({ gift: true, stage: 'returned', package_stage: 'returned' })).body).toBe('Returning to the sender');
+  });
+
+  it.each(['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'])('titles a gift with its page\'s words in %s', (locale) => {
+    const page: Record<string, string> = messagesFor(locale as Locale);
+    expect(alerts.payload(row({ locale, gift: true })).title).toBe(page['share.gift.headline']);
+    expect(alerts.payload(row({ locale, gift: true, stage: 'delivered', package_stage: 'delivered' })).title).toBe(page['share.gift.here']);
+  });
+
+  it('leads a gift\'s line with the step it is at, as its title is the gift', () => {
+    expect(alerts.payload(row({ gift: true, stage: 'out_for_delivery' })).body).toBe('Out for delivery · almost there');
+    expect(alerts.payload(row({ gift: true, stage: 'customs' })).body).toBe('At customs · Peek is keeping an eye on it');
+    // The title has just said that it is on its way.
+    expect(alerts.payload(row({ gift: true, stage: 'in_transit' })).body).toBe('One step closer');
+    expect(alerts.payload(row({ gift: true, stage: 'delivered', package_stage: 'delivered' })).body).toBe('Delivered at 14:30\nExample Town');
   });
 
   it('tells the owner of a gift lookup like the owner of any parcel', () => {

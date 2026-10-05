@@ -7,270 +7,249 @@ import { SignJWT } from 'jose';
 import { DateTime, IANAZone } from 'luxon';
 import webpush from 'web-push';
 import { CARRIER_CAPABILITIES, type ApiParcelAlertPreset } from '../generated/apiContract';
+import { isLocale, type Locale } from '../lib/locale';
+import { languageTags } from '../lib/messages';
 import { ALERT_PRESET_STAGES } from '../lib/notificationPresets';
+import { capitalized } from '../peek/parcel/summary';
 import { recordParcelAlertRemoved, recordParcelAlertSent } from './metrics';
 import { logOperationalEvent } from './observability';
+import { messagesFor } from './requestLocale';
 import type { SupabaseServiceClient } from './supabase';
 import { errorMessage, isRecord, type JsonObject } from './types';
 
-const STAGE_LABELS: Record<string, string> = {
-  pending: 'Not announced yet',
-  registered: 'Shipment announced',
-  accepted: 'Parcel accepted',
-  in_transit: 'Parcel in transit',
-  customs: 'At customs',
-  exception: 'Parcel needs attention',
-  out_for_delivery: 'Out for delivery',
-  ready_for_pickup: 'Ready for pickup',
-  delivered: 'Delivered',
-  failed_attempt: 'Delivery attempt failed',
-  returned: 'Returning to sender',
-};
-
-const PUSH_COPY: Record<string, Record<string, string>> = {
+/**
+ * What a notification says beyond the app's own words for a parcel's stages.
+ * Its title is the news; the line under it names the parcel, then says when it
+ * arrives or what the step means. Those sentences start in lower case where
+ * their language allows, and are capitalised when no name comes before them.
+ * Nothing assumes the reader is the recipient: an account also follows the
+ * parcels it sends.
+ */
+const PUSH_COPY: Record<Locale, Record<string, string>> = {
   en: {
-    test_title: "Parcel alerts are on",
-    test_body: "You’ll receive the delivery updates you chose on this device. You can change them in Notification settings.",
+    test_title: 'You’ll hear from Peek',
+    test_body: 'This device gets a ping for the steps you chose. Change them anytime in Settings.',
+    friend_title: '{{name}} is in',
+    friend_body: 'Your passports are side by side now. Have a peek.',
     update: 'Parcel update',
-    gift_on_its_way: "Something’s on its way to you",
-    gift_delivered: "It’s here",
-    today: 'today',
-    tomorrow: 'tomorrow',
-    ...STAGE_LABELS,
-    body_update: "There’s an update to your parcel. Open tracking for details.",
-    body_pending: "We’re waiting for the carrier’s first update.",
-    body_registered: "The sender has announced your parcel. We’re waiting for the carrier to receive it.",
-    body_accepted: "The carrier has received your parcel.",
-    body_in_transit: "Your parcel is on its way.",
-    body_customs: "Your parcel is going through customs. We’ll update you when it moves again.",
-    body_exception: "The carrier reported a problem with your parcel. Open tracking for the next steps.",
-    body_out_for_delivery: "Your parcel is out for delivery.",
-    body_ready_for_pickup: "Your parcel is ready to collect. Open tracking for pickup details.",
-    body_delivered: "Your parcel has been delivered.",
-    body_failed_attempt: "The carrier couldn’t deliver your parcel. Open tracking for the next steps.",
-    body_returned: "Your parcel is being returned to the sender. Contact the sender for the next steps.",
-    delivered_time: "Your parcel was delivered at {{time}}.",
-    delivered_date: "Your parcel was delivered on {{date}} at {{time}}.",
-    eta: 'Expected: {{date}}.',
-    eta_changed: 'New expected delivery: {{date}}.',
+    title_registered: 'Announced by the sender',
+    title_in_transit: 'On its way',
+    title_ready_for_pickup: 'Ready to collect',
+    title_delivered: 'It’s arrived',
+    title_failed_attempt: 'Delivery missed',
+    title_returned: 'On its way back',
+    body_update: 'tap to see what’s new',
+    body_pending: 'waiting for the carrier’s first scan',
+    body_registered: 'the carrier doesn’t have it yet',
+    body_accepted: 'off it goes',
+    body_in_transit: 'one step closer',
+    body_customs: 'Peek is keeping an eye on it',
+    body_exception: 'the carrier flagged a problem. Tap to see what to do.',
+    body_out_for_delivery: 'almost there',
+    body_ready_for_pickup: 'waiting at the pickup point',
+    body_delivered: 'delivered',
+    body_failed_attempt: 'the carrier couldn’t deliver it. Tap to see what happens next.',
+    body_returned: 'returning to the sender',
+    delivered_time: 'delivered at {{time}}',
+    delivered_date: 'delivered on {{date}} at {{time}}',
+    eta_day: 'arriving {{date}}',
+    eta_date: 'arriving {{date}}',
+    eta_changed_day: 'now arriving {{date}}',
+    eta_changed_date: 'now arriving {{date}}',
   },
   de: {
-    test_title: "Paketmeldungen sind aktiv",
-    test_body: "Du erhältst die gewählten Liefermeldungen auf diesem Gerät. Du kannst sie in den Meldungseinstellungen ändern.",
-    update: 'Paket-Update',
-    gift_on_its_way: "Etwas ist auf dem Weg zu dir",
-    gift_delivered: "Es ist da",
-    today: 'heute',
-    tomorrow: 'morgen',
-    pending: 'Noch nicht angekündigt',
-    registered: 'Sendung angekündigt',
-    accepted: 'Paket angenommen',
-    in_transit: 'Paket unterwegs',
-    customs: 'Beim Zoll',
-    exception: "Paket braucht Aufmerksamkeit",
-    out_for_delivery: 'In Zustellung',
-    ready_for_pickup: 'Abholbereit',
-    delivered: 'Zugestellt',
-    failed_attempt: 'Zustellversuch fehlgeschlagen',
-    returned: 'Rücksendung an Absender',
-    body_update: "Es gibt Neuigkeiten zu deinem Paket. Öffne die Sendungsverfolgung für Details.",
-    body_pending: "Wir warten auf die erste Meldung des Paketdienstes.",
-    body_registered: "Der Absender hat dein Paket angekündigt. Wir warten auf die Übergabe an den Paketdienst.",
-    body_accepted: "Der Paketdienst hat dein Paket erhalten.",
-    body_in_transit: "Dein Paket ist unterwegs.",
-    body_customs: "Dein Paket wird beim Zoll bearbeitet. Wir melden uns, wenn es weitergeht.",
-    body_exception: "Der Paketdienst meldet ein Problem mit deinem Paket. Öffne das Tracking für die nächsten Schritte.",
-    body_out_for_delivery: "Dein Paket ist auf Zustelltour.",
-    body_ready_for_pickup: "Dein Paket ist abholbereit. Öffne das Tracking für die Abholinformationen.",
-    body_delivered: "Dein Paket wurde zugestellt.",
-    body_failed_attempt: "Dein Paket konnte nicht zugestellt werden. Öffne das Tracking für die nächsten Schritte.",
-    body_returned: "Dein Paket geht an den Absender zurück. Frage dort nach den nächsten Schritten.",
-    delivered_time: "Dein Paket wurde um {{time}} Uhr zugestellt.",
-    delivered_date: "Dein Paket wurde am {{date}} um {{time}} Uhr zugestellt.",
-    eta: 'Voraussichtliche Zustellung: {{date}}.',
-    eta_changed: 'Neue voraussichtliche Zustellung: {{date}}.',
+    test_title: 'Peek meldet sich bei dir',
+    test_body: 'Dieses Gerät bekommt Meldungen für die Schritte, die du gewählt hast. Ändern kannst du sie jederzeit in den Einstellungen.',
+    friend_title: '{{name}} ist dabei',
+    friend_body: 'Eure Reisepässe liegen jetzt nebeneinander. Wirf einen Blick drauf.',
+    update: 'Neues vom Paket',
+    title_registered: 'Vom Absender angekündigt',
+    title_in_transit: 'Unterwegs',
+    title_ready_for_pickup: 'Abholbereit',
+    title_delivered: 'Angekommen',
+    title_failed_attempt: 'Zustellung nicht geklappt',
+    title_returned: 'Auf dem Rückweg',
+    body_update: 'tippe, um zu sehen, was sich getan hat',
+    body_pending: 'wartet auf den ersten Scan des Paketdienstes',
+    body_registered: 'der Paketdienst hat es noch nicht',
+    body_accepted: 'und los geht’s',
+    body_in_transit: 'wieder ein Stück näher',
+    body_customs: 'Peek behält es im Auge',
+    body_exception: 'tippe, um zu sehen, was zu tun ist',
+    body_out_for_delivery: 'fast da',
+    body_ready_for_pickup: 'wartet am Abholort',
+    body_delivered: 'zugestellt',
+    body_failed_attempt: 'der Paketdienst konnte es nicht zustellen. Tippe, um zu sehen, wie es weitergeht.',
+    body_returned: 'geht zurück an den Absender',
+    delivered_time: 'um {{time}} Uhr zugestellt',
+    delivered_date: 'am {{date}} um {{time}} Uhr zugestellt',
+    eta_day: 'kommt {{date}}',
+    eta_date: 'kommt am {{date}}',
+    eta_changed_day: 'neuer Liefertermin: {{date}}',
+    eta_changed_date: 'neuer Liefertermin: {{date}}',
   },
   fr: {
-    test_title: "Les alertes colis sont activées",
-    test_body: "Tu recevras les mises à jour choisies sur cet appareil. Tu peux les modifier dans les réglages des notifications.",
-    update: 'Mise à jour du colis',
-    gift_on_its_way: "Quelque chose est en route pour toi",
-    gift_delivered: "C’est arrivé",
-    today: 'aujourd’hui',
-    tomorrow: 'demain',
-    pending: 'Pas encore annoncé',
-    registered: 'Envoi annoncé',
-    accepted: 'Colis pris en charge',
-    in_transit: 'Colis en transit',
-    customs: 'À la douane',
-    exception: "Colis à vérifier",
-    out_for_delivery: 'En cours de livraison',
-    ready_for_pickup: 'Prêt à être retiré',
-    delivered: 'Livré',
-    failed_attempt: 'Livraison manquée',
-    returned: 'Retour à l’expéditeur',
-    body_update: "Du nouveau pour ton colis. Ouvre le suivi pour les détails.",
-    body_pending: "Nous attendons la première mise à jour du transporteur.",
-    body_registered: "L’expéditeur a annoncé ton colis. Nous attendons sa remise au transporteur.",
-    body_accepted: "Le transporteur a pris en charge ton colis.",
-    body_in_transit: "Ton colis est en route.",
-    body_customs: "Ton colis passe la douane. Nous te préviendrons lorsqu’il repartira.",
-    body_exception: "Le transporteur signale un problème avec ton colis. Consulte le suivi pour connaître la suite.",
-    body_out_for_delivery: "Ton colis est en livraison.",
-    body_ready_for_pickup: "Ton colis est prêt à être retiré. Consulte le suivi pour savoir où le récupérer.",
-    body_delivered: "Ton colis a été livré.",
-    body_failed_attempt: "Le transporteur n’a pas pu livrer ton colis. Consulte le suivi pour connaître la suite.",
-    body_returned: "Ton colis est en cours de retour à l’expéditeur. Contacte-le pour connaître la suite.",
-    delivered_time: "Ton colis a été livré à {{time}}.",
-    delivered_date: "Ton colis a été livré le {{date}} à {{time}}.",
-    eta: 'Livraison prévue : {{date}}.',
-    eta_changed: 'Livraison désormais prévue : {{date}}.',
+    test_title: 'Peek te tient au courant',
+    test_body: 'Cet appareil reçoit des alertes pour les étapes que tu as choisies. Change-les quand tu veux dans les réglages.',
+    friend_title: '{{name}} est de la partie',
+    friend_body: 'Vos passeports sont maintenant côte à côte. Jette un œil.',
+    update: 'Des nouvelles du colis',
+    title_registered: 'Annoncé par l’expéditeur',
+    title_in_transit: 'En route',
+    title_ready_for_pickup: 'Prêt à être retiré',
+    title_delivered: 'Bien arrivé',
+    title_failed_attempt: 'Livraison manquée',
+    title_returned: 'Sur le chemin du retour',
+    body_update: 'touche pour voir ce qui a changé',
+    body_pending: 'en attente du premier scan du transporteur',
+    body_registered: 'le transporteur ne l’a pas encore reçu',
+    body_accepted: 'c’est parti',
+    body_in_transit: 'il se rapproche',
+    body_customs: 'Peek garde un œil dessus',
+    body_exception: 'touche pour savoir quoi faire',
+    body_out_for_delivery: 'presque arrivé',
+    body_ready_for_pickup: 'il attend au point de retrait',
+    body_delivered: 'livré',
+    body_failed_attempt: 'le transporteur n’a pas pu le livrer. Touche pour voir la suite.',
+    body_returned: 'il repart chez l’expéditeur',
+    delivered_time: 'livré à {{time}}',
+    delivered_date: 'livré le {{date}} à {{time}}',
+    eta_day: 'arrive {{date}}',
+    eta_date: 'arrive le {{date}}',
+    eta_changed_day: 'arrive finalement {{date}}',
+    eta_changed_date: 'arrive finalement le {{date}}',
   },
   it: {
-    test_title: "Gli avvisi sui pacchi sono attivi",
-    test_body: "Riceverai gli aggiornamenti scelti su questo dispositivo. Puoi modificarli nelle impostazioni delle notifiche.",
-    update: 'Aggiornamento del pacco',
-    gift_on_its_way: "Qualcosa è in viaggio verso di te",
-    gift_delivered: "È arrivato",
-    today: 'oggi',
-    tomorrow: 'domani',
-    pending: 'Non ancora annunciato',
-    registered: 'Spedizione annunciata',
-    accepted: 'Pacco accettato',
-    in_transit: 'Pacco in transito',
-    customs: 'Alla dogana',
-    exception: "Il pacco richiede attenzione",
-    out_for_delivery: 'In consegna',
-    ready_for_pickup: 'Pronto per il ritiro',
-    delivered: 'Consegnato',
-    failed_attempt: 'Tentativo di consegna non riuscito',
-    returned: 'Restituzione al mittente',
-    body_update: "Ci sono novità sul pacco. Apri il tracciamento per i dettagli.",
-    body_pending: "Aspettiamo il primo aggiornamento del corriere.",
-    body_registered: "Il mittente ha annunciato il pacco. Attendiamo che venga affidato al corriere.",
-    body_accepted: "Il corriere ha preso in carico il tuo pacco.",
-    body_in_transit: "Il tuo pacco è in viaggio.",
-    body_customs: "Il tuo pacco è in fase di sdoganamento. Ti avviseremo quando ripartirà.",
-    body_exception: "Il corriere segnala un problema con il tuo pacco. Apri il tracciamento per sapere come procedere.",
-    body_out_for_delivery: "Il tuo pacco è in consegna.",
-    body_ready_for_pickup: "Il pacco è pronto per il ritiro. Apri il tracciamento per i dettagli.",
-    body_delivered: "Il tuo pacco è stato consegnato.",
-    body_failed_attempt: "Il corriere non è riuscito a consegnare il pacco. Apri il tracciamento per sapere come procedere.",
-    body_returned: "Il pacco sta tornando al mittente. Contattalo per sapere come procedere.",
-    delivered_time: "Il tuo pacco è stato consegnato alle {{time}}.",
-    delivered_date: "Il tuo pacco è stato consegnato il {{date}} alle {{time}}.",
-    eta: 'Consegna prevista: {{date}}.',
-    eta_changed: 'La consegna è ora prevista: {{date}}.',
+    test_title: 'Peek ti terrà al corrente',
+    test_body: 'Questo dispositivo riceve gli avvisi per i passaggi che hai scelto. Puoi cambiarli quando vuoi nelle impostazioni.',
+    friend_title: '{{name}} è dei nostri',
+    friend_body: 'I vostri passaporti ora sono fianco a fianco. Dai un’occhiata.',
+    update: 'Novità sul pacco',
+    title_registered: 'Annunciato dal mittente',
+    title_in_transit: 'In viaggio',
+    title_ready_for_pickup: 'Pronto per il ritiro',
+    title_delivered: 'È arrivato',
+    title_failed_attempt: 'Consegna mancata',
+    title_returned: 'Sulla via del ritorno',
+    body_update: 'tocca per vedere cos’è cambiato',
+    body_pending: 'in attesa della prima scansione del corriere',
+    body_registered: 'il corriere non ce l’ha ancora',
+    body_accepted: 'si parte',
+    body_in_transit: 'un passo più vicino',
+    body_customs: 'Peek lo tiene d’occhio',
+    body_exception: 'tocca per vedere cosa fare',
+    body_out_for_delivery: 'ci siamo quasi',
+    body_ready_for_pickup: 'in attesa al punto di ritiro',
+    body_delivered: 'consegnato',
+    body_failed_attempt: 'il corriere non è riuscito a consegnarlo. Tocca per vedere cosa succede ora.',
+    body_returned: 'sta tornando al mittente',
+    delivered_time: 'consegnato alle {{time}}',
+    delivered_date: 'consegnato il giorno {{date}} alle {{time}}',
+    eta_day: 'arriva {{date}}',
+    eta_date: 'arrivo previsto: {{date}}',
+    eta_changed_day: 'ora arriva {{date}}',
+    eta_changed_date: 'nuova data prevista: {{date}}',
   },
   es: {
-    "test_title": "Avisos de paquetes activados",
-    "test_body": "Recibirás las novedades elegidas en este dispositivo. Puedes cambiarlas en los ajustes de notificaciones.",
-    "update": "Novedades del paquete",
-    "gift_on_its_way": "Algo va de camino hacia ti",
-    "gift_delivered": "Ya está aquí",
-    "today": "hoy",
-    "tomorrow": "mañana",
-    "pending": "Aún sin anunciar",
-    "registered": "Envío anunciado",
-    "accepted": "Paquete recibido",
-    "in_transit": "Paquete en tránsito",
-    "customs": "En aduanas",
-    "exception": "El paquete necesita atención",
-    "out_for_delivery": "En reparto",
-    "ready_for_pickup": "Listo para recoger",
-    "delivered": "Entregado",
-    "failed_attempt": "Intento de entrega fallido",
-    "returned": "De vuelta al remitente",
-    "body_update": "Hay novedades de tu paquete. Abre el seguimiento para ver los detalles.",
-    "body_pending": "Esperamos la primera actualización del transportista.",
-    "body_registered": "El remitente ha anunciado tu paquete. Esperamos que lo reciba el transportista.",
-    "body_accepted": "El transportista ha recibido tu paquete.",
-    "body_in_transit": "Tu paquete está en camino.",
-    "body_customs": "Tu paquete está pasando por aduanas. Te avisaremos cuando siga su camino.",
-    "body_exception": "El transportista informa de un problema con tu paquete. Consulta el seguimiento para saber qué hacer.",
-    "body_out_for_delivery": "Tu paquete está en reparto.",
-    "body_ready_for_pickup": "Tu paquete está listo para recoger. Consulta el seguimiento para saber dónde.",
-    "body_delivered": "Tu paquete se ha entregado.",
-    "body_failed_attempt": "El transportista no pudo entregar tu paquete. Consulta el seguimiento para saber qué hacer.",
-    "body_returned": "Tu paquete está volviendo al remitente. Contacta con él para saber qué hacer.",
-    "delivered_time": "Tu paquete se entregó a las {{time}}.",
-    "delivered_date": "Tu paquete se entregó el {{date}} a las {{time}}.",
-    "eta": "Entrega prevista: {{date}}.",
-    "eta_changed": "Nueva entrega prevista: {{date}}."
+    test_title: 'Peek te mantendrá al tanto',
+    test_body: 'Este dispositivo recibe avisos de los pasos que has elegido. Cámbialos cuando quieras en los ajustes.',
+    friend_title: '{{name}} se apunta',
+    friend_body: 'Vuestros pasaportes ya están uno al lado del otro. Echa un vistazo.',
+    update: 'Novedades del paquete',
+    title_registered: 'Anunciado por el remitente',
+    title_in_transit: 'En camino',
+    title_ready_for_pickup: 'Listo para recoger',
+    title_delivered: 'Ha llegado',
+    title_failed_attempt: 'Entrega fallida',
+    title_returned: 'Camino de vuelta',
+    body_update: 'toca para ver qué hay de nuevo',
+    body_pending: 'esperando el primer escaneo del transportista',
+    body_registered: 'el transportista aún no lo tiene',
+    body_accepted: 'en marcha',
+    body_in_transit: 'un paso más cerca',
+    body_customs: 'Peek no lo pierde de vista',
+    body_exception: 'toca para ver qué hacer',
+    body_out_for_delivery: 'ya casi está',
+    body_ready_for_pickup: 'esperando en el punto de recogida',
+    body_delivered: 'entregado',
+    body_failed_attempt: 'el transportista no ha podido entregarlo. Toca para ver qué pasa ahora.',
+    body_returned: 'se devuelve al remitente',
+    delivered_time: 'entregado a las {{time}}',
+    delivered_date: 'entregado el {{date}} a las {{time}}',
+    eta_day: 'llega {{date}}',
+    eta_date: 'llega el {{date}}',
+    eta_changed_day: 'ahora llega {{date}}',
+    eta_changed_date: 'ahora llega el {{date}}',
   },
   pt: {
-    "test_title": "Alertas de envios ativos",
-    "test_body": "Receberás as atualizações escolhidas neste dispositivo. Podes alterá-las nas definições de notificações.",
-    "update": "Atualização do envio",
-    "gift_on_its_way": "Há algo a caminho para ti",
-    "gift_delivered": "Já chegou",
-    "today": "hoje",
-    "tomorrow": "amanhã",
-    "pending": "Ainda não anunciado",
-    "registered": "Envio anunciado",
-    "accepted": "Envio aceite",
-    "in_transit": "Envio em trânsito",
-    "customs": "Na alfândega",
-    "exception": "O envio precisa de atenção",
-    "out_for_delivery": "Em distribuição",
-    "ready_for_pickup": "Pronto para levantamento",
-    "delivered": "Entregue",
-    "failed_attempt": "Tentativa de entrega falhada",
-    "returned": "De volta ao remetente",
-    "body_update": "Há novidades sobre o teu envio. Abre o seguimento para ver os detalhes.",
-    "body_pending": "Estamos à espera da primeira atualização da transportadora.",
-    "body_registered": "O remetente anunciou o teu envio. Aguardamos a entrega à transportadora.",
-    "body_accepted": "A transportadora recebeu o teu envio.",
-    "body_in_transit": "O teu envio está a caminho.",
-    "body_customs": "O teu envio está na alfândega. Avisamos-te quando voltar a seguir caminho.",
-    "body_exception": "A transportadora reportou um problema com o teu envio. Consulta o seguimento para saber o que fazer.",
-    "body_out_for_delivery": "O teu envio está em distribuição.",
-    "body_ready_for_pickup": "O teu envio está pronto para levantamento. Consulta o seguimento para saber onde.",
-    "body_delivered": "O teu envio foi entregue.",
-    "body_failed_attempt": "A transportadora não conseguiu entregar o teu envio. Consulta o seguimento para saber o que fazer.",
-    "body_returned": "O teu envio está a ser devolvido ao remetente. Contacta-o para saber o que fazer.",
-    "delivered_time": "O teu envio foi entregue às {{time}}.",
-    "delivered_date": "O teu envio foi entregue em {{date}} às {{time}}.",
-    "eta": "Entrega prevista: {{date}}.",
-    "eta_changed": "Nova previsão de entrega: {{date}}."
+    test_title: 'O Peek vai dando notícias',
+    test_body: 'Este dispositivo recebe alertas para os passos que escolheste. Podes alterá-los quando quiseres nas definições.',
+    friend_title: '{{name}} juntou-se a ti',
+    friend_body: 'Os vossos passaportes já estão lado a lado. Dá uma espreitadela.',
+    update: 'Atualização do envio',
+    title_registered: 'Anunciado pelo remetente',
+    title_in_transit: 'A caminho',
+    title_ready_for_pickup: 'Pronto para levantamento',
+    title_delivered: 'Chegou',
+    title_failed_attempt: 'Entrega falhada',
+    title_returned: 'De regresso',
+    body_update: 'toca para ver as novidades',
+    body_pending: 'à espera da primeira leitura da transportadora',
+    body_registered: 'a transportadora ainda não o tem',
+    body_accepted: 'a viagem começou',
+    body_in_transit: 'um passo mais perto',
+    body_customs: 'o Peek está de olho nele',
+    body_exception: 'toca para ver o que fazer',
+    body_out_for_delivery: 'quase a chegar',
+    body_ready_for_pickup: 'à espera no ponto de recolha',
+    body_delivered: 'entregue',
+    body_failed_attempt: 'a transportadora não conseguiu entregá-lo. Toca para ver o que se segue.',
+    body_returned: 'a ser devolvido ao remetente',
+    delivered_time: 'entregue às {{time}}',
+    delivered_date: 'entregue a {{date}} às {{time}}',
+    eta_day: 'chega {{date}}',
+    eta_date: 'chega a {{date}}',
+    eta_changed_day: 'afinal chega {{date}}',
+    eta_changed_date: 'afinal chega a {{date}}',
   },
   pl: {
-    "test_title": "Powiadomienia o przesyłkach włączone",
-    "test_body": "Na tym urządzeniu otrzymasz wybrane aktualizacje dostaw. Możesz je zmienić w ustawieniach powiadomień.",
-    "update": "Aktualizacja przesyłki",
-    "gift_on_its_way": "Coś jest do Ciebie w drodze",
-    "gift_delivered": "Już jest",
-    "today": "dziś",
-    "tomorrow": "jutro",
-    "pending": "Jeszcze niezgłoszona",
-    "registered": "Przesyłka zgłoszona",
-    "accepted": "Przesyłka przyjęta",
-    "in_transit": "Przesyłka w transporcie",
-    "customs": "W urzędzie celnym",
-    "exception": "Przesyłka wymaga uwagi",
-    "out_for_delivery": "W doręczeniu",
-    "ready_for_pickup": "Gotowa do odbioru",
-    "delivered": "Dostarczona",
-    "failed_attempt": "Nieudana próba doręczenia",
-    "returned": "Zwrot do nadawcy",
-    "body_update": "Są nowe informacje o Twojej przesyłce. Otwórz śledzenie, aby zobaczyć szczegóły.",
-    "body_pending": "Czekamy na pierwszą aktualizację od przewoźnika.",
-    "body_registered": "Nadawca zgłosił przesyłkę. Czekamy na przekazanie jej przewoźnikowi.",
-    "body_accepted": "Przewoźnik przyjął Twoją przesyłkę.",
-    "body_in_transit": "Twoja przesyłka jest w drodze.",
-    "body_customs": "Twoja przesyłka przechodzi odprawę celną. Powiadomimy Cię, gdy ruszy dalej.",
-    "body_exception": "Przewoźnik zgłosił problem z Twoją przesyłką. Sprawdź dalsze kroki w śledzeniu.",
-    "body_out_for_delivery": "Twoja przesyłka jest w doręczeniu.",
-    "body_ready_for_pickup": "Twoja przesyłka jest gotowa do odbioru. Sprawdź miejsce odbioru w śledzeniu.",
-    "body_delivered": "Twoja przesyłka została dostarczona.",
-    "body_failed_attempt": "Przewoźnik nie mógł doręczyć przesyłki. Sprawdź dalsze kroki w śledzeniu.",
-    "body_returned": "Twoja przesyłka wraca do nadawcy. Skontaktuj się z nim w sprawie dalszych kroków.",
-    "delivered_time": "Twoja przesyłka została dostarczona o {{time}}.",
-    "delivered_date": "Twoja przesyłka została dostarczona {{date}} o {{time}}.",
-    "eta": "Planowana dostawa: {{date}}.",
-    "eta_changed": "Nowy termin dostawy: {{date}}."
+    test_title: 'Peek da Ci znać',
+    test_body: 'To urządzenie dostaje powiadomienia o wybranych przez Ciebie krokach. Zmienisz je w każdej chwili w ustawieniach.',
+    friend_title: '{{name}} jest już w Twoim kręgu',
+    friend_body: 'Wasze paszporty leżą teraz obok siebie. Zerknij.',
+    update: 'Nowe wieści o przesyłce',
+    title_registered: 'Zgłoszona przez nadawcę',
+    title_in_transit: 'W drodze',
+    title_ready_for_pickup: 'Gotowa do odbioru',
+    title_delivered: 'Dotarła',
+    title_failed_attempt: 'Nieudane doręczenie',
+    title_returned: 'W drodze powrotnej',
+    body_update: 'stuknij, aby zobaczyć szczegóły',
+    body_pending: 'czeka na pierwszy skan przewoźnika',
+    body_registered: 'przewoźnik jeszcze jej nie ma',
+    body_accepted: 'ruszyła w drogę',
+    body_in_transit: 'o krok bliżej',
+    body_customs: 'Peek ma ją na oku',
+    body_exception: 'stuknij, aby zobaczyć, co zrobić',
+    body_out_for_delivery: 'już prawie na miejscu',
+    body_ready_for_pickup: 'czeka w punkcie odbioru',
+    body_delivered: 'dostarczona',
+    body_failed_attempt: 'przewoźnik nie mógł jej doręczyć. Stuknij, aby zobaczyć, co dalej.',
+    body_returned: 'wraca do nadawcy',
+    delivered_time: 'dostarczona o {{time}}',
+    delivered_date: 'dostarczona {{date}} o {{time}}',
+    eta_day: 'dotrze {{date}}',
+    eta_date: 'dotrze {{date}}',
+    eta_changed_day: 'nowy termin: {{date}}',
+    eta_changed_date: 'nowy termin: {{date}}',
   },
 };
+
+/**
+ * The pictures a browser draws with a notification. Android keeps only the
+ * outline of the badge, for the status bar: the mark's eyes on nothing.
+ */
+export const WEB_NOTIFICATION_PICTURES = { icon: '/icons/icon-192.png', badge: '/icons/badge-96.png' };
 
 export interface PushSummary {
   attempted: number;
@@ -302,68 +281,82 @@ function carrierDisplayName(value: unknown): string {
   return carrier || 'Carrier';
 }
 
-const NOTIFICATION_LANGUAGE_TAGS: Record<string, string> = {
-  en: 'en-CH',
-  de: 'de-CH',
-  fr: 'fr-CH',
-  it: 'it-CH',
-  es: 'es-ES',
-  pt: 'pt-PT',
-  pl: 'pl-PL',
-};
-
-function notificationLocale(value: unknown): string {
+/** The language a notification is written in: its device's, or English. */
+function notificationLocale(value: unknown): Locale {
   const locale = typeof value === 'string'
     ? value.trim().split(/[-_]/, 1)[0]!.toLowerCase()
     : 'en';
-  return PUSH_COPY[locale] ? locale : 'en';
+  return isLocale(locale) ? locale : 'en';
 }
 
+/** What tells someone a friend took their invitation, in the language of the device it goes to. */
+export function friendNotificationCopy(language: unknown, name: string): { locale: Locale; title: string; body: string } {
+  const locale = notificationLocale(language);
+  const copy = PUSH_COPY[locale];
+  // A function, so that a nickname with a dollar sign is written as it is.
+  return { locale, title: copy.friend_title!.replace('{{name}}', () => name), body: copy.friend_body! };
+}
+
+/** One of the app's own words in a notification's language, so both say the same. */
+function appWord(locale: Locale, key: string): string | undefined {
+  const messages: Record<string, string> = messagesFor(locale);
+  return Object.hasOwn(messages, key) ? messages[key] : undefined;
+}
+
+/** A day of the year as a sentence names it: "9 October", without the year. */
+function notificationDay(day: DateTime, locale: Locale): string {
+  return day.setLocale(languageTags[locale]).toLocaleString({ day: 'numeric', month: 'long' });
+}
+
+interface ExpectedDelivery {
+  text: string;
+  /** Whether it names a day of the year rather than today or tomorrow: a sentence may need another word before it. */
+  dated: boolean;
+}
+
+function expectedDelivery(
+  value: unknown,
+  locale: Locale,
+  timezone: string,
+  now: number,
+): ExpectedDelivery | null {
+  const cleaned = notificationText(value, 100);
+  if (!cleaned) return null;
+  const zone = IANAZone.isValidZone(timezone) ? timezone : 'Europe/Zurich';
+  const today = DateTime.fromMillis(now, { zone });
+
+  const formattedDay = (raw: string, time = ''): ExpectedDelivery | null => {
+    const expected = DateTime.fromISO(raw, { zone });
+    if (!expected.isValid || !today.isValid || expected.startOf('day') < today.startOf('day')) return null;
+    const relative = expected.toISODate() === today.toISODate() ? 'time.today'
+      : expected.toISODate() === today.plus({ days: 1 }).toISODate() ? 'time.tomorrow' : null;
+    const day = relative ? appWord(locale, relative)! : notificationDay(expected, locale);
+    return { text: time ? `${day}, ${time}` : day, dated: !relative };
+  };
+
+  const window = /^(\d{4}-\d{2}-\d{2})[ T]+(\d{2}:\d{2})(?:[–-](\d{2}:\d{2}))?$/.exec(
+    cleaned,
+  );
+  if (window) return formattedDay(window[1]!, `${window[2]}${window[3] ? `–${window[3]}` : ''}`);
+  const expected = DateTime.fromISO(cleaned, { zone });
+  if (expected.isValid && /T\d{2}:\d{2}/.test(cleaned)) {
+    return formattedDay(expected.toISODate()!, expected.toFormat('HH:mm'));
+  }
+  return formattedDay(cleaned);
+}
+
+/** When a parcel is expected, as a notification writes it: "tomorrow, 09:00–12:00". Empty for a day that has passed. */
 export function notificationExpectedDelivery(
   value: unknown,
   locale = 'en',
   timezone = 'Europe/Zurich',
   now = Date.now(),
 ): string {
-  const cleaned = notificationText(value, 100);
-  if (!cleaned) return '';
-  const language = notificationLocale(locale);
-  const copy = PUSH_COPY[language]!;
-  const languageTag = NOTIFICATION_LANGUAGE_TAGS[language]!;
-  const zone = IANAZone.isValidZone(timezone) ? timezone : 'Europe/Zurich';
-  const today = DateTime.fromMillis(now, { zone });
-
-  const formattedDay = (raw: string): string | null => {
-    const expected = DateTime.fromISO(raw, { zone });
-    if (!expected.isValid || !today.isValid) return null;
-    if (expected.startOf('day') < today.startOf('day')) return '';
-    if (expected.toISODate() === today.toISODate()) return copy.today!;
-    if (expected.toISODate() === today.plus({ days: 1 }).toISODate()) return copy.tomorrow!;
-    return expected.setLocale(languageTag).toLocaleString(DateTime.DATE_SHORT);
-  };
-
-  const window = /^(\d{4}-\d{2}-\d{2})[ T]+(\d{2}:\d{2})(?:[–-](\d{2}:\d{2}))?$/.exec(
-    cleaned,
-  );
-  if (window) {
-    const day = formattedDay(window[1]!);
-    if (!day) return '';
-    return `${day}, ${window[2]}${window[3] ? `–${window[3]}` : ''}`;
-  }
-  const expected = DateTime.fromISO(cleaned, { zone });
-  if (expected.isValid && /T\d{2}:\d{2}/.test(cleaned)) {
-    const day = formattedDay(expected.toISODate()!);
-    return day ? `${day}, ${expected.toFormat('HH:mm')}` : '';
-  }
-  return formattedDay(cleaned) ?? '';
+  return expectedDelivery(value, notificationLocale(locale), timezone, now)?.text ?? '';
 }
 
-function deliveredMessage(
-  row: JsonObject,
-  copy: Record<string, string>,
-  locale: string,
-  now: number,
-): string {
+function deliveredMessage(row: JsonObject, locale: Locale, now: number): string {
+  const copy = PUSH_COPY[locale];
   const fallback = copy.body_delivered!;
   // The queue distinguishes carrier times from date-only and observed updates.
   if (row.event_has_time !== true) return fallback;
@@ -377,38 +370,41 @@ function deliveredMessage(
   const template = sameDay ? copy.delivered_time : copy.delivered_date;
   return template!
     .replace('{{time}}', delivered.toFormat('HH:mm'))
-    .replace('{{date}}', delivered.setLocale(NOTIFICATION_LANGUAGE_TAGS[locale]!)
-      .toLocaleString(DateTime.DATE_SHORT));
+    .replace('{{date}}', notificationDay(delivered, locale));
 }
 
 const ETA_NOTIFICATION_STAGES = new Set([
   'registered', 'accepted', 'in_transit', 'customs', 'out_for_delivery',
 ]);
 
-function notificationBody(
-  row: JsonObject,
-  copy: Record<string, string>,
-  locale: string,
-  now: number,
-): string {
+/** The news a notification leads with: a title of its own, or the app's word for the stage. */
+function notificationTitle(row: JsonObject, locale: Locale): string {
   const stage = stringField(row, 'stage');
-  let message = stage === 'delivered'
-    ? deliveredMessage(row, copy, locale, now)
-    : copy[`body_${stage}`] ?? copy.body_update!;
-  if (ETA_NOTIFICATION_STAGES.has(stage)) {
-    const expected = notificationExpectedDelivery(
-      row.expected_delivery,
-      locale,
-      stringField(row, 'timezone') || 'Europe/Zurich',
-      now,
-    );
-    if (expected && !(stage === 'out_for_delivery' && expected === copy.today)) {
-      const template = row.expected_delivery_changed === true ? copy.eta_changed : copy.eta;
-      message += ` ${template!.replace('{{date}}', expected)}`;
-    }
-  }
+  const copy = PUSH_COPY[locale];
+  return notificationText(copy[`title_${stage}`] ?? appWord(locale, `stage.${stage}`) ?? copy.update, 80);
+}
 
-  const primary = notificationText(message, 220);
+/** What the step means: when the parcel arrives if that is known, the stage's own sentence otherwise. */
+function notificationDetail(row: JsonObject, locale: Locale, now: number): string {
+  const stage = stringField(row, 'stage');
+  const copy = PUSH_COPY[locale];
+  if (stage === 'delivered') return deliveredMessage(row, locale, now);
+  const expected = ETA_NOTIFICATION_STAGES.has(stage)
+    ? expectedDelivery(row.expected_delivery, locale, stringField(row, 'timezone') || 'Europe/Zurich', now)
+    : null;
+  if (!expected) return copy[`body_${stage}`] ?? copy.body_update!;
+  const changed = row.expected_delivery_changed === true ? 'eta_changed' : 'eta';
+  return copy[`${changed}_${expected.dated ? 'date' : 'day'}`]!.replace('{{date}}', expected.text);
+}
+
+/**
+ * The line under the title: what leads it (the parcel's name, for whoever may
+ * read it), then the detail, then the scan's place on a line of its own.
+ */
+function notificationBody(row: JsonObject, locale: Locale, now: number, lead = row.label): string {
+  const name = notificationText(lead, 80);
+  const detail = notificationDetail(row, locale, now);
+  const primary = notificationText(name ? `${name} · ${detail}` : capitalized(detail, languageTags[locale]), 220);
   const remaining = 220 - [...primary].length - 1;
   const location = remaining > 1 ? notificationText(row.location, Math.min(140, remaining)) : '';
   return location ? `${primary}\n${location}` : primary;
@@ -515,12 +511,14 @@ export class WebPushNotificationService {
   }
 
   async sendTest(subscription: JsonObject): Promise<void> {
-    const copy = PUSH_COPY[notificationLocale(subscription.locale)]!;
+    const locale = notificationLocale(subscription.locale);
+    const copy = PUSH_COPY[locale];
     await this.send(subscription, {
       title: copy.test_title,
       body: copy.test_body,
+      ...WEB_NOTIFICATION_PICTURES,
       tag: 'parcel-post-ready',
-      lang: notificationLocale(subscription.locale),
+      lang: locale,
       data: { url: '/' },
     });
   }
@@ -549,13 +547,11 @@ export class WebPushNotificationService {
 
   payload(row: JsonObject): JsonObject {
     const locale = notificationLocale(row.locale);
-    const copy = PUSH_COPY[locale]!;
     const packageId = stringField(row, 'package_id');
     return {
-      title: notificationText(row.label || copy.update, 80),
-      body: notificationBody(row, copy, locale, this.now()),
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      title: notificationTitle(row, locale),
+      body: notificationBody(row, locale, this.now()),
+      ...WEB_NOTIFICATION_PICTURES,
       tag: `parcel-${packageId}`,
       lang: locale,
       data: { url: `/?parcel=${packageId}` },
@@ -571,9 +567,9 @@ const FINISHED_STAGES = new Set(['delivered', 'returned']);
 
 /**
  * Browser notifications for parcel links, for people without an account. An
- * alert is told about its parcel's scans with the sentences an account gets,
- * in the alert's language, when its preset covers the scan's stage. It never
- * carries the parcel's name or number: the title is generic.
+ * alert is told about its parcel's scans with the words an account gets, in
+ * the alert's language, when its preset covers the scan's stage. It never
+ * carries the parcel's name or number.
  *
  * - A batch of new scans announces its newest covered one, and only when that
  *   is the parcel's newest, as for accounts.
@@ -666,22 +662,23 @@ export class ParcelLinkAlertService {
 
   payload(row: JsonObject): JsonObject {
     const locale = notificationLocale(row.locale);
-    const copy = PUSH_COPY[locale]!;
     const linkId = stringField(row, 'link_id');
     const stage = stringField(row, 'stage');
-    const gift = row.gift === true && row.owner !== true;
-    const title = !gift || stage === 'returned' ? copy.update
-      : stage === 'delivered' ? copy.gift_delivered : copy.gift_on_its_way;
+    const news = notificationTitle(row, locale);
+    // A gift is announced as one while it travels and when it lands, in its page's words. The step it is at
+    // then leads the line below, unless the title has just said it.
+    const gift = row.gift === true && row.owner !== true && stage !== 'returned';
+    const title = gift ? appWord(locale, stage === 'delivered' ? 'share.gift.here' : 'share.gift.headline')! : news;
+    const lead = gift && stage !== 'delivered' && stage !== 'in_transit' ? news : '';
     return {
-      // Neither the parcel's name nor its number: both are its owner's.
       title: notificationText(title, 80),
-      // The scan's place is part of what a gift keeps to itself. Nobody chose a timezone: Zurich's, as for an account without one.
+      // Neither the parcel's name nor its number: both are its owner's. The scan's place is part of what a gift
+      // keeps to itself. Nobody chose a timezone: Zurich's, as for an account without one.
       body: notificationBody(
         { ...row, timezone: 'Europe/Zurich', location: this.wrappedGift(row) ? null : row.location },
-        copy, locale, this.web.now(),
+        locale, this.web.now(), lead,
       ),
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      ...WEB_NOTIFICATION_PICTURES,
       tag: `parcel-link-${linkId}`,
       lang: locale,
       data: { url: `/p/${linkId}` },
@@ -839,7 +836,7 @@ export class NativePushNotificationService {
   }
 
   async sendTest(device: JsonObject): Promise<void> {
-    const copy = this.copy(device);
+    const copy = PUSH_COPY[this.locale(device)];
     await this.send(device, this.payload(copy.test_title!, copy.test_body!, null));
   }
 
@@ -871,10 +868,9 @@ export class NativePushNotificationService {
 
   eventPayload(row: JsonObject): JsonObject {
     const locale = this.locale(row);
-    const copy = this.copy(row);
     return this.payload(
-      notificationText(row.label || copy.update, 80),
-      notificationBody(row, copy, locale, this.now() * 1_000),
+      notificationTitle(row, locale),
+      notificationBody(row, locale, this.now() * 1_000),
       stringField(row, 'package_id'),
     );
   }
@@ -893,11 +889,7 @@ export class NativePushNotificationService {
     return payload;
   }
 
-  copy(row: JsonObject): Record<string, string> {
-    return PUSH_COPY[this.locale(row)] ?? PUSH_COPY.en!;
-  }
-
-  locale(row: JsonObject): string {
+  locale(row: JsonObject): Locale {
     return notificationLocale(stringField(row, 'locale'));
   }
 
@@ -1044,9 +1036,9 @@ export class DeliveryLiveActivityNotificationService {
     const timestamp = Math.floor(this.apns.now());
     const parcelId = stringField(row, 'package_id');
     const locale = this.apns.locale(row);
-    const copy = this.apns.copy(row);
     const stage = stringField(row, 'stage');
-    const status = copy[stage] ?? copy.update!;
+    // The words the app writes on the activities it starts itself.
+    const status = appWord(locale, `stage.${stage}`) ?? PUSH_COPY[locale].update!;
     const expected = notificationExpectedDelivery(
       row.expected_delivery,
       locale,
@@ -1057,11 +1049,11 @@ export class DeliveryLiveActivityNotificationService {
     const contentState: JsonObject = {
       parcel: {
         id: parcelId,
-        label: notificationText(row.label || copy.update, 80),
+        label: notificationText(row.label || appWord(locale, 'common.parcel'), 80),
         carrier: notificationText(carrierDisplayName(row.carrier), 80),
         status: notificationText(status, 80),
         // Older app versions already suppress a detail equal to the status.
-        detail: notificationText(stage === 'out_for_delivery' && expected && expected !== copy.today
+        detail: notificationText(stage === 'out_for_delivery' && expected && expected !== appWord(locale, 'time.today')
           ? expected : status, 100),
         phase,
       },
@@ -1079,8 +1071,8 @@ export class DeliveryLiveActivityNotificationService {
       aps['input-push-token'] = 1;
       aps['stale-date'] = timestamp + 30 * 60;
       aps.alert = {
-        title: notificationText(row.label || copy.update, 80),
-        body: notificationBody(row, copy, locale, timestamp * 1_000),
+        title: notificationTitle(row, locale),
+        body: notificationBody(row, locale, timestamp * 1_000),
       };
     } else if (kind === 'update') {
       aps['stale-date'] = timestamp + 30 * 60;
@@ -1090,8 +1082,8 @@ export class DeliveryLiveActivityNotificationService {
         : LIVE_ACTIVITY_PHASES.has(stage) ? 30 * 60 : -1;
       aps['dismissal-date'] = timestamp + graceSeconds;
       aps.alert = {
-        title: notificationText(row.label || copy.update, 80),
-        body: notificationBody(row, copy, locale, timestamp * 1_000),
+        title: notificationTitle(row, locale),
+        body: notificationBody(row, locale, timestamp * 1_000),
       };
     }
     return { aps };

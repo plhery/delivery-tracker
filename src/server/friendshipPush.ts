@@ -1,25 +1,17 @@
 import 'server-only';
-import en from '../../shared/locales/en.json';
-import fr from '../../shared/locales/fr.json';
-import de from '../../shared/locales/de.json';
-import it from '../../shared/locales/it.json';
-import es from '../../shared/locales/es.json';
-import pt from '../../shared/locales/pt.json';
-import pl from '../../shared/locales/pl.json';
-import type { NativePushNotificationService, WebPushNotificationService, PushSummary } from './push';
+import {
+  friendNotificationCopy, WEB_NOTIFICATION_PICTURES,
+  type NativePushNotificationService, type WebPushNotificationService, type PushSummary,
+} from './push';
 import type { SupabaseServiceClient } from './supabase';
 import type { JsonObject } from './types';
 import { captureOperationalError, databaseUnavailable, logOperationalEvent, errorType } from './observability';
 
-const copy = { en, fr, de, it, es, pt, pl };
 export function friendshipNotification(row: JsonObject): { web: JsonObject; native: JsonObject } {
-  const requested = String(row.locale ?? 'en').split(/[-_]/)[0]!.toLowerCase();
-  const language = Object.hasOwn(copy, requested) ? requested as keyof typeof copy : 'en';
-  const title = copy[language]['friends.invitationAccepted'].replace('{{name}}', String(row.nickname ?? ''));
-  const body = copy[language]['friends.viewPassport'];
+  const { locale, title, body } = friendNotificationCopy(row.locale, String(row.nickname ?? ''));
   const id = String(row.friend_id);
   return {
-    web: { title, body, lang: language, icon: '/icons/icon-192.png', badge: '/icons/icon-192.png',
+    web: { title, body, lang: locale, ...WEB_NOTIFICATION_PICTURES,
       tag: `friend-${id}`, data: { url: `/?view=friends&friend=${encodeURIComponent(id)}` } },
     native: { aps: { alert: { title, body }, sound: 'default', badge: 1, 'thread-id': 'friends' }, kind: 'friend_accepted', friend_id: id },
   };

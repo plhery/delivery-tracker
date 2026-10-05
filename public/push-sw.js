@@ -21,13 +21,13 @@ self.addEventListener('push', (event) => {
   );
   // Matches the generic update copy in src/server/push.ts.
   const fallbackCopy = {
-    en: ['Parcel update', 'There’s an update to your parcel. Open tracking for details.'],
-    de: ['Paket-Update', 'Es gibt Neuigkeiten zu deinem Paket. Öffne die Sendungsverfolgung für Details.'],
-    fr: ['Mise à jour du colis', 'Du nouveau pour ton colis. Ouvre le suivi pour les détails.'],
-    it: ['Aggiornamento del pacco', 'Ci sono novità sul pacco. Apri il tracciamento per i dettagli.'],
-    es: ['Novedades del paquete', 'Hay novedades de tu paquete. Abre el seguimiento para ver los detalles.'],
-    pt: ['Atualização do envio', 'Há novidades sobre o teu envio. Abre o seguimento para ver os detalhes.'],
-    pl: ['Aktualizacja przesyłki', 'Są nowe informacje o Twojej przesyłce. Otwórz śledzenie, aby zobaczyć szczegóły.'],
+    en: ['Parcel update', 'Tap to see what’s new'],
+    de: ['Neues vom Paket', 'Tippe, um zu sehen, was sich getan hat'],
+    fr: ['Des nouvelles du colis', 'Touche pour voir ce qui a changé'],
+    it: ['Novità sul pacco', 'Tocca per vedere cos’è cambiato'],
+    es: ['Novedades del paquete', 'Toca para ver qué hay de nuevo'],
+    pt: ['Atualização do envio', 'Toca para ver as novidades'],
+    pl: ['Nowe wieści o przesyłce', 'Stuknij, aby zobaczyć szczegóły'],
   };
   const requestedLanguage = String(payload.lang || self.navigator?.language || 'en').split(/[-_]/)[0].toLowerCase();
   const lang = Object.hasOwn(fallbackCopy, requestedLanguage) ? requestedLanguage : 'en';
@@ -37,7 +37,7 @@ self.addEventListener('push', (event) => {
     body: text(payload.body, fallbackBody, 500),
     lang,
     icon: text(payload.icon, '/icons/icon-192.png', 2_048),
-    badge: text(payload.badge, '/icons/icon-192.png', 2_048),
+    badge: text(payload.badge, '/icons/badge-96.png', 2_048),
     tag: text(payload.tag, 'parcel-update', 120),
     renotify: true,
     data: payload.data && typeof payload.data === 'object' ? payload.data : { url: '/' },

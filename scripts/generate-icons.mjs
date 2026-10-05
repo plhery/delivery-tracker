@@ -27,6 +27,30 @@ function markSvg({ bleed = false, scale = 1 } = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">\n${lines.map((line) => `  ${line}\n`).join('')}</svg>\n`;
 }
 
+/**
+ * The mark's eyes alone, white on nothing, for the badge of a notification. Android keeps only
+ * a badge's outline and paints it in one colour, so the tile would come out as a plain square.
+ * The light shapes show and the dark ones are cut out of them; a highlight is too small to
+ * survive in a status bar and is left out.
+ */
+function badgeSvg() {
+  const speck = size * 0.03;
+  const drawn = shapes.filter(({ rx, r }) => (rx ?? r) > speck);
+  const light = ({ fill }) => Number.parseInt(fill.slice(1, 3), 16) > 127;
+  const edges = (axis, radius) => drawn.flatMap((shape) => [shape[axis] - (shape[radius] ?? shape.r), shape[axis] + (shape[radius] ?? shape.r)]);
+  const [left, right, top, bottom] = [Math.min(...edges('cx', 'rx')), Math.max(...edges('cx', 'rx')), Math.min(...edges('cy', 'ry')), Math.max(...edges('cy', 'ry'))];
+  // A square around the eyes, with a little air on the sides they reach.
+  const side = Math.max(right - left, bottom - top) * 1.08;
+  const box = `${(left + right - side) / 2} ${(top + bottom - side) / 2} ${side} ${side}`;
+  const [x, y] = box.split(' ');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}">
+  <mask id="eyes">
+${drawn.map((shape) => `    ${element({ ...shape, fill: light(shape) ? '#fff' : '#000' })}\n`).join('')}  </mask>
+  <rect x="${x}" y="${y}" width="${side}" height="${side}" fill="#fff" mask="url(#eyes)"/>
+</svg>
+`;
+}
+
 /** How far an ellipse or a circle, the only shapes the mark is drawn in, reaches from the centre of the square. */
 function reach({ tag, cx, cy, rx, ry, r }) {
   if (tag !== 'ellipse' && tag !== 'circle') throw new Error(`The reach of a ${tag} is not measured`);
@@ -79,6 +103,7 @@ await write('public/icons/favicon.svg', markSvg());
 await write('public/favicon.ico', ico([16, 32, 48]));
 await write('public/icons/icon-192.png', render(markSvg(), 192));
 await write('public/icons/icon-512.png', render(markSvg(), 512));
+await write('public/icons/badge-96.png', render(badgeSvg(), 96));
 await write('public/icons/icon-maskable-512.png', opaque(render(markSvg({ bleed: true, scale: maskableScale }), 512)));
 await write('public/icons/apple-touch-icon.png', opaque(render(markSvg({ bleed: true }), 180)));
 await write('ios/PeekDeliveryTracker/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png', opaque(render(markSvg({ bleed: true }), 1024)));

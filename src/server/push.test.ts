@@ -39,11 +39,11 @@ function alert(payload: JsonObject): JsonObject {
 }
 
 describe('friendly parcel notifications', () => {
-  it.each(['web', 'native', 'live'])('uses the carrier delivery time and drops the ETA for %s alerts', (channel) => {
+  it.each(['web', 'native', 'live'])('leads with the news, then names the parcel and when it arrived, for %s alerts', (channel) => {
     const payload = channel === 'web' ? web.payload(delivered)
       : alert(channel === 'native' ? native.eventPayload(delivered) : live.payload(delivered, 'end'));
     expect(payload).toMatchObject({
-      title: 'Coffee beans', body: "Your parcel was delivered at 14:32.",
+      title: 'It’s arrived', body: 'Coffee beans · delivered at 14:32',
     });
     // Keep tapping the notification linked to the same parcel.
     expect(web.payload(delivered).data).toEqual({ url: '/?parcel=package-1' });
@@ -51,29 +51,54 @@ describe('friendly parcel notifications', () => {
   });
 
   it.each([
-    ['en', "Your parcel was delivered at 14:32."],
-    ['de-CH', "Dein Paket wurde um 14:32 Uhr zugestellt."],
-    ['fr', "Ton colis a été livré à 14:32."],
-    ['it', "Il tuo pacco è stato consegnato alle 14:32."],
-    ['es-ES', "Tu paquete se entregó a las 14:32."],
-    ['pt-PT', "O teu envio foi entregue às 14:32."],
-    ['pl-PL', "Twoja przesyłka została dostarczona o 14:32."],
+    ['registered', 'Announced by the sender'],
+    ['accepted', 'Received by carrier'],
+    ['in_transit', 'On its way'],
+    ['customs', 'At customs'],
+    ['exception', 'Needs attention'],
+    ['out_for_delivery', 'Out for delivery'],
+    ['ready_for_pickup', 'Ready to collect'],
+    ['failed_attempt', 'Delivery missed'],
+    ['returned', 'On its way back'],
+    ['something_new', 'Parcel update'],
+  ])('titles a %s scan with the news, in its own words or the app\'s', (stage, title) => {
+    expect(web.payload({ ...delivered, stage }).title).toBe(title);
+    expect(alert(native.eventPayload({ ...delivered, stage })).title).toBe(title);
+  });
+
+  it.each([
+    ['en', 'Coffee beans · delivered at 14:32'],
+    ['de-CH', 'Coffee beans · um 14:32 Uhr zugestellt'],
+    ['fr', 'Coffee beans · livré à 14:32'],
+    ['it', 'Coffee beans · consegnato alle 14:32'],
+    ['es-ES', 'Coffee beans · entregado a las 14:32'],
+    ['pt-PT', 'Coffee beans · entregue às 14:32'],
+    ['pl-PL', 'Coffee beans · dostarczona o 14:32'],
   ])('localizes delivery sentences for %s devices', (locale, body) => {
     expect(alert(native.eventPayload({ ...delivered, locale })).body).toBe(body);
   });
 
+  it.each([
+    ['en', 'Delivered at 14:32', 'Peek is keeping an eye on it'],
+    ['de', 'Um 14:32 Uhr zugestellt', 'Peek behält es im Auge'],
+    ['pt', 'Entregue às 14:32', 'O Peek está de olho nele'],
+  ])('starts the line with a capital when a %s parcel has no name', (locale, arrived, customs) => {
+    expect(web.payload({ ...delivered, locale, label: '' }).body).toBe(arrived);
+    expect(web.payload({ ...delivered, locale, label: null, stage: 'customs', expected_delivery: null }).body).toBe(customs);
+  });
+
   it('uses the recipient timezone and a safe fallback for an invalid timezone', () => {
     expect(web.payload({ ...delivered, timezone: 'America/New_York' }).body)
-      .toBe("Your parcel was delivered at 08:32.");
+      .toBe('Coffee beans · delivered at 08:32');
     expect(web.payload({ ...delivered, timezone: 'Invalid/Zone' }).body)
-      .toBe("Your parcel was delivered at 14:32.");
+      .toBe('Coffee beans · delivered at 14:32');
   });
 
   it('does not call delayed alerts recent, and dates deliveries from a previous day', () => {
     expect(web.payload({ ...delivered, occurred_at: '2026-09-07T09:32:00Z' }).body)
-      .toBe("Your parcel was delivered at 11:32.");
+      .toBe('Coffee beans · delivered at 11:32');
     expect(web.payload({ ...delivered, occurred_at: '2026-09-06T12:32:00Z' }).body)
-      .toBe("Your parcel was delivered on 06.09.2026 at 14:32.");
+      .toBe('Coffee beans · delivered on 6 September at 14:32');
   });
 
   it.each([
@@ -83,14 +108,14 @@ describe('friendly parcel notifications', () => {
     { occurred_at: 'invalid' },
     { occurred_at: '2026-09-08T12:32:00Z' },
   ])('omits the clock time when the carrier time is unavailable or unreliable: %j', (changes) => {
-    expect(web.payload({ ...delivered, ...changes }).body).toBe("Your parcel has been delivered.");
+    expect(web.payload({ ...delivered, ...changes }).body).toBe('Coffee beans · delivered');
   });
 
   it.each([
-    ['ready_for_pickup', "Your parcel is ready to collect. Open tracking for pickup details."],
-    ['failed_attempt', "The carrier couldn’t deliver your parcel. Open tracking for the next steps."],
-    ['returned', "Your parcel is being returned to the sender. Contact the sender for the next steps."],
-    ['exception', "The carrier reported a problem with your parcel. Open tracking for the next steps."],
+    ['ready_for_pickup', 'Coffee beans · waiting at the pickup point'],
+    ['failed_attempt', 'Coffee beans · the carrier couldn’t deliver it. Tap to see what happens next.'],
+    ['returned', 'Coffee beans · returning to the sender'],
+    ['exception', 'Coffee beans · the carrier flagged a problem. Tap to see what to do.'],
   ])('does not repeat an obsolete estimate for %s', (stage, body) => {
     expect(web.payload({ ...delivered, stage }).body).toBe(body);
   });
@@ -104,43 +129,96 @@ describe('friendly parcel notifications', () => {
       .toBe((live.payload({ ...row, stage: 'failed_attempt' }, 'end').aps as JsonObject)['dismissal-date']);
   });
 
-  it('omits a redundant today estimate from out-for-delivery alerts', () => {
+  it('says when a parcel out for delivery arrives, or that it is close', () => {
     const row = { ...delivered, stage: 'out_for_delivery', expected_delivery_changed: false };
-    expect(web.payload(row).body).toBe("Your parcel is out for delivery.");
+    expect(web.payload(row).body).toBe('Coffee beans · arriving today');
     expect(alert(live.payload(row, 'start')).body).toBe(web.payload(row).body);
+    expect(web.payload({ ...row, expected_delivery: null }).body).toBe('Coffee beans · almost there');
+  });
+
+  it('says when the parcel arrives instead of what the step means, once that is known', () => {
+    const row = { ...delivered, stage: 'in_transit', expected_delivery_changed: false };
+    expect(web.payload({ ...row, expected_delivery: null }).body).toBe('Coffee beans · one step closer');
+    expect(web.payload({ ...row, expected_delivery: '2026-09-08' }).body).toBe('Coffee beans · arriving tomorrow');
+    expect(web.payload({ ...row, expected_delivery: '2026-09-11' }).body).toBe('Coffee beans · arriving 11 September');
+    expect(web.payload({ ...row, expected_delivery: '2026-09-11', expected_delivery_changed: true }).body)
+      .toBe('Coffee beans · now arriving 11 September');
+  });
+
+  it.each([
+    ['de', 'kommt morgen', 'kommt am 11. September', 'neuer Liefertermin: 11. September'],
+    ['fr', 'arrive demain', 'arrive le 11 septembre', 'arrive finalement le 11 septembre'],
+    ['it', 'arriva domani', 'arrivo previsto: 11 settembre', 'nuova data prevista: 11 settembre'],
+    ['es', 'llega mañana', 'llega el 11 de septiembre', 'ahora llega el 11 de septiembre'],
+    ['pt', 'chega amanhã', 'chega a 11 de setembro', 'afinal chega a 11 de setembro'],
+    ['pl', 'dotrze jutro', 'dotrze 11 września', 'nowy termin: 11 września'],
+  ])('fits a day of the year into a %s sentence', (locale, tomorrow, dated, changed) => {
+    const row = { ...delivered, locale, stage: 'in_transit', expected_delivery_changed: false };
+    expect(web.payload({ ...row, expected_delivery: '2026-09-08' }).body).toBe(`Coffee beans · ${tomorrow}`);
+    expect(web.payload({ ...row, expected_delivery: '2026-09-11' }).body).toBe(`Coffee beans · ${dated}`);
+    expect(web.payload({ ...row, expected_delivery: '2026-09-11', expected_delivery_changed: true }).body)
+      .toBe(`Coffee beans · ${changed}`);
   });
 
   it('keeps the delivery message readable before a long Unicode location', () => {
     const body = String(web.payload({ ...delivered, location: '😀'.repeat(250) }).body);
-    expect(body).toMatch(/^Your parcel was delivered at 14:32\.\n😀+…$/u);
+    expect(body).toMatch(/^Coffee beans · delivered at 14:32\n😀+…$/u);
     expect([...body].length).toBeLessThanOrEqual(220);
+  });
+
+  it('sends the mark\'s eyes as the badge Android reduces to an outline', () => {
+    expect(web.payload(delivered)).toMatchObject({ icon: '/icons/icon-192.png', badge: '/icons/badge-96.png' });
   });
 });
 
 describe('useful, localized tracking updates', () => {
   it.each(['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'])('uses the same %s copy on web, iOS and Live Activities', (locale) => {
     for (const stage of ['pending', 'registered', 'accepted', 'in_transit', 'customs', 'exception', 'out_for_delivery', 'ready_for_pickup', 'delivered', 'failed_attempt', 'returned']) {
-      const row = { ...delivered, locale, stage };
-      const browser = web.payload(row);
-      expect(browser.lang).toBe(locale);
-      expect(browser.body).toBe(alert(native.eventPayload(row)).body);
-      if (['out_for_delivery', 'delivered', 'ready_for_pickup', 'failed_attempt', 'returned', 'exception'].includes(stage)) {
-        expect(browser.body).toBe(alert(live.payload(row, stage === 'out_for_delivery' ? 'start' : 'end')).body);
+      for (const expected_delivery of ['2026-09-07', '2026-09-11', null]) {
+        const row = { ...delivered, locale, stage, expected_delivery };
+        const browser = web.payload(row);
+        expect(browser.lang).toBe(locale);
+        expect(browser.title).toBe(alert(native.eventPayload(row)).title);
+        expect(browser.body).toBe(alert(native.eventPayload(row)).body);
+        if (['out_for_delivery', 'delivered', 'ready_for_pickup', 'failed_attempt', 'returned', 'exception'].includes(stage)) {
+          expect(alert(live.payload(row, stage === 'out_for_delivery' ? 'start' : 'end'))).toEqual({ title: browser.title, body: browser.body });
+        }
+        expect(`${String(browser.title)} ${String(browser.body)}`).not.toMatch(/\{\{|undefined|ETA/);
+        expect(String(browser.body)).toMatch(/^Coffee beans · \S/);
+        if (locale !== 'en') expect(browser.body).not.toBe(web.payload({ ...row, locale: 'en' }).body);
       }
-      expect(String(browser.body)).not.toMatch(/\{\{|undefined|ETA/);
-      if (locale !== 'en') expect(browser.body).not.toBe(web.payload({ ...row, locale: 'en' }).body);
     }
   });
 
   it('keeps a useful delivery window but removes past or malformed estimates', () => {
     const row = { ...delivered, stage: 'out_for_delivery', locale: 'fr', expected_delivery_changed: false };
     expect(web.payload({ ...row, expected_delivery: '2026-09-07 14:00–16:00' }).body)
-      .toBe('Ton colis est en livraison. Livraison prévue : aujourd’hui, 14:00–16:00.');
-    for (const expected_delivery of ['2026-09-06', 'invalid', '2026-09-07']) {
-      expect(web.payload({ ...row, expected_delivery }).body).toBe('Ton colis est en livraison.');
+      .toBe('Coffee beans · arrive aujourd’hui, 14:00–16:00');
+    for (const expected_delivery of ['2026-09-06', 'invalid']) {
+      expect(web.payload({ ...row, expected_delivery }).body).toBe('Coffee beans · presque arrivé');
     }
-    expect(((live.payload({ ...row, expected_delivery: '2026-09-07' }, 'start').aps as JsonObject)['content-state'] as JsonObject).parcel)
-      .toMatchObject({ detail: 'En cours de livraison', status: 'En cours de livraison' });
+    expect(web.payload({ ...row, expected_delivery: '2026-09-07' }).body).toBe('Coffee beans · arrive aujourd’hui');
+  });
+
+  it('writes a Live Activity in the app\'s own words', () => {
+    const row = { ...delivered, stage: 'out_for_delivery', locale: 'fr', expected_delivery_changed: false };
+    const parcel = (changes: JsonObject) => ((live.payload({ ...row, ...changes }, 'start').aps as JsonObject)['content-state'] as JsonObject).parcel;
+    expect(parcel({})).toMatchObject({ label: 'Coffee beans', detail: 'En livraison', status: 'En livraison' });
+    expect(parcel({ expected_delivery: '2026-09-08 09:00–12:00' })).toMatchObject({ detail: 'demain, 09:00–12:00', status: 'En livraison' });
+    expect(parcel({ label: '', stage: 'failed_attempt' })).toMatchObject({ label: 'Colis', status: 'Tentative de livraison' });
+  });
+
+  it.each(['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'])('confirms that notifications are on in %s', async (locale) => {
+    const sent: JsonObject[] = [];
+    const browser = new WebPushNotificationService({} as never, 'public-key', 'private-key', 'https://delivery.example', () => now);
+    vi.spyOn(browser, 'send').mockImplementation(async (_row, payload) => { sent.push(payload!); });
+    await browser.sendTest({ locale });
+    await browser.sendTest({ locale: 'en' });
+    expect(sent[0]).toMatchObject({ lang: locale, badge: '/icons/badge-96.png', data: { url: '/' } });
+    expect(String(sent[0]!.title)).toContain('Peek');
+    expect(String(sent[0]!.body).length).toBeGreaterThan(40);
+    if (locale !== 'en') expect(sent[0]!.body).not.toBe(sent[1]!.body);
+    expect(sent[1]).toMatchObject({ title: 'You’ll hear from Peek' });
   });
 });
 
