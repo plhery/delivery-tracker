@@ -103,3 +103,8 @@ gh workflow run adopt-scraper.yml -f version=1.2.3 -f database_ready=true
 The gate compares catalog data. Rules written as scraper code, such as URL shapes and the
 Mondial Relay barcode checksum, are outside it. A changed stage also needs the `Stage`
 enum in `contracts/openapi.json` edited by hand.
+
+A checksum a detection rule names must also exist in `ios/PeekDeliveryTracker/CarrierCatalog.swift`.
+The iPhone app passes every number through a checksum it does not know, so its replay of the
+scraper's detection answers fails after the adoption. Add the checksum there before the
+release that names it.
