@@ -28,7 +28,9 @@
   "bpost": {
     "decal": "bpost"
   },
-  "bring-posten": {},
+  "bring-posten": {
+    "decal": "bring"
+  },
   "brt": {
     "decal": "dpd"
   },
@@ -60,7 +62,8 @@
     "palette": {
       "accent": "#06416a",
       "brand-light": "#06416a"
-    }
+    },
+    "decal": "correios-br"
   },
   "correos-chile": {},
   "correos-express": {
@@ -77,8 +80,12 @@
     },
     "decal": "correos"
   },
-  "ctt": {},
-  "ctt-express": {},
+  "ctt": {
+    "decal": "ctt"
+  },
+  "ctt-express": {
+    "decal": "ctt"
+  },
   "dachser": {},
   "delhivery": {},
   "delivengo": {},
@@ -162,7 +169,9 @@
   "hermes-de": {
     "decal": "hermes"
   },
-  "hongkong-post": {},
+  "hongkong-post": {
+    "decal": "hongkong-post"
+  },
   "india-post": {
     "decal": "india-post",
     "palette": {
@@ -182,7 +191,9 @@
     "decal": "japan-post"
   },
   "jd-logistics": {},
-  "korea-post": {},
+  "korea-post": {
+    "decal": "korea-post"
+  },
   "la-poste": {
     "decal": "la-poste",
     "palette": {
@@ -203,18 +214,26 @@
   },
   "mrw": {},
   "nacex": {},
-  "ninja-van": {},
+  "ninja-van": {
+    "decal": "ninja-van"
+  },
   "nova-poshta": {
     "decal": "nova-poshta"
   },
-  "nz-post": {},
+  "nz-post": {
+    "decal": "nz-post"
+  },
   "old-dominion": {},
   "ontrac": {},
   "paack": {},
-  "packeta": {},
+  "packeta": {
+    "decal": "packeta"
+  },
   "parcelforce": {},
   "planzer": {},
-  "poczta-polska": {},
+  "poczta-polska": {
+    "decal": "poczta-polska"
+  },
   "pos-malaysia": {},
   "poste-italiane": {
     "palette": {
@@ -239,7 +258,14 @@
     }
   },
   "seur": {},
-  "sf-express": {},
+  "sf-express": {
+    "decal": "sf-express",
+    "palette": {
+      "truck": "#231815",
+      "edge": "#000000",
+      "accent": "#ffffff"
+    }
+  },
   "shipup": {},
   "singapore-post": {},
   "spee-dee": {},
@@ -259,7 +285,9 @@
   "swiss-post-cargo": {
     "family": "swiss-post"
   },
-  "thailand-post": {},
+  "thailand-post": {
+    "decal": "thailand-post"
+  },
   "the-courier-guy": {},
   "tipsa": {
     "palette": {
@@ -273,7 +301,8 @@
     "palette": {
       "accent": "#0e2f4b",
       "brand-light": "#0e2f4b"
-    }
+    },
+    "decal": "ukrposhta"
   },
   "uniuni": {},
   "unknown": {},

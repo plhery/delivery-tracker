@@ -57,7 +57,9 @@ describe('carrier brand', () => {
     for (const name of [
       'ups', 'fedex', 'dpd', 'amazon', 'japan-post', 'swiss-post', 'quickpac', 'la-poste', 'chronopost', 'india-post',
       'mondial-relay', 'postnl', 'usps', 'royal-mail', 'canada-post', 'australia-post', 'tnt', 'correos', 'yamato',
-      'china-post', 'inpost', 'bpost', 'austrian-post', 'hermes', 'nova-poshta',
+      'china-post', 'inpost', 'bpost', 'austrian-post', 'hermes', 'nova-poshta', 'korea-post', 'nz-post',
+      'poczta-polska', 'ukrposhta', 'correios-br', 'ctt', 'sf-express', 'ninja-van', 'hongkong-post', 'thailand-post',
+      'bring', 'packeta',
     ] as const) {
       for (const shape of CARRIER_TRUCK.decals[name]) {
         if (shape.type === 'circle') {

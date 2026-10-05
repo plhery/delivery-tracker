@@ -27,7 +27,9 @@ export type CarrierPalette = Record<BrandProperty, string>;
 export type CarrierDecal = 'default' | 'dhl' | 'ups' | 'fedex' | 'dpd' | 'amazon' | 'japan-post'
   | 'swiss-post' | 'quickpac' | 'la-poste' | 'chronopost' | 'india-post' | 'mondial-relay' | 'postnl'
   | 'usps' | 'royal-mail' | 'canada-post' | 'australia-post' | 'tnt' | 'correos' | 'yamato'
-  | 'china-post' | 'inpost' | 'bpost' | 'austrian-post' | 'hermes' | 'nova-poshta';
+  | 'china-post' | 'inpost' | 'bpost' | 'austrian-post' | 'hermes' | 'nova-poshta' | 'korea-post'
+  | 'nz-post' | 'poczta-polska' | 'ukrposhta' | 'correios-br' | 'ctt' | 'sf-express' | 'ninja-van'
+  | 'hongkong-post' | 'thailand-post' | 'bring' | 'packeta';
 
 /** How one property is mixed out of the carrier's catalog color. */
 export interface BrandDerivationStep {

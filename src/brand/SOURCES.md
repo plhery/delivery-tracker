@@ -109,3 +109,15 @@ and [`truck.json`](truck.json).
 | `austrian-post` | Black outline of the horn and its mouthpiece on yellow | [post.at](https://www.post.at/) |
 | `hermes` (`hermes-de`, `hermes`) | White wing of speed lines on blue | [myhermes.de](https://www.myhermes.de/) |
 | `nova-poshta` | White arrows pointing four ways on red | [novaposhta.ua](https://novaposhta.ua/) |
+| `korea-post` | White ribbon of a swallow ahead of three chevrons on red; the chevrons' orange and yellow are approximations | [koreapost.go.kr](https://postman.koreapost.go.kr/kpost/subIndex/4263.do) |
+| `nz-post` | White striped loop in a ring on red | [nzpost.co.nz](https://www.nzpost.co.nz/) |
+| `poczta-polska` | White post horn on red | [poczta-polska.pl](https://www.poczta-polska.pl/) |
+| `ukrposhta` | Navy horn with its bell opening upwards on yellow | [ukrposhta.ua](https://www.ukrposhta.ua/en) |
+| `correios-br` | Gold arrow and blue arrow, interlocked, on yellow; the gold is an approximation | [correios.com.br](https://www.correios.com.br/) |
+| `ctt` (`ctt`, `ctt-express`) | White horseman with his horn on red | [ctt.pt](https://www.ctt.pt/) |
+| `sf-express` | White ring around its two letters in plain strokes, on the logo's black | [sf-express.com](https://www.sf-express.com/chn/en/) |
+| `ninja-van` | Black hooded face in a white ring on red | [ninjavan.co](https://www.ninjavan.co/) |
+| `hongkong-post` | White hummingbird and its wing on green | [hongkongpost.hk](https://www.hongkongpost.hk/en/home/index.html) |
+| `thailand-post` | Envelope folded into a dart, in blue, white and grey on red; the blue and grey are approximations | [international.thailandpost.com](https://international.thailandpost.com/) |
+| `bring` (`bring-posten`) | Ring in a white half and a grey half on green; the grey is an approximation | [bring.com](https://www.bring.com/) |
+| `packeta` | White taped box drawn as a solid on red; the greys are approximations | [packeta.com](https://www.packeta.com/) |
