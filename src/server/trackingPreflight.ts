@@ -3,12 +3,14 @@ import { carrierErrorKind, retryAfterMsOf, normalizeCarrierResult, universalPlan
 import { UniversalTracker } from 'universal-parcel-scraper/node';
 import { hostAdapterEnvironment } from './adapterRegistry';
 import type { ProviderHealth } from './trackingRouting';
+import type { ApiCarrierId } from '../generated/apiContract';
+import { providerCarrier } from './providerCarrier';
 
 export type PreflightOutcome = { provider: UniversalSource; outcome: 'history' | 'no_history' | 'input_required' | 'unavailable' | 'deferred' };
 const BUDGET_MS = 8_000;
 const TTL_MS = 5 * 60_000;
 const MAX_ENTRIES = 500;
-interface PreflightAnswer { providers: PreflightOutcome[]; trackingFound?: boolean }
+interface PreflightAnswer { providers: PreflightOutcome[]; trackingFound?: boolean; carrier?: ApiCarrierId }
 interface State {
   histories: Map<string, { at: number; result: CarrierResult }>;
   answers: Map<string, { at: number; answer: PreflightAnswer }>;
@@ -38,6 +40,7 @@ async function lookup(number: string, health: ProviderHealth, signal: AbortSigna
   const bounded = AbortSignal.any([signal, controller.signal, AbortSignal.timeout(BUDGET_MS)]);
   const deadline = performance.now() + BUDGET_MS;
   const sources = universalPlan({ trackingNumber: number }).sources.filter((source) => source === 'Ship24' || source === 'ParcelsApp');
+  const identities = new Set<ApiCarrierId | undefined>();
   const providers = await Promise.all(sources.map(async (provider): Promise<PreflightOutcome> => {
     let lease: Awaited<ReturnType<ProviderHealth['acquireTrackingProvider']>>;
     try {
@@ -62,6 +65,7 @@ async function lookup(number: string, health: ProviderHealth, signal: AbortSigna
         kind = 'not_found'; return { provider, outcome: 'no_history' };
       }
       remember(state.histories, `${provider}:${number}`, { at: Date.now(), result: structuredClone(result) });
+      identities.add(providerCarrier(result, number));
       return { provider, outcome: 'history' };
     } catch (error) {
       if (signal.aborted) { kind = 'not_found'; return { provider, outcome: 'unavailable' }; }
@@ -78,7 +82,9 @@ async function lookup(number: string, health: ProviderHealth, signal: AbortSigna
   }));
   signal.throwIfAborted();
   controller.abort();
-  return { providers, ...(providers.some(({ outcome }) => outcome === 'history') ? { trackingFound: true } : {}) };
+  const carrier = identities.size === 1 ? [...identities][0] : undefined;
+  return { providers, ...(providers.some(({ outcome }) => outcome === 'history') ? { trackingFound: true } : {}),
+    ...(carrier ? { carrier } : {}) };
 }
 
 /** Bounded anonymous checks, shared by concurrent Add requests and reused by the first sync. */

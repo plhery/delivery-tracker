@@ -57,3 +57,17 @@ it('cancels abandoned work without counting a provider outage or retaining histo
   expect(service.finishTrackingProvider.mock.calls.map((call) => call[2])).toEqual(['not_found', 'not_found']);
   expect(takePreflightHistory('Ship24', '1234500099', null)).toBeUndefined();
 });
+
+it('returns one carrier when every available history agrees on its dated movement', async () => {
+  vi.spyOn(UniversalTracker.prototype, 'fetchSource').mockResolvedValue({ ...history,
+    discovered_carrier: 'dhl-express', reported_carriers: ['DHL Express'] });
+  expect(await preflightTracking('1234500201', health())).toMatchObject({ carrier: 'dhl-express', trackingFound: true });
+});
+it('keeps conflicting provider identities unresolved', async () => {
+  vi.spyOn(UniversalTracker.prototype, 'fetchSource').mockImplementation(async (source) => ({ ...history,
+    discovered_carrier: source === 'Ship24' ? 'dhl-express' : 'tipsa',
+    reported_carriers: [source === 'Ship24' ? 'DHL Express' : 'TIPSA'] }));
+  const answer = await preflightTracking('1234500212', health());
+  expect(answer.trackingFound).toBe(true);
+  expect(answer.carrier).toBeUndefined();
+});

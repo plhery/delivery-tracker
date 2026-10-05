@@ -17,6 +17,7 @@ import { latestResultTime } from 'universal-parcel-scraper/app';
 import type { Recognition, TrackingContext } from 'universal-parcel-scraper/node';
 import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from 'universal-parcel-scraper';
 import { BROWSER_RECOGNITION_BUDGET_MS, MAX_BROWSER_RECOGNITIONS } from './browserRecognition';
+import { providerCarrier } from './providerCarrier';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -286,6 +287,14 @@ export class TrackingRouter {
         state.configured_carrier = provider;
         value.correction = { carrier: provider, trackingUrl: state.confirmed_tracking_url ?? null,
           postcode: state.confirmed_postcode ?? null };
+      }
+      // A provider can name an unknown parcel without pretending the carrier answered.
+      const identified = declared === 'unknown' && !withoutProgress && !state.confirmed_carrier
+        && !metadata.original_carrier && universalNumber === number && sources.includes(provider as UniversalSource)
+        ? providerCarrier(value.result, number) : undefined;
+      if (identified) {
+        state.configured_carrier = identified;
+        value.correction = { carrier: identified, trackingUrl: null, postcode: null };
       }
       return { ...value, result: { ...value.result, routing: state,
         ...(localHistory ? { direct_local_history: localHistory } : {}),

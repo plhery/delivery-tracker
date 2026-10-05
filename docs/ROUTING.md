@@ -15,7 +15,9 @@ number, Ship24 and ParcelsApp share a short lookup budget before browser confirm
 They run only after the request allowance is granted. A successful universal answer
 returns immediately; direct confirmation continues after saving. Their outcomes distinguish missing
 history, recipient input, cooldowns and service failures. Universal history proves that
-tracking is available; a direct carrier still confirms its identity. The Add button stays
+tracking is available. A single catalog carrier named with dated movement identifies
+an unknown parcel; conflicting names, bare brands and registration-only history stay
+unresolved. Direct confirmation remains necessary to replace a selected carrier. The Add button stays
 available while the check runs, and the saved parcel continues the full lookup chain.
 
 Concurrent anonymous checks share work until their last caller cancels. A process-wide
@@ -170,7 +172,7 @@ Post 17TRACK route skip shadow checks.
 | Wrong carrier selected, right one supported | On failure, try the detected carrier, then a saved confirmed route, then the carriers that recognize the number, then universals. When a universal names a supported carrier, the router asks that carrier's adapter directly. A bare brand ("DPD Group") counts only when the number leaves one of the brand's catalog networks, by shape or a preferred rule such as a DPD depot range. It swaps only after that adapter returns real progress on the same number, at least as recent as what we have. The UI shows "Swapped automatically from X" for 12 h. |
 | Carrier needs a postcode or capability URL | Report `carrier_input_required` and continue with universals. Inputs are never borrowed from another carrier. An optional input (DPD's postcode) does not block a lookup; the lookup runs without it. |
 | Only one or two universals know the carrier | The carrier's order asks them first, and the one that answers is pinned. No fan-out on normal successful checks. |
-| Unknown carrier | Try one strong direct candidate if there is one, then the carriers that recognize the number, otherwise discover a universal. Never invent a carrier from a number's shape: a probe adopts a carrier only on its own real progress. Once found, the carrier replaces it without the "Swapped automatically" notice, as it does an unknown postal carrier: no carrier was chosen. |
+| Unknown carrier | Try one strong direct candidate if there is one, then the carriers that recognize the number, otherwise discover a universal. A number's shape stays a suggestion. One carrier explicitly named by universal dated movement can identify an unknown parcel while the universal remains its source. Replacing a selected carrier still needs direct confirmation. Once found, the carrier replaces it without the "Swapped automatically" notice, as it does an unknown postal carrier: no carrier was chosen. |
 | A universal returns another parcel | Numbers are reused and carriers' number spaces overlap. For a parcel filed under a specific carrier, a universal history counts as no history when every carrier it names is a different catalog carrier and its newest scan is more than 30 days older than the parcel. The next provider is asked. |
 | Everything fails | Keep progress, store the next check time, keep affinity until a replacement works. |
 | User switches to a worse carrier | Check the new choice first. If the previously confirmed route still works, restore it with the same notice, using the postcode or link saved with it. Choosing the confirmed carrier again replaces those with what the user entered, so a cleared postcode is not reused. Generation fencing cancels in-flight work. |

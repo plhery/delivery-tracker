@@ -625,6 +625,25 @@ describe('TrackingSyncService', () => {
     expect(adapter.fetchUniversal).toHaveBeenCalledTimes(1);
   });
 
+  it('saves provider identity for an unknown parcel without claiming a direct answer', async () => {
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined) };
+    const adapter = { fetch: vi.fn().mockRejectedValue(new Error('carrier blocked')),
+      fetchUniversal: vi.fn().mockResolvedValue({ status: 'delivered', current_stage: 'delivered',
+        discovered_carrier: 'dhl-express', reported_carriers: ['DHL Express'],
+        events: [{ time: '2026-09-10T11:00:00Z', description: 'Delivered', stage: 'delivered' }] }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null,
+      () => new Date('2026-09-10T12:00:00Z'));
+    await service.syncPackage({ id: 'provider-identity', carrier: 'unknown', tracking_number: '1234567891', current_stage: 'pending' });
+    const saved = client.updatePackage.mock.calls.at(-1)![1];
+    expect(saved).toMatchObject({ carrier: 'dhl-express', current_stage: 'delivered', carrier_data: {
+      tracking_provider: 'Ship24', routing: { configured_carrier: 'dhl-express', preferred_number: '1234567891' } } });
+    expect(saved.carrier_data).not.toHaveProperty('carrier_answered');
+    expect(saved.carrier_data.routing).not.toHaveProperty('confirmed_carrier');
+    expect(saved.carrier_data).not.toHaveProperty('auto_changed_from');
+  });
+
   it('atomically persists a verified correction and retains its timestamp on later syncs', async () => {
     const report = vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
     const client = fakeClient();

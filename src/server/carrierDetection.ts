@@ -55,7 +55,7 @@ async function recognize(trackingNumber: string, beforeAsking?: () => Promise<vo
   const answer: ApiCarrierDetectionResponse = {
     trackingNumber,
     ...preflight,
-    carrier: (carrier ?? 'unknown') as ApiCarrierId,
+    carrier: (carrier ?? preflight?.carrier ?? 'unknown') as ApiCarrierId,
     ...(!carrier && choices.length > 1 ? { recognized: choices as ApiCarrierId[] } : {}),
     ...(asked.length ? { asked } : {}),
     ...(unanswered.length ? { unanswered } : {}),
@@ -65,7 +65,7 @@ async function recognize(trackingNumber: string, beforeAsking?: () => Promise<vo
       asked: asked.length,
       known: outcomes.filter((outcome) => outcome.status === 'known').length,
       failed: unanswered.length,
-      settled: carrier ?? (choices.length > 1 ? 'choice' : 'none'),
+      settled: carrier ?? preflight?.carrier ?? (choices.length > 1 ? 'choice' : 'none'),
     });
   }
   // A carrier that could not answer may answer on the next focus-out.
@@ -104,8 +104,7 @@ export async function detectCarrier(
     return { trackingNumber, carrier: ['available', 'expired'].includes(amazonShippingStatus) ? 'amazon-shipping' : 'amazon-logistics', amazonShippingStatus };
   }
   const detected = detectCarrierMatch(trackingNumber);
-  // Shared shapes and generic postal numbers need a direct carrier to confirm them.
-  // Only a carrier that knows the number is returned; the rest stay suggestions.
+  // Shared shapes need shipment evidence; the shape alone remains a suggestion.
   const answer = detected.carrier === 'unknown' || recognitionCandidates(trackingNumber).length > 0 || recognitionCandidates(trackingNumber, { phase: 'browser' }).length > 0
     ? await recognize(trackingNumber, beforeAsking, signal, supportClient).catch((error: unknown) => {
       if (signal?.aborted) throw new HttpError(499, 'Carrier check cancelled');

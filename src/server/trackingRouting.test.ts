@@ -988,6 +988,29 @@ describe('routingFailure with carrier package errors', () => {
 });
 
 describe('universal preflight and recipient input', () => {
+  it('labels prefetched provider history without waiting for blocked direct confirmation', async () => {
+    const value = setup();
+    value.router.options.takePrefetchedUniversal = vi.fn((source) => source === 'Ship24' ? { ...history(),
+      discovered_carrier: 'dhl-express', reported_carriers: ['DHL Express'] } : undefined);
+    const result = await value.router.fetch(parcel({ tracking_number: '1234567891' }), false);
+    expect(result.correction).toEqual({ carrier: 'dhl-express', trackingUrl: null, postcode: null });
+    expect(result.sourceCarrierId).toBe('unknown');
+    expect(result.result.tracking_provider).toBe('Ship24');
+    expect(result.result.routing).toMatchObject({ configured_carrier: 'dhl-express' });
+    expect(result.result.routing).not.toHaveProperty('confirmed_carrier');
+    expect(result.result).not.toHaveProperty('auto_changed_from');
+    expect(value.direct).not.toHaveBeenCalled();
+  });
+  it.each(['unknown', 'ups'])('keeps provider history and changes only an unknown carrier: %s', async (carrier) => {
+    const value = setup();
+    value.direct.mockRejectedValue(new Error('carrier blocked'));
+    value.universal.mockResolvedValue({ ...history(), discovered_carrier: 'dhl-express', reported_carriers: ['DHL Express'] });
+    const result = await value.router.fetch(parcel({ carrier, tracking_number: '1234567891' }), false);
+    expect(result.correction?.carrier).toBe(carrier === 'unknown' ? 'dhl-express' : undefined);
+    expect(result.result.tracking_provider).toBe('Ship24');
+    expect(result.result.routing).not.toHaveProperty('confirmed_carrier');
+  });
+
   it('reuses a matching history before acquiring an upstream lease', async () => {
     const value = setup();
     value.router.options.takePrefetchedUniversal = vi.fn((source) => source === 'Ship24' ? { ...history(), discovered_carrier: 'dhl-express' } : undefined);

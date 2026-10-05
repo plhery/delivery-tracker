@@ -292,3 +292,11 @@ it('uses universal preflight for a number with no direct candidates and reports 
   expect(preflightTracking).toHaveBeenCalledWith('TESTPREFLIGHT0001', expect.any(SupabaseServiceClient), expect.any(AbortSignal));
   expect(recognize).not.toHaveBeenCalled();
 });
+
+it.each([request, (number: string) => withoutAccount(number, '198.51.100.89')])('returns the carrier named by universal preflight when direct recognition fails', async (detect) => {
+  vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance').mockResolvedValue({ allowed: true, scope: null, overallUsed: 1 });
+  recognize.mockRejectedValue(new Error('carrier blocked'));
+  vi.mocked(preflightTracking).mockResolvedValue({ carrier: 'dhl-express', trackingFound: true,
+    providers: [{ provider: 'Ship24', outcome: 'history' }] });
+  expect(await (await detect('1234500223')).json()).toMatchObject({ carrier: 'dhl-express', trackingFound: true });
+});
