@@ -1131,7 +1131,7 @@ export const CARRIER_CAPABILITIES = {
   },
   "colis-prive": {
     "displayName": "Colis Privé",
-    "color": "#e30613",
+    "color": "#aa78ff",
     "selectable": true,
     "timezone": "Europe/Paris",
     "tracking": {
@@ -1202,7 +1202,7 @@ export const CARRIER_CAPABILITIES = {
   },
   "colisweb": {
     "displayName": "Colisweb",
-    "color": "#ff8a00",
+    "color": "#15cbe3",
     "selectable": true,
     "timezone": "Europe/Paris",
     "tracking": {
@@ -1298,7 +1298,7 @@ export const CARRIER_CAPABILITIES = {
   },
   "ciblex": {
     "displayName": "Ciblex",
-    "color": "#e30613",
+    "color": "#0160ab",
     "selectable": true,
     "timezone": "Europe/Paris",
     "tracking": {
@@ -1381,7 +1381,7 @@ export const CARRIER_CAPABILITIES = {
   },
   "asendia": {
     "displayName": "Asendia",
-    "color": "#ef7d00",
+    "color": "#005d69",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2886,7 +2886,7 @@ export const CARRIER_CAPABILITIES = {
   },
   "four-px": {
     "displayName": "4PX",
-    "color": "#f58220",
+    "color": "#005add",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
