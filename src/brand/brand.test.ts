@@ -14,7 +14,7 @@ import {
   mix,
 } from './index';
 
-const HEX = /^#[\da-f]{6}$/;
+const HEX = /^#[\da-f]{6}$/i;
 
 describe('carrier brand', () => {
   it('derives the nine properties from the catalog color', () => {

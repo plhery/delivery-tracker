@@ -397,7 +397,17 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [
       {
         "domains": [
-          "dhl.com",
+          "dhl.com"
+        ],
+        "params": [
+          "tracking-id",
+          "trackingId",
+          "piececode"
+        ],
+        "detectFromNumber": true
+      },
+      {
+        "domains": [
           "dhl.de",
           "deutschepost.de"
         ],
@@ -415,7 +425,7 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       },
       {
-        "pattern": "^(JJD|JVGL)[A-Z0-9]{8,}$",
+        "pattern": "^(?:JJD[A-Z0-9]{8,}|JVGL(?![0-9]{20}$)[A-Z0-9]{8,})$",
         "confidence": "high"
       },
       {
@@ -429,6 +439,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^00340434\\d{12}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^JVGL[0-9]{20}$",
+        "confidence": "low"
       }
     ],
     "aliases": [
@@ -472,7 +486,8 @@ export const CARRIER_CAPABILITIES = {
         "params": [
           "tracking-id",
           "trackingId"
-        ]
+        ],
+        "detectFromNumber": true
       }
     ],
     "detectionRules": [
@@ -482,6 +497,10 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^[0-9]{16,17}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^JVGL[0-9]{20}$",
         "confidence": "low"
       }
     ],
@@ -932,7 +951,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       },
       {
-        "pattern": "^\\d{10}$",
+        "pattern": "^(?:\\d{10}|\\d{14})$",
         "confidence": "low"
       }
     ],
@@ -969,11 +988,15 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^[68][A-Z]\\d{11}$",
+        "pattern": "^(?:[68][A-Z]|5[N-Z])\\d{11}$",
         "confidence": "high"
       },
       {
         "pattern": "^870\\d{11,12}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^(?:870|880)\\d{11}[A-Z]$",
         "confidence": "high"
       },
       {
@@ -1477,13 +1500,17 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^H\\d{15,19}$",
+        "pattern": "^H\\d{16,19}$",
         "confidence": "high"
       },
       {
         "pattern": "^\\d{14}$",
         "confidence": "low",
         "checksum": "hermes"
+      },
+      {
+        "pattern": "^H\\d{15}$",
+        "confidence": "low"
       }
     ],
     "aliases": [
@@ -1603,7 +1630,7 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$|CL$)[A-Z]{2}$",
+        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CA$|CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$|CL$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }
@@ -1726,12 +1753,12 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^H[A-Z0-9]{15}$",
-        "confidence": "high"
+        "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.evri.com/track-a-parcel",
+    "trackingUrlTemplate": "https://globaleco.app/track",
     "aliases": [
-      "Hermes UK"
+      "Evri International"
     ],
     "countries": [
       "GB"
@@ -2359,6 +2386,11 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^\\d{16}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}CA$",
+        "confidence": "high",
+        "checksum": "s10"
       }
     ],
     "trackingUrlTemplate": "https://www.canadapost-postescanada.ca/track-reperage/en/search?searchFor={trackingNumber}",
@@ -3156,16 +3188,25 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "jd-logistics"
     },
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "jingdonglogistics.com"
+        ],
+        "params": [
+          "waybillCodes"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^VG\\d{11}$",
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://www.jingdonglogistics.com/Tracking",
+    "trackingUrlTemplate": "https://www.jingdonglogistics.com/Tracking?waybillCodes={trackingNumber}",
     "countries": [
       "CN"
     ]
@@ -3297,6 +3338,10 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^[BDHPTUV]\\d{10}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^V\\d{8}$",
         "confidence": "low"
       }
     ],
@@ -3526,8 +3571,14 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^\\d{19,20}$",
+        "pattern": "^\\d{19}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{20}$",
+        "confidence": "low",
+        "checksum": "poczta-polska",
+        "preferred": true
       },
       {
         "pattern": "^PX\\d{10}$",
@@ -3632,7 +3683,9 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{9}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "tnt",
+        "preferred": true
       },
       {
         "pattern": "^\\d{16}$",
@@ -3878,6 +3931,462 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{10}$",
+        "confidence": "low",
+        "checksum": "dhl-express",
+        "preferred": true
+      }
+    ]
+  },
+  "cne": {
+    "displayName": "CNE Express",
+    "aliases": [
+      "CNE",
+      "递一物流"
+    ],
+    "countries": [
+      "CN"
+    ],
+    "color": "#e83828",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "trackingUrlTemplate": "https://www.cne.com/en/track?no={trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "cne.com"
+        ],
+        "params": [
+          "no"
+        ]
+      }
+    ],
+    "detectionRules": []
+  },
+  "dpd-de": {
+    "displayName": "DPD Germany",
+    "aliases": [
+      "DPD Deutschland"
+    ],
+    "countries": [
+      "DE"
+    ],
+    "color": "#dc0032",
+    "selectable": true,
+    "timezone": "Europe/Berlin",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "dpd-de",
+      "requirements": [
+        {
+          "field": "dpdPostcode",
+          "optional": true,
+          "label": "Delivery postcode",
+          "type": "text",
+          "pattern": "^[0-9]{5}$",
+          "maxLength": 5,
+          "inputMode": "numeric",
+          "autoComplete": "postal-code",
+          "help": "Optional. DPD uses it to unlock verified scans and the delivery window.",
+          "validator": "germanyPostcode"
+        }
+      ]
+    },
+    "trackingUrlTemplate": "https://tracking.dpd.de/status/en_US/parcel/{trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "tracking.dpd.de"
+        ],
+        "path": "^/status/[a-z]{2}_[A-Z]{2}/parcel/(\\d{14})/?$"
+      },
+      {
+        "domains": [
+          "my.dpd.de"
+        ],
+        "params": [
+          "parcelno"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{14}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "dpd-uk": {
+    "displayName": "DPD UK",
+    "aliases": [
+      "DPD United Kingdom"
+    ],
+    "countries": [
+      "GB"
+    ],
+    "color": "#dc0032",
+    "selectable": true,
+    "timezone": "Europe/London",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "trackingUrlTemplate": "https://track.dpd.co.uk/?reference={trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "track.dpd.co.uk",
+          "tracking.dpd.co.uk"
+        ],
+        "params": [
+          "reference",
+          "parcelNumber"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{14}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "ekart": {
+    "displayName": "Ekart",
+    "aliases": [
+      "eKart Logistics"
+    ],
+    "countries": [
+      "IN"
+    ],
+    "color": "#0074D9",
+    "selectable": true,
+    "timezone": "Asia/Kolkata",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "ekart"
+    },
+    "trackingUrlTemplate": "https://ekartlogistics.com/ekartlogistics-web/shipmenttrack/{trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "ekartlogistics.com"
+        ],
+        "path": "^/(?:ekartlogistics-web/)?shipmenttrack/([A-Z]{4}\\d{10})(?:/|$)"
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^(?:FMP[CP]|MYS[PR])\\d{10}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "evri-uk": {
+    "displayName": "Evri UK",
+    "aliases": [
+      "Hermes UK",
+      "Evri Domestic",
+      "Hermes Domestic UK"
+    ],
+    "countries": [
+      "GB"
+    ],
+    "color": "#00014d",
+    "selectable": true,
+    "timezone": "Europe/London",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "trackingUrlTemplate": "https://www.evri.com/track/parcel/{trackingNumber}/details",
+    "linkRules": [
+      {
+        "domains": [
+          "evri.com",
+          "www.evri.com"
+        ],
+        "path": "^/track/parcel/([A-Za-z0-9]{16})/details/?$"
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^H[A-Z0-9]{15}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{16}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "intelcom": {
+    "displayName": "Intelcom / Dragonfly",
+    "aliases": [
+      "Intelcom",
+      "Dragonfly",
+      "Dragonfly Shipping"
+    ],
+    "countries": [
+      "CA"
+    ],
+    "color": "#ffda00",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "intelcom"
+    },
+    "trackingUrlTemplate": "https://dragonflyshipping.ca/en/track-your-package/?tracking-id={trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "intelcom.ca",
+          "dragonflyshipping.ca"
+        ],
+        "params": [
+          "tracking-id"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^INTLCM\\d{8,20}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "lbc-express": {
+    "displayName": "LBC Express",
+    "aliases": [
+      "LBC"
+    ],
+    "countries": [
+      "PH"
+    ],
+    "color": "#e30613",
+    "selectable": true,
+    "timezone": "Asia/Manila",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "trackingUrlTemplate": "https://www.lbcexpress.com/track/?tracking_no={trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "lbcexpress.com"
+        ],
+        "params": [
+          "tracking_no"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{12}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "nova-poshta": {
+    "displayName": "Nova Poshta (Ukraine)",
+    "aliases": [
+      "Nova Poshta",
+      "Nova Post Ukraine",
+      "Нова Пошта"
+    ],
+    "countries": [
+      "UA"
+    ],
+    "color": "#e30613",
+    "selectable": true,
+    "timezone": "Europe/Kyiv",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "nova-poshta"
+    },
+    "trackingUrlTemplate": "https://novaposhta.ua/en/tracking/{trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "novaposhta.ua"
+        ],
+        "path": "^/(?:en/)?tracking/(\\d{14})(?:/|$)"
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^(?:(?:20[4678]|590|595)\\d{11}|(?:21|51)\\d{12})$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "sagawa": {
+    "displayName": "Sagawa Express",
+    "aliases": [
+      "佐川急便"
+    ],
+    "countries": [
+      "JP"
+    ],
+    "color": "#003889",
+    "selectable": true,
+    "timezone": "Asia/Tokyo",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "trackingUrlTemplate": "https://k2k.sagawa-exp.co.jp/p/sagawa/web/okurijoinput.jsp",
+    "linkRules": [
+      {
+        "domains": [
+          "sagawa-exp.co.jp"
+        ],
+        "params": [
+          "okurijoNo"
+        ]
+      }
+    ],
+    "detectionRules": []
+  },
+  "speedpak": {
+    "displayName": "SpeedPAK",
+    "aliases": [
+      "Orange Connex",
+      "OrangeConnex"
+    ],
+    "countries": [
+      "CN"
+    ],
+    "color": "#ee7532",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "speedpak"
+    },
+    "trackingUrlTemplate": "https://www.orangeconnex.com/tracking",
+    "linkRules": [
+      {
+        "domains": [
+          "orangeconnex.com",
+          "orangeconnex.cn"
+        ],
+        "params": [
+          "trackingNumber",
+          "trackingNumbers"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^E[ES][A-Z0-9]{26}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "spx-ph": {
+    "displayName": "SPX Express Philippines",
+    "aliases": [
+      "Shopee Express Philippines",
+      "Shopee Xpress Philippines",
+      "SPX Philippines"
+    ],
+    "countries": [
+      "PH"
+    ],
+    "color": "#ee4d2d",
+    "selectable": true,
+    "timezone": "Asia/Manila",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "spx-ph"
+    },
+    "trackingUrlTemplate": "https://spx.ph/track?{trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "spx.ph"
+        ],
+        "pathPattern": "^/track/?$",
+        "query": "^((?:SPX)?PH\\d{10,16}[A-Z]?)$"
+      },
+      {
+        "domains": [
+          "spx.ph",
+          "shopeexpress.ph"
+        ],
+        "params": [
+          "spx_tn",
+          "sls_tracking_number"
+        ]
+      },
+      {
+        "domains": [
+          "spx.ph",
+          "shopeexpress.ph"
+        ],
+        "path": "^/detail/((?:SPX)?PH\\d{10,16}[A-Z]?)(?:/|$)"
+      },
+      {
+        "domains": [
+          "spx.ph",
+          "shopeexpress.ph"
+        ],
+        "fragment": "^/detail/((?:SPX)?PH\\d{10,16}[A-Z]?)(?:$|[?&])"
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^SPXPH\\d{10,16}[A-Z]?$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^PH\\d{12,14}[A-Z]?$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "xpressbees": {
+    "displayName": "Xpressbees",
+    "aliases": [
+      "Xpress Bees",
+      "XpressBees"
+    ],
+    "countries": [
+      "IN"
+    ],
+    "color": "#f58220",
+    "selectable": true,
+    "timezone": "Asia/Kolkata",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "xpressbees"
+    },
+    "trackingUrlTemplate": "https://shipmentv2.xpressbees.com/orders/tracking/{trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "shipmentv2.xpressbees.com"
+        ],
+        "path": "^/orders/tracking/(\\d{12,16})(?:/|$)"
+      },
+      {
+        "domains": [
+          "xpressbees.com"
+        ],
+        "params": [
+          "trackid"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^[19]\\d{13}$",
         "confidence": "low"
       }
     ]
@@ -4022,7 +4531,19 @@ export const CARRIER_IDS = [
   "unknown",
   "ems",
   "omgo",
-  "dhl-express"
+  "dhl-express",
+  "cne",
+  "dpd-de",
+  "dpd-uk",
+  "ekart",
+  "evri-uk",
+  "intelcom",
+  "lbc-express",
+  "nova-poshta",
+  "sagawa",
+  "speedpak",
+  "spx-ph",
+  "xpressbees"
 ] as const;
 export type ApiCarrierId = (typeof CARRIER_IDS)[number];
 

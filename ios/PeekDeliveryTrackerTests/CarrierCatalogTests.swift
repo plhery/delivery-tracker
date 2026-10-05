@@ -280,7 +280,7 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(hugger?.alias, "Hugger")
         XCTAssertNil(hugger?.highlight)
         XCTAssertEqual(names("die post").first, "Swiss Post")
-        XCTAssertEqual(names("hermes uk").first, "Evri")
+        XCTAssertEqual(names("hermes uk").first, "Evri UK")
         let colis = CarrierPickerSearch.search("colis", catalog: catalog, language: .en)
         XCTAssertEqual(colis.map { catalog.info(for: $0.carrier).displayName },
                        ["Colis Privé", "Colisweb", "La Poste / Colissimo", "Relais Colis"])
@@ -642,6 +642,18 @@ final class CarrierCatalogTests: XCTestCase {
         for number in ["12345678901234567891", "1234567890123456789", "123456789012345678900", "12345678901234567890\n"] {
             XCTAssertFalse(CarrierCatalog.isValidPocztaPolskaBarcode(number))
         }
+        let express = catalog.detect("123 456-7891")
+        XCTAssertEqual(express.carrier, .unknown)
+        XCTAssertEqual(express.confidence, .low)
+        XCTAssertEqual(express.preferred, [.dhlExpress])
+        XCTAssertEqual(catalog.recognitionCandidates(for: "1234567891").first, .dhlExpress)
+        XCTAssertFalse(catalog.detect("1234567890").candidates.contains(.dhlExpress))
+        XCTAssertEqual(catalog.detect("123456785").preferred, [.tnt])
+        XCTAssertFalse(catalog.detect("123456789").candidates.contains(.tnt))
+        XCTAssertTrue(catalog.detect("1234567890123456").candidates.contains(.tnt))
+        XCTAssertEqual(catalog.detect("12345678901234567890").preferred, [.pocztaPolska])
+        XCTAssertFalse(catalog.detect("12345678901234567891").candidates.contains(.pocztaPolska))
+        XCTAssertTrue(catalog.detect("1234567890123456789").candidates.contains(.pocztaPolska))
     }
 
     func testPostlogisticsPrintedReferenceAndTrackingLink() throws {

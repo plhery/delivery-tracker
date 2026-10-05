@@ -43,7 +43,7 @@ describe('carrier search', () => {
     expect(hugger.highlight).toBeUndefined();
     expect(names('die post')[0]).toBe('Swiss Post');
     expect(names('cainiao')[0]).toBe('AliExpress / Cainiao');
-    expect(names('hermes uk')[0]).toBe('Evri');
+    expect(names('hermes uk')[0]).toBe('Evri UK');
   });
 
   it('marks the matched part of the name', () => {
@@ -106,7 +106,7 @@ describe('carrier check', () => {
   const asked = recognitionAskedCarriers(number) as CarrierId[];
 
   it('asks the carriers the detect route asks', () => {
-    expect(asked).toEqual(['dpd', 'seur', 'brt', 'ciblex']);
+    expect(asked).toEqual(['dpd', 'seur', 'brt', 'relais-colis', 'ciblex']);
   });
 
   it('follows the number from settled to answered', () => {

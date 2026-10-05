@@ -275,9 +275,9 @@ describe('carrier detection', () => {
     // REPORTED REAL DPD Germany trailing-L report — a collision needing carrier context.
     // Source: https://www.paketda.de/fragen-antworten.php
     expect(detectCarrierMatch('01196812014637L')).toMatchObject({ carrier: 'unknown', confidence: 'low' });
-    // MERCHANT EXAMPLE labeled La Poste by Fnac Darty — same collision.
+    // MERCHANT EXAMPLE labeled La Poste by Fnac Darty.
     // Source: https://marketplace.fnacdarty.com/s/article/Dois-je-obligatoirement-renseigner-un-num%C3%A9ro-de-suivi-tracking-pour-ma-commande?language=fr_BE
-    expect(detectCarrierMatch('88000019255788Y')).toMatchObject({ carrier: 'unknown', confidence: 'low' });
+    expect(detectCarrierMatch('88000019255788Y')).toMatchObject({ carrier: 'la-poste', confidence: 'high' });
     // Historical XF/XA fixtures fall into La Poste S10 (only PZ/XU/XW/XY are excluded);
     // an identity nuance, not a failed lookup — both share the La Poste adapter.
     // Sources: https://gist.github.com/zxp/e83a4a1b7294a5ed6207 and Fnac Darty merchant guidance.
@@ -550,7 +550,9 @@ describe('carrier detection', () => {
     // MERCHANT EXAMPLE with internal letters (a digits-only validator would reject it;
     // distinct from Hermes Einrichtungs-Service and Hermes Germany H-digits).
     // Source: https://wobaaa.com/aliexpress-uk-tracking-numbers/
-    expect(detectCarrier('H06R4A1011299623')).toBe('evri');
+    expect(detectCarrierMatch('H06R4A1011299623')).toMatchObject({
+      carrier: 'unknown', confidence: 'low', candidates: ['evri', 'evri-uk'],
+    });
     expect(CARRIERS['evri'].capabilities.tracking.adapter).toBe('evri');
     expect(tracksAutomatically('evri')).toBe(true);
   });
@@ -747,7 +749,7 @@ describe('carrier detection', () => {
     // OSS EXAMPLE fixture, VG + 11 digits (modern variants remain to be established).
     // Source: https://gist.github.com/zxp/e83a4a1b7294a5ed6207
     expect(detectCarrier('VG05778167021')).toBe('jd-logistics');
-    expectUniversalFallback('jd-logistics');
+    expectDirectTracking('jd-logistics');
   });
 
   it('korea-post — Korea Post', () => {
@@ -1445,18 +1447,18 @@ describe('ambiguous number shapes', () => {
     // everything else stays out of Planzer/DHL routing. OSS fixtures below.
     // Source: https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json
     expect(detectCarrierMatch('03071790000523483741')).toEqual({
-      carrier: 'unknown', confidence: 'low', candidates: ['usps', 'nz-post', 'poczta-polska'], preferred: [],
+      carrier: 'unknown', confidence: 'low', candidates: ['poczta-polska', 'usps', 'nz-post'], preferred: ['poczta-polska'],
     });
     const second = detectCarrierMatch('71123456789123456787');
     expect(second).toMatchObject({ carrier: 'unknown', confidence: 'low' });
-    expect(second.candidates).toEqual(['usps', 'nz-post', 'poczta-polska']);
+    expect(second.candidates).toEqual(['poczta-polska', 'usps', 'nz-post']);
   });
 
   it('keeps 10-digit numbers ambiguous', () => {
     expect(detectCarrierMatch('1234567890')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['dhl', 'mondial-relay', 'relais-colis', 'tipsa', 'estafeta', 'dhl-express'],
+      candidates: ['dhl', 'mondial-relay', 'relais-colis', 'tipsa', 'estafeta'],
       preferred: [],
     });
   });
@@ -1474,12 +1476,12 @@ describe('ambiguous number shapes', () => {
     expect(detectCarrierMatch('123456789012')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['fedex', 'dpd-fr', 'mondial-relay', 'colis-prive', 'mrw', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t'],
+      candidates: ['fedex', 'dpd-fr', 'mondial-relay', 'colis-prive', 'mrw', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t', 'lbc-express'],
       preferred: [],
     });
     // A valid GLS check digit adds the GLS networks.
     expect(detectCarrierMatch('123456789011').candidates).toEqual(
-      ['fedex', 'gls-ch', 'dpd-fr', 'mondial-relay', 'gls-fr', 'colis-prive', 'gls-de', 'mrw', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t'],
+      ['fedex', 'gls-ch', 'dpd-fr', 'mondial-relay', 'gls-fr', 'colis-prive', 'gls-de', 'mrw', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t', 'lbc-express'],
     );
   });
 
@@ -1487,13 +1489,13 @@ describe('ambiguous number shapes', () => {
     expect(detectCarrierMatch('01234567890123')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['dpd', 'dpd-fr', 'ciblex', 'seur', 'brt', 'delhivery'],
+      candidates: ['dpd', 'dpd-fr', 'relais-colis', 'ciblex', 'seur', 'brt', 'delhivery', 'dpd-de', 'dpd-uk'],
       preferred: [],
     });
     expect(detectCarrierMatch('10594002378611')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['dpd-fr', 'dpd', 'ciblex', 'seur', 'brt', 'delhivery'],
+      candidates: ['dpd-fr', 'dpd', 'relais-colis', 'ciblex', 'seur', 'brt', 'delhivery', 'dpd-de', 'dpd-uk', 'xpressbees'],
       preferred: ['dpd-fr'],
     });
   });
