@@ -188,6 +188,7 @@ jobs:
             sleep 1
           done
           SMOKE_EXPECT_READY=false scripts/smoke-url.sh http://127.0.0.1:3000
+          docker exec -i peek-delivery-tracker-test node --input-type=module - < scripts/test-tracking-runtime.mjs
       - name: Log in to the registry
         if: env.PUBLISH == 'true'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4

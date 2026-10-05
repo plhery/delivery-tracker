@@ -78,8 +78,9 @@ providers in the same check. If none has progress, the first usable answer follo
 normal preservation path while the previous affinity and event watermark stay. A parcel
 still waiting for its first progress keeps the first usable answer as before.
 
-**Royal Mail** uses the universal providers. Its browser adapter exists but isn't an active
-route (see its [README](https://github.com/plhery/universal-parcel-scraper/blob/main/carriers/royal-mail/README.md)).
+**Royal Mail** starts with its own adapter using the container's local Chromium. A failed
+direct lookup follows the normal provider fallback route (see its
+[README](https://github.com/plhery/universal-parcel-scraper/blob/main/carriers/royal-mail/README.md)).
 
 ## When a source fails
 

@@ -101,9 +101,9 @@ describe('persistent tracking routing', () => {
     expect(direct).toHaveBeenCalledWith(expect.objectContaining({ tracking_number: 'TEST1234' }), carrier);
     expect(universal).not.toHaveBeenCalled();
   });
-  it.each([false, true])('uses normal universal routing for Royal Mail, including saved direct state: %s', async (saved) => {
+  it.each([false, true])('uses Royal Mail history before providers, including saved provider affinity: %s', async (saved) => {
     const { router, direct, universal } = setup();
-    universal.mockResolvedValue({ ...history(), discovered_carrier: 'royal-mail' });
+    direct.mockResolvedValue(directValue('royal-mail'));
     const result = await router.fetch(parcel({
       carrier: 'royal-mail',
       carrier_data: saved ? { routing: state({
@@ -111,10 +111,23 @@ describe('persistent tracking routing', () => {
         preferred_provider: 'ParcelsApp', preferred_number: 'TEST1234',
       }) } : {},
     }), false);
-    expect(direct).not.toHaveBeenCalled();
-    // ParcelsApp is first in Royal Mail's own order too.
+    expect(direct).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ tracking_number: 'TEST1234' }), 'royal-mail');
+    expect(universal).not.toHaveBeenCalled();
+    expect(result.sourceCarrierId).toBe('royal-mail');
+    expect(result.result.routing).toMatchObject({ configured_carrier: 'royal-mail', confirmed_carrier: 'royal-mail' });
+  });
+  it('falls back to provider history when Royal Mail browser tracking fails', async () => {
+    const { router, direct, universal } = setup();
+    vi.spyOn(scraper, 'universalPlan').mockReturnValue({
+      sources: ['ParcelsApp'], carrier: 'royal-mail', tier: () => 'full', rank: () => 0,
+    });
+    direct.mockRejectedValue(new Error('Browser tracking unavailable'));
+    universal.mockResolvedValue({ ...history(), discovered_carrier: 'royal-mail' });
+    const result = await router.fetch(parcel({ carrier: 'royal-mail' }), false);
+    expect(direct).toHaveBeenCalledExactlyOnceWith(expect.any(Object), 'royal-mail');
     expect(universal).toHaveBeenCalledExactlyOnceWith('ParcelsApp', 'TEST1234', expect.any(Number), null, null);
-    expect(result.result.routing).toMatchObject({ configured_carrier: 'royal-mail', preferred_provider: 'ParcelsApp' });
+    expect(result.result.routing).toMatchObject({ preferred_provider: 'ParcelsApp', failures: { 'royal-mail': { kind: 'transport' } } });
+    expect(result.result.tracking_provider).toBe('ParcelsApp');
   });
   it('discovers in default order and remembers the working provider across instances', async () => {
     const first = setup();

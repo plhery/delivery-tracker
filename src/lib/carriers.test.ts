@@ -1085,7 +1085,7 @@ describe('carrier detection', () => {
     // Source: https://www.royalmail.com/royal-mail-you/intellectual-property-rights/linking-our-website
     expect(detectCarrier('ZW924750388GB')).toBe('royal-mail');
     expect(detectCarrier('SG577041359GB')).toBe('royal-mail');
-    expect(CARRIERS['royal-mail'].capabilities.tracking.adapter).toBe('universal');
+    expect(CARRIERS['royal-mail'].capabilities.tracking.adapter).toBe('royal-mail');
     expect(tracksAutomatically('royal-mail')).toBe(true);
   });
 

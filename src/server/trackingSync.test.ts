@@ -41,13 +41,15 @@ vi.mock(import('universal-parcel-scraper'), async importOriginal => ({ ...await 
 afterEach(() => vi.restoreAllMocks());
 
 describe('dedicated carrier dispatch', () => {
-  it('dispatches Royal Mail through universal providers despite retaining its experimental adapter file', async () => {
-    const universal = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+  it('dispatches Royal Mail through its dedicated registry adapter', async () => {
+    const universal = { fetch: vi.fn() };
     const adapter = new CarrierTrackingAdapter(universal as unknown as UniversalTracker);
+    const track = vi.spyOn(adapter.registry.for('royal-mail')!, 'track').mockResolvedValue({ status: 'in_transit' });
 
     await expect(adapter.fetch('royal-mail', 'SG999999999GB', null)).resolves.toMatchObject({ status: 'in_transit' });
-    expect(universal.fetch).toHaveBeenCalledExactlyOnceWith('SG999999999GB', null, expect.any(Object));
-    expect(adapter.registry.has('royal-mail')).toBe(false);
+    expect(track).toHaveBeenCalledExactlyOnceWith({ number: 'SG999999999GB', trackingUrl: null, postcode: null });
+    expect(universal.fetch).not.toHaveBeenCalled();
+    expect(adapter.registry.has('royal-mail')).toBe(true);
   });
 
   it.each(['la-poste', 'chronopost', 'gls-fr', 'colis-prive', 'geodis', 'dpd-fr', 'mondial-relay', 'relais-colis', 'swiss-post-cargo', 'gls-ch', 'colisweb', 'c-chez-vous', 'heppner', 'ciblex', 'paack', 'india-post'])('dispatches %s through the public registry', async carrier => {
@@ -2411,7 +2413,8 @@ describe('tracking anomaly detection', () => {
     expect(detect('dpd', { tracking_provider: 'ParcelsApp' }, { status: 'pending', events: [scan] }, 'dpd')).toEqual(['progress_disappeared']);
     // No adapter of its own: routing exhausts the eligible providers before returning a thin answer.
     expect(detect('unknown', { tracking_provider: 'Ship24' }, fallback, 'unknown')).toEqual(['progress_disappeared']);
-    expect(detect('royal-mail', { tracking_provider: 'Ship24' }, fallback, 'unknown')).toEqual(['progress_disappeared']);
+    expect(detect('parcelforce', { tracking_provider: 'Ship24' }, fallback, 'unknown')).toEqual(['progress_disappeared']);
+    expect(detect('royal-mail', { tracking_provider: 'Ship24' }, fallback, 'unknown')).toEqual(['fallback_without_progress']);
   });
   it('preserves real movement when a provider has only registration, without flagging a new label', () => {
     const label: CarrierResult = { status: 'pending', current_stage: 'registered', tracking_provider: 'Ship24',

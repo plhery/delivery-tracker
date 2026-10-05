@@ -1,7 +1,10 @@
 # Deployment
 
 The app is one long-running Next.js container: web, API and background worker. It needs
-Supabase (Auth, PostgREST, Postgres 16+) and HTTPS. The official instance runs at
+Supabase (Auth, PostgREST, Postgres 16+) and HTTPS. The Docker image uses Debian across
+its build and runtime stages, installs Chromium for tracking, and reaps browser helper
+processes with Tini. Update the image and deploy it to change the browser runtime.
+The official instance runs at
 `https://peektracker.com`, behind Cloudflare.
 
 ## Requirements

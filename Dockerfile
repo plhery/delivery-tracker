@@ -1,10 +1,10 @@
-FROM node:26-alpine@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS dependencies
+FROM node:26-trixie-slim@sha256:ec7758ee051e457b468b32bde57b0879010b325bb9862718e9615225ce4aaae1 AS dependencies
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json ./
 RUN npm ci
 
-FROM node:26-alpine@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS build
+FROM node:26-trixie-slim@sha256:ec7758ee051e457b468b32bde57b0879010b325bb9862718e9615225ce4aaae1 AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_SUPABASE_URL
@@ -26,7 +26,7 @@ COPY . .
 RUN npm run validate:production-config \
     && npm run build
 
-FROM node:26-alpine@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS runtime
+FROM node:26-trixie-slim@sha256:ec7758ee051e457b468b32bde57b0879010b325bb9862718e9615225ce4aaae1 AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
@@ -35,9 +35,10 @@ ENV NODE_ENV=production \
     PORT=3000 \
     TRACKING_CHROMIUM_PATH=/usr/bin/chromium
 # Coolify probes Dockerfile applications with curl from inside the container.
-RUN apk add --no-cache curl chromium \
-    && addgroup --system --gid 10001 delivery \
-    && adduser --system --uid 10001 --ingroup delivery delivery
+RUN apt-get update && apt-get install -y --no-install-recommends curl chromium ca-certificates tini \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 10001 delivery \
+    && useradd --system --uid 10001 --gid delivery --create-home delivery
 COPY --from=build --chown=delivery:delivery /app/.next/standalone ./
 # The commit the image was built from. It names the release in error reports; a platform
 # that sets IMAGE_COMMIT at runtime overrides it.
@@ -47,4 +48,6 @@ USER delivery
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
   CMD ["curl", "--fail", "--silent", "--show-error", "--max-time", "5", "http://127.0.0.1:3000/health"]
+# Reap the helper processes left by browser lookups.
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["node", "server.js"]

@@ -61,12 +61,18 @@ describe('tracking support context', () => {
       detection_carrier: 'intl-post', detection_confidence: 'high', reasons: ['generic_postal'],
     });
     expect(trackingSupportContext('RR123456785FI', 'royal-mail').reasons)
-      .toEqual(['generic_postal', 'no_direct_adapter']);
+      .toEqual(['generic_postal']);
+  });
+
+  it('does not report a direct-adapter gap for Royal Mail', () => {
+    expect(trackingSupportContext('RR123456785GB', 'royal-mail')).toMatchObject({
+      detection_carrier: 'royal-mail', detection_confidence: 'high', reasons: [],
+    });
   });
 
   it('records an identified carrier whose tracking still depends on providers', () => {
-    expect(trackingSupportContext('RR123456785GB', 'royal-mail')).toMatchObject({
-      detection_carrier: 'royal-mail', detection_confidence: 'high', reasons: ['no_direct_adapter'],
+    expect(trackingSupportContext('EE123456785GB', 'parcelforce')).toMatchObject({
+      detection_carrier: 'parcelforce', detection_confidence: 'high', reasons: ['no_direct_adapter'],
     });
   });
 
@@ -112,8 +118,15 @@ describe('tracking support evidence', () => {
       .support_direct_progress).toBe(false);
   });
 
-  it('does not count a universal-only carrier as a direct fix even without a provider label', () => {
-    expect(trackingSupportEvidence(parcel, progress, 'royal-mail', 'updated', false).support_direct_progress).toBe(false);
+  it('counts persisted Royal Mail history as direct progress', () => {
+    const royalParcel = { tracking_number: 'RR123456785GB', carrier: 'royal-mail' };
+    expect(trackingSupportEvidence(royalParcel, progress, 'royal-mail', 'updated', false)).toEqual({
+      support_lookup_number: royalParcel.tracking_number, support_provider: null, support_direct_progress: true,
+    });
+  });
+
+  it('does not count a universal-only carrier as a direct fix without a provider label', () => {
+    expect(trackingSupportEvidence(parcel, progress, 'parcelforce', 'updated', false).support_direct_progress).toBe(false);
   });
 
   it('binds handoff evidence to the delivery number so it cannot verify the original number', () => {

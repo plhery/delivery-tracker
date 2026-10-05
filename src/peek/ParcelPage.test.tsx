@@ -56,7 +56,10 @@ afterEach(() => {
 
 describe('ParcelPage', () => {
   it('loads a link opened directly: the status is the headline, with the carrier, the estimate, the number and the journey', async () => {
-    mocks.read.mockResolvedValue(testView({ parcel: { expectedDelivery: '2099-01-05', lastSyncedAt: ago(2 / 60) } }));
+    mocks.read.mockResolvedValue(testView({ parcel: {
+      expectedDelivery: '2099-01-05', lastSyncedAt: ago(2 / 60),
+      events: [scan('registered', 24, 'Scan 1'), scan('in_transit', 6, 'Scan 2')],
+    } }));
     open();
     expect(screen.getByRole('status')).toHaveTextContent('Checking for updates');
     expect(document.title).toBe('Checking for updates · Peek');
@@ -729,7 +732,7 @@ describe('ParcelPage keeping', () => {
     mocks.read.mockResolvedValue(testView());
     const user = userEvent.setup();
     open(session);
-    const note = await screen.findByRole('note');
+    const note = (await screen.findByText('You already follow this parcel')).closest<HTMLElement>('[role="note"]')!;
     expect(note).toHaveTextContent('You already follow this parcel');
     expect(note).toHaveTextContent('It’s in your deliveries as “New sneakers”.');
     expect(screen.queryByRole('button', { name: 'Add to my deliveries' })).toBeNull();
