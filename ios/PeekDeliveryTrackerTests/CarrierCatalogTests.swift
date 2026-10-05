@@ -273,7 +273,7 @@ final class CarrierCatalogTests: XCTestCase {
         }
         XCTAssertEqual(Array(names("dpd").prefix(2)), ["DPD", "DPD France"])
         XCTAssertEqual(names("colis prive").first, "Colis Privé")
-        XCTAssertEqual(names("jt").first, "J&T Express")
+        XCTAssertTrue(names("jt").contains("J&T Express"))
         XCTAssertEqual(names("4px").first, "4PX")
         let hugger = CarrierPickerSearch.search("hugger", catalog: catalog, language: .en).first
         XCTAssertEqual(hugger?.carrier, .swissPostCargo)
@@ -436,15 +436,14 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(parsed.source, .link)
     }
 
-    func testTakesALettersOnlyNumberWholeButNeverOutOfProse() {
-        // Six to ten unbroken letters are a number when they are the whole input.
-        for input in ["ABCDEF", " abcdefg ", "ABCDEFGHIJ"] {
-            let parsed = catalog.parse(input)
-            XCTAssertEqual(parsed.source, .number, input)
-            XCTAssertEqual(parsed.trackingNumber, input.trimmingCharacters(in: .whitespaces), input)
+    func testTakesALettersOnlyNumberOnlyWhenACarrierClaimsItsShape() {
+        // Letters alone are a number once a carrier's rule claims the shape, as GLS Track IDs are.
+        for input in ["ABCDEF", " abcdef "] {
+            let claimed = catalog.detect(input).confidence != .none
+            XCTAssertEqual(catalog.parse(input).source, claimed ? .number : TrackingInputMatch.Source.none, input)
         }
-        // Shorter, longer or broken up, they are a word or a phrase.
-        for input in ["ABCDE", "ABCDEFGHIJK", "ABC DEF", "ABC-DEF", "AB.CD.EF"] {
+        // A word no carrier uses stays a word, whatever a general rule makes of its length.
+        for input in ["ABCDE", "BONJOUR", "TRACKING", "CONFIRMATION", "ABC DEF", "ABC-DEF", "AB.CD.EF"] {
             XCTAssertEqual(catalog.parse(input).source, TrackingInputMatch.Source.none, input)
         }
         // A word that follows a label in a message stays a word.

@@ -57,9 +57,9 @@ export function newPackageValues(payload: JsonObject): NewPackageValues {
   if (trackingNumber.length < 4 || trackingNumber.length > 40) {
     throw new HttpError(400, 'Enter a tracking number between 4 and 40 characters');
   }
-  // The scraper decides what a number may be: a digit, or six to ten unbroken letters.
+  // The scraper decides what a number may be: a digit, or letters alone in a shape a carrier issues.
   if (!/^(?:[A-Z0-9]+|\d{4}\/\d{8})$/.test(trackingNumber) || !validTrackingNumber(rawTracking)) {
-    throw new HttpError(400, 'Tracking numbers use letters and numbers and include a digit, unless they are six to ten letters');
+    throw new HttpError(400, 'Tracking numbers use letters and numbers and include a digit, unless a carrier issues them as letters alone');
   }
   if (codePointLength(rawLabel) > 80) {
     throw new HttpError(400, 'Parcel names can be at most 80 characters');

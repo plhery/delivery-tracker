@@ -548,7 +548,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
                 }
                 let candidate = (queryValue ?? pathValue ?? fragmentValue ?? "")
                     .split(whereSeparator: { $0 == "," || $0 == "|" }).first.map(String.init) ?? ""
-                if Self.valid(candidate) {
+                if valid(candidate) {
                     let detected = detect(candidate)
                     if firstMatch.rule.detectFromNumber == true, detected.confidence == .high {
                         return makeMatch(candidate, source: .link)
@@ -583,7 +583,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             let keyword = labelled.replacingOccurrences(of: "[.-]+$", with: "", options: .regularExpression)
             if Self.validInText(keyword) { return makeMatch(keyword, source: .text) }
         }
-        if !input.contains("://"), Self.valid(input) { return makeMatch(input, source: .number) }
+        if !input.contains("://"), valid(input) { return makeMatch(input, source: .number) }
         return Self.emptyMatch
     }
 
@@ -865,11 +865,14 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     }
 
     /// A number entered whole or carried by a carrier's link. Without a digit it must be
-    /// six to ten unbroken letters, so a short phrase is not a number.
-    private static func valid(_ raw: String) -> Bool {
-        let value = normalize(raw)
-        return shaped(value) && (matches(value, pattern: "\\d")
-            || matches(raw.trimmingCharacters(in: .whitespacesAndNewlines), pattern: "^[A-Za-z]{6,10}$"))
+    /// six to ten unbroken letters that a carrier's detection rule claims, as GLS issues
+    /// six-letter Track IDs: a word no carrier uses is not a number.
+    private func valid(_ raw: String) -> Bool {
+        let value = Self.normalize(raw)
+        guard Self.shaped(value) else { return false }
+        if Self.matches(value, pattern: "\\d") { return true }
+        return Self.matches(raw.trimmingCharacters(in: .whitespacesAndNewlines), pattern: "^[A-Za-z]{6,10}$")
+            && detect(value).confidence != .none
     }
 
     /// A number pulled out of prose always holds a digit: a word there is not a number.

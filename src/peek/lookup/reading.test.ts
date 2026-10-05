@@ -21,6 +21,9 @@ describe('reading the field', () => {
     expect(uncertainNumberInText('Call us on 0441234567.\nYour parcel number is 1234567899.')?.trackingNumber).toBe('1234567899');
     // Two candidates and nothing to tell them apart: none is taken.
     expect(uncertainNumberInText('1234567899 or 9987654321')).toBeNull();
+    // A word is never the number, though a carrier's rule may fit its length.
+    expect(readText('Order confirmation').match.trackingNumber).toBe('');
+    expect(uncertainNumberInText('Your registration is complete. Parcel number 1234567899')?.trackingNumber).toBe('1234567899');
     expect(uncertainNumberInText('Order 302-4571983-2294617')).toBeNull();
   });
 

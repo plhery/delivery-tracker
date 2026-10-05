@@ -102,9 +102,9 @@ gh workflow run adopt-scraper.yml -f version=1.2.3 -f database_ready=true
 
 The gate compares catalog data. Rules written as scraper code, such as URL shapes and the
 Mondial Relay barcode checksum, are outside it. So is the rule for a number with no digit:
-the scraper's `validTrackingNumber` takes six to ten letters and the database six or more,
-so a wider rule there needs a migration first. A changed stage also needs the `Stage`
-enum in `contracts/openapi.json` edited by hand.
+the scraper's `validTrackingNumber` takes six to ten letters that a detection rule claims
+and the database six or more, so a wider rule there needs a migration first. A changed
+stage also needs the `Stage` enum in `contracts/openapi.json` edited by hand.
 
 A checksum a detection rule names must also exist in `ios/PeekDeliveryTracker/CarrierCatalog.swift`.
 The iPhone app passes every number through a checksum it does not know, so its replay of the

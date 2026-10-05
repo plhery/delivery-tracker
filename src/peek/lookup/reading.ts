@@ -71,7 +71,9 @@ const NUMBER_WORDS = /track|parcel|shipment|sendung|paket|suivi|colis|tracciamen
  * with DHL: 1234567899". The parser leaves these alone, since a phone number
  * can look the same; the door takes one when the text holds no other
  * candidate, or when only one stands on a line that speaks of tracking. The
- * carriers are then asked, and the visitor sees which number was read.
+ * carriers are then asked, and the visitor sees which number was read. A
+ * candidate holds a digit: some shapes also fit a word, and a word in a
+ * message is not a number.
  */
 export function uncertainNumberInText(text: string): TrackingInputMatch | null {
   const candidates = new Map<string, { match: TrackingInputMatch; introduced: boolean }>();
@@ -80,6 +82,7 @@ export function uncertainNumberInText(text: string): TrackingInputMatch | null {
     for (const pattern of TRACKING_CANDIDATE_PATTERNS) {
       for (const hit of prose.matchAll(new RegExp(pattern.source, pattern.flags))) {
         const candidate = hit[0].trim();
+        if (!/\d/.test(candidate)) continue;
         const detection = detectCarrierMatch(candidate);
         if (detection.confidence !== 'low' || ORDER_NUMBER.test(candidate)) continue;
         const normalized = normalizeTrackingNumber(candidate);

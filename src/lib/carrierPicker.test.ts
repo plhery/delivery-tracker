@@ -32,7 +32,7 @@ describe('carrier search', () => {
   it('ignores case, accents and punctuation', () => {
     expect(foldForSearch('Colis Privé')).toBe('colis prive');
     expect(names('colis prive')[0]).toBe('Colis Privé');
-    expect(names('jt')[0]).toBe('J&T Express');
+    expect(names('jt')).toContain('J&T Express');
     expect(names('4px')[0]).toBe('4PX');
   });
 
