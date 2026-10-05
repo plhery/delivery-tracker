@@ -4032,7 +4032,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/London",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "dpd-uk"
     },
     "trackingUrlTemplate": "https://track.dpd.co.uk/?reference={trackingNumber}",
     "linkRules": [
@@ -4100,7 +4100,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/London",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "evri-uk"
     },
     "trackingUrlTemplate": "https://www.evri.com/track/parcel/{trackingNumber}/details",
     "linkRules": [
