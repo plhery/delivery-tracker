@@ -17,6 +17,7 @@ and [`truck.json`](truck.json).
 | --- | --- |
 | `an-post` | [anpost.com](https://www.anpost.com/) |
 | `aramex` | [aramex.com](https://www.aramex.com/) |
+| `asendia` | [asendia.com](https://www.asendia.com/) |
 | `australia-post` | [auspost.com.au](https://auspost.com.au/) |
 | `austrian-post` | [post.at](https://www.post.at/) |
 | `blue-dart` | [bluedart.com](https://www.bluedart.com/) |
@@ -26,6 +27,9 @@ and [`truck.json`](truck.json).
 | `canada-post` | [brand cheat sheet (PDF)](https://www.canadapost-postescanada.ca/cpc/doc/en/our-company/media-centre/cpc-brand-cheat-sheet.pdf) |
 | `canpar` | [canpar.com](https://www.canpar.com/) (approximate) |
 | `china-post` | [chinapost.com.cn](https://www.chinapost.com.cn/) |
+| `ciblex` | [ciblex.fr](https://www.ciblex.fr/) (sampled from the site icon) |
+| `colis-prive` | [colisprive.fr](https://www.colisprive.fr/) (sampled from the site icon) |
+| `colisweb` | [colisweb.com](https://www.colisweb.com/) (sampled from the site icon) |
 | `correios-br` | [correios.com.br](https://www.correios.com.br/) |
 | `correos-chile` | [correos.cl](https://www.correos.cl/) |
 | `correos-express` | [correosexpress.com](https://www.correosexpress.com/) |
@@ -38,7 +42,7 @@ and [`truck.json`](truck.json).
 | `ems` | [ems.post](https://www.ems.post/) (approximate) |
 | `estafeta` | [estafeta.com](https://www.estafeta.com/) |
 | `evri` | [evri.com](https://www.evri.com/) |
-| `four-px` | [4px.com](https://www.4px.com/) (approximate) |
+| `four-px` | [4px.com](https://www.4px.com/) (sampled from the site icon) |
 | `gofo` | [gofo.com](https://www.gofo.com/us/) |
 | `hongkong-post` | [hongkongpost.hk](https://www.hongkongpost.hk/en/home/index.html) |
 | `inpost` | [inpost.pl](https://inpost.pl/) |
@@ -92,7 +96,7 @@ and [`truck.json`](truck.json).
 | `japan-post` | White postal mark on red | [post.japanpost.jp](https://www.post.japanpost.jp/) |
 | `swiss-post` (Swiss Post, Swiss Post Cargo, PostLogistics) | Red Swiss cross and black P on yellow | [Swiss Post brand](https://site.post.ch/en/about-us/company/the-brand-swiss-post) |
 | `quickpac` | White Q with a forward tail and speed lines on red | [quickpac.ch](https://quickpac.ch/); the site now shows Quickmail/Planzer branding, the name is kept for older parcels |
-| `la-poste` | The three bird contours from the official SVG (54:24) on yellow; blue `#003da5` | [website SVG](https://www.laposte.fr/ecom/_nuxt/logo-part-horizontal.BtezbiGr.svg) |
+| `la-poste` (`la-poste`, `delivengo`) | The three bird contours from the official SVG (54:24) on yellow; blue `#003da5` | [website SVG](https://www.laposte.fr/ecom/_nuxt/logo-part-horizontal.BtezbiGr.svg) |
 | `chronopost` | Cyan parcel cube with a darker left face (76:89) on a white truck for contrast | [Chronopost guide cover (PDF)](https://static.chronopost.fr/pdf/chronopost/guide_utilisateur_Shopify.pdf) |
 | `india-post` | Two gold flight lines on red; gold `#fedb01` from the SVG | [official logo SVG](https://www.indiapost.gov.in/images/home/logo/indiapostlogo.svg) |
 | `mondial-relay` | Burgundy badge with a white person and pink parcel; colours are sampled approximations | [brand announcement (PDF)](https://storage.mondialrelay.fr/Mondial%20Relay%20transforme%20sa%20marque%20avec%20Dragon%20Rouge.pdf) |
@@ -124,11 +128,11 @@ and [`truck.json`](truck.json).
 | `packeta` | White taped box drawn as a solid on red; the greys are approximations | [packeta.com](https://www.packeta.com/) |
 | `gls` (`gls-ch`, `gls-de`, `gls-fr`) | White letters and the yellow dot on blue | [gls-group.com](https://gls-group.com/) |
 | `evri` (`evri`, `evri-uk`) | Cyan letters on navy | [evri.com](https://www.evri.com/) |
-| `postnord` | White lowercase name on blue | [postnord.com](https://www.postnord.com/) |
-| `poste-italiane` | Blue name on two lines, the first one heavier, on yellow | [poste.it](https://www.poste.it/) |
-| `aramex` | White lowercase name on red | [aramex.com](https://www.aramex.com/) |
-| `j-and-t` | White slanted letters above the word EXPRESS on red | [jtexpress.ph](https://www.jtexpress.ph/) |
-| `aliexpress` | White name above a smile on red | [aliexpress.com](https://www.aliexpress.com/) |
+| `postnord` | White lowercase name on two lines on blue | [postnord.com](https://www.postnord.com/) |
+| `poste-italiane` | Blue word Poste on yellow | [poste.it](https://www.poste.it/) |
+| `aramex` | White lowercase a, as on the carrier's own icon, on red | [aramex.com](https://www.aramex.com/) |
+| `j-and-t` | White slanted letters on red | [jtexpress.ph](https://www.jtexpress.ph/) |
+| `aliexpress` | White shopping bag with its smile on red | [aliexpress.com](https://www.aliexpress.com/) |
 | `zto` | White slanted letters on blue | [zto.com](https://www.zto.com/) |
 | `yto` | White letters on purple, the T in pink; the pink is an approximation | [yto.net.cn](https://www.yto.net.cn/) |
 | `sto` | White letters in a rounded frame on orange | [sto.cn](https://www.sto.cn/) |
@@ -138,19 +142,46 @@ and [`truck.json`](truck.json).
 | `seur` | White letters behind a pale bar and a red block on blue; both colours are approximations | [seur.com](https://www.seur.com/) |
 | `mrw` | White slanted letters over a red line on navy; the red is an approximation | [mrw.es](https://www.mrw.es/) |
 | `nacex` | White slanted letters on orange | [nacex.es](https://www.nacex.es/) |
-| `purolator` | White slanted name on red | [purolator.com](https://www.purolator.com/) |
+| `purolator` | Red and blue slanted bars of the flag on a white truck | [purolator.com](https://www.purolator.com/) |
 | `parcelforce` | White name on two lines on dark red | [parcelforce.com](https://www.parcelforce.com/) |
 | `posti` | White lowercase name on orange | [posti.fi](https://www.posti.fi/) |
 | `an-post` | White lowercase name stacked on two lines on green | [anpost.com](https://www.anpost.com/) |
-| `delhivery` | White capitals on red | [delhivery.com](https://www.delhivery.com/) |
+| `delhivery` | Square cut along its diagonal, white and black, on red | [delhivery.com](https://www.delhivery.com/) |
 | `blue-dart` | White capitals on two lines on blue | [bluedart.com](https://www.bluedart.com/) |
 | `dtdc` | White slanted letters over a red line on navy; the red is an approximation | [dtdc.com](https://www.dtdc.com/) |
 | `sagawa` | White capitals on blue | [sagawa-exp.co.jp](https://www.sagawa-exp.co.jp/) |
 | `ontrac` | White name on red | [ontrac.com](https://www.ontrac.com/) |
-| `estafeta` | White slanted lowercase name on red | [estafeta.com](https://www.estafeta.com/) |
+| `estafeta` | White slanted lowercase e, as on the carrier's own icon, on red | [estafeta.com](https://www.estafeta.com/) |
 | `pos-malaysia` | White letters POS on red, the O a disc pointing forward | [pos.com.my](https://www.pos.com.my/) |
-| `four-px` | White slanted 4PX on orange | [4px.com](https://www.4px.com/) |
+| `four-px` | White slanted 4PX beside an orange spark on blue; the orange is an approximation | [4px.com](https://www.4px.com/) |
 | `planzer` | White capitals on red | [planzer.ch](https://www.planzer.ch/) |
 | `tipsa` | White capitals between four orange corners on navy | [tip-sa.com](https://www.tip-sa.com/) |
 | `gofo` | White capitals on orange | [gofo.com](https://www.gofo.com/us/) |
 | `dachser` | Blue capitals on a yellow panel across a blue truck; the yellow is an approximation | [dachser.com](https://www.dachser.com/) |
+| `asendia` | White lowercase name over a yellow line on teal | [asendia.com](https://www.asendia.com/) |
+| `colis-prive` | Dark pin and purple exclamation mark on lilac | [colisprive.fr](https://www.colisprive.fr/) |
+| `ciblex` | White squared C on blue | [ciblex.fr](https://www.ciblex.fr/) |
+| `colisweb` | White c in a ring on cyan | [colisweb.com](https://www.colisweb.com/) |
+| `uniuni` | Orange box on a dark shield, on orange | [uniuni.com](https://www.uniuni.com/) |
+| `yunexpress` | White outline of a cloud on teal | [yunexpress.com](https://www.yunexpress.com/) |
+| `canpar` | White slanted name on navy | [canpar.com](https://www.canpar.com/) |
+| `relais-colis` | Arrow dropping into a white disc on green | [relaiscolis.com](https://www.relaiscolis.com/) |
+| `singapore-post` | Two red slanted bars on a white slab, on blue | [singpost.com](https://www.singpost.com/) |
+| `geodis` | White capitals on blue | [geodis.com](https://geodis.com/) |
+| `lbc-express` | White letters in a six-sided frame on red | [lbcexpress.com](https://www.lbcexpress.com/) |
+| `spx` (`spx-ph`) | White letters on orange | [spx.ph](https://spx.ph/) |
+| `ekart` | White name on blue | [ekartlogistics.com](https://www.ekartlogistics.com/) |
+| `xpressbees` | Two initials on orange, the second in black | [xpressbees.com](https://www.xpressbees.com/) |
+| `cne` | White slanted letters in a frame on red | [cne.com](https://www.cne.com/) |
+| `yanwen` | White capitals on green | [yw56.com.cn](https://www.yw56.com.cn/) |
+| `sunyou` | White initials over a curve on orange | [sunyou.hk](https://www.sunyou.hk/) |
+| `speedx` | X of one white and one pale stroke on blue | [speedx.io](https://speedx.io/) |
+| `spee-dee` | White name on two lines on red | [speedeedelivery.com](https://speedeedelivery.com/) |
+| `speedpak` | White name on two lines on orange | [orangeconnex.com](https://www.orangeconnex.com/) |
+| `the-courier-guy` | White runner carrying a red parcel on blue | [thecourierguy.co.za](https://www.thecourierguy.co.za/) |
+| `landmark-global` | White four-pointed mark on red | [landmarkglobal.com](https://landmarkglobal.com/) |
+| `old-dominion` | White initials in a ring on green | [odfl.com](https://www.odfl.com/) |
+| `paack` | White pinwheel of four leaves on violet | [paack.co](https://paack.co/) |
+| `c-chez-vous` | White capital C on pink | [cchezvous.fr](https://www.cchezvous.fr/) |
+| `ecoscooting` | White stopwatch and a green leaf on blue | [ecoscooting.com](https://www.ecoscooting.com/) |
+| `correos-chile` | White wing of three strokes on red | [correos.cl](https://www.correos.cl/) |

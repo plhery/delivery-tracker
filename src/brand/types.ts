@@ -32,7 +32,11 @@ export type CarrierDecal = 'default' | 'dhl' | 'ups' | 'fedex' | 'dpd' | 'amazon
   | 'hongkong-post' | 'thailand-post' | 'bring' | 'packeta' | 'gls' | 'evri' | 'postnord' | 'poste-italiane'
   | 'aramex' | 'j-and-t' | 'aliexpress' | 'zto' | 'yto' | 'sto' | 'yunda' | 'jd-logistics' | 'ems' | 'seur'
   | 'mrw' | 'nacex' | 'purolator' | 'parcelforce' | 'posti' | 'an-post' | 'delhivery' | 'blue-dart' | 'dtdc'
-  | 'sagawa' | 'ontrac' | 'estafeta' | 'pos-malaysia' | 'four-px' | 'planzer' | 'tipsa' | 'gofo' | 'dachser';
+  | 'sagawa' | 'ontrac' | 'estafeta' | 'pos-malaysia' | 'four-px' | 'planzer' | 'tipsa' | 'gofo' | 'dachser'
+  | 'asendia' | 'colis-prive' | 'ciblex' | 'colisweb' | 'uniuni' | 'yunexpress' | 'canpar' | 'relais-colis'
+  | 'singapore-post' | 'geodis' | 'lbc-express' | 'spx' | 'ekart' | 'xpressbees' | 'cne' | 'yanwen'
+  | 'sunyou' | 'speedx' | 'spee-dee' | 'speedpak' | 'the-courier-guy' | 'landmark-global' | 'old-dominion'
+  | 'paack' | 'c-chez-vous' | 'ecoscooting' | 'correos-chile';
 
 /** How one property is mixed out of the carrier's catalog color. */
 export interface BrandDerivationStep {

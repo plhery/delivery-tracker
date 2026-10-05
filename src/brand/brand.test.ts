@@ -46,7 +46,7 @@ describe('carrier brand', () => {
   it.each([
     ['dhl-ecommerce', 'dhl'], ['dpd-fr', 'dpd'], ['amazon-shipping', 'amazon-logistics'],
     ['swiss-post-cargo', 'swiss-post'], ['postlogistics', 'swiss-post'],
-    ['dpd-de', 'dpd'], ['dpd-uk', 'dpd'], ['evri-uk', 'evri'],
+    ['dpd-de', 'dpd'], ['dpd-uk', 'dpd'], ['evri-uk', 'evri'], ['delivengo', 'la-poste'],
   ])('shares %s branding with %s', (id, owner) => {
     expect(carrierBrandFamily(id)).toBe(owner);
     expect(carrierDecal(id)).toBe(carrierDecal(owner));
@@ -63,6 +63,10 @@ describe('carrier brand', () => {
       'sto', 'yunda', 'jd-logistics', 'ems', 'seur', 'mrw', 'nacex', 'purolator', 'parcelforce', 'posti', 'an-post',
       'delhivery', 'blue-dart', 'dtdc', 'sagawa', 'ontrac', 'estafeta', 'pos-malaysia', 'four-px', 'planzer', 'tipsa',
       'gofo', 'dachser',
+      'asendia', 'colis-prive', 'ciblex', 'colisweb', 'uniuni', 'yunexpress', 'canpar', 'relais-colis',
+      'singapore-post', 'geodis', 'lbc-express', 'spx', 'ekart', 'xpressbees', 'cne', 'yanwen', 'sunyou', 'speedx',
+      'spee-dee', 'speedpak', 'the-courier-guy', 'landmark-global', 'old-dominion', 'paack', 'c-chez-vous',
+      'ecoscooting', 'correos-chile',
     ] as const) {
       for (const shape of CARRIER_TRUCK.decals[name]) {
         if (shape.type === 'circle') {

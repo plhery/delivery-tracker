@@ -19,7 +19,9 @@
   "aramex": {
     "decal": "aramex"
   },
-  "asendia": {},
+  "asendia": {
+    "decal": "asendia"
+  },
   "australia-post": {
     "decal": "australia-post"
   },
@@ -42,7 +44,9 @@
   "brt": {
     "decal": "dpd"
   },
-  "c-chez-vous": {},
+  "c-chez-vous": {
+    "decal": "c-chez-vous"
+  },
   "canada-post": {
     "decal": "canada-post",
     "palette": {
@@ -51,7 +55,9 @@
       "accent": "#e4002b"
     }
   },
-  "canpar": {},
+  "canpar": {
+    "decal": "canpar"
+  },
   "china-post": {
     "decal": "china-post"
   },
@@ -63,9 +69,18 @@
       "edge": "#0056a7"
     }
   },
-  "ciblex": {},
-  "colis-prive": {},
-  "colisweb": {},
+  "ciblex": {
+    "decal": "ciblex"
+  },
+  "cne": {
+    "decal": "cne"
+  },
+  "colis-prive": {
+    "decal": "colis-prive"
+  },
+  "colisweb": {
+    "decal": "colisweb"
+  },
   "correios-br": {
     "palette": {
       "accent": "#06416a",
@@ -73,7 +88,9 @@
     },
     "decal": "correios-br"
   },
-  "correos-chile": {},
+  "correos-chile": {
+    "decal": "correos-chile"
+  },
   "correos-express": {
     "palette": {
       "accent": "#002e6d",
@@ -100,7 +117,9 @@
   "delhivery": {
     "decal": "delhivery"
   },
-  "delivengo": {},
+  "delivengo": {
+    "family": "la-poste"
+  },
   "dhl": {
     "palette": {
       "surface-light": "#f7e8aa",
@@ -136,7 +155,12 @@
   "dtdc": {
     "decal": "dtdc"
   },
-  "ecoscooting": {},
+  "ecoscooting": {
+    "decal": "ecoscooting"
+  },
+  "ekart": {
+    "decal": "ekart"
+  },
   "ems": {
     "decal": "ems"
   },
@@ -161,7 +185,9 @@
   "four-px": {
     "decal": "four-px"
   },
-  "geodis": {},
+  "geodis": {
+    "decal": "geodis"
+  },
   "gls-ch": {
     "family": "gls",
     "palette": {
@@ -229,7 +255,12 @@
       "brand-light": "#003da5"
     }
   },
-  "landmark-global": {},
+  "landmark-global": {
+    "decal": "landmark-global"
+  },
+  "lbc-express": {
+    "decal": "lbc-express"
+  },
   "mondial-relay": {
     "decal": "mondial-relay",
     "palette": {
@@ -255,11 +286,15 @@
   "nz-post": {
     "decal": "nz-post"
   },
-  "old-dominion": {},
+  "old-dominion": {
+    "decal": "old-dominion"
+  },
   "ontrac": {
     "decal": "ontrac"
   },
-  "paack": {},
+  "paack": {
+    "decal": "paack"
+  },
   "packeta": {
     "decal": "packeta"
   },
@@ -292,12 +327,19 @@
     "decal": "postnord"
   },
   "purolator": {
-    "decal": "purolator"
+    "decal": "purolator",
+    "palette": {
+      "truck": "#ffffff",
+      "edge": "#22387d",
+      "accent": "#da322a"
+    }
   },
   "quickpac": {
     "decal": "quickpac"
   },
-  "relais-colis": {},
+  "relais-colis": {
+    "decal": "relais-colis"
+  },
   "royal-mail": {
     "decal": "royal-mail",
     "palette": {
@@ -314,16 +356,30 @@
     "decal": "sf-express"
   },
   "shipup": {},
-  "singapore-post": {},
-  "spee-dee": {},
-  "speedx": {},
+  "singapore-post": {
+    "decal": "singapore-post"
+  },
+  "spee-dee": {
+    "decal": "spee-dee"
+  },
+  "speedpak": {
+    "decal": "speedpak"
+  },
+  "speedx": {
+    "decal": "speedx"
+  },
   "spring-gds": {
     "decal": "postnl"
+  },
+  "spx-ph": {
+    "decal": "spx"
   },
   "sto": {
     "decal": "sto"
   },
-  "sunyou": {},
+  "sunyou": {
+    "decal": "sunyou"
+  },
   "swiss-post": {
     "decal": "swiss-post",
     "palette": {
@@ -337,7 +393,9 @@
   "thailand-post": {
     "decal": "thailand-post"
   },
-  "the-courier-guy": {},
+  "the-courier-guy": {
+    "decal": "the-courier-guy"
+  },
   "tipsa": {
     "palette": {
       "accent": "#ff4f00"
@@ -354,7 +412,9 @@
     },
     "decal": "ukrposhta"
   },
-  "uniuni": {},
+  "uniuni": {
+    "decal": "uniuni"
+  },
   "unknown": {},
   "ups": {
     "palette": {
@@ -378,6 +438,9 @@
       "accent": "#004b87"
     }
   },
+  "xpressbees": {
+    "decal": "xpressbees"
+  },
   "yamato": {
     "palette": {
       "accent": "#141414",
@@ -385,7 +448,9 @@
     },
     "decal": "yamato"
   },
-  "yanwen": {},
+  "yanwen": {
+    "decal": "yanwen"
+  },
   "yto": {
     "decal": "yto"
   },
@@ -396,7 +461,9 @@
     },
     "decal": "yunda"
   },
-  "yunexpress": {},
+  "yunexpress": {
+    "decal": "yunexpress"
+  },
   "zto": {
     "decal": "zto"
   }
