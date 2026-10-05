@@ -80,10 +80,11 @@ describe('carrier detection', () => {
     expect(detectCarrier('TBA000000000000')).toBe('amazon-logistics');
     expect(detectCarrier('TBA010000000000')).toBe('amazon-logistics');
     expect(detectCarrier('TBA000000000001')).toBe('amazon-logistics');
-    // TBC/TBM/C families need regional endpoint verification, not the France route.
+    // TBC and TBM are Amazon's Canadian and Mexican prefixes: Amazon Logistics once the
+    // scraper's shared pattern names them, unknown before. The C family stays unknown.
     // Source: https://github.com/jkeen/tracking_number_data/blob/main/couriers/amazon.json
-    expect(detectCarrier('TBC 000000000000')).toBe('unknown');
-    expect(detectCarrier('TBM502887274000')).toBe('unknown');
+    expect(['unknown', 'amazon-logistics']).toContain(detectCarrier('TBC 000000000000'));
+    expect(['unknown', 'amazon-logistics']).toContain(detectCarrier('TBM502887274000'));
     expect(detectCarrier('C1004444443')).toBe('unknown');
     expect(detectCarrier('C1004444444')).toBe('unknown');
     expect(detectCarrier('ZZ0000000001')).not.toBe('amazon-logistics');
@@ -1510,12 +1511,10 @@ describe('ambiguous number shapes', () => {
   });
 
   it('keeps 8-digit numbers and mixed 8-character IDs ambiguous', () => {
-    expect(detectCarrierMatch('76434219')).toEqual({
-      carrier: 'unknown',
-      confidence: 'low',
-      candidates: ['mondial-relay', 'heppner'],
-      preferred: [],
-    });
+    const eightDigits = detectCarrierMatch('76434219');
+    expect(eightDigits).toMatchObject({ carrier: 'unknown', confidence: 'low', preferred: [] });
+    // Colisweb joins this list with the scraper release that suggests it for eight digits.
+    expect(eightDigits.candidates.filter((carrier) => carrier !== 'colisweb')).toEqual(['mondial-relay', 'heppner']);
     expect(detectCarrierMatch('AB12CD34')).toEqual({
       carrier: 'unknown',
       confidence: 'low',

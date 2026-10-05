@@ -418,9 +418,13 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     }
 
     static func amazonMarketplace(_ number: String) -> String {
+        let normalized = normalize(number)
+        // TBA names no country; its Canadian and Mexican siblings do.
+        if normalized.hasPrefix("TBC") { return "ca" }
+        if normalized.hasPrefix("TBM") { return "com.mx" }
         let domains = ["FR": "fr", "DE": "de", "AT": "de", "BE": "com.be", "UK": "co.uk", "GB": "co.uk",
             "IT": "it", "ES": "es", "PT": "es", "NL": "nl", "IE": "ie", "PL": "pl", "SE": "se", "TR": "com.tr"]
-        return domains[String(normalize(number).prefix(2))] ?? "com"
+        return domains[String(normalized.prefix(2))] ?? "com"
     }
 
     static func amazonOrdersURL(_ number: String) -> URL {

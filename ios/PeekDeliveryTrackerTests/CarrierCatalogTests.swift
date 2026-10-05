@@ -419,6 +419,10 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(CarrierCatalog.amazonOrdersURL("UK0000000001").host, "www.amazon.co.uk")
         XCTAssertEqual(CarrierCatalog.amazonShippingURL("IT0000000001").host, "track.amazon.it")
         XCTAssertEqual(CarrierCatalog.amazonShippingURL("TBA000000000001").host, "track.amazon.com")
+        XCTAssertEqual(CarrierCatalog.amazonOrdersURL("TBA000000000001").host, "www.amazon.com")
+        XCTAssertEqual(CarrierCatalog.amazonOrdersURL("tbc 000000000001").host, "www.amazon.ca")
+        XCTAssertEqual(CarrierCatalog.amazonOrdersURL("TBM000000000001").host, "www.amazon.com.mx")
+        XCTAssertEqual(CarrierCatalog.amazonShippingURL("TBC000000000001").host, "track.amazon.com")
         let parcel = Parcel(id: UUID(), trackingNumber: "UK0000000001", label: "Example", carrier: .amazonShipping,
             createdAt: "2026-09-10T12:00:00Z", syncStatus: .ok, notificationsMuted: false)
         XCTAssertEqual(parcel.activeTrackingCarrier, .amazonShipping)
