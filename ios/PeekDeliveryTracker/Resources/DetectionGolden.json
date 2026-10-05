@@ -71,6 +71,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -901,6 +902,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -1185,6 +1187,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -1194,6 +1197,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -1274,6 +1278,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -2558,6 +2563,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -2598,6 +2604,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -2694,6 +2701,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -3481,6 +3489,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -3518,6 +3527,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -3990,6 +4000,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -3999,6 +4010,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -4113,6 +4125,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -4208,6 +4221,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -4229,6 +4243,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -4283,6 +4298,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -4372,6 +4388,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -4479,6 +4496,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -4575,6 +4593,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -4584,6 +4603,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -4810,6 +4830,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -5096,6 +5117,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -5162,6 +5184,7 @@
     "confidence": "low",
     "candidates": [
       "mondial-relay",
+      "colisweb",
       "heppner"
     ]
   },
@@ -8147,15 +8170,19 @@
   },
   {
     "input": "TBC 000000000000",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "amazon-logistics",
+    "confidence": "high",
+    "candidates": [
+      "amazon-logistics"
+    ]
   },
   {
     "input": "TBM502887274000",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "amazon-logistics",
+    "confidence": "high",
+    "candidates": [
+      "amazon-logistics"
+    ]
   },
   {
     "input": "TLR000083964",

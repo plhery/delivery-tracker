@@ -164,7 +164,7 @@ export const CARRIER_CAPABILITIES = {
   },
   "aliexpress": {
     "displayName": "AliExpress / Cainiao",
-    "color": "#ff4747",
+    "color": "#e62e04",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -203,7 +203,7 @@ export const CARRIER_CAPABILITIES = {
   },
   "sunyou": {
     "displayName": "SunYou",
-    "color": "#f39800",
+    "color": "#02a232",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -578,7 +578,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^(?:(?:FR|DE|BE|UK|GB|IT|ES|NL|AT|IE|PL|SE|PT|LU|DK|FI|CZ|SK|HU|RO|BG|HR|SI|EE|LV|LT|GR|CY|MT|CH|NO|IS|LI|TR)[0-9]{10}|TBA[0-9]{12})$",
+        "pattern": "^(?:(?:FR|DE|BE|UK|GB|IT|ES|NL|AT|IE|PL|SE|PT|LU|DK|FI|CZ|SK|HU|RO|BG|HR|SI|EE|LV|LT|GR|CY|MT|CH|NO|IS|LI|TR)[0-9]{10}|TB[ACM][0-9]{12})$",
         "confidence": "high"
       }
     ],
@@ -620,7 +620,9 @@ export const CARRIER_CAPABILITIES = {
       "IS",
       "LI",
       "TR",
-      "US"
+      "US",
+      "CA",
+      "MX"
     ]
   },
   "amazon-shipping": {
@@ -1170,7 +1172,7 @@ export const CARRIER_CAPABILITIES = {
   },
   "geodis": {
     "displayName": "GEODIS",
-    "color": "#00549f",
+    "color": "#3100e6",
     "selectable": true,
     "timezone": "Europe/Paris",
     "tracking": {
@@ -1221,7 +1223,12 @@ export const CARRIER_CAPABILITIES = {
         ]
       }
     ],
-    "detectionRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{8}$",
+        "confidence": "low"
+      }
+    ],
     "countries": [
       "FR"
     ]
@@ -1436,7 +1443,7 @@ export const CARRIER_CAPABILITIES = {
   },
   "shipup": {
     "displayName": "ShipUp",
-    "color": "#5c4ee5",
+    "color": "#c8ef69",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -4197,7 +4204,7 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "CA"
     ],
-    "color": "#ffda00",
+    "color": "#13a58f",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
