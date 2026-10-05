@@ -578,9 +578,10 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             return makeMatch(recognized, source: input == recognized ? .number : .text)
         }
 
-        let keywordPattern = "(?:(?:tracking|track(?:ing)?\\s*(?:number|no\\.?|id)?)|(?:parcel|shipment)(?:\\s+(?:tracking|number|no\\.?|id))?)\\s*[:#-]?\\s*([A-Z0-9][A-Z0-9.-]{3,39})"
-        if let keyword = Self.capture(input, pattern: keywordPattern, caseInsensitive: true), Self.valid(keyword) {
-            return makeMatch(keyword, source: .text)
+        if let labelled = Self.capture(input, pattern: Self.labelledNumberPattern, caseInsensitive: true) {
+            // A sentence can end right after its number.
+            let keyword = labelled.replacingOccurrences(of: "[.-]+$", with: "", options: .regularExpression)
+            if Self.validInText(keyword) { return makeMatch(keyword, source: .text) }
         }
         if !input.contains("://"), Self.valid(input) { return makeMatch(input, source: .number) }
         return Self.emptyMatch
@@ -846,11 +847,35 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         return matches(value, pattern: "^L[A-Z]\\d{9}CH$") && isValidS10(value)
     }
 
+    /// A number introduced by a "tracking number:" style label, as the web engine reads it.
+    /// "No" and "ID" also start numbers, so they belong to the label only when they stand
+    /// apart from what follows. The token holds a digit, so a label followed by a plain
+    /// word does not end the search.
+    private static let labelledNumberPattern: String = {
+        let suffix = "(?:numbers?(?![A-Z])|no\\.|(?:no|id)(?![A-Z0-9.]))"
+        return "(?:track(?:ing)?(?:\\s*\(suffix)|(?![A-Z]))"
+            + "|(?:parcel|shipment)(?:\\s+(?:tracking(?![A-Z])|\(suffix))|(?![A-Z])))"
+            + "(?:\\s+is(?![A-Z0-9]))?\\s*[:#-]?\\s*"
+            + "((?=[A-Z0-9.-]{0,39}\\d)[A-Z0-9][A-Z0-9.-]{3,39})"
+    }()
+
+    private static func shaped(_ value: String) -> Bool {
+        (4...40).contains(value.count)
+            && (matches(value, pattern: "^[A-Z0-9]+$") || matches(value, pattern: "^\\d{4}/\\d{8}$"))
+    }
+
+    /// A number entered whole or carried by a carrier's link. Without a digit it must be
+    /// six to ten unbroken letters, so a short phrase is not a number.
     private static func valid(_ raw: String) -> Bool {
         let value = normalize(raw)
-        return (4...40).contains(value.count)
-            && (matches(value, pattern: "^[A-Z0-9]+$") || matches(value, pattern: "^\\d{4}/\\d{8}$"))
-            && matches(value, pattern: "\\d")
+        return shaped(value) && (matches(value, pattern: "\\d")
+            || matches(raw.trimmingCharacters(in: .whitespacesAndNewlines), pattern: "^[A-Za-z]{6,10}$"))
+    }
+
+    /// A number pulled out of prose always holds a digit: a word there is not a number.
+    private static func validInText(_ raw: String) -> Bool {
+        let value = normalize(raw)
+        return shaped(value) && matches(value, pattern: "\\d")
     }
 
     /// Compiling a pattern costs far more than matching it, and detection runs

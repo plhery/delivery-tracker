@@ -3,7 +3,7 @@ import 'server-only';
 import type { AdapterRegistry } from 'universal-parcel-scraper/node';
 import type { ApiCarrierDetectionResponse, ApiCarrierId } from '../generated/apiContract';
 import { isAmazonTrackingNumber } from '../lib/amazon';
-import { detectCarrierMatch, normalizeTrackingNumber } from '../lib/carriers';
+import { detectCarrierMatch, normalizeTrackingNumber, validTrackingNumber } from '../lib/carriers';
 import { createAdapterRegistry } from './adapterRegistry';
 import { BROWSER_RECOGNITION_BUDGET_MS, MAX_BROWSER_RECOGNITIONS, recognizeBrowser } from './browserRecognition';
 import { checkAmazonShipping } from './amazonShippingEligibility';
@@ -94,7 +94,7 @@ export async function detectCarrier(
     throw new HttpError(400, 'Invalid tracking number');
   }
   const trackingNumber = normalizeTrackingNumber(body.trackingNumber);
-  if (!/^(?=.*\d)[A-Z0-9]{4,40}$/.test(trackingNumber)) {
+  if (!/^[A-Z0-9]{4,40}$/.test(trackingNumber) || !validTrackingNumber(body.trackingNumber)) {
     throw new HttpError(400, 'Invalid tracking number');
   }
   if (isAmazonTrackingNumber(trackingNumber)) {

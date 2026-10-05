@@ -1,5 +1,6 @@
 import { AMAZON_ACCOUNT_MESSAGE, isAmazonTrackingNumber, requiresAmazonAccount } from '../lib/amazon';
 import { CARRIER_IDS, type ApiGiftWords, type ApiParcelAlertPreset } from '../generated/apiContract';
+import { validTrackingNumber } from '../lib/carriers';
 import { ALERT_PRESET_STAGES, ALL_NOTIFICATION_STAGES } from '../lib/notificationPresets';
 import { createECDH } from 'node:crypto';
 import { HttpError, parseUuid } from './api';
@@ -56,8 +57,9 @@ export function newPackageValues(payload: JsonObject): NewPackageValues {
   if (trackingNumber.length < 4 || trackingNumber.length > 40) {
     throw new HttpError(400, 'Enter a tracking number between 4 and 40 characters');
   }
-  if (!/^(?:[A-Z0-9]+|\d{4}\/\d{8})$/.test(trackingNumber) || !/\d/.test(trackingNumber)) {
-    throw new HttpError(400, 'Tracking numbers must use letters and numbers and include a digit');
+  // The scraper decides what a number may be: a digit, or six to ten unbroken letters.
+  if (!/^(?:[A-Z0-9]+|\d{4}\/\d{8})$/.test(trackingNumber) || !validTrackingNumber(rawTracking)) {
+    throw new HttpError(400, 'Tracking numbers use letters and numbers and include a digit, unless they are six to ten letters');
   }
   if (codePointLength(rawLabel) > 80) {
     throw new HttpError(400, 'Parcel names can be at most 80 characters');

@@ -1,5 +1,5 @@
 import { carrierBrandFamily } from '../brand';
-import { normalizeTrackingNumber, parseTrackingInput } from '../lib/carriers';
+import { normalizeTrackingNumber, parseTrackingInput, validTrackingNumber } from '../lib/carriers';
 import { currentEvent, isFinal, latestEvent } from '../lib/stages';
 import { uid } from '../lib/uid';
 import { browserStorage } from '../store/apiRepo';
@@ -226,7 +226,7 @@ export function createDemoLinks(
     async lookupParcel(input, signal) {
       signal?.throwIfAborted();
       const trackingNumber = normalizeTrackingNumber(input.trackingNumber);
-      if (!/^(?=.*\d)(?:[A-Z0-9]{4,40}|\d{4}\/\d{8})$/.test(trackingNumber)) {
+      if (!/^(?:[A-Z0-9]{4,40}|\d{4}\/\d{8})$/.test(trackingNumber) || !validTrackingNumber(input.trackingNumber)) {
         throw new ParcelLinkError('validation', { guidance: 'error.trackingNumber' });
       }
       const time = now();

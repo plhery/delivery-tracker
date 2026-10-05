@@ -514,7 +514,7 @@ describe('input validation', () => {
       dpdPostcode: 'ABC',
     })).toThrow('valid delivery postcode');
     expect(() => newPackageValues({
-      trackingNumber: 'letters',
+      trackingNumber: 'lette',
       label: 'Parcel',
       carrier: 'unknown',
       trackingUrl: '',

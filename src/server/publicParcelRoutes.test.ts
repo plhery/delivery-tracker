@@ -236,7 +236,7 @@ describe('looking up a parcel without an account', () => {
 
   it.each([
     [{ trackingNumber: '!!' }, 'Enter a tracking number between 4 and 40 characters'],
-    [{ trackingNumber: 'ABCDEFGH' }, 'Tracking numbers must use letters and numbers and include a digit'],
+    [{ trackingNumber: 'ABCDE' }, 'Tracking numbers use letters and numbers and include a digit, unless they are six to ten letters'],
     [{ trackingNumber, carrier: 'not-a-carrier' }, 'Choose a supported carrier'],
     [{ trackingNumber, carrier: 'gls-ch' }, expect.stringContaining('postcode')],
     [{ trackingNumber: 'TBA000000000001', carrier: 'amazon-logistics' }, AMAZON_ACCOUNT_MESSAGE],

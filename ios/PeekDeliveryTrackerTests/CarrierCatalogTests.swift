@@ -436,6 +436,45 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(parsed.source, .link)
     }
 
+    func testTakesALettersOnlyNumberWholeButNeverOutOfProse() {
+        // Six to ten unbroken letters are a number when they are the whole input.
+        for input in ["ABCDEF", " abcdefg ", "ABCDEFGHIJ"] {
+            let parsed = catalog.parse(input)
+            XCTAssertEqual(parsed.source, .number, input)
+            XCTAssertEqual(parsed.trackingNumber, input.trimmingCharacters(in: .whitespaces), input)
+        }
+        // Shorter, longer or broken up, they are a word or a phrase.
+        for input in ["ABCDE", "ABCDEFGHIJK", "ABC DEF", "ABC-DEF", "AB.CD.EF"] {
+            XCTAssertEqual(catalog.parse(input).source, TrackingInputMatch.Source.none, input)
+        }
+        // A word that follows a label in a message stays a word.
+        XCTAssertEqual(catalog.parse("Tracking number: pending").source, TrackingInputMatch.Source.none)
+        XCTAssertEqual(catalog.parse("Your shipment arrives Monday").source, TrackingInputMatch.Source.none)
+    }
+
+    func testReadsTheNumberALabelIntroduces() {
+        for text in [
+            "Tracking number: 12345678901",
+            "Tracking number 12345678901",
+            "Your tracking number is 12345678901.",
+            "tracking no. 12345678901",
+            "Tracking ID: 12345678901",
+            "Tracking: 12345678901",
+            "track 12345678901",
+            "Parcel number: 12345678901",
+            "Shipment tracking number: 12345678901",
+            "Tracking update. Your parcel number 12345678901 leaves today",
+        ] {
+            let parsed = catalog.parse(text)
+            XCTAssertEqual(parsed.trackingNumber, "12345678901", text)
+            XCTAssertEqual(parsed.source, .text, text)
+        }
+        // A label word attached to the number stays with it, and no word is taken for a number.
+        XCTAssertEqual(catalog.parse("Tracking NO123456789").trackingNumber, "NO123456789")
+        XCTAssertEqual(catalog.parse("tracking notable1234").trackingNumber, "notable1234")
+        XCTAssertEqual(catalog.parse("Shipment tracking: delayed").source, TrackingInputMatch.Source.none)
+    }
+
     func testParsesGeodisHashLinkAndExposesFrenchCarriersInThePicker() {
         let parsed = catalog.parse(
             "https://espace-client.geodis.com/services/destinataires/#/fr/suivi/1G123GEODIS0"

@@ -77,4 +77,5 @@ export {
   normalizeTrackingNumber,
   parseTrackingInput,
   supportsSwissPostHandoff,
+  validTrackingNumber,
 } from 'universal-parcel-scraper';
