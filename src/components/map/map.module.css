@@ -3,6 +3,8 @@
   --map-space: light-dark(#e9ece5, #0e120e); --map-ocean: light-dark(#f4f6f1, #171c17);
   --map-land: light-dark(#dfe4d8, #2d352b); --map-border: var(--map-ocean);
   --map-visited: color-mix(in srgb, var(--map-accent) 13%, var(--map-land));
+  /* What shows up close: built-up areas a shade off the land, roads a little further off it. */
+  --map-urban: color-mix(in srgb, var(--map-land) 93%, var(--ink)); --map-road: color-mix(in srgb, var(--map-land) 82%, var(--ink));
   --map-night: light-dark(rgb(24 34 40 / 10%), rgb(0 0 0 / 34%)); --map-grid: light-dark(rgb(32 37 30 / 6%), rgb(245 246 242 / 4%));
   --map-limb: light-dark(rgb(32 37 30 / 9%), rgb(245 246 242 / 10%)); --map-shade: light-dark(rgb(32 45 32 / 7%), rgb(0 0 0 / 26%));
   --map-route: var(--ink); --map-route-muted: color-mix(in srgb, var(--ink) 38%, transparent);

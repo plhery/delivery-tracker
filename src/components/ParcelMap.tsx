@@ -45,6 +45,12 @@ const pip = (stage: Stage | undefined, floor?: number): PipPlacing | null => {
   return mood && { mood, ceiling: 52, floor };
 };
 
+/** On the opened map he keeps clear of what lies over it: the summary and the button that closes it. */
+const pipOnMap = (stage: Stage | undefined): PipPlacing | null => {
+  const mood = pipMood(stage);
+  return mood && { mood, inset: true };
+};
+
 /** The parcel's dot pulses until the journey is over. */
 const travelling = (stage?: Stage) => stage !== 'delivered' && stage !== 'returned';
 
@@ -171,8 +177,8 @@ export function ParcelMapSheet({ route, stage, brand, onClose }: {
   }
 
   return createPortal(<div className="parcel-map" ref={dialog} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1} style={brand}>
-    <WorldMap route={route} mode={mode} time={time} night interactive sites label={label} languageTag={languageTag} insets={insets}
-      live={travelling(stage)}
+    <WorldMap route={route} mode={mode} time={time} night interactive sites detail label={label} languageTag={languageTag} insets={insets}
+      live={travelling(stage)} pip={pipOnMap(stage)}
       recenter={recenter} onFreeChange={setFree} className="parcel-map__map" />
     <button ref={close} type="button" className="parcel-map__close" onClick={onClose} aria-label={t('map.close')}>
       <Icon name="close" />

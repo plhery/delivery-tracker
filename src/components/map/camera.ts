@@ -17,6 +17,8 @@ export interface Camera {
 export interface Box { x: number; y: number; width: number; height: number }
 
 const EARTH_KM = 6371;
+/** How wide a view may be, across its shorter side, to count as a close-up: under it the opened map shows rivers, roads and towns. */
+export const CLOSE_UP_KM = 560;
 
 export function projection(camera: Camera): GeoProjection {
   return geoOrthographic()

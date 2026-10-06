@@ -52,6 +52,10 @@ Key server modules:
   Lines between recorded stops are solid; approximate areas have dotted markers.
   On the web the route is drawn as one stroke, from its first place to the parcel's, and
   the way still to go shows once the stroke has arrived.
+  The opened map shows more as it closes in: rivers, lakes, built-up areas, main roads
+  and towns, from tiles the site serves itself (`public/atlas`, built by
+  [`build-detail.mjs`](../src/components/map/build-detail.mjs)). The iPhone app ships the
+  same tiles in one file, so no map service is asked on either.
 - `push.ts` sends Web Push, APNs alerts and Live Activity updates to the parcel owner's
   devices, and Web Push to the alerts of the parcel's links. Each batch of new scans
   announces its newest one, and only when it is the parcel's newest scan: history a carrier

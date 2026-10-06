@@ -1,10 +1,11 @@
 'use client';
 
 import { geoCircle, geoDistance, geoGraticule, geoPath } from 'd3-geo';
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type MouseEvent, type PointerEvent } from 'react';
 import { easeInOut, interpolateCamera, projection, subsolarPoint, zoomCamera, type Camera } from './camera';
+import { detailRead, levelStrengths, loadDetail, noDetail, onDetailLoaded, paintDetail, spanKm, tilesInView, type DetailTile } from './detail';
 import { geography, useWorld, type Coordinate } from './geography';
-import { circleOf, layout, mapView, targetCamera, type Insets, type Overlay, type PipPlacing, type Shape, type Size } from './layout';
+import { circleOf, layout, mapView, targetCamera, type Insets, type Overlay, type PipPlacing, type PipSpot, type Shape, type Size } from './layout';
 import { InkPip } from './Pip';
 import { formatKm, type MapMode, type Route } from './route';
 import { springAt, springSettleTime, type Spring } from '../../lib/spring';
@@ -15,15 +16,16 @@ export { circleOf, targetCamera, type Insets, type PipPlacing };
 type Look = 'map' | 'tint';
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
-const COLORS = ['space', 'ocean', 'land', 'visited', 'border', 'night', 'grid', 'limb', 'shade'] as const;
+const COLORS = ['space', 'ocean', 'land', 'visited', 'border', 'night', 'grid', 'limb', 'shade', 'urban', 'road'] as const;
 type Palette = Record<(typeof COLORS)[number], string>;
 const graticule = geoGraticule().step([30, 30])();
 const LABEL_FONT = '500 11.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
+const NO_TILES: readonly DetailTile[] = [];
 
 export function WorldMap({
   route, mode, shape = 'rect', insets = NO_INSETS, look = 'map', labels = 'all', sites = false, context = true, interactive = false, night = false,
   time, redrawKey = '', recenter = 0, onFreeChange, className = '', style, label, languageTag = 'en', live = true, peek = false, pip = null,
-  framing, glide = false, quiet = false,
+  framing, glide = false, quiet = false, detail = false,
 }: {
   route: Route;
   mode: MapMode;
@@ -63,6 +65,8 @@ export function WorldMap({
   glide?: boolean;
   /** The route as part of the picture rather than its subject: thinner legs and smaller dots, drawn at once. */
   quiet?: boolean;
+  /** Up close, shows rivers, lakes, built-up areas, main roads and towns. */
+  detail?: boolean;
 }) {
   const ready = useWorld();
   const root = useRef<HTMLDivElement>(null);
@@ -75,6 +79,9 @@ export function WorldMap({
   const [settle, setSettle] = useState(0);
   // Pointers and faint names wait for the camera to land instead of jittering in flight.
   const [moving, setMoving] = useState(false);
+  // Where Pip stood when the map was last moved by hand: he keeps his spot beside the dot while it is.
+  const [pipSpot, setPipSpot] = useState<PipSpot | null>(null);
+  const shownPip = useRef<PipSpot | null>(null);
   const current = useRef<Camera | null>(null);
   const frame = useRef(0);
   // A gesture keeps the camera it began on. It has none while the fingers are on a map just opened that is not drawn yet.
@@ -121,6 +128,7 @@ export function WorldMap({
       if (!start) {
         start = now;
         free.current = false;
+        setPipSpot(null);
         onFreeChange?.(false);
       }
       const t = interpolate ? Math.min(1, (now - start) / duration) : 1;
@@ -154,6 +162,7 @@ export function WorldMap({
       setCamera(next);
       if (!free.current) {
         free.current = true;
+        setPipSpot(shownPip.current);
         onFreeChange?.(true);
       }
     };
@@ -161,14 +170,30 @@ export function WorldMap({
     return () => element.removeEventListener('wheel', onWheel);
   }, [interactive, size, top, right, bottom, left, shape, onFreeChange]);
 
+  // A close-up reads the tiles it shows, and draws them as they come.
+  const tileKeys = detail && camera && size ? tilesInView(camera, size).join() : '';
+  const read = useSyncExternalStore(onDetailLoaded, detailRead, noDetail);
+  useEffect(() => {
+    if (tileKeys) loadDetail(tileKeys.split(','));
+  }, [tileKeys]);
+  const tiles = useMemo(() => tileKeys ? tileKeys.split(',').flatMap(key => read.get(key) ?? []) : NO_TILES, [tileKeys, read]);
+  // Whether every tile of the view has come: until then the wide map's own lakes stay.
+  const tiled = tiles.length > 0 && tiles.length === tileKeys.split(',').length;
+  const towns = useMemo(() => detail ? tiles.flatMap(tile => tile.towns) : undefined, [detail, tiles]);
+
   useLayoutEffect(() => {
     if (!camera || !size || !canvas.current || !probes.current) return;
     const circle = shape === 'circle' ? circleOf(size, { top, right, bottom, left }) : null;
-    draw(canvas.current, size, camera, readPalette(probes.current), route, night ? time : null, circle);
-  }, [camera, size, route, time, night, shape, look, redrawKey, top, right, bottom, left]);
+    draw(canvas.current, size, camera, readPalette(probes.current), route, night ? time : null, circle, tiles, tiled);
+  }, [camera, size, route, time, night, shape, look, redrawKey, top, right, bottom, left, tiles, tiled]);
 
-  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, sites, mode, context, languageTag, pip, textWidth) : null;
+  // Pip waits for the camera to land, like the faint names, and then keeps his spot while the map is moved under him.
+  const pipNow = !pip || (interactive && moving) ? null : pipSpot ? { ...pip, held: pipSpot } : pip;
+  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, sites, mode, context, languageTag, pipNow, textWidth, towns) : null;
   const circle = shape === 'circle' && size ? circleOf(size, insets) : null;
+  useEffect(() => {
+    shownPip.current = overlay?.pip ?? null;
+  });
 
   function local(event: PointerEvent<HTMLDivElement>): [number, number] {
     const box = event.currentTarget.getBoundingClientRect();
@@ -178,6 +203,7 @@ export function WorldMap({
   function markFree() {
     if (free.current) return;
     free.current = true;
+    setPipSpot(shownPip.current);
     onFreeChange?.(true);
   }
 
@@ -419,7 +445,7 @@ function readPalette(element: HTMLElement): Palette {
 const transparent = (color: string) => color === 'transparent' || /^rgba\(.*,\s*0\)$/.test(color) || color.endsWith('/ 0)');
 
 function draw(canvas: HTMLCanvasElement, size: Size, camera: Camera, palette: Palette, route: Route, time: Date | null,
-  circle: { x: number; y: number; radius: number } | null) {
+  circle: { x: number; y: number; radius: number } | null, tiles: readonly DetailTile[], tiled: boolean) {
   const ratio = Math.min(window.devicePixelRatio || 1, 2.5);
   const width = Math.round(size.width * ratio);
   const height = Math.round(size.height * ratio);
@@ -469,7 +495,8 @@ function draw(canvas: HTMLCanvasElement, size: Size, camera: Camera, palette: Pa
     context.fill();
     context.globalAlpha = 1;
   }
-  if (detail === 'fine') {
+  // Up close the tiles draw every lake, in finer lines than the wide map's.
+  if (detail === 'fine' && !(tiled && levelStrengths(spanKm(camera, size))[0] >= 1)) {
     context.beginPath();
     path({ type: 'MultiPolygon', coordinates: inView(world.lakes) });
     if (transparent(palette.ocean)) {
@@ -481,6 +508,7 @@ function draw(canvas: HTMLCanvasElement, size: Size, camera: Camera, palette: Pa
     context.fill();
     context.globalCompositeOperation = 'source-over';
   }
+  paintDetail(context, tiles, camera, size, { water: palette.ocean, urban: palette.urban, road: palette.road }, transparent(palette.ocean));
   if (time && globe > 0 && !transparent(palette.night)) {
     // The night side darkens over 24° past the terminator, like dusk: twenty rings, each drawn
     // once at its own depth, since stacking twenty faint fills rounds them away.

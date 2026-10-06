@@ -14,7 +14,7 @@ const nativeInputs = new Set([
   'scripts/native-localization.mjs', 'scripts/native-localization.test.mjs',
   'scripts/prepare-personal-ios-project.mjs', 'scripts/prepare-personal-ios-project.test.mjs',
   'scripts/validate-ios-install.mjs', 'scripts/validate-ios-install.test.mjs', 'scripts/refresh-ios-app.sh',
-  'src/components/map/world.json',
+  'src/components/map/world.json', 'src/components/map/detail.json',
 ]);
 const webConfiguration = new Set([
   'Dockerfile', '.dockerignore', '.env.example', 'next.config.ts', 'next-env.d.ts',
@@ -36,7 +36,7 @@ export function selectSuites(files) {
       suites.ios = true;
     } else if (file === 'package.json' || file === 'package-lock.json'
       || file.startsWith('shared/') || file.startsWith('contracts/')
-      || file.startsWith('src/brand/') || nativeInputs.has(file)) {
+      || file.startsWith('src/brand/') || file.startsWith('public/atlas/') || nativeInputs.has(file)) {
       suites.web = true;
       suites.ios = true;
     } else if (file.startsWith('app/') || file.startsWith('src/')

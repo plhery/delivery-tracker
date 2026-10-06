@@ -1,17 +1,24 @@
 // What a map shows and where everything on it goes, worked out without a browser: the canvas map draws from it, and so does the server.
 import { geoDistance, geoInterpolate, geoPath } from 'd3-geo';
-import { fitCamera, projection, type Box, type Camera } from './camera';
+import { CLOSE_UP_KM, fitCamera, projection, type Box, type Camera } from './camera';
+import type { Town } from './detail';
 import { PIP_FRAME, PIP_SPOTS, PIP_SPOT_BELOW, outlineDistance, pipExtents, pipOutlines, pipWidths, type PipMood, type PipSide } from './pipGeometry';
 import { NEAR_KM, distanceKm, formatKm, placeName, type MapMode, type Route, type Scale } from './route';
 import { cities, geography, type Coordinate, type Detail, type Part } from './world';
 
 export interface Insets { top: number; right: number; bottom: number; left: number }
+/** Where Pip stands: his frame's corner as an offset from the parcel's dot, how wide he is, and which side of him the dot is on. */
+export interface PipSpot { dx: number; dy: number; width: number; side: PipSide; below: boolean }
 export interface PipPlacing {
   mood: PipMood;
   /** Where the card's top row ends; the top inset when absent. */
   ceiling?: number;
   /** Where the card starts writing over the bottom of the map; the map's bottom edge when absent. */
   floor?: number;
+  /** Keeps him inside the insets on every side, where a bar or a button covers the map's edges. */
+  inset?: boolean;
+  /** The spot he keeps while the map is moved under him, instead of looking for the best one. */
+  held?: PipSpot;
 }
 export type Size = { width: number; height: number };
 export type Shape = 'rect' | 'circle';
@@ -106,8 +113,8 @@ export interface Overlay {
   /** Each name with the corner and the width of the box it found room for. */
   labels: { id: string; x: number; y: number; width: number; text: string; kind: 'current' | 'end' | 'stop' | 'area' | 'context' | 'city' }[];
   pointers: { id: string; x: number; y: number; angle: number; text: string; detail: string }[];
-  /** Where Pip's frame starts, how wide it is, and which side of him the parcel's dot is on. */
-  pip: { x: number; y: number; width: number; mood: PipMood; side: PipSide; below: boolean } | null;
+  /** Where Pip's frame starts, on the map and from the parcel's dot, how wide it is, and which side of him the dot is on. */
+  pip: (PipSpot & { x: number; y: number; mood: PipMood }) | null;
 }
 
 type Rect = { x: number; y: number; width: number; height: number };
@@ -146,7 +153,8 @@ function runThrough(track: readonly (readonly [number, number])[], box: Rect): {
  * face the map writes it in.
  */
 export function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape: Shape, labels: 'all' | 'ends' | 'none', sites: boolean,
-  mode: MapMode, context: boolean, languageTag: string, pip: PipPlacing | null, textWidth: (text: string) => number): Overlay {
+  mode: MapMode, context: boolean, languageTag: string, pip: PipPlacing | null, textWidth: (text: string) => number,
+  towns?: readonly Town[]): Overlay {
   // Long legs are cut a little outside the frame.
   const cut: Rect = { x: -400, y: -400, width: size.width + 800, height: size.height + 800 };
   const project = projection(camera).clipExtent([[cut.x, cut.y], [cut.x + cut.width, cut.y + cut.height]]);
@@ -368,27 +376,40 @@ export function layout(route: Route, camera: Camera, size: Size, insets: Insets,
   if (pip && parcelDot && inside(parcelDot, -2)) {
     const [x, y] = parcelDot;
     const ceiling = pip.ceiling ?? insets.top;
-    const floor = pip.floor ?? size.height - 4;
+    const floor = pip.floor ?? size.height - (pip.inset ? insets.bottom : 4);
+    const [west, east] = pip.inset ? [insets.left + 4, size.width - insets.right - 4] : [4, size.width - 4];
     const chips = placed.slice(dots.length);
     const named = names(placed).found.length;
     let best: { cost: number; place: NonNullable<Overlay['pip']>; box: Rect } | null = null;
-    // Every spot beside the dot at every size, before the one below it.
+    // Every spot beside the dot at every size, before the one below it; or the one spot he already stands on.
     const widths = pipWidths(pip.mood);
-    const trials = [...widths.flatMap(width => PIP_SPOTS.map(spot => ({ width, spot }))), ...widths.map(width => ({ width, spot: PIP_SPOT_BELOW }))];
-    for (const { width, spot: [dx, dy] } of trials) {
+    const trials: PipSpot[] = pip.held ? [pip.held]
+      : [...widths.flatMap(width => PIP_SPOTS.map(spot => ({ width, spot }))), ...widths.map(width => ({ width, spot: PIP_SPOT_BELOW }))]
+        .map(({ width, spot: [dx, dy] }) => ({
+          dx: dx * width - PIP_FRAME.groundX * width / PIP_FRAME.width,
+          dy: dy * width - PIP_FRAME.groundY * width / PIP_FRAME.width,
+          width, side: dx > 0 ? -1 : dx < 0 ? 1 : 0, below: dy > 1,
+        }));
+    for (const spot of trials) {
+      const { width, side } = spot;
       const unit = width / PIP_FRAME.width;
-      const side: PipSide = dx > 0 ? -1 : dx < 0 ? 1 : 0;
-      const left = x + dx * width - PIP_FRAME.groundX * unit;
-      const top = y + dy * width - PIP_FRAME.groundY * unit;
+      const left = x + spot.dx;
+      const top = y + spot.dy;
       const extents = pipExtents(pip.mood, side);
       const box = { x: left + extents.left * unit, y: top + extents.top * unit, width: (extents.right - extents.left) * unit, height: (extents.bottom - extents.top) * unit };
       const framed = shape === 'circle'
         ? [[box.x, box.y], [box.x + box.width, box.y], [box.x, box.y + box.height], [box.x + box.width, box.y + box.height]].every(([cornerX, cornerY]) => inside([cornerX, cornerY], 4))
-        : box.x >= 4 && box.x + box.width <= size.width - 4 && box.y >= ceiling && box.y + box.height <= floor;
+        : box.x >= west && box.x + box.width <= east && box.y >= ceiling && box.y + box.height <= floor;
+      if (!framed) continue;
+      const place = { ...spot, x: left, y: top, mood: pip.mood };
+      if (pip.held) {
+        best = { cost: 0, place, box };
+        break;
+      }
       // How far a point on the map is from Pip himself: the corners of his box are empty.
       const outlines = pipOutlines(pip.mood, side);
       const away = (pointX: number, pointY: number) => Math.min(...outlines.map(outline => outlineDistance([(pointX - left) / unit, (pointY - top) / unit], outline))) * unit;
-      if (!framed || away(x, y) < 10) continue;
+      if (away(x, y) < 10) continue;
       const beside = names([...placed, box]).found;
       const own = beside.find(name => name.own);
       if (own && !own.free) continue;
@@ -396,7 +417,7 @@ export function layout(route: Route, camera: Camera, size: Size, insets: Insets,
         + tracks.filter(track => track.some(([trackX, trackY]) => away(trackX, trackY) < 1.5)).length
         + chips.filter(chip => intersects(box, chip)).length
         + (own && !own.clean ? 1 : 0) + Math.max(0, named - beside.length);
-      if (!best || cost < best.cost) best = { cost, place: { x: left, y: top, width, mood: pip.mood, side, below: dy > 1 }, box };
+      if (!best || cost < best.cost) best = { cost, place, box };
       if (!cost) break;
     }
     if (best) {
@@ -425,15 +446,30 @@ export function layout(route: Route, camera: Camera, size: Size, insets: Insets,
     labelBoxes.push({ id: `country-${country.code}`, x: box.x, y: box.y, width, text, kind: 'context' });
   }
 
-  // In a close-up, a few big cities give bearings.
+  // In a close-up, a few big cities give bearings. Closer still there is room for more names, and smaller towns take it.
   const maxCityRank = !context || labels === 'none' || spanKm > 1600 ? -1 : spanKm > 800 ? 3 : spanKm > 400 ? 6 : 7;
+  // A map that shows its close-ups in full names as many places as it has room for, and ever smaller towns.
+  const room = (size.width - insets.left - insets.right) * (size.height - insets.top - insets.bottom) / 15000;
+  const most = towns && spanKm < CLOSE_UP_KM ? Math.max(7, Math.min(24, Math.round(room))) : 7;
+  const smallest = spanKm > 420 ? Infinity : spanKm > 260 ? 50 : spanKm > 130 ? 25 : 0;
+  // A place the parcel passed through has its name already: a city's stands for the whole of it, a town's for its own centre.
+  const ends = [...route.stops.map(stop => stop.place), ...(route.destination ? [route.destination] : [])];
+  const namedAlready = (coordinate: Coordinate, name: string, reach: number) => ends.some((place) => {
+    const distance = distanceKm(place.coordinate, coordinate);
+    return distance < reach || (distance < SAME_TOWN_KM && (place.name === name || place.site === name));
+  });
+  const bearings = maxCityRank < 0 ? [] : [
+    ...cities().filter(city => city.rank <= maxCityRank).map(city => ({ ...city, reach: spanKm > 150 ? 12 : 3 })),
+    ...(towns ?? []).filter(town => town.thousands >= smallest).map(town => ({ ...town, reach: 2 })),
+  ];
   let shown = 0;
-  for (const city of maxCityRank < 0 ? [] : cities()) {
-    if (shown >= 7) break;
-    if (city.rank > maxCityRank || !visible(city.coordinate)) continue;
-    if (route.stops.some(stop => distanceKm(stop.place.coordinate, city.coordinate) < 12)
-      || (route.destination && distanceKm(route.destination.coordinate, city.coordinate) < 12)) continue;
+  for (const city of bearings) {
+    if (shown >= most) break;
+    if (!visible(city.coordinate)) continue;
     const [x, y] = at(city.coordinate);
+    // Off the map, which is most of them.
+    if (!inside([x, y], 4)) continue;
+    if (namedAlready(city.coordinate, city.name, city.reach)) continue;
     const width = textWidth(city.name) * .87 + 12;
     const box = { x: x - 3, y: y - 8, width, height: 16 };
     if (overlaps(box) || !inside([box.x, box.y], 4) || !inside([box.x + width, box.y + 16], 4)

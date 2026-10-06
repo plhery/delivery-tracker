@@ -427,6 +427,9 @@ struct MapPalette {
     var land: Color
     /// Drawn over the land of countries the parcel passed through.
     var visited: Color
+    /// What shows up close: built-up areas a shade off the land, roads a little further off it.
+    var urban: Color
+    var road: Color
     var border: Color
     var night: Color?
     var grid: Color?
@@ -443,7 +446,7 @@ struct MapPalette {
     /// The card's ink and surface, which Pip is drawn in; nil on a map with no card.
     var card: (ink: Color, surface: Color)?
 
-    /// The full map: quiet greens, with the carrier's colour on the parcel.
+    /// The full map: quiet greens, with the carrier's colour on the parcel, and on Pip beside it.
     static func map(accent: Color) -> MapPalette {
         let ocean = Brand.color(light: "#F4F6F1", dark: "#171C17")
         return MapPalette(
@@ -451,6 +454,8 @@ struct MapPalette {
             ocean: ocean,
             land: Brand.color(light: "#DFE4D8", dark: "#2D352B"),
             visited: accent.opacity(0.13),
+            urban: Brand.color(light: "#D2D7CB", dark: "#3B4339"),
+            road: Brand.color(light: "#BDC2B7", dark: "#51584F"),
             border: ocean,
             night: adaptive(light: rgb(24, 34, 40, 0.10), dark: rgb(0, 0, 0, 0.34)),
             grid: adaptive(light: rgb(32, 37, 30, 0.06), dark: rgb(245, 246, 242, 0.04)),
@@ -463,14 +468,16 @@ struct MapPalette {
             labelStrong: Brand.ink,
             labelBackground: adaptive(light: rgb(255, 255, 255, 0.84), dark: rgb(32, 38, 31, 0.82)),
             dotRing: ocean,
-            currentRing: Brand.paper
+            currentRing: Brand.paper,
+            card: (accent, Brand.paper)
         )
     }
 
     /// The card's engraving: the carrier's ink on the card's own colour.
     static func tint(ink: Color, surface: Color) -> MapPalette {
         MapPalette(
-            space: nil, ocean: nil, land: ink.opacity(0.10), visited: ink.opacity(0.17), border: surface.opacity(0.8),
+            space: nil, ocean: nil, land: ink.opacity(0.10), visited: ink.opacity(0.17), urban: ink.opacity(0.07), road: ink.opacity(0.18),
+            border: surface.opacity(0.8),
             night: nil, grid: nil, limb: ink.opacity(0.16), shade: nil, route: ink, routeMuted: ink.opacity(0.45),
             accent: ink, label: ink, labelStrong: ink, labelBackground: surface.opacity(0.92), dotRing: surface,
             currentRing: Brand.paper, card: (ink, surface)
@@ -534,9 +541,10 @@ struct MapOverlay {
     /// A town is named once, however many of its sites the parcel passed through.
     private static let sameTownKilometres = 30.0
 
+    /// `towns` are the towns of the tiles in view, on a map that shows its close-ups in full.
     init(route: ParcelRoute, camera: GlobeCamera, size: CGSize, insets: EdgeInsets, labels labelSet: MapLabels,
          sites: Bool = false, mode: ParcelRoute.Mode, context: Bool, atlas: WorldAtlas, locale: Locale,
-         countryName: (String) -> String, pip request: PipRequest? = nil) {
+         countryName: (String) -> String, pip request: PipRequest? = nil, towns: [DetailTile.Town]? = nil) {
         let projection = GlobeProjection(camera)
         let visible = { (point: GeoPoint) in projection.sees(point) }
         let at = { (point: GeoPoint) in projection.project(point) }
@@ -732,24 +740,35 @@ struct MapOverlay {
         if let request, let current = route.current, visible(current.place.point), inside(at(current.place.point), -2) {
             let dot = at(current.place.point)
             let ceiling = request.ceiling ?? insets.top
-            let floor = request.floor ?? size.height - 4
+            let floor = request.floor ?? size.height - (request.inset ? insets.bottom : 4)
+            let west = request.inset ? insets.leading + 4 : 4
+            let east = size.width - (request.inset ? insets.trailing + 4 : 4)
             let chips = Array(placed.dropFirst(dots.count))
             let named = names(placed).found.count
             let marks = dots.map(\.point)
             var best: (cost: Int, place: PipPlacement)?
-            // Every spot beside the dot at every size, before the one below it.
-            let trials = request.mood.widths.flatMap { width in PipGeometry.spots.map { (width: width, spot: $0) } }
-                + request.mood.widths.map { (width: $0, spot: PipGeometry.spotBelow) }
-            for (width, spot) in trials {
+            // Every spot beside the dot at every size, before the one below it; or the one spot he already stands on.
+            let trials = request.held.map { [$0] } ?? (request.mood.widths.flatMap { width in PipGeometry.spots.map { (width: width, spot: $0) } }
+                + request.mood.widths.map { (width: $0, spot: PipGeometry.spotBelow) }).map { width, spot in
+                    let unit = width / PipGeometry.frame.width
+                    return PipSpot(offset: CGSize(width: spot.x * width - PipGeometry.ground.x * unit, height: spot.y * width - PipGeometry.ground.y * unit),
+                                   width: width, side: spot.x > 0 ? -1 : spot.x < 0 ? 1 : 0, below: spot.y > 1)
+                }
+            for spot in trials {
+                let width = spot.width
+                let side = spot.side
                 let unit = width / PipGeometry.frame.width
-                let side = spot.x > 0 ? -1 : spot.x < 0 ? 1 : 0
-                let origin = CGPoint(x: dot.x + spot.x * width - PipGeometry.ground.x * unit,
-                                     y: dot.y + spot.y * width - PipGeometry.ground.y * unit)
+                let origin = CGPoint(x: dot.x + spot.offset.width, y: dot.y + spot.offset.height)
                 let extents = PipGeometry.extents(request.mood, side: side)
                 let box = CGRect(x: origin.x + extents.minX * unit, y: origin.y + extents.minY * unit,
                                  width: extents.width * unit, height: extents.height * unit)
                 // Inside the map, below the card's top row.
-                guard box.minX >= 4, box.maxX <= size.width - 4, box.minY >= ceiling, box.maxY <= floor else { continue }
+                guard box.minX >= west, box.maxX <= east, box.minY >= ceiling, box.maxY <= floor else { continue }
+                let place = PipPlacement(origin: origin, width: width, mood: request.mood, side: side, below: spot.below, box: box, spot: spot)
+                if request.held != nil {
+                    best = (0, place)
+                    break
+                }
                 // How far a point on the map is from Pip himself: the corners of his box are empty.
                 let outlines = PipGeometry.outlines(request.mood, side: side)
                 let away = { (point: CGPoint) -> CGFloat in
@@ -764,9 +783,7 @@ struct MapOverlay {
                     + routeTracks.filter { $0.contains { away($0) < 1.5 } }.count
                     + chips.filter { overlaps(box, [$0]) }.count
                     + (own.map { $0.clean ? 0 : 1 } ?? 0) + max(0, named - beside.count)
-                if best.map({ cost < $0.cost }) ?? true {
-                    best = (cost, PipPlacement(origin: origin, width: width, mood: request.mood, side: side, below: spot.y > 1, box: box))
-                }
+                if best.map({ cost < $0.cost }) ?? true { best = (cost, place) }
                 if cost == 0 { break }
             }
             if let best {
@@ -796,16 +813,33 @@ struct MapOverlay {
             labels.append(Label(frame: box, text: text, kind: .context))
         }
 
-        // In a close-up, a few big cities give bearings.
+        // In a close-up, a few big cities give bearings. Closer still there is room for more names, and smaller towns take it.
         let maxCityRank = !context || labelSet == .none || spanKilometres > 1_600 ? -1
             : spanKilometres > 800 ? 3 : spanKilometres > 400 ? 6 : 7
+        // A map that shows its close-ups in full names as many places as it has room for, and ever smaller towns.
+        let room = (size.width - insets.leading - insets.trailing) * (size.height - insets.top - insets.bottom) / 15_000
+        let most = towns != nil && spanKilometres < WorldDetailPack.closeUpKilometres ? max(7, min(24, Int(room.rounded()))) : 7
+        let smallest = spanKilometres > 420 ? Int.max : spanKilometres > 260 ? 50 : spanKilometres > 130 ? 25 : 0
+        // A place the parcel passed through has its name already: a city's stands for the whole of it, a town's for its own centre.
+        let ends = route.stops.map(\.place) + (route.destination.map { [$0] } ?? [])
+        let namedAlready = { (point: GeoPoint, name: String, reach: Double) -> Bool in
+            ends.contains { place in
+                let distance = place.point.kilometres(to: point)
+                return distance < reach || (distance < sameTown && (place.name == name || place.site == name))
+            }
+        }
+        var bearings: [(point: GeoPoint, name: String, reach: Double)] = []
+        if maxCityRank >= 0 {
+            bearings = atlas.cities.filter { $0.rank <= maxCityRank }.map { ($0.point, $0.name, spanKilometres > 150 ? 12 : 3) }
+                + (towns ?? []).filter { $0.thousands >= smallest }.map { ($0.point, $0.name, 2) }
+        }
         var shown = 0
-        for city in maxCityRank < 0 ? [] : atlas.cities {
-            if shown >= 7 { break }
-            guard city.rank <= maxCityRank, visible(city.point) else { continue }
-            if route.stops.contains(where: { $0.place.point.kilometres(to: city.point) < 12 })
-                || (route.destination.map { $0.point.kilometres(to: city.point) < 12 } ?? false) { continue }
+        for city in bearings {
+            if shown >= most { break }
+            guard visible(city.point) else { continue }
             let spot = at(city.point)
+            // Off the map, which is most of them.
+            guard inside(spot, 4), !namedAlready(city.point, city.name, city.reach) else { continue }
             let box = CGRect(x: spot.x - 3, y: spot.y - 8, width: Fonts.width(city.name, Fonts.city) + 12, height: 16)
             guard !overlaps(box, placed), fits(box, 4) else { continue }
             placed.append(box)
@@ -819,8 +853,9 @@ struct MapOverlay {
 
 enum MapPainter {
     /// Space, ocean, land, visited countries, lakes, night, borders and the globe's shading.
+    /// Up close, `tiles` add what the wide map leaves out; `tiled` says that every tile of the view has come.
     static func drawBase(_ context: inout GraphicsContext, size: CGSize, atlas: WorldAtlas, route: ParcelRoute,
-                         camera: GlobeCamera, palette: MapPalette, night: Date?) {
+                         camera: GlobeCamera, palette: MapPalette, night: Date?, tiles: [DetailTile] = [], tiled: Bool = false) {
         let projection = GlobeProjection(camera)
         let span = min(size.width, size.height) / camera.scale
         let detail: WorldAtlas.Detail = span < 0.45 ? .fine : .coarse
@@ -861,7 +896,9 @@ enum MapPainter {
                 faded.opacity = visited
                 faded.fill(countries, with: .color(palette.visited), style: evenOdd)
             }
-            if detail == .fine {
+            // Up close the tiles draw every lake, in finer lines than the wide map's.
+            let tilesDrawLakes = tiled && (WorldDetailPack.strengths(span * GeoPoint.earthKilometres).first ?? 0) >= 1
+            if detail == .fine, !tilesDrawLakes {
                 var lakes = Path()
                 for part in atlas.lakes where inView(part) { MapGeometry.addPart(&lakes, part, projection, disk: disk) }
                 if let ocean = palette.ocean {
@@ -873,6 +910,7 @@ enum MapPainter {
                 }
             }
         }
+        drawDetail(&context, tiles: tiles, camera: camera, size: size, palette: palette)
         if let night, globe > 0, let shadow = palette.night {
             // The night side darkens over 24° past the terminator, like dusk: twenty rings, each drawn
             // once at its own depth, since stacking twenty faint fills rounds them away.
@@ -1071,6 +1109,8 @@ struct WorldMapView: View {
     /// Changes to bring a moved map back to the parcel.
     var recenter = 0
     var language: AppLanguage = .en
+    /// What an opened map shows up close: rivers, lakes, built-up areas, main roads and towns.
+    var detail: MapDetail?
     var onFreeChange: (Bool) -> Void = { _ in }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -1079,6 +1119,8 @@ struct WorldMapView: View {
     @State private var gestureStart: GlobeCamera?
     @State private var zooming = false
     @State private var free = false
+    /// Where Pip stood when the map was last moved by hand: he keeps his spot beside the dot while it is.
+    @State private var heldPip: PipSpot?
 
     private struct Flight {
         let id = UUID()
@@ -1094,18 +1136,22 @@ struct WorldMapView: View {
         GeometryReader { proxy in
             let size = proxy.size
             let target = targetCamera(in: size)
+            // A close-up reads the tiles it shows, and draws them as they come.
+            let wanted = detail?.pack.keys(in: camera ?? target, size: size) ?? []
             TimelineView(.animation(paused: flight == nil)) { timeline in
                 let shown = flight?.camera(at: timeline.date) ?? camera ?? target
                 let moving = flight.map { $0.progress(at: timeline.date) < 1 } ?? false
+                let close = closeUp(shown, in: size)
                 let overlay = MapOverlay(
                     route: route, camera: shown, size: size, insets: insets, labels: labels, sites: sites, mode: mode, context: showsContext,
                     atlas: atlas, locale: language.locale, countryName: { TrackingLocation.countryName($0, language: language) },
-                    pip: palette.card == nil ? nil : pip
+                    pip: pipRequest(moving: moving), towns: close.towns
                 )
                 ZStack(alignment: .topLeading) {
                     ZStack(alignment: .topLeading) {
                         Canvas { context, size in
-                            MapPainter.drawBase(&context, size: size, atlas: atlas, route: route, camera: shown, palette: palette, night: night)
+                            MapPainter.drawBase(&context, size: size, atlas: atlas, route: route, camera: shown, palette: palette, night: night,
+                                                tiles: close.tiles, tiled: close.tiled)
                             MapPainter.drawLegs(&context, overlay, palette: palette, quiet: quiet)
                         }
                         if live, !reduceMotion, let dot = overlay.dots.first(where: { $0.kind == .current }) {
@@ -1129,6 +1175,7 @@ struct WorldMapView: View {
             .onChange(of: target) { _, next in if !free { fly(to: next, size: size) } }
             .onChange(of: mode) { _, _ in fly(to: target, size: size) }
             .onChange(of: recenter) { _, _ in fly(to: target, size: size) }
+            .onChange(of: wanted, initial: true) { _, keys in detail?.need(keys) }
             .contentShape(Rectangle())
             .gesture(moveGesture(size: size), including: interactive ? .all : .subviews)
             .simultaneousGesture(peekGesture(size: size, target: target), including: peek && !interactive ? .all : .subviews)
@@ -1139,6 +1186,31 @@ struct WorldMapView: View {
         .framing(route, mode: mode, in: size, insets: insets)
     }
 
+    /// The tiles a camera shows, whether every one of them has come, and their towns; nothing on a map without close-ups.
+    private func closeUp(_ camera: GlobeCamera, in size: CGSize) -> (tiles: [DetailTile], tiled: Bool, towns: [DetailTile.Town]?) {
+        guard let detail else { return ([], false, nil) }
+        let keys = detail.pack.keys(in: camera, size: size)
+        let tiles = keys.compactMap { detail.tiles[$0] }
+        return (tiles, !keys.isEmpty && tiles.count == keys.count, tiles.flatMap(\.towns))
+    }
+
+    /// Pip waits for the camera to land, like the faint names, and then keeps his spot while the map is moved under him.
+    private func pipRequest(moving: Bool) -> PipRequest? {
+        guard palette.card != nil, var request = pip, !(interactive && moving) else { return nil }
+        request.held = heldPip
+        return request
+    }
+
+    /// Where Pip stands on the map as `camera` shows it.
+    private func pipSpot(at camera: GlobeCamera?, size: CGSize) -> PipSpot? {
+        guard palette.card != nil, let pip, let camera else { return nil }
+        let overlay = MapOverlay(
+            route: route, camera: camera, size: size, insets: insets, labels: labels, sites: sites, mode: mode, context: showsContext,
+            atlas: atlas, locale: language.locale, countryName: { TrackingLocation.countryName($0, language: language) }, pip: pip
+        )
+        return overlay.pip?.spot
+    }
+
     private func fly(to target: GlobeCamera, size: CGSize) {
         // Already there or on the way, as when a new view also changes the target.
         if !free, camera == target { return }
@@ -1147,6 +1219,7 @@ struct WorldMapView: View {
             free = false
             onFreeChange(false)
         }
+        heldPip = nil
         camera = target
         guard let from, from != target, !reduceMotion else {
             flight = nil
@@ -1199,6 +1272,7 @@ struct WorldMapView: View {
                 }
                 if !free {
                     free = true
+                    heldPip = pipSpot(at: gestureStart, size: size)
                     onFreeChange(true)
                 }
             }

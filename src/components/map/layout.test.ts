@@ -124,3 +124,88 @@ describe('layout', () => {
     expect(stroke).toBe(0);
   });
 });
+
+describe('layout of the opened map', () => {
+  const width = (text: string) => text.length * 6;
+  const WIDE = { width: 800, height: 600 };
+  const zurich = city('Zürich', 'CH', 8.55, 47.37);
+  const at = (place: Place) => ({ at: '2026-09-28T10:00:00Z', description: 'Scan', stage: 'in_transit' as const, place });
+  /** A view `kilometres` across its shorter side, around Zürich. */
+  const close = (kilometres: number, size = WIDE): Camera => ({ center: [8.55, 47.37], scale: size.height / (kilometres / 6371), offset: [size.width / 2, size.height / 2] });
+  const town = (name: string, longitude: number, latitude: number, thousands: number) => ({ coordinate: [longitude, latitude] as Coordinate, name, thousands });
+  const towns = [town('Winterthur', 8.72, 47.5, 112), town('Zug', 8.52, 47.17, 31), town('Rapperswil', 8.82, 47.23, 27), town('Baden', 8.31, 47.47, 19)];
+  const bearings = (route: ReturnType<typeof buildRoute>, kilometres: number, given?: typeof towns, size = WIDE) =>
+    layout(route, close(kilometres, size), size, NO_INSETS, 'rect', 'all', true, 'now', true, 'en', null, width, given)
+      .labels.filter(label => label.kind === 'city').map(label => label.text);
+
+  it('names smaller towns the closer the view, and none on a map without close-ups', async () => {
+    await loadWorld();
+    const route = buildRoute([at(zurich)]);
+    expect(bearings(route, 500, towns)).not.toContain('Winterthur');
+    expect(bearings(route, 300, towns)).toContain('Winterthur');
+    expect(bearings(route, 300, towns)).not.toContain('Zug');
+    expect(bearings(route, 200, towns)).toEqual(expect.arrayContaining(['Winterthur', 'Zug', 'Rapperswil']));
+    expect(bearings(route, 200, towns)).not.toContain('Baden');
+    expect(bearings(route, 100, towns)).toEqual(expect.arrayContaining(['Winterthur', 'Zug', 'Rapperswil', 'Baden']));
+    // A map that was given no towns names the large cities, a few of them, as before.
+    expect(bearings(route, 100)).toEqual(['Luzern']);
+    expect(bearings(route, 300).length).toBeLessThanOrEqual(7);
+    expect(bearings(route, 300, []).length).toBeGreaterThan(7);
+  });
+
+  it('leaves a place the parcel passed through to its own name', async () => {
+    await loadWorld();
+    const mulligen: Place = { ...city('Zürich', 'CH', 8.49, 47.39), id: 'mulligen', site: 'Zürich-Mülligen' };
+    const route = buildRoute([at(city('Regensdorf', 'CH', 8.47, 47.43)), at(mulligen)]);
+    const given = [...towns, town('Regensdorf', 8.468, 47.434, 18), town('Zürich', 8.55, 47.37, 400), town('Zürich-Mülligen', 8.6, 47.4, 20), town('Adliswil', 8.52, 47.31, 19)];
+    const names = bearings(route, 60, given);
+    // The town of a stop, by its place or by either of its names; a town of its own a few kilometres on is named.
+    expect(names).not.toContain('Regensdorf');
+    expect(names).not.toContain('Zürich');
+    expect(names).not.toContain('Zürich-Mülligen');
+    expect(names).toContain('Adliswil');
+  });
+
+  it('names as many places as the map has room for', async () => {
+    await loadWorld();
+    const route = buildRoute([at(zurich)]);
+    const many = Array.from({ length: 60 }, (_, index) => town(`Town ${index}`, 8.05 + (index % 10) * .1, 47.05 + Math.floor(index / 10) * .11, 60 - index));
+    const small = { width: 400, height: 300 };
+    const few = bearings(route, 100, many, small);
+    const more = bearings(route, 120, many, { width: 1200, height: 900 });
+    // 400 × 300 has room for eight names; a screen nine times the size stops at twenty-four.
+    expect(few.length).toBeGreaterThan(4);
+    expect(few.length).toBeLessThanOrEqual(8);
+    expect(more).toHaveLength(24);
+    // The largest towns are the first to be named.
+    expect(few).toContain('Town 0');
+  });
+
+  it('stands Pip clear of what covers the map, and keeps his spot while the map is moved under him', async () => {
+    await loadWorld();
+    const size = { width: 400, height: 300 };
+    const route = buildRoute([at(city('Hamburg', 'DE', 9.99, 53.55)), at(zurich)]);
+    const insets = { top: 40, right: 10, bottom: 120, left: 130 };
+    const show = (view: Camera, pip: Parameters<typeof layout>[10]) => layout(route, view, size, insets, 'rect', 'all', true, 'now', true, 'en', pip, width);
+    const dot = (overlay: ReturnType<typeof show>) => overlay.dots.find(mark => mark.kind === 'current')!;
+    const view: Camera = { ...close(300, size), offset: [280, 110] };
+    const first = show(view, { mood: 'look', inset: true });
+    const pip = first.pip!;
+    expect(pip.x - dot(first).x).toBeCloseTo(pip.dx, 9);
+    expect(pip.y - dot(first).y).toBeCloseTo(pip.dy, 9);
+    // Inside the room the summary and the buttons leave.
+    const unit = pip.width / 300;
+    expect(pip.x + 52 * unit).toBeGreaterThanOrEqual(insets.left + 4);
+    expect(pip.x + 248 * unit).toBeLessThanOrEqual(size.width - insets.right - 4);
+    expect(pip.y + 92 * unit).toBeGreaterThanOrEqual(insets.top);
+    expect(pip.y + 288 * unit).toBeLessThanOrEqual(size.height - insets.bottom);
+    // Moved a little, he moves with the dot, wherever the best spot would now be.
+    const held = { dx: pip.dx, dy: pip.dy, width: pip.width, side: pip.side, below: pip.below };
+    const moved = show({ ...view, offset: [300, 120] }, { mood: 'look', inset: true, held });
+    expect(moved.pip).toMatchObject({ ...held, x: dot(moved).x + pip.dx, y: dot(moved).y + pip.dy });
+    // Moved until he would stand past the room there is, he steps out, where a Pip who had just come would pick the other side.
+    const edge: Camera = { ...view, offset: [pip.dx + 150 * unit >= 0 ? 388 : 132, 110] };
+    expect(show(edge, { mood: 'look', inset: true, held }).pip).toBeNull();
+    expect(show(edge, { mood: 'look', inset: true }).pip).not.toBeNull();
+  });
+});

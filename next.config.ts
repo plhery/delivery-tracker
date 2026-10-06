@@ -106,6 +106,13 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // The map's tiles: their address carries the version of the set, so a tile never changes under its address.
+        source: '/atlas/:tile',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
         source: '/sw.js',
         headers: [
           { key: 'Cache-Control', value: 'no-store, max-age=0, must-revalidate' },

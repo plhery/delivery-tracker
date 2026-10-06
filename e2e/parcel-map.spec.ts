@@ -39,6 +39,55 @@ test('engraves the route in the card and opens it as a full map', async ({ page 
   expect(errors).toEqual([]);
 });
 
+test('keeps Pip on the opened map, and shows more of the land up close', async ({ page, isMobile }) => {
+  const tiles: { address: string; kept: string }[] = [];
+  page.on('response', (response) => {
+    const address = new URL(response.url());
+    if (address.pathname.startsWith('/atlas/')) tiles.push({ address: address.pathname + address.search, kept: response.headers()['cache-control'] ?? '' });
+  });
+  await page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ }).click();
+  await page.locator('.detail--postcard').getByRole('button', { name: 'Open the map' }).click();
+  const map = page.getByRole('dialog', { name: 'Map of the journey from Hamburg to Zürich' });
+  // Waiting at its pickup point, Pip waits here as he does on the card: beside the dot, clear of the summary.
+  const pip = map.locator('[data-pip="wait"]');
+  await expect(pip).toBeVisible();
+  await pip.locator('> span').evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
+  const box = (await pip.locator('svg > g > g').boundingBox())!;
+  const dot = (await map.locator('g[data-kind="current"] circle').last().boundingBox())!;
+  const bar = (await map.locator('.parcel-map__bar').boundingBox())!;
+  expect(Math.hypot(box.x + box.width / 2 - dot.x, box.y + box.height / 2 - dot.y)).toBeLessThan(90);
+  expect(box.x + box.width <= bar.x || box.x >= bar.x + bar.width || box.y + box.height <= bar.y).toBe(true);
+
+  // The last mile is a close-up: the site's own tiles around Zürich draw its rivers, roads and towns.
+  await expect.poll(() => tiles.length).toBeGreaterThan(0);
+  expect(tiles.every((tile) => /^\/atlas\/\d+_\d+\.bin\?v=[0-9a-f]{12}$/.test(tile.address))).toBe(true);
+  // A tile never changes under its address, so a browser keeps it.
+  if (process.env.CI || process.env.PLAYWRIGHT_PRODUCTION) expect(tiles.every((tile) => tile.kept.includes('immutable'))).toBe(true);
+  // A wide screen has room for the towns around.
+  if (!isMobile) await expect(map.getByText('Winterthur', { exact: true })).toBeVisible();
+
+  // He keeps his spot while the map is moved under him.
+  const view = (await map.locator('[data-scale]').boundingBox())!;
+  const beside = async () => {
+    const [pipBox, dotBox] = [await pip.boundingBox(), await map.locator('g[data-kind="current"] circle').last().boundingBox()];
+    return [pipBox!.x - dotBox!.x, pipBox!.y - dotBox!.y];
+  };
+  const spot = await beside();
+  await page.mouse.move(view.x + view.width * .6, view.y + view.height * .2);
+  await page.mouse.down();
+  await page.mouse.move(view.x + view.width * .6 - 40, view.y + view.height * .2 + 30, { steps: 8 });
+  await page.mouse.up();
+  await expect(map.getByRole('button', { name: 'Nearby' })).toHaveAttribute('aria-pressed', 'false');
+  const kept = await beside();
+  expect(Math.hypot(kept[0] - spot[0], kept[1] - spot[1])).toBeLessThan(1);
+
+  // The whole journey is too wide for towns, and Pip comes along.
+  await map.getByRole('button', { name: 'Journey' }).click();
+  await expect(map.locator('[data-scale]')).toHaveAttribute('data-mode', 'journey');
+  await expect(pip).toBeVisible();
+  await expect(map.getByText('Winterthur', { exact: true })).toHaveCount(0);
+});
+
 test('draws the route as one stroke, leg after leg', async ({ page }) => {
   await page.getByRole('button', { name: /^Belgian chocolate 🍫 —/ }).click();
   const legs = page.locator('.detail--postcard .detail__engraving path[data-kind="travelled"]');

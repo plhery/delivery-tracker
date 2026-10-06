@@ -49,8 +49,8 @@ describe('test suite boundaries', () => {
   it('keeps browser and native coverage for dependencies and shared generator inputs', () => {
     for (const file of ['package.json', 'package-lock.json', 'shared/locales/en.json',
       'contracts/openapi.json', 'src/brand/identities.json', 'src/components/map/world.json',
-      'scripts/generate-api-contract.mjs', 'scripts/generate-ios-resources.mjs', 'scripts/generate-icons.mjs',
-      'scripts/prepare-personal-ios-project.mjs']) {
+      'src/components/map/detail.json', 'public/atlas/37_27.bin', 'scripts/generate-api-contract.mjs',
+      'scripts/generate-ios-resources.mjs', 'scripts/generate-icons.mjs', 'scripts/prepare-personal-ios-project.mjs']) {
       assert.deepEqual(selectSuites([file]), both, file);
     }
   });

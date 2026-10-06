@@ -81,6 +81,7 @@ struct ParcelMapScreen: View {
     @State private var recenter = 0
     @State private var barHeight: CGFloat = 220
     @State private var time = Date()
+    @StateObject private var tiles = WorldDetailStore()
 
     private var mode: ParcelRoute.Mode { chosen ?? route.defaultMode(for: stage) }
 
@@ -91,9 +92,13 @@ struct ParcelMapScreen: View {
                 WorldMapView(
                     atlas: atlas, route: route, mode: mode, palette: .map(accent: accent), sites: true, interactive: true, night: time,
                     live: stage != .delivered && stage != .returned,
+                    // Pip came along from the card. Here he keeps clear of what lies over the map: the summary and the button that closes it.
+                    pip: PipMood(stage: stage).map { PipRequest(mood: $0, inset: true) },
                     insets: EdgeInsets(top: proxy.safeAreaInsets.top + 52, leading: 0,
                                        bottom: proxy.safeAreaInsets.bottom + barHeight + 24, trailing: 0),
-                    recenter: recenter, language: localizer.language, onFreeChange: { free = $0 }
+                    recenter: recenter, language: localizer.language,
+                    detail: tiles.pack.map { MapDetail(pack: $0, tiles: tiles.tiles, need: tiles.need) },
+                    onFreeChange: { free = $0 }
                 )
                 .ignoresSafeArea()
                 .accessibilityElement(children: .ignore)
@@ -120,6 +125,7 @@ struct ParcelMapScreen: View {
             }
         }
         .background(Brand.background)
+        .task { await tiles.open() }
     }
 
     /// The opened map has room for a facility's own name, so it says "Zürich-Mülligen" where the card says "Zürich".

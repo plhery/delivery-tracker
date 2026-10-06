@@ -22,13 +22,27 @@ enum PipMood: Equatable, Sendable, CaseIterable {
     var widths: [CGFloat] { self == .joy ? [66, 62, 54, 48] : [48, 44] }
 }
 
-/// Where a card wants Pip: beside the parcel's place, in this mood.
+/// Where Pip stands beside the parcel's dot: the top left of his frame as an offset from the dot, and how he stands there.
+struct PipSpot: Equatable {
+    var offset: CGSize
+    var width: CGFloat
+    /// Which side of him the parcel's dot is on: -1 to his left, 1 to his right, 0 straight above or below.
+    var side: Int
+    /// He stands straight below the dot, and looks up at it.
+    var below: Bool
+}
+
+/// Where a map wants Pip: beside the parcel's place, in this mood.
 struct PipRequest: Equatable {
     var mood: PipMood
     /// Where the card's top row ends; the top inset when absent.
     var ceiling: CGFloat?
     /// Where the card starts writing over the bottom of the map; the map's bottom edge when absent.
     var floor: CGFloat?
+    /// Keeps him inside the insets on every side, where a bar or a button covers the map's edges.
+    var inset = false
+    /// The spot he keeps while the map is moved under him, instead of looking for the best one.
+    var held: PipSpot?
 }
 
 /// Where Pip stands on a map.
@@ -43,6 +57,8 @@ struct PipPlacement: Equatable {
     var below: Bool
     /// What he takes on the map, for the names to keep off.
     var box: CGRect
+    /// The same place, told from the parcel's dot.
+    var spot: PipSpot
 }
 
 /// Pip's box on its way open: how far each part has come, so long after the news.

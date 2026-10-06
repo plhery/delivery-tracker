@@ -40,6 +40,22 @@ const apiFixture = JSON.parse(fs.readFileSync(
   path.join(root, 'contracts', 'fixtures', 'delivery-api.json'),
   'utf8',
 ));
+// What the parcel map shows up close: the tiles the web map reads one by one, here one after the other behind a
+// first line that says where each one starts.
+function worldDetailPack() {
+  const { degrees, precision, tiles } = JSON.parse(fs.readFileSync(path.join(root, 'src', 'components', 'map', 'detail.json'), 'utf8'));
+  const places = {};
+  const parts = [];
+  let offset = 0;
+  for (const key of tiles) {
+    const tile = fs.readFileSync(path.join(root, 'public', 'atlas', `${key}.bin`));
+    places[key] = [offset, tile.length];
+    offset += tile.length;
+    parts.push(tile);
+  }
+  return Buffer.concat([Buffer.from(`${JSON.stringify({ degrees, precision, tiles: places })}\n`), ...parts]);
+}
+
 const outputs = new Map([
   ['TrackingMessages.json', trackingMessagesSource],
   ['Analytics.json', fs.readFileSync(path.join(root, 'shared', 'analytics.json'), 'utf8')],
@@ -61,13 +77,14 @@ const outputs = new Map([
   ['Brand.json', renderBrandJson(readBrandData())],
   // The parcel map draws the same Natural Earth countries as the web map.
   ['World.json', fs.readFileSync(path.join(root, 'src', 'components', 'map', 'world.json'), 'utf8')],
+  ['WorldDetail.pack', worldDetailPack()],
 ]);
 
 if (process.argv.includes('--check')) {
   const stale = [...outputs].flatMap(([name, expected]) => {
     const target = path.join(resources, name);
-    const current = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : '';
-    return current === expected ? [] : [path.relative(root, target)];
+    const current = fs.existsSync(target) ? fs.readFileSync(target) : Buffer.alloc(0);
+    return current.equals(Buffer.from(expected)) ? [] : [path.relative(root, target)];
   });
   if (stale.length) {
     throw new Error(`Generated iOS resources are stale: ${stale.join(', ')}. Run npm run ios:resources.`);

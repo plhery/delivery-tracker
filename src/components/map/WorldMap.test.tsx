@@ -1,3 +1,4 @@
+import { deflateRawSync } from 'node:zlib';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { countryPlace, buildRoute, distanceKm, formatKm, type Place, type Route, type Scan } from './route';
@@ -637,6 +638,85 @@ describe('WorldMap', () => {
     await waitFor(() => expect(container.querySelector('g[data-kind="current"]')).not.toBeNull());
     expect(container.querySelector('g[data-kind="current"]')).toHaveAttribute('transform');
     expect(container.querySelector('[data-glide]')).toBeNull();
+  });
+
+  describe('the opened map up close', () => {
+    // A tile around Zürich: a river, a lake, a built-up area, a road and two towns.
+    const tile = {
+      rivers: [[0, 8540, 47370, -140, 40, -160, 60]],
+      lakes: [[0, 8540, 47360, 180, -110, -40, -60, -160, 130]],
+      urban: [[0, 8450, 47340, 180, 0, 0, 90, -180, 0]],
+      roads: [[0, 8300, 47400, 400, 20]],
+      towns: [[8724, 47506, 'Winterthur', 112], [8717, 47348, 'Uster', 35]],
+    };
+    const tiles = () => vi.fn<typeof fetch>(async () => new Response(deflateRawSync(Buffer.from(JSON.stringify(tile)))));
+
+    it('reads the tiles of a close-up, draws them and names their towns', async () => {
+      frame = { width: 800, height: 600 };
+      const fetched = tiles();
+      vi.stubGlobal('fetch', fetched);
+      const route = buildRoute([scan(zurich)]);
+      const { rerender } = render(<WorldMap route={route} mode="journey" time={time} interactive detail />);
+      // The large town is named as soon as its tile has come; the small one waits for a closer view.
+      expect(await screen.findByText('Winterthur')).toHaveAttribute('data-kind', 'city');
+      expect(screen.queryByText('Uster')).toBeNull();
+      expect(fetched.mock.calls.map(([address]) => String(address).replace(/\?.*/, '')).sort()).toEqual(['/atlas/37_27.bin', '/atlas/38_27.bin']);
+      // Their shapes are drawn with rounded corners, which the wide map's are not.
+      expect(calls).toContain('quadraticCurveTo');
+      // A map of the whole journey asks for nothing more.
+      rerender(<WorldMap route={buildRoute([scan(kyoto), scan(zurich)])} mode="journey" time={time} interactive detail />);
+      await waitFor(() => expect(screen.queryByText('Winterthur')).toBeNull());
+      expect(fetched).toHaveBeenCalledTimes(2);
+    });
+
+    it('asks for no tiles on a card', async () => {
+      const fetched = tiles();
+      vi.stubGlobal('fetch', fetched);
+      const { container } = render(<WorldMap route={buildRoute([scan(zurich)])} mode="journey" time={time} />);
+      await waitFor(() => expect(container.querySelector('g[data-kind="current"]')).not.toBeNull());
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      expect(fetched).not.toHaveBeenCalled();
+      expect(calls).not.toContain('quadraticCurveTo');
+    });
+
+    it('keeps Pip on his spot beside the dot while the map is moved, and without him once the dot has left', async () => {
+      Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', { configurable: true, value: vi.fn() });
+      const route = buildRoute([scan(basel), scan(zurich)]);
+      const { container } = render(<WorldMap route={route} mode="journey" time={time} interactive pip={{ mood: 'look', inset: true }}
+        insets={{ top: 20, right: 0, bottom: 60, left: 0 }} />);
+      const place = (selector: string) => /translate\((-?[\d.]+)(?:px,)? (-?[\d.]+)/.exec(container.querySelector(selector)!.getAttribute('transform')
+        ?? container.querySelector<HTMLElement>(selector)!.style.transform)!.slice(1).map(Number);
+      const beside = () => {
+        const [pipX, pipY] = place('[data-pip]');
+        const [dotX, dotY] = place('g[data-kind="current"]');
+        return [Math.round(pipX - dotX), Math.round(pipY - dotY)];
+      };
+      await waitFor(() => expect(container.querySelector('[data-pip="look"]')).not.toBeNull());
+      const spot = beside();
+      const [dotX] = place('g[data-kind="current"]');
+      const map = screen.getByRole('img');
+      fireEvent.pointerDown(map, { pointerId: 1, button: 0, clientX: 200, clientY: 100 });
+      fireEvent.pointerMove(map, { pointerId: 1, clientX: 170, clientY: 110 });
+      await waitFor(() => expect(place('g[data-kind="current"]')[0]).not.toBe(dotX));
+      expect(beside()).toEqual(spot);
+      // Far enough and the parcel's place is off the map: he does not stand there alone.
+      fireEvent.pointerMove(map, { pointerId: 1, clientX: -400, clientY: 110 });
+      await waitFor(() => expect(container.querySelector('[data-pip]')).toBeNull());
+      fireEvent.pointerUp(map, { pointerId: 1 });
+      delete (HTMLElement.prototype as Partial<HTMLElement>).setPointerCapture;
+    });
+
+    it('lets Pip step back in once the camera has landed', async () => {
+      reducedMotion(false);
+      const route = buildRoute([scan(kyoto), scan(basel), scan(zurich)]);
+      const map = (mode: 'journey' | 'now') => <WorldMap route={route} mode={mode} time={time} interactive pip={{ mood: 'look', inset: true }} />;
+      const { container, rerender } = render(map('journey'));
+      await waitFor(() => expect(container.querySelector('[data-pip]')).not.toBeNull());
+      rerender(map('now'));
+      // In flight the map shows the route alone.
+      await waitFor(() => expect(container.querySelector('[data-pip]')).toBeNull());
+      await waitFor(() => expect(container.querySelector('[data-pip]')).not.toBeNull(), { timeout: 4000 });
+    });
   });
 
   it('waits for a size before drawing', async () => {
