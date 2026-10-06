@@ -126,12 +126,13 @@ export function FrontDoor({ onTracked, onSample, onSignIn, covered = false }: {
 
   // Where going on stopped is where the visitor continues: the choice to make or the input to give.
   // Without either, the focus stays where it is; only a focus left nowhere is brought back.
-  const halted = useRef(state.halted);
-  const led = useRef(false);
+  // A choice in the picker is counted in the drawing it belongs to: the effects of an earlier drawing, run late,
+  // see the count they were drawn with and leave the leading to the drawing that has the field.
+  const [led, setLed] = useState(0);
+  const seen = useRef({ halted: state.halted, led });
   useEffect(() => {
-    if (halted.current === state.halted && !led.current) return;
-    halted.current = state.halted;
-    led.current = false;
+    if (seen.current.halted === state.halted && seen.current.led === led) return;
+    seen.current = { halted: state.halted, led };
     if (state.trouble && state.trouble.kind !== 'validation') return;
     const within = (selector: string) => form.current?.querySelector<HTMLElement>(selector);
     const asked = found.several.length ? within('.door-numbers input:checked')
@@ -309,7 +310,7 @@ export function FrontDoor({ onTracked, onSample, onSignIn, covered = false }: {
         send({ type: 'choose', carrier: choice });
         setPicking(false);
         // A carrier that asks for something leads straight to its field.
-        led.current = true;
+        setLed((count) => count + 1);
       }}
       onClose={() => setPicking(false)}
     />}

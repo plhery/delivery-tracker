@@ -330,7 +330,8 @@ describe('FrontDoor', () => {
     await user.click(field);
     await user.paste(SHARED);
     const postcode = await screen.findByRole('textbox', { name: 'Delivery postcode' });
-    expect(postcode).toHaveFocus();
+    // The field is found as soon as it is drawn; the focus follows in the drawing's effects.
+    await waitFor(() => expect(postcode).toHaveFocus());
     expect(postcode).toHaveAccessibleDescription('The carrier needs the delivery postcode to show your parcel’s updates.');
     expect(screen.getByText('Only sent to GLS Switzerland, never shown on shared links.')).toBeVisible();
     expect(mocks.lookup).not.toHaveBeenCalled();
@@ -360,6 +361,32 @@ describe('FrontDoor', () => {
     await user.keyboard('8004');
     await user.click(track);
     await waitFor(() => expect(mocks.lookup).toHaveBeenCalledWith({ trackingNumber: 'DEMO4471203', carrier: 'gls-ch', dpdPostcode: '8004' }, expect.any(AbortSignal)));
+  });
+
+  it('leads to the chosen carrier’s field when the choice lands just after the door redrew', async () => {
+    let answer!: (value: { trackingNumber: string; carrier: string }) => void;
+    mocks.detect.mockReturnValueOnce(new Promise((resolve) => { answer = resolve; }));
+    const { user, field } = door();
+    await user.type(field, SHARED);
+    await user.click(await screen.findByRole('button', { name: 'Change' }));
+    const picker = await screen.findByRole('dialog', { name: 'Carrier' });
+    await user.type(within(picker).getByRole('combobox', { name: 'Search carriers' }), 'GLS Switz');
+    const option = within(picker).getByRole('option', { name: /GLS Switzerland/ });
+    // The carriers' answer redraws the door; the click comes before React has run that drawing's effects.
+    const line = document.querySelector('.door-line')!;
+    const redrawn = new Promise<void>((resolve) => {
+      const observer = new MutationObserver(() => {
+        observer.disconnect();
+        fireEvent.click(option);
+        resolve();
+      });
+      observer.observe(line, { attributes: true, childList: true, subtree: true, characterData: true });
+    });
+    answer({ trackingNumber: SHARED, carrier: 'unknown' });
+    await redrawn;
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(document.querySelector('.door-line')).toHaveTextContent('GLS Switzerland Chosen by you');
+    expect(screen.getByRole('textbox', { name: 'Delivery postcode' })).toHaveFocus();
   });
 
   it('hands the keyboard back to “Change” when the picker closes without a choice, in a browser that leaves a clicked button unfocused', async () => {
