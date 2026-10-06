@@ -761,6 +761,10 @@
           "pattern": "^\\d{12}$",
           "confidence": "low",
           "checksum": "gls"
+        },
+        {
+          "pattern": "^[A-Z]{6}$",
+          "confidence": "low"
         }
       ],
       "aliases": [
@@ -1593,6 +1597,10 @@
           "pattern": "^\\d{12}$",
           "confidence": "low",
           "checksum": "gls"
+        },
+        {
+          "pattern": "^[A-Z]{6}$",
+          "confidence": "low"
         }
       ],
       "aliases": [
@@ -4460,6 +4468,40 @@
       "detectionRules": [
         {
           "pattern": "^[19]\\d{13}$",
+          "confidence": "low"
+        }
+      ]
+    },
+    "j-and-t-cargo": {
+      "displayName": "J&T Cargo",
+      "aliases": [
+        "JNT Cargo",
+        "JT Cargo"
+      ],
+      "countries": [
+        "ID"
+      ],
+      "color": "#00b075",
+      "selectable": true,
+      "timezone": "UTC",
+      "tracking": {
+        "mode": "link-only",
+        "adapter": null
+      },
+      "trackingUrlTemplate": "https://www.jtcargo.id/networkQuery?waybillNo={trackingNumber}&type=0",
+      "linkRules": [
+        {
+          "domains": [
+            "jtcargo.id"
+          ],
+          "params": [
+            "waybillNo"
+          ]
+        }
+      ],
+      "detectionRules": [
+        {
+          "pattern": "^20\\d{10}$",
           "confidence": "low"
         }
       ]

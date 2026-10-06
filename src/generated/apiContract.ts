@@ -762,6 +762,10 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{12}$",
         "confidence": "low",
         "checksum": "gls"
+      },
+      {
+        "pattern": "^[A-Z]{6}$",
+        "confidence": "low"
       }
     ],
     "aliases": [
@@ -1594,6 +1598,10 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{12}$",
         "confidence": "low",
         "checksum": "gls"
+      },
+      {
+        "pattern": "^[A-Z]{6}$",
+        "confidence": "low"
       }
     ],
     "aliases": [
@@ -4464,6 +4472,40 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       }
     ]
+  },
+  "j-and-t-cargo": {
+    "displayName": "J&T Cargo",
+    "aliases": [
+      "JNT Cargo",
+      "JT Cargo"
+    ],
+    "countries": [
+      "ID"
+    ],
+    "color": "#00b075",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "link-only",
+      "adapter": null
+    },
+    "trackingUrlTemplate": "https://www.jtcargo.id/networkQuery?waybillNo={trackingNumber}&type=0",
+    "linkRules": [
+      {
+        "domains": [
+          "jtcargo.id"
+        ],
+        "params": [
+          "waybillNo"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^20\\d{10}$",
+        "confidence": "low"
+      }
+    ]
   }
 } as const;
 
@@ -4617,7 +4659,8 @@ export const CARRIER_IDS = [
   "sagawa",
   "speedpak",
   "spx-ph",
-  "xpressbees"
+  "xpressbees",
+  "j-and-t-cargo"
 ] as const;
 export type ApiCarrierId = (typeof CARRIER_IDS)[number];
 
