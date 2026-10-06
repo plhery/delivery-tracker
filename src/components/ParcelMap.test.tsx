@@ -177,37 +177,6 @@ describe('map summary', () => {
     expect(screen.getByText('Last seen').nextElementSibling).toHaveTextContent('Bern');
   });
 
-  it('draws its line only once a third place stands on it', () => {
-    const osaka = city('Osaka', 'JP', 135.5, 34.69);
-    const marks = (kind: string) => [...document.querySelectorAll(`.parcel-map__line > [data-kind="${kind}"]`)];
-    const far = sheet(buildRoute([scan(tokyo), scan(osaka), scan(bern)]), 'in_transit');
-    // A dot for each place passed, the flag of the country reached, and the parcel's own dot, which pulses on its way.
-    const line = document.querySelector('.parcel-map__line')!;
-    expect(line).toHaveAttribute('aria-hidden', 'true');
-    expect(line).toHaveAttribute('data-live', 'true');
-    expect(marks('stop')).toHaveLength(2);
-    expect(marks('flag').map((mark) => mark.textContent)).toEqual(['🇨🇭']);
-    expect(marks('parcel')).toHaveLength(1);
-    expect(marks('goal')).toHaveLength(0);
-    far.unmount();
-    // Two places are named beside each other already: the distance between them is all that is left to say.
-    const route = buildRoute([scan(tokyo), scan(bern)]);
-    const short = sheet(route, 'in_transit');
-    expect(document.querySelector('.parcel-map__line')).toBeNull();
-    expect(screen.getByText(`${formatKm(route.km, 'en-CH')} so far`)).toBeInTheDocument();
-    short.unmount();
-    // The way still to go ends in a ring, and flies no flag before the parcel is there.
-    const ahead = sheet(buildRoute([scan(tokyo), scan(osaka)], countryPlace('CH', 'Switzerland', [7.46, 46.72])), 'in_transit');
-    expect(marks('goal')).toHaveLength(1);
-    expect(marks('ahead')).toHaveLength(1);
-    expect(marks('flag')).toHaveLength(0);
-    ahead.unmount();
-    // Delivered, the line is whole and its dot is still.
-    sheet(buildRoute([scan(tokyo), scan(osaka), scan(bern)]), 'delivered');
-    expect(document.querySelector('.parcel-map__line')).not.toHaveAttribute('data-live');
-    expect(marks('goal')).toHaveLength(0);
-  });
-
   it('shows a single place on its own', () => {
     sheet(buildRoute([scan(bern)]));
     expect(screen.getByRole('dialog', { name: 'Map showing Bern' })).toBeInTheDocument();

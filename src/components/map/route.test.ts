@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EventPlace, Stage, TrackingEvent } from '../../types';
-import { buildRoute, countryPlace, defaultMode, flag, formatKm, hasNearView, placeFromEvent, placeName, routeFromEvents, routeLine, type Place, type Scan } from './route';
+import { buildRoute, countryPlace, defaultMode, flag, formatKm, hasNearView, placeFromEvent, placeName, routeFromEvents, type Place, type Scan } from './route';
 
 const city = (name: string, country: string, longitude: number, latitude: number): Place => ({
   id: name, name, country, coordinate: [longitude, latitude], precision: 'city',
@@ -71,71 +71,6 @@ describe('camera views', () => {
     expect(defaultMode(world, 'ready_for_pickup')).toBe('now');
     expect(defaultMode(world, 'delivered')).toBe('journey');
     expect(defaultMode(buildRoute([scan(bern), scan(zurich)]), 'out_for_delivery')).toBe('journey');
-  });
-});
-
-describe('summary line', () => {
-  const switzerland = countryPlace('CH', 'Switzerland', [7.46, 46.72]);
-
-  it('takes a third place, passed or still ahead, to be worth drawing', () => {
-    expect(routeLine(buildRoute([scan(kyoto), scan(basel), scan(zurich)]))).not.toBeNull();
-    // Two places are named beside each other already.
-    expect(routeLine(buildRoute([scan(kyoto), scan(zurich)]))).toBeNull();
-    expect(routeLine(buildRoute([scan(kyoto)], switzerland))).toBeNull();
-    expect(routeLine(buildRoute([scan(kyoto), scan(leipzig)], switzerland))).not.toBeNull();
-  });
-
-  it('marks the places passed, further apart the longer the way between them', () => {
-    const line = routeLine(buildRoute([scan(bern), scan(basel), scan(zurich), scan(mulligen)]))!;
-    // The parcel is at the end; the three places before it are marked, and no border was crossed.
-    expect(line.now).toBe(1);
-    expect(line.borders).toEqual([]);
-    expect(line.stops).toHaveLength(3);
-    expect(line.stops[0]).toBe(0);
-    const [first, second, last] = [line.stops[1], line.stops[2] - line.stops[1], 1 - line.stops[2]];
-    // Zürich to Mülligen is a few kilometres: it keeps the room two dots need, and no more than the longer legs.
-    expect(last).toBeGreaterThan(.045);
-    expect(last).toBeLessThan(second);
-    expect(last).toBeLessThan(first);
-  });
-
-  it('flies a new country’s flag halfway along the leg that crosses into it', () => {
-    const line = routeLine(buildRoute([scan(kyoto), scan(leipzig), scan(basel), scan(zurich)]))!;
-    expect(line.borders.map((border) => border.country)).toEqual(['DE', 'CH']);
-    expect(line.borders[0].at).toBeCloseTo(line.stops[1] / 2);
-    expect(line.borders[1].at).toBeCloseTo((line.stops[1] + line.stops[2]) / 2);
-    // A flag has room between its two places, however short the leg; a flight is still the longest.
-    expect(line.stops[2] - line.stops[1]).toBeGreaterThan(.09);
-    expect(line.stops[1]).toBeGreaterThan(line.stops[2] - line.stops[1]);
-  });
-
-  it('leaves the way still to go bare until the parcel has arrived', () => {
-    const route = buildRoute([scan(kyoto), scan(leipzig)], switzerland);
-    const line = routeLine(route)!;
-    expect(line.stops).toEqual([0]);
-    expect(line.now).toBeGreaterThan(.5);
-    expect(line.now).toBeLessThan(1);
-    // Germany was reached; Switzerland has not been yet.
-    expect(line.borders.map((border) => border.country)).toEqual(['DE']);
-    // Delivered, it is at the end, wherever its last scan with a place was.
-    const arrived = routeLine(route, true)!;
-    expect(arrived.now).toBe(1);
-    expect(arrived.borders.map((border) => border.country)).toEqual(['DE', 'CH']);
-    // The last leg now keeps room for its flag, so Leipzig stands a little earlier.
-    expect(arrived.stops).toHaveLength(2);
-    expect(arrived.stops[1]).toBeLessThan(line.now);
-    expect(arrived.borders[1].at).toBeCloseTo((arrived.stops[1] + 1) / 2);
-  });
-
-  it('thins the places of a crowded line', () => {
-    const round = Array.from({ length: 30 }, () => [scan(zurich), scan(mulligen)]).flat();
-    const route = buildRoute([scan(kyoto), ...round]);
-    const line = routeLine(route)!;
-    expect(line.stops.length).toBeLessThan(route.stops.length - 1);
-    expect(line.stops.length).toBeGreaterThan(20);
-    line.stops.slice(1).forEach((at, index) => expect(at - line.stops[index]).toBeGreaterThanOrEqual(.02));
-    expect(line.stops.at(-1)).toBeLessThan(1);
-    expect(line.borders).toHaveLength(1);
   });
 });
 

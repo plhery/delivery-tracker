@@ -7,7 +7,7 @@ import { countryName } from 'universal-parcel-scraper/app';
 import type { ParcelWithEvents, Stage } from '../types';
 import { Icon } from './Icon';
 import { countryLabel, useWorld } from './map/geography';
-import { countryPlace, defaultMode, flag, formatKm, hasNearView, placeName, routeFromEvents, routeLine, type MapMode, type Route, type RouteLine } from './map/route';
+import { countryPlace, defaultMode, flag, formatKm, hasNearView, placeName, routeFromEvents, type MapMode, type Route } from './map/route';
 import { pipMood } from './map/Pip';
 import { WorldMap, type PipPlacing } from './map/WorldMap';
 import './ParcelMap.css';
@@ -99,24 +99,6 @@ export function CardRoute({ route }: { route: Route | null }) {
   </span>;
 }
 
-/**
- * The journey in small, under the two names: a dot for each place passed, a flag where a border was crossed, the
- * parcel's own dot where it is now and, dashed, the way still to go. It is drawn as the map opens, in a time that
- * grows with its places. The map above names them, so the line is not read aloud.
- */
-function SummaryLine({ line, live }: { line: RouteLine; live: boolean }) {
-  const mark = (at: number) => ({ '--line-at': at }) as CSSProperties;
-  const style = { '--line-now': line.now, '--line-time': `${Math.min(1500, 700 + line.stops.length * 110)}ms` } as CSSProperties;
-  return <div className="parcel-map__line" data-live={live || undefined} style={style} aria-hidden="true">
-    <span data-kind="track" />
-    {line.now < 1 && <><span data-kind="ahead" /><span data-kind="goal" /></>}
-    <span data-kind="ink" />
-    {line.stops.map((at) => <span key={at} data-kind="stop" style={mark(at)} />)}
-    {line.borders.map((border) => <span key={border.at} data-kind="flag" style={mark(border.at)}>{flag(border.country)}</span>)}
-    <span data-kind="parcel" />
-  </div>;
-}
-
 function RouteSummary({ route, stage }: { route: Route; stage?: Stage }) {
   const { t, languageTag } = useI18n();
   const origin = route.origin;
@@ -127,7 +109,6 @@ function RouteSummary({ route, stage }: { route: Route; stage?: Stage }) {
   const finished = delivered || stage === 'returned';
   const end = route.destination ?? current.place;
   const endLabel = delivered ? t('map.delivered') : route.destination ? t('map.to') : route.latestLocated ? t('map.now') : t('map.lastSeen');
-  const line = routeLine(route, delivered);
   const single = route.stops.length === 1 && !route.destination;
   return <div className="parcel-map__summary" data-single={single || undefined}>
     {!single && <div>
@@ -140,7 +121,6 @@ function RouteSummary({ route, stage }: { route: Route; stage?: Stage }) {
       <strong>{placeName(end, true)}</strong>
       <small><span aria-hidden="true">{flag(end.country)}</span> {countryName(end.country, languageTag)}</small>
     </div>
-    {line && <SummaryLine line={line} live={travelling(stage)} />}
     {!single && <p className="parcel-map__facts">
       {route.km >= 1 && <span>{finished ? formatKm(route.km, languageTag) : t('map.soFar', { distance: formatKm(route.km, languageTag) })}</span>}
       {!finished && route.remainingKm !== undefined && <span>{t('map.toGo', { distance: formatKm(route.remainingKm, languageTag) })}</span>}

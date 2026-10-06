@@ -112,67 +112,6 @@ test('draws the route as one stroke, leg after leg', async ({ page }) => {
   expect(await left(1)).toEqual([0, 0]);
 });
 
-test('draws the summary\u2019s line with its places and the flag of the border crossed', async ({ page }) => {
-  await page.getByRole('button', { name: /^Belgian chocolate 🍫 —/ }).click();
-  await page.locator('.detail--postcard').getByRole('button', { name: 'Open the map' }).click();
-  const map = page.getByRole('dialog', { name: 'Map of the journey from Brussels to Zürich' });
-  const line = map.locator('.parcel-map__line');
-  await expect(line.locator('[data-kind="flag"]')).toHaveText('🇨🇭');
-  await expect(line.locator('[data-kind="stop"]')).toHaveCount(2);
-  // The map has opened before anything on it is measured.
-  await map.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
-  // Each mark with the pen held at a share of its time: how far along the line its middle is, and how wide it shows.
-  const marks = (share: number) => line.evaluate((element, share) => {
-    const [pen] = element.getAnimations();
-    const timing = pen.effect!.getComputedTiming();
-    pen.pause();
-    pen.currentTime = Number(timing.delay) + Number(timing.duration) * share;
-    const frame = element.getBoundingClientRect();
-    const mark = (kind: string) => [...element.querySelectorAll(`[data-kind="${kind}"]`)].map((item) => {
-      const box = item.getBoundingClientRect();
-      return { at: (box.left + box.width / 2 - frame.left) / frame.width, width: Math.round(box.width * 10) / 10 };
-    });
-    return { stops: mark('stop'), flag: mark('flag')[0], parcel: mark('parcel')[0], ink: mark('ink')[0].width / frame.width };
-  }, share);
-  // The pen starts on Brussels: nothing else is there yet.
-  const start = await marks(0);
-  expect(start.parcel.at).toBeCloseTo(0, 2);
-  expect(start.ink).toBeCloseTo(0, 2);
-  expect(start.stops.map((stop) => stop.width)).toEqual([6, 0]);
-  expect(start.flag.width).toBe(0);
-  // The parcel's dot rides it, and a mark shows once the pen is over it.
-  const midway = await marks(.5);
-  expect(midway.parcel.at).toBeGreaterThan(.1);
-  expect(midway.parcel.at).toBeLessThan(.9);
-  expect(midway.ink).toBeCloseTo(midway.parcel.at, 2);
-  // Drawn, the parcel is in Zürich, Basel is marked on the way and Switzerland's flag flies between Brussels and Basel.
-  const drawn = await marks(1);
-  expect(drawn.parcel.at).toBeCloseTo(1, 2);
-  expect(drawn.stops.map((stop) => stop.width)).toEqual([6, 6]);
-  expect(drawn.stops[0].at).toBeCloseTo(0, 2);
-  expect(drawn.flag.width).toBeGreaterThan(12);
-  expect(drawn.flag.at).toBeCloseTo(drawn.stops[1].at / 2, 2);
-  // The flag has room: it touches neither place, and Basel stands clear of the parcel.
-  const room = await line.evaluate((element) => {
-    const box = (kind: string, index = 0) => element.querySelectorAll(`[data-kind="${kind}"]`)[index].getBoundingClientRect();
-    return [box('flag').left - box('stop').right, box('stop', 1).left - box('flag').right, box('parcel').left - box('stop', 1).right];
-  });
-  for (const gap of room) expect(gap).toBeGreaterThan(2);
-  // On its way, the dot pulses once the pen has arrived; with motion reduced the line is simply there.
-  const pulse = () => line.locator('[data-kind="parcel"]').evaluate((element) => getComputedStyle(element, '::before').animationName);
-  expect(await pulse()).toBe('parcel-map-pulse');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  expect(await pulse()).toBe('none');
-  await expect(line).toHaveCSS('animation-name', 'none');
-  const still = await line.evaluate((element) => {
-    const frame = element.getBoundingClientRect();
-    const parcel = element.querySelector('[data-kind="parcel"]')!.getBoundingClientRect();
-    return { parcel: (parcel.left + parcel.width / 2 - frame.left) / frame.width, flag: element.querySelector('[data-kind="flag"]')!.getBoundingClientRect().width };
-  });
-  expect(still.parcel).toBeCloseTo(1, 2);
-  expect(still.flag).toBeGreaterThan(12);
-});
-
 test('draws the route on Next up, and opens the parcel on the same picture', async ({ page }) => {
   // How far below the top of its card the parcel's dot sits.
   const dotOffset = async (card: Locator) => {

@@ -156,62 +156,6 @@ export function hasNearView(route: Route): boolean {
   return route.near.length < route.stops.length || (route.remainingKm ?? 0) >= NEAR_KM;
 }
 
-/** The journey as a line: how far along it each mark stands, from 0 at the first place to 1 at the last, or at the destination. */
-export interface RouteLine {
-  /** The places passed, in order, without the one the parcel is at. */
-  stops: number[];
-  /** Each new country's flag, halfway along the leg that crosses into it. */
-  borders: { at: number; country: string }[];
-  /** Where the parcel is. The line beyond it is the way still to go. */
-  now: number;
-}
-
-/** The share of the line a leg keeps however short it is, so that no two places touch; a leg over a border keeps room for its flag. */
-const LINE_GAP = .045;
-const LINE_BORDER = .09;
-/** On a line crowded with places, one standing closer than this to the one before it is left out. */
-const LINE_APART = .02;
-
-/**
- * The line under the summary's two names. A long leg is longer on it, by its square root: to scale, a flight would leave
- * the last mile no room. Between two places the line would tell nothing their names do not, so it takes a third, passed
- * or still ahead, to be worth drawing. A delivered parcel has arrived, wherever its last scan with a place was.
- */
-export function routeLine(route: Route, arrived = false): RouteLine | null {
-  const places = [...route.stops.map((stop) => stop.place), ...(route.destination ? [route.destination] : [])];
-  if (places.length < 3) return null;
-  // The place the parcel is at: its last stop, or the destination once it is delivered.
-  const here = arrived ? places.length - 1 : route.stops.length - 1;
-  const legs = places.slice(1).map((place, index) => ({
-    root: Math.sqrt(route.legs[index]?.km ?? route.remainingKm ?? 0),
-    // The way still to go has crossed no border yet.
-    border: index < here && place.country !== places[index].country,
-  }));
-  const borders = legs.filter((leg) => leg.border).length;
-  const plain = legs.length - borders;
-  let border = LINE_BORDER;
-  let gap = LINE_GAP;
-  // A journey of many legs shares out most of the line, the flags first.
-  if (borders * border + plain * gap > .7) {
-    border = Math.min(border, .5 / borders);
-    gap = plain ? (.7 - borders * border) / plain : 0;
-  }
-  const free = 1 - borders * border - plain * gap;
-  const roots = legs.reduce((sum, leg) => sum + leg.root, 0);
-  const at = [0];
-  legs.forEach((leg, index) => at.push(at[index] + (leg.border ? border : gap) + free * (roots ? leg.root / roots : 1 / legs.length)));
-  at[at.length - 1] = 1;
-  const stops: number[] = [];
-  route.stops.forEach((_, index) => {
-    if (index !== here && (!stops.length || at[index] - stops[stops.length - 1] >= LINE_APART)) stops.push(at[index]);
-  });
-  return {
-    stops,
-    borders: legs.flatMap((leg, index) => leg.border ? [{ at: (at[index] + at[index + 1]) / 2, country: places[index + 1].country }] : []),
-    now: at[here],
-  };
-}
-
 /** The camera follows the parcel: the whole trip while it travels, a close-up for the last mile. */
 export function defaultMode(route: Route, stage?: Stage): MapMode {
   if (!hasNearView(route)) return 'journey';

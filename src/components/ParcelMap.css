@@ -63,42 +63,12 @@
 }
 .parcel-map__summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 14px; width: 100%; }
 .parcel-map__summary[data-single] { grid-template-columns: minmax(0, 1fr); }
-.parcel-map__summary > div:not(.parcel-map__line) { display: grid; align-content: start; gap: 2px; min-width: 0; }
+.parcel-map__summary > div { display: grid; align-content: start; gap: 2px; min-width: 0; }
 .parcel-map__summary > div[data-end] { justify-items: end; text-align: right; }
 .parcel-map__summary[data-single] > div[data-end] { justify-items: start; text-align: left; }
 .parcel-map__summary > div > span { color: var(--ink-soft); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; }
 .parcel-map__summary > div > strong { overflow: hidden; font-size: 24px; font-weight: 650; line-height: 1.15; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
 .parcel-map__summary > div > small { color: var(--ink-soft); font-size: 12px; }
-/*
- * The journey in small. One pen draws it as the map opens: `--line-pen` is how much of the way to the parcel is drawn,
- * registered as a number so that it can move. The parcel's dot rides the pen, and each place and flag shows as it is reached.
- */
-@property --line-pen { syntax: "<number>"; inherits: true; initial-value: 1; }
-.parcel-map__line { position: relative; grid-column: 1 / -1; height: 14px; margin: 2px 5px 0; animation: parcel-map-pen var(--line-time) cubic-bezier(.45, 0, .2, 1) .35s both; }
-.parcel-map__line > span { position: absolute; }
-.parcel-map__line > [data-kind=track] { top: calc(50% - .75px); left: 0; width: calc(var(--line-now) * 100%); height: 1.5px; border-radius: 2px; background: color-mix(in srgb, var(--ink) 11%, transparent); }
-.parcel-map__line > [data-kind=ink] { top: calc(50% - 1px); left: 0; width: calc(var(--line-pen) * var(--line-now) * 100%); height: 2px; border-radius: 2px; background: var(--tone); }
-/* The way still to go shows once the pen has arrived. */
-.parcel-map__line > :is([data-kind=ahead], [data-kind=goal]) { animation: parcel-map-settle .5s var(--ease-out) calc(var(--line-time) + .35s) both; }
-.parcel-map__line > [data-kind=ahead] { top: calc(50% - .75px); right: 0; left: calc(var(--line-now) * 100%); border-top: 1.5px dashed color-mix(in srgb, var(--ink) 28%, transparent); }
-.parcel-map__line > [data-kind=goal] {
-  top: calc(50% - 4px); right: -4px; width: 8px; height: 8px; border: 1.5px solid color-mix(in srgb, var(--ink) 40%, transparent);
-  border-radius: 50%; background: var(--paper);
-}
-.parcel-map__line > :is([data-kind=stop], [data-kind=flag]) {
-  top: 50%; left: calc(var(--line-at) * 100%); scale: clamp(0, calc((var(--line-pen) * var(--line-now) - var(--line-at)) * 26 + 1), 1);
-}
-.parcel-map__line > [data-kind=stop] { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--tone); box-shadow: 0 0 0 2px var(--paper); }
-.parcel-map__line > [data-kind=flag] { translate: -50% -50%; padding: 0 2px; border-radius: 4px; background: var(--paper); font-size: 13px; line-height: 14px; letter-spacing: 0; }
-.parcel-map__line > [data-kind=parcel] {
-  top: 50%; left: calc(var(--line-pen) * var(--line-now) * 100%); z-index: 1; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
-  background: var(--tone); box-shadow: 0 0 0 3px var(--paper);
-}
-/* The parcel's dot pulses until the journey is over, as it does on the map. */
-.parcel-map__line[data-live] > [data-kind=parcel]::before {
-  content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--tone);
-  animation: parcel-map-pulse 2.4s var(--ease-out) calc(var(--line-time) + .35s) infinite backwards;
-}
 .parcel-map__facts { display: flex; flex-wrap: wrap; grid-column: 1 / -1; gap: 4px 16px; margin: 0; color: var(--ink-soft); font-size: 12px; font-variant-numeric: tabular-nums; }
 .parcel-map__views { display: inline-flex; gap: 2px; padding: 3px; border-radius: 17px; background: var(--control); }
 .parcel-map__views button {
@@ -111,11 +81,6 @@
   .parcel-map__bar { right: auto; bottom: 24px; left: 24px; width: 360px; }
 }
 @keyframes parcel-map-in { from { opacity: 0; transform: translateY(16px) scale(.985); } }
-@keyframes parcel-map-pen { from { --line-pen: 0; } to { --line-pen: 1; } }
-@keyframes parcel-map-settle { from { opacity: 0; } }
-@keyframes parcel-map-pulse { from { transform: scale(1); opacity: .35; } to { transform: scale(3.4); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .parcel-map, .detail__hero .detail__engraving-map, .parcel-card .parcel-card__engraving-map, .card-route .card-route__map { animation: none; }
-  /* The line is simply there, whole. */
-  .parcel-map__line, .parcel-map__line > :is([data-kind=ahead], [data-kind=goal]), .parcel-map__line[data-live] > [data-kind=parcel]::before { animation: none; }
 }
