@@ -195,7 +195,12 @@ final class WorldDetailTests: XCTestCase {
             return bytes
         }
         func changed(_ a: [UInt8], _ b: [UInt8]) -> Int {
-            stride(from: 0, to: min(a.count, b.count), by: 4).filter { a[$0] != b[$0] || a[$0 + 1] != b[$0 + 1] || a[$0 + 2] != b[$0 + 2] || a[$0 + 3] != b[$0 + 3] }.count
+            var pixels = 0
+            for start in stride(from: 0, to: min(a.count, b.count), by: 4) {
+                let pixel: Range<Int> = start..<(start + 4)
+                if a[pixel] != b[pixel] { pixels += 1 }
+            }
+            return pixels
         }
         let tiles = try pack.keys(in: close(200, in: small), size: small).compactMap { try pack.tile($0) }
         XCTAssertFalse(tiles.isEmpty)
