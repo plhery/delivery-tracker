@@ -2613,6 +2613,27 @@
     ]
   },
   {
+    "input": "2522622410",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dhl-express",
+      "dhl",
+      "mondial-relay",
+      "relais-colis",
+      "tipsa",
+      "estafeta"
+    ],
+    "preferred": [
+      "dhl-express"
+    ],
+    "asked": [
+      "dhl-express",
+      "relais-colis",
+      "tipsa"
+    ]
+  },
+  {
     "input": "25631818",
     "carrier": "unknown",
     "confidence": "low",
