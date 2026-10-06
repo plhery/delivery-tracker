@@ -22,3 +22,7 @@ b964bcc5dc5fb10e6d2211be002260de21dacee5:packages/carriers/carriers/purolator/ad
 # Historical Python isinstance check for the P-256 elliptic curve type.
 # The scanner mistakes the public cryptography class name for a key value.
 4884b7dab3b0131df8159ad249dadb32c7e576de:server/push.py:generic-api-key:254
+
+# A browser test once spelled out the name of the browser storage that keeps a device's parcels.
+# The name is public; the scanner mistakes it for a key value.
+075a319ed5362e39095d2b6fcf2cce625d6ce810:e2e/door-arrival.spec.ts:generic-api-key:46

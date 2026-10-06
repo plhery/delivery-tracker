@@ -43,15 +43,16 @@ async function door(page: Page) {
 
 /** The device learns that the parcel leading its list was delivered, as it does when it asks again. */
 const deliver = (page: Page) => page.evaluate(() => {
-  const KEY = 'sdt.peek.parcels.v1';
-  const list = JSON.parse(localStorage.getItem(KEY)!);
+  // What the device keeps of its parcels is the one thing in its storage that holds their last answers.
+  const stored = Object.keys(localStorage).find((name) => localStorage.getItem(name)!.includes('"snapshot"'))!;
+  const list = JSON.parse(localStorage.getItem(stored)!);
   const recent = list.find((entry: { id: string }) => entry.id === document.querySelector('.door-nextup')!.getAttribute('data-parcel-link'));
   const { events } = recent.snapshot.parcel;
   const last = [...events].sort((a, b) => a.occurredAt.localeCompare(b.occurredAt)).at(-1);
   events.push({ ...last, id: `${last.id}-delivered`, stage: 'delivered', description: 'Delivered', occurredAt: new Date().toISOString() });
   recent.stage = 'delivered';
-  localStorage.setItem(KEY, JSON.stringify(list));
-  window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
+  localStorage.setItem(stored, JSON.stringify(list));
+  window.dispatchEvent(new StorageEvent('storage', { key: stored }));
 });
 
 const lift = (page: Page) => page.evaluate(() => { window.dispatchEvent(new PointerEvent('pointerup')); });
