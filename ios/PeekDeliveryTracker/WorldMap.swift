@@ -446,7 +446,8 @@ struct MapPalette {
     /// The card's ink and surface, which Pip is drawn in; nil on a map with no card.
     var card: (ink: Color, surface: Color)?
 
-    /// The full map: quiet greens, with the carrier's colour on the parcel, and on Pip beside it.
+    /// The full map: quiet greens, with the carrier's colour on the parcel. Pip beside it is a deeper green of the land,
+    /// whoever carries the parcel: a carrier's colour can clash with the map.
     static func map(accent: Color) -> MapPalette {
         let ocean = Brand.color(light: "#F4F6F1", dark: "#171C17")
         return MapPalette(
@@ -469,7 +470,7 @@ struct MapPalette {
             labelBackground: adaptive(light: rgb(255, 255, 255, 0.84), dark: rgb(32, 38, 31, 0.82)),
             dotRing: ocean,
             currentRing: Brand.paper,
-            card: (accent, Brand.paper)
+            card: (Brand.color(light: "#55654B", dark: "#B7C6AA"), ocean)
         )
     }
 

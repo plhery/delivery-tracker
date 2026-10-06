@@ -45,21 +45,29 @@
 /* The whole map, over the parcel. */
 .parcel-map {
   --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark));
+  /* What lies over the map is frosted glass, like the iPhone app's: the map shows through, under a lit rim. */
+  --map-glass: linear-gradient(180deg, color-mix(in srgb, var(--paper) 74%, transparent), color-mix(in srgb, var(--paper) 60%, transparent));
+  --map-glass-blur: blur(24px) saturate(180%);
+  --map-glass-edge: inset 0 0 0 1px light-dark(rgb(255 255 255 / 50%), rgb(255 255 255 / 9%)), inset 0 1.5px 0 light-dark(rgb(255 255 255 / 95%), rgb(255 255 255 / 24%)),
+    inset 0 -1px 0 light-dark(rgb(255 255 255 / 40%), rgb(255 255 255 / 7%)), 0 0 0 .5px light-dark(rgb(20 30 20 / 16%), rgb(0 0 0 / 55%)),
+    0 12px 36px light-dark(rgb(20 30 20 / 15%), rgb(0 0 0 / 45%));
   position: fixed; inset: 0; z-index: 80; overflow: hidden; background: var(--canvas); color: var(--ink);
   animation: parcel-map-in .35s var(--spring) both;
 }
 .parcel-map:focus { outline: none; }
 .parcel-map__map { position: absolute; inset: 0; }
+/* On the map Pip is a deeper green of its land, whoever carries the parcel: a carrier's colour can clash with it. The dot keeps that colour. */
+.parcel-map [data-pip] { --pip-ink: light-dark(#55654b, #b7c6aa); --pip-surface: var(--map-ocean); }
 .parcel-map__close {
   position: absolute; top: max(14px, env(safe-area-inset-top)); right: 14px; z-index: 1; display: grid; place-items: center;
-  width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--paper) 82%, transparent);
-  color: var(--ink); box-shadow: 0 2px 10px rgb(20 30 20 / 12%); cursor: pointer; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: var(--map-glass);
+  color: var(--ink); box-shadow: var(--map-glass-edge); cursor: pointer; -webkit-backdrop-filter: var(--map-glass-blur); backdrop-filter: var(--map-glass-blur);
 }
 .parcel-map__close svg { width: 16px; height: 16px; }
 .parcel-map__bar {
   position: absolute; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; z-index: 1; display: grid; justify-items: start;
-  gap: 14px; padding: 16px 16px 12px; border-radius: 24px; background: color-mix(in srgb, var(--paper) 90%, transparent);
-  box-shadow: 0 8px 30px rgb(20 30 20 / 14%); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  gap: 14px; padding: 16px 16px 12px; border-radius: 28px; background: var(--map-glass);
+  box-shadow: var(--map-glass-edge); -webkit-backdrop-filter: var(--map-glass-blur); backdrop-filter: var(--map-glass-blur);
 }
 .parcel-map__summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 14px; width: 100%; }
 .parcel-map__summary[data-single] { grid-template-columns: minmax(0, 1fr); }
@@ -70,7 +78,7 @@
 .parcel-map__summary > div > strong { overflow: hidden; font-size: 24px; font-weight: 650; line-height: 1.15; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
 .parcel-map__summary > div > small { color: var(--ink-soft); font-size: 12px; }
 .parcel-map__facts { display: flex; flex-wrap: wrap; grid-column: 1 / -1; gap: 4px 16px; margin: 0; color: var(--ink-soft); font-size: 12px; font-variant-numeric: tabular-nums; }
-.parcel-map__views { display: inline-flex; gap: 2px; padding: 3px; border-radius: 17px; background: var(--control); }
+.parcel-map__views { display: inline-flex; gap: 2px; padding: 3px; border-radius: 17px; background: color-mix(in srgb, var(--ink) 7%, transparent); }
 .parcel-map__views button {
   display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 14px; background: transparent;
   color: var(--ink-soft); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
