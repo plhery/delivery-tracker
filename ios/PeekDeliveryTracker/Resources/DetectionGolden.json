@@ -156,6 +156,14 @@
     ]
   },
   {
+    "input": "00340435061352161527",
+    "carrier": "dhl",
+    "confidence": "high",
+    "candidates": [
+      "dhl"
+    ]
+  },
+  {
     "input": "00573132901903503247",
     "carrier": "unknown",
     "confidence": "low",
