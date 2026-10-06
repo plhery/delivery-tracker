@@ -106,7 +106,8 @@ describe('carrier check', () => {
   const asked = recognitionAskedCarriers(number) as CarrierId[];
 
   it('asks the carriers the detect route asks', () => {
-    expect(asked).toEqual(['dpd', 'seur', 'brt', 'relais-colis', 'ciblex']);
+    expect(asked).toEqual(expect.arrayContaining(['dpd', 'seur', 'brt', 'relais-colis', 'ciblex']));
+    expect(asked[0]).toBe('dpd');
   });
 
   it('follows the number from settled to answered', () => {

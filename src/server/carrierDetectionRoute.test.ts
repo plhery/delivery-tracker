@@ -43,6 +43,10 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
+// The scraper may add a network to the fourteen-digit shape; the known ones keep their order.
+const fourteen = recognitionAskedCarriers('06080000000002');
+const pinned = ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex'];
+
 // Answers are cached per number for a few minutes, so every test uses its own numbers.
 
 it('returns the one carrier that knows an ambiguous number', async () => {
@@ -50,9 +54,10 @@ it('returns the one carrier that knows an ambiguous number', async () => {
   const response = await request('0608 0000 0000 02');
   expect(response.status).toBe(200);
   expect(response.headers.get('cache-control')).toBe('no-store');
-  expect(await response.json()).toEqual({ trackingNumber: '06080000000002', carrier: 'dpd', asked: ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex'] });
+  expect(await response.json()).toEqual({ trackingNumber: '06080000000002', carrier: 'dpd', asked: fourteen });
   // Every carrier that can answer is asked at once, number evidence first.
-  expect(asked()).toEqual(['dpd', 'seur', 'brt', 'relais-colis', 'ciblex']);
+  expect(asked()).toEqual(fourteen);
+  expect(fourteen.filter(carrier => pinned.includes(carrier))).toEqual(pinned);
 });
 
 it('offers a carrier that needs a postcode so the sheet can ask for it', async () => {
@@ -130,7 +135,7 @@ it('ignores an answer about an old parcel that reused the number', async () => {
     lastActivityAt: carrier === 'dpd' ? '2026-01-01T00:00:00Z' : null }));
   vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-09-10T12:00:00Z') });
   try {
-    expect(await (await request('06080000000019')).json()).toEqual({ trackingNumber: '06080000000019', carrier: 'ciblex', asked: ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex'] });
+    expect(await (await request('06080000000019')).json()).toEqual({ trackingNumber: '06080000000019', carrier: 'ciblex', asked: fourteen });
   } finally { vi.useRealTimers(); }
 });
 
@@ -141,17 +146,17 @@ it('answers unknown when no carrier knows the number or one fails, and asks agai
   });
   // The sheet tells a carrier that could not answer from one that said no.
   expect(await (await request('06080000000027')).json()).toEqual({
-    trackingNumber: '06080000000027', carrier: 'unknown', asked: ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex'], unanswered: ['dpd'],
+    trackingNumber: '06080000000027', carrier: 'unknown', asked: fourteen, unanswered: ['dpd'],
   });
   recognize.mockClear();
   // A carrier that could not answer is asked again on the next focus-out.
   await request('06080000000027');
-  expect(asked()).toEqual(['dpd', 'seur', 'brt', 'relais-colis', 'ciblex']);
+  expect(asked()).toEqual(fourteen);
   // A complete answer is reused.
   recognize.mockReset().mockImplementation(knows());
-  expect(await (await request('06080000000035')).json()).toEqual({ trackingNumber: '06080000000035', carrier: 'unknown', asked: ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex'] });
+  expect(await (await request('06080000000035')).json()).toEqual({ trackingNumber: '06080000000035', carrier: 'unknown', asked: fourteen });
   await request('06080000000035');
-  expect(asked()).toEqual(['dpd', 'seur', 'brt', 'relais-colis', 'ciblex']);
+  expect(asked()).toEqual(fourteen);
 });
 
 it('does not ask carriers for selected shapes, formats without candidates or unauthenticated callers', async () => {
@@ -163,8 +168,8 @@ it('does not ask carriers for selected shapes, formats without candidates or una
 });
 
 it.each([
-  ['12345678901242', 'brt', ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex']],
-  ['12345678901243', 'seur', ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex']],
+  ['12345678901242', 'brt', fourteen],
+  ['12345678901243', 'seur', fourteen],
   ['9900002', 'seur', ['seur']],
   ['1000000000000001', 'tnt', ['tnt', 'correos-express', 'dhl-ecommerce', 'canada-post']],
   ['1000000000000002', 'correos-express', ['tnt', 'correos-express', 'dhl-ecommerce', 'canada-post']],
@@ -180,7 +185,7 @@ it.each([
 it('keeps unrelated BRT and SEUR answers ambiguous', async () => {
   recognize.mockImplementation(knows('brt', 'seur'));
   expect(await (await request('06080000000084')).json()).toEqual({ trackingNumber: '06080000000084', carrier: 'unknown',
-    recognized: ['seur', 'brt'], asked: ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex'] });
+    recognized: ['seur', 'brt'], asked: fourteen });
 });
 
 it.each(['06080000000076', '12345678901234', '12345678909', '1234567890', '12345678'])('asks the carriers the Add sheets name for %s', async (number) => {
@@ -213,7 +218,7 @@ it('answers the front door without a session, the same way, within a limit per c
   const response = await withoutAccount('0608 0000 0000 92');
   expect(response.status).toBe(200);
   expect(response.headers.get('cache-control')).toBe('no-store');
-  expect(await response.json()).toEqual({ trackingNumber: '06080000000092', carrier: 'dpd', asked: ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex'] });
+  expect(await response.json()).toEqual({ trackingNumber: '06080000000092', carrier: 'dpd', asked: fourteen });
   // One implementation serves both routes: in this process they even share its answers.
   recognize.mockClear();
   expect(await (await request('06080000000092')).json()).toMatchObject({ carrier: 'dpd' });

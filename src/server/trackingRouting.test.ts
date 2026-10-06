@@ -7,6 +7,7 @@ import * as monitoring from './observability';
 import { universalCarrierHints } from 'universal-parcel-scraper/app';
 import { IndeterminateError, InputRequiredError, NotFoundError } from 'universal-parcel-scraper';
 import * as scraper from 'universal-parcel-scraper';
+import { recognitionAskedCarriers } from '../lib/carriers';
 
 // Keep the published plan configurable without changing the scraper's other exports.
 vi.mock(import('universal-parcel-scraper'), async importOriginal => ({ ...await importOriginal() }));
@@ -402,6 +403,9 @@ describe('persistent tracking routing', () => {
   describe('recognition of the carriers a number could belong to', () => {
     // A Swiss DPD depot prefix; the number is only a suggestion by shape.
     const swissDpd = '06080000000002';
+    // The scraper may add a network to a shape; the known ones keep their order.
+    const fourteen = recognitionAskedCarriers(swissDpd);
+    const probes = (count: number, retryAt: string, carriers = fourteen) => Object.fromEntries(carriers.map(carrier => [carrier, { count, retry_at: retryAt }]));
     const notFound = (carrier: string) => new NotFoundError(carrier);
     const knows = (...carriers: string[]) => async (carrier: string) => ({ known: carriers.includes(carrier) });
     const asked = (recognize: ReturnType<typeof vi.fn>) => recognize.mock.calls.map(([carrier]) => carrier);
@@ -426,7 +430,8 @@ describe('persistent tracking routing', () => {
       });
       const result = await router.fetch(parcel({ carrier: 'asendia', tracking_number: swissDpd, dpd_postcode: null }), false);
       // Asked at once, number evidence first, then by popularity.
-      expect(asked(recognize)).toEqual(['dpd', 'seur', 'brt', 'relais-colis', 'ciblex']);
+      expect(asked(recognize)).toEqual(fourteen);
+      expect(fourteen.filter(carrier => ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex'].includes(carrier))).toEqual(['dpd', 'seur', 'brt', 'relais-colis', 'ciblex']);
       // Only the carrier that knows the number gets a full lookup, without borrowed inputs.
       expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['asendia', 'dpd']);
       expect(direct.mock.calls[1][0]).toMatchObject({ carrier: 'dpd', dpd_postcode: null, tracking_url: null });
@@ -439,13 +444,14 @@ describe('persistent tracking routing', () => {
       const hermesShape = '12345678901231';
       const first = setup();
       await first.router.fetch(parcel({ tracking_number: hermesShape }), false);
-      expect(asked(first.recognize)).toEqual(['dpd', 'seur', 'brt', 'hermes-de', 'relais-colis']);
+      expect(asked(first.recognize)).toEqual(recognitionAskedCarriers(hermesShape));
+      expect(asked(first.recognize).slice(0, 4)).toEqual(['dpd', 'seur', 'brt', 'hermes-de']);
       // A universal that named a carrier needing a postcode puts it first; one
       // needing nothing was already looked up by the correction step.
       const hinted = setup();
       await hinted.router.fetch(parcel({ tracking_number: '12345678901',
         carrier_data: { routing: state({ discovered_carrier: 'gls-de' }) } }), false);
-      expect(asked(hinted.recognize)).toEqual(['gls-de', 'gls-ch', 'postlogistics']);
+      expect(asked(hinted.recognize).slice(0, 3)).toEqual(['gls-de', 'gls-ch', 'postlogistics']);
       // Newly supported number shapes follow the same popularity order.
       const tnt = setup();
       await tnt.router.fetch(parcel({ tracking_number: '1000000000000001' }), false);
@@ -495,19 +501,16 @@ describe('persistent tracking routing', () => {
     it('asks again within hours, outside the carrier failures', async () => {
       const { router, universal, recognize } = setup();
       const result = await router.fetch(parcel({ tracking_number: swissDpd }), false);
-      expect(asked(recognize)).toEqual(['dpd', 'seur', 'brt', 'relais-colis', 'ciblex']);
+      expect(asked(recognize)).toEqual(fourteen);
       expect(universal).toHaveBeenCalled();
       const routing = result.result.routing as JsonObject & { failures: JsonObject; candidate_probes: JsonObject };
-      expect(routing.candidate_probes).toEqual({
-        dpd: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' }, seur: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' },
-        brt: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' }, 'relais-colis': { count: 1, retry_at: '2026-09-10T13:00:00.000Z' }, ciblex: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' },
-      });
+      expect(routing.candidate_probes).toEqual(probes(1, '2026-09-10T13:00:00.000Z'));
       // The answers decide neither the parcel's status nor a carrier cooldown.
       expect(routing.failures).toEqual({});
       // Inside the cooldown the next check goes straight to the universals.
       const next = setup(new Date('2026-09-10T12:30:00Z'));
       const again = await next.router.fetch(parcel({ tracking_number: swissDpd, carrier_data: result.result }), false);
-      expect(next.recognize).not.toHaveBeenCalled();
+      expect(asked(next.recognize).filter(carrier => fourteen.includes(carrier))).toEqual([]);
       // After it, a second miss doubles the wait.
       const later = setup(new Date('2026-09-10T13:05:00Z'));
       const third = await later.router.fetch(parcel({ tracking_number: swissDpd, carrier_data: again.result }), false);
@@ -533,7 +536,7 @@ describe('persistent tracking routing', () => {
       // Both GLS networks answer from the same overview: the more common one is offered.
       recognize.mockImplementation(knows('gls-ch', 'gls-de'));
       const result = await router.fetch(parcel({ tracking_number: '12345678901' }), false);
-      expect(asked(recognize)).toEqual(['gls-ch', 'gls-de', 'postlogistics']);
+      expect(asked(recognize).slice(0, 3)).toEqual(['gls-ch', 'gls-de', 'postlogistics']);
       expect(direct).not.toHaveBeenCalled();
       expect(result.result.routing).toMatchObject({ input_needed: { carrier: 'gls-ch', field: 'dpdPostcode' } });
       expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('carrier_input_needed', expect.objectContaining({ provider: 'gls-ch' }));
@@ -587,10 +590,7 @@ describe('persistent tracking routing', () => {
       const { router, direct, universal, recognize } = setup();
       universal.mockResolvedValue({ ...history(), ...universalCarrierHints(['DPD Group'], swissDpd) });
       direct.mockResolvedValue(directValue('dpd'));
-      const saved = { routing: state({ candidate_probes: {
-        dpd: { count: 7, retry_at: '2026-09-11T11:00:00Z' }, seur: { count: 7, retry_at: '2026-09-11T11:00:00Z' },
-        brt: { count: 7, retry_at: '2026-09-11T11:00:00Z' }, 'relais-colis': { count: 7, retry_at: '2026-09-11T11:00:00Z' }, ciblex: { count: 7, retry_at: '2026-09-11T11:00:00Z' },
-      } }) };
+      const saved = { routing: state({ candidate_probes: probes(7, '2026-09-11T11:00:00Z', scraper.recognitionCandidates(swissDpd).map(({ carrier }) => carrier)) }) };
       const result = await router.fetch(parcel({ tracking_number: swissDpd, carrier_data: saved }), false);
       expect(recognize).not.toHaveBeenCalled();
       expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['dpd']);

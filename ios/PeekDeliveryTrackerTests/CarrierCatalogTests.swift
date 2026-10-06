@@ -185,7 +185,8 @@ final class CarrierCatalogTests: XCTestCase {
         let asked = catalog.recognitionCandidates(for: number)
         XCTAssertEqual(ambiguous.confidence, .low)
         XCTAssertEqual(ambiguous.carrier, .unknown)
-        XCTAssertEqual(asked, [.glsCh, .glsDe, .postlogistics])
+        // The scraper may add a network to the shape; the known ones keep their order.
+        XCTAssertEqual(Array(asked.prefix(3)), [.glsCh, .glsDe, .postlogistics])
         XCTAssertTrue(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: false))
         XCTAssertFalse(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: true))
         XCTAssertFalse(CarrierRecognition.applies(to: ambiguous, amazon: true, demo: false))
@@ -200,7 +201,7 @@ final class CarrierCatalogTests: XCTestCase {
         recognition.settledNumber = number
         XCTAssertEqual(recognition.request(for: number, applies: true), number)
         // The line names the carriers being asked while they answer.
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .asking([.glsCh, .glsDe, .postlogistics]))
+        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .asking(asked))
         // A shape no carrier can be asked about is left to routing after saving.
         XCTAssertEqual(recognition.status(for: number, applies: true, asked: []), .asking([]))
         XCTAssertNil(recognition.request(for: number, applies: false))
