@@ -23,8 +23,12 @@ parcel with a face, is a separate drawing.
 Catalog colours come from Universal Parcel Scraper. `palette.json` defines fallback
 colours and palette mixing; `truck.json` defines the shared truck geometry.
 
-`scripts/generate-brand.mjs` writes `src/generated/brand.ts`. The iOS resource generator
-uses the same data for `Brand.json`. Web and native parity tests check their rendering
+`truck.json` spells every outline twice: `d` for the web's SVG, and `points` or `segments`,
+the same outline in straight lines, for the iPhone app's canvas.
+
+`scripts/generate-brand.mjs` writes `src/generated/brand.ts`, which leaves `points` and
+`segments` out so the browser does not download them. The iOS resource generator writes
+the whole data to `Brand.json`. Web and native parity tests check their rendering
 inputs. Run `npm run contract:generate` and `npm run ios:resources` after editing them.
 
 Several carrier IDs can share a family. Exactly one family member declares each explicit

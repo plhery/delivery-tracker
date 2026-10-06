@@ -2,7 +2,7 @@
  * Brand vocabulary.
  *
  * What it is: the shape of the nine brand properties, of a palette declared in
- * `src/brand/identities.json`, and of the truck geometry both clients render.
+ * `src/brand/identities.json`, and of the truck geometry the web renders.
  * What it is not: no data and no behaviour; every declaration here is erased at
  * build time. `src/generated/brand.ts` annotates its constants
  * with these types, which is why they live in their own module: the generated
@@ -62,12 +62,13 @@ export interface TruckBody {
 }
 
 /**
- * A filled and stroked outline. `d` is what the SVG draws; `points` is the
- * straight-line spelling of the same outline for the SwiftUI canvas.
+ * A filled and stroked outline, as the SVG draws it. `truck.json` spells every
+ * outline a second time in straight lines (`points`, `segments`) for the
+ * SwiftUI canvas; those reach the iPhone app in `Brand.json` and are left out
+ * of the web's data.
  */
 export interface TruckPanel {
   d: string;
-  points: readonly TruckPoint[];
   fill: TruckPaint;
   stroke: TruckPaint;
 }
@@ -75,7 +76,6 @@ export interface TruckPanel {
 /** Same, without a stroke. */
 export interface TruckGlass {
   d: string;
-  points: readonly TruckPoint[];
   fill: TruckPaint;
 }
 
@@ -85,11 +85,10 @@ export interface TruckWheels {
   hub: { r: number; fill: TruckPaint };
 }
 
-/** Stroked segments: `d` for SVG, `segments` for the canvas. */
+/** Stroked segments. */
 export interface TruckDecalLine {
   type: 'line';
   d: string;
-  segments: readonly (readonly TruckPoint[])[];
   stroke: TruckPaint;
   strokeWidth: number;
 }
@@ -102,11 +101,10 @@ export interface TruckDecalCircle {
   fill: TruckPaint;
 }
 
-/** A filled outline; the canvas draws `points`, which approximates any curve in `d`. */
+/** A filled outline. */
 export interface TruckDecalPolygon {
   type: 'polygon';
   d: string;
-  points: readonly TruckPoint[];
   fill: TruckPaint;
 }
 

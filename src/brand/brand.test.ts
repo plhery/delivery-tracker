@@ -12,9 +12,23 @@ import {
   carrierBrandFamily,
   carrierDecal,
   mix,
+  type CarrierDecal,
+  type TruckDecalCircle,
+  type TruckDecalLine,
+  type TruckDecalPolygon,
+  type TruckPoint,
 } from './index';
+import truckSource from './truck.json';
 
 const HEX = /^#[\da-f]{6}$/i;
+
+/** A decal as `truck.json` declares it: `d` for SVG, and the same outline in straight lines for the SwiftUI canvas. */
+type SourceDecalShape =
+  | TruckDecalCircle
+  | (TruckDecalPolygon & { points: readonly TruckPoint[] })
+  | (TruckDecalLine & { segments: readonly (readonly TruckPoint[])[] });
+
+const SOURCE_DECALS = truckSource.decals as unknown as Record<CarrierDecal, readonly SourceDecalShape[]>;
 
 describe('carrier brand', () => {
   it('derives the nine properties from the catalog color', () => {
@@ -68,7 +82,7 @@ describe('carrier brand', () => {
       'spee-dee', 'speedpak', 'the-courier-guy', 'landmark-global', 'old-dominion', 'paack', 'c-chez-vous',
       'ecoscooting', 'correos-chile', 'intelcom', 'shipup', 'heppner',
     ] as const) {
-      for (const shape of CARRIER_TRUCK.decals[name]) {
+      for (const shape of SOURCE_DECALS[name]) {
         if (shape.type === 'circle') {
           expect(shape.cx - shape.r).toBeGreaterThanOrEqual(CARRIER_TRUCK.body.x);
           expect(shape.cx + shape.r).toBeLessThanOrEqual(CARRIER_TRUCK.body.x + CARRIER_TRUCK.body.width);
@@ -87,6 +101,12 @@ describe('carrier brand', () => {
         }
       }
     }
+  });
+
+  it('gives the web the same truck without the native outlines', () => {
+    const drawn: unknown = JSON.parse(JSON.stringify(truckSource, (key, value: unknown) =>
+      (key === 'points' || key === 'segments' ? undefined : value)));
+    expect(CARRIER_TRUCK).toEqual(drawn);
   });
 
   it('keeps a carrier that declares nothing on its own identity', () => {
