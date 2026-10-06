@@ -108,3 +108,39 @@ test('a stamp’s bubble grows out of it, and a friend’s page out of their car
   await expect(friend).toHaveCount(0);
   await expect(card).toBeFocused();
 });
+
+test('search folds open over the list and folds shut again', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
+  await page.goto('/');
+
+  const toggle = page.locator('.delivery-search');
+  const list = page.locator('.parcel-card').first();
+  await expect(list).toBeVisible();
+  await page.locator('.deliveries-page').evaluate((element) => Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)));
+  const before = (await list.boundingBox())!.y;
+  await toggle.click();
+  const shell = page.locator('.parcel-view-shell');
+  await hold(shell, 0);
+  // Nothing jumps: the list starts where it was and is pushed down as the field unfolds.
+  expect(Math.abs((await list.boundingBox())!.y - before)).toBeLessThan(2);
+  expect((await shell.boundingBox())!.height).toBeLessThan(2);
+  await settle(shell);
+  const open = (await list.boundingBox())!.y;
+  expect(open).toBeGreaterThan(before + 40);
+  // The count only takes a line once the list has been narrowed.
+  const count = page.locator('.parcel-view__meta');
+  expect((await count.boundingBox())!.height).toBeLessThan(2);
+  await page.getByRole('searchbox').fill('dhl');
+  await expect.poll(async () => (await count.boundingBox())!.height).toBeGreaterThan(12);
+  await page.getByRole('searchbox').fill('');
+
+  await toggle.click();
+  await expect.poll(() => shell.evaluate((element) => element.getAnimations().length)).toBeGreaterThan(0);
+  await hold(shell, 110);
+  const closing = (await list.boundingBox())!.y;
+  expect(closing).toBeLessThan(open - 4);
+  expect(closing).toBeGreaterThan(before + 4);
+  await settle(shell);
+  await expect(shell).toHaveCount(0);
+  expect(Math.abs((await list.boundingBox())!.y - before)).toBeLessThan(2);
+});

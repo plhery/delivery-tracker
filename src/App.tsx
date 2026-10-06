@@ -134,6 +134,17 @@ export default function App({
   const [sort, setSort] = useState<ParcelSort>('priority');
   const [viewControlsOpen, setViewControlsOpen] = useState(false);
   const searchToggle = useRef<HTMLButtonElement>(null);
+  const searchShell = useRef<HTMLDivElement>(null);
+  // Search folds shut before it goes, and the list rises with it.
+  function closeViewControls() {
+    const shell = searchShell.current;
+    if (!shell?.animate || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setViewControlsOpen(false); return; }
+    if (shell.dataset.leaving) return;
+    shell.dataset.leaving = 'true';
+    const { height, marginBottom } = getComputedStyle(shell);
+    void shell.animate([{ height, marginBottom, opacity: 1 }, { height: '0px', marginBottom: '0px', opacity: 0 }],
+      { duration: 220, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'forwards' }).finished.catch(() => undefined).then(() => setViewControlsOpen(false));
+  }
   const deliveriesPage = useRef<HTMLDivElement>(null);
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [viewNow, setViewNow] = useState(() => Date.now());
@@ -515,7 +526,7 @@ export default function App({
               aria-expanded={viewControlsOpen}
               aria-controls={PARCEL_VIEW_CONTROLS_ID}
               aria-describedby={hasCustomView ? 'parcel-view-active' : undefined}
-              onClick={() => { if (!viewControlsOpen) trackAction('filters-open'); setViewControlsOpen((open) => !open); }}
+              onClick={() => { if (viewControlsOpen) closeViewControls(); else { trackAction('filters-open'); setViewControlsOpen(true); } }}
             >
               <Icon name="search" />
               {hasCustomView && <><i className="delivery-search__dot" aria-hidden="true" /><span className="sr-only" id="parcel-view-active">{t('view.customized')}</span></>}
@@ -524,10 +535,10 @@ export default function App({
           </div>
         </div>
         {!loading && parcels.length > 0 && viewControlsOpen && (
-          <div className="parcel-view-shell" onKeyDown={(event) => {
+          <div ref={searchShell} className="parcel-view-shell" onKeyDown={(event) => {
             if (event.key !== 'Escape' || event.nativeEvent.isComposing) return;
             event.preventDefault();
-            setViewControlsOpen(false);
+            closeViewControls();
             searchToggle.current?.focus({ preventScroll: true });
           }}>
             <ParcelViewControls

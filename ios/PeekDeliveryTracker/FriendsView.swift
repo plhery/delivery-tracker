@@ -14,6 +14,9 @@ struct FriendsView: View {
     @State private var showingAccount = false
     @State private var visible = false
     @State private var panel: FriendsPanel?
+    /// A friend's page opens out of their card and goes back into it, as a parcel's does.
+    @State private var openFriend: UUID?
+    @Namespace private var friendTransition
     @State private var noticeKey: String?
     @State private var arrivingID: UUID?
     @State private var cardLanded = false
@@ -59,6 +62,7 @@ struct FriendsView: View {
             .navigationTitle(text("friends.title")).navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountToolbarButton { showingAccount = true } } }
             .refreshable { await model.load(parcels: parcels.parcels) }
+            .navigationDestination(item: $openFriend) { friendPage($0) }
             .task(id: focusReady ? activity.presentationID.uuidString : "waiting") {
                 guard focusReady, presented != activity.presentationID, let friendID = activity.focusID else { return }
                 arrivingID = friendID; cardLanded = false
@@ -80,9 +84,9 @@ struct FriendsView: View {
             visible = true; model.configure(session: session)
             if let seed = activity.arrivalSnapshot { model.seed(seed) }
         }
-        .onDisappear { visible = false; panel = nil; noticeKey = nil; arrivingID = nil; model.clear() }
+        .onDisappear { visible = false; panel = nil; openFriend = nil; noticeKey = nil; arrivingID = nil; model.clear() }
         .task(id: active ? activity.presentationID.uuidString : "hidden") {
-            guard active else { panel = nil; model.clear(); return }
+            guard active else { panel = nil; openFriend = nil; model.clear(); return }
             while !Task.isCancelled {
                 await model.load(parcels: parcels.parcels)
                 guard !Task.isCancelled else { return }
@@ -91,7 +95,7 @@ struct FriendsView: View {
             }
         }
         .onChange(of: model.snapshot) { _, data in
-            if case .friend(let friend) = panel, data?.friends.contains(where: { $0.id == friend.id }) != true { panel = nil }
+            if let openFriend, data?.friends.contains(where: { $0.id == openFriend }) != true { self.openFriend = nil }
         }
         .onChange(of: model.working) { _, working in if working { noticeKey = nil } }
         .sheet(isPresented: $showingAccount) { AccountView() }
@@ -153,7 +157,7 @@ struct FriendsView: View {
     }
 
     private func friendButton(_ friend: FriendCard) -> some View {
-        Button { DeliveryAnalytics.shared.action("friend-open"); panel = .friend(friend) } label: { FriendCardView(friend: friend) }
+        Button { DeliveryAnalytics.shared.action("friend-open"); openFriend = friend.id } label: { FriendCardView(friend: friend).matchedTransitionSource(id: friend.id, in: friendTransition) }
             .buttonStyle(TactileButtonStyle(scale: 0.98)).id(friend.id)
             .offset(x: friend.id == (arrivingID ?? activity.focusID) && !cardLanded && !reduceMotion ? 100 : 0)
             .opacity(friend.id == (arrivingID ?? activity.focusID) && !cardLanded ? 0 : 1)
@@ -174,23 +178,36 @@ struct FriendsView: View {
             } else {
                 FriendsInvitationView(nickname: model.snapshot?.profile?.nickname ?? text("friends.you"), busy: model.working, act: { await model.act($0, parcels: parcels.parcels) }, completed: { panel = nil })
             }
-        case .friend(let initial):
-            if let friend = model.snapshot?.friends.first(where: { $0.id == initial.id }) {
-                FriendDetailView(friend: friend, busy: model.working) {
-                    Task { if await model.act(FriendsActionRequest(action: .removeFriend, friendID: friend.id), parcels: parcels.parcels) != nil { panel = nil } }
-                }
-            }
         }
+    }
+
+    private func friendPage(_ id: UUID) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if let error = model.errorKey { errorView(error) }
+                if let friend = model.snapshot?.friends.first(where: { $0.id == id }) {
+                    FriendDetailView(friend: friend, busy: model.working) {
+                        Task { if await model.act(FriendsActionRequest(action: .removeFriend, friendID: friend.id), parcels: parcels.parcels) != nil { openFriend = nil } }
+                    }
+                }
+            }.padding(24)
+        }
+        .scrollIndicators(.hidden).background(Brand.background)
+        .safeAreaInset(edge: .top, spacing: 0) { DemoModeBar() }
+        .navigationTitle(text("passport.title")).navigationBarTitleDisplayMode(.inline)
+        .navigationTransition(.zoom(sourceID: id, in: friendTransition))
+        .toolbar(.hidden, for: .tabBar)
+        .navigationBarBackButtonHidden(model.working)
     }
     private func errorView(_ key: String) -> some View { Text(text(key)).font(.subheadline).foregroundStyle(ExperimentalPalette.pickup).padding(14).frame(maxWidth: .infinity, alignment: .leading).background(ExperimentalPalette.pickupSurface, in: RoundedRectangle(cornerRadius: 16)) }
 }
 
 private enum FriendsPanel: Identifiable {
-    case profile, create, invite, friend(FriendCard)
-    var id: String { switch self { case .profile: "profile"; case .create: "create"; case .invite: "invite"; case .friend(let friend): friend.id.uuidString } }
+    case profile, create, invite
+    var id: String { switch self { case .profile: "profile"; case .create: "create"; case .invite: "invite" } }
     var detents: Set<PresentationDetent> { if case .invite = self { [.height(590), .large] } else { [.large] } }
     @MainActor func title(_ localizer: Localizer) -> String {
-        switch self { case .friend: localizer.text("passport.title"); case .profile: localizer.text("friends.settings"); case .create: localizer.text("friends.join"); case .invite: localizer.text("friends.inviteTitle") }
+        switch self { case .profile: localizer.text("friends.settings"); case .create: localizer.text("friends.join"); case .invite: localizer.text("friends.inviteTitle") }
     }
 }
 
@@ -209,12 +226,20 @@ struct FriendAvatarView: View {
     }
 }
 
+private extension FriendCard {
+    /// A friend keeps one colour, on their card and on their page.
+    var tone: (tint: Color, surface: Color) {
+        let index = Int(id.uuid.0) % 4
+        return ([ExperimentalPalette.transit, ExperimentalPalette.lilac, ExperimentalPalette.pickup, ExperimentalPalette.delivered][index],
+                [ExperimentalPalette.transitSurface, ExperimentalPalette.lilacSurface, ExperimentalPalette.pickupSurface, ExperimentalPalette.deliveredSurface][index])
+    }
+}
+
 private struct FriendCardView: View {
     @EnvironmentObject private var localizer: Localizer
     let friend: FriendCard
-    private var tone: Int { Int(friend.id.uuid.0) % 4 }
-    private var tint: Color { [ExperimentalPalette.transit, ExperimentalPalette.lilac, ExperimentalPalette.pickup, ExperimentalPalette.delivered][tone] }
-    private var surface: Color { [ExperimentalPalette.transitSurface, ExperimentalPalette.lilacSurface, ExperimentalPalette.pickupSurface, ExperimentalPalette.deliveredSurface][tone] }
+    private var tint: Color { friend.tone.tint }
+    private var surface: Color { friend.tone.surface }
     var body: some View {
         HStack(spacing: 12) {
             FriendAvatarView(name: friend.nickname, tint: tint, surface: surface).frame(width: 39, height: 48)
@@ -233,15 +258,17 @@ struct FriendPostcardView: View {
     @EnvironmentObject private var localizer: Localizer
     let nickname: String
     var arrivedThisWeek: Bool? = nil
+    var tint: Color = ExperimentalPalette.lilac
+    var surface: Color = ExperimentalPalette.lilacSurface
     var body: some View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(nickname).font(.system(size: 28, weight: .semibold)).tracking(-1)
-                if arrivedThisWeek == true { HStack(spacing: 5) { Circle().fill(ExperimentalPalette.lilac).frame(width: 4, height: 4); Text(localizer.text("friends.arrived")).font(.caption).foregroundStyle(ExperimentalPalette.lilac) } }
+                if arrivedThisWeek == true { HStack(spacing: 5) { Circle().fill(tint).frame(width: 4, height: 4); Text(localizer.text("friends.arrived")).font(.caption).foregroundStyle(tint) } }
             }
             Spacer(minLength: 0)
-            FriendAvatarView(name: nickname).frame(width: 61, height: 74)
-        }.padding(22).frame(maxWidth: .infinity, minHeight: 135, alignment: .leading).background(ExperimentalPalette.lilacSurface, in: RoundedRectangle(cornerRadius: 21))
+            FriendAvatarView(name: nickname, tint: tint, surface: surface).frame(width: 61, height: 74)
+        }.padding(22).frame(maxWidth: .infinity, minHeight: 135, alignment: .leading).background(surface, in: RoundedRectangle(cornerRadius: 21))
     }
 }
 
@@ -450,7 +477,7 @@ private struct FriendDetailView: View {
     @State private var confirming = false
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            FriendPostcardView(nickname: friend.nickname, arrivedThisWeek: friend.arrivedThisWeek)
+            FriendPostcardView(nickname: friend.nickname, arrivedThisWeek: friend.arrivedThisWeek, tint: friend.tone.tint, surface: friend.tone.surface)
             if let stats = friend.stats {
                 HStack(alignment: .top) {
                     metric(stats.deliveredCount.formatted(), localizer.text("passport.delivered", ["count": stats.deliveredCount]))

@@ -492,7 +492,7 @@ private struct DeliveryListView: View {
             }
             Spacer(minLength: 0)
             Button {
-                showingSearch.toggle()
+                withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) { showingSearch.toggle() }
                 searchFocused = showingSearch
             } label: {
                 Image(systemName: "magnifyingglass")
@@ -518,30 +518,42 @@ private struct DeliveryListView: View {
         .buttonStyle(.plain)
     }
 
+    /// One quiet field, as the system's own search fields are: no box around it, its tools inside and beside it.
     private var searchControls: some View {
-        HStack(spacing: 8) {
-            TextField(localizer.text("view.searchPlaceholder"), text: $query)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-                .focused($searchFocused)
-                .onAppear { searchFocused = true }
-                .accessibilityLabel(localizer.text("view.search"))
-                .padding(.horizontal, 12).frame(minHeight: 44)
-                .background(Brand.paper, in: RoundedRectangle(cornerRadius: 12))
-            if !query.isEmpty {
-                Button { query = "" } label: {
-                    Image(systemName: "xmark.circle").frame(width: 44, height: 44)
-                }.accessibilityLabel(localizer.text("view.clear"))
+        HStack(spacing: 4) {
+            HStack(spacing: 7) {
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary).accessibilityHidden(true)
+                TextField(localizer.text("view.searchPlaceholder"), text: $query)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
+                    .focused($searchFocused)
+                    .onAppear { searchFocused = true }
+                    .accessibilityLabel(localizer.text("view.search"))
+                if !query.isEmpty {
+                    Button { query = "" } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary).frame(width: 30, height: 44).contentShape(Rectangle())
+                    }
+                    .accessibilityLabel(localizer.text("view.clear"))
+                    .transition(.opacity.combined(with: .scale(scale: 0.7)))
+                }
             }
+            .padding(.leading, 13).padding(.trailing, query.isEmpty ? 13 : 5).frame(minHeight: 44)
+            .background(Brand.ink.opacity(0.06), in: Capsule())
+            .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: query.isEmpty)
             Button { searchFocused = false; showingFilters = true } label: {
-                Image(systemName: "line.3.horizontal.decrease").frame(width: 44, height: 44)
+                Image(systemName: "line.3.horizontal.decrease").frame(width: 44, height: 44).contentShape(Rectangle())
             }
             .accessibilityLabel(localizer.text("view.showControls"))
         }
         .font(.subheadline)
         .buttonStyle(.plain)
-        .onKeyPress(.escape) { showingSearch = false; searchFocused = false; return .handled }
+        .onKeyPress(.escape) {
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) { showingSearch = false }
+            searchFocused = false
+            return .handled
+        }
+        .transition(.opacity.combined(with: .scale(scale: 0.94, anchor: .top)).combined(with: .offset(y: -10)))
     }
 
     @ViewBuilder private func listEmptyState(_ layout: DeliveryListLayout) -> some View {
@@ -744,8 +756,7 @@ private struct DeliveryListView: View {
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 11)
             .frame(height: 34)
-            .background(.regularMaterial, in: Capsule())
-            .overlay(Capsule().stroke(Brand.warning.opacity(0.25), lineWidth: 0.7))
+            .background(Brand.ink.opacity(0.06), in: Capsule())
         }
         .buttonStyle(.plain)
         .foregroundStyle(Brand.ink)

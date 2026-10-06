@@ -92,28 +92,33 @@ export function ParcelViewControls({
         </button>
       </div>
 
-      {hasCustomView && (
-        <div className="parcel-view__chips" aria-label={t('view.customized')}>
-          {status !== 'all' && (
-            <button type="button" onClick={() => onStatusChange('all')}>
-              <span>{t(STATUS_LABELS[status])}</span><b aria-hidden="true">×</b>
+      <div className={`parcel-view__meta${hasCustomView ? '' : ' parcel-view__meta--quiet'}`}>
+        {hasCustomView && (
+          <div className="parcel-view__chips" aria-label={t('view.customized')}>
+            {status !== 'all' && (
+              <button type="button" onClick={() => onStatusChange('all')}>
+                <span>{t(STATUS_LABELS[status])}</span><b aria-hidden="true">×</b>
+              </button>
+            )}
+            {carrier && (
+              <button type="button" onClick={() => onCarrierChange('')}>
+                <span>{carrierInfo(carrier, locale).name}</span><b aria-hidden="true">×</b>
+              </button>
+            )}
+            {sort !== 'priority' && (
+              <button type="button" onClick={() => onSortChange('priority')}>
+                <span>{t(SORT_LABELS[sort])}</span><b aria-hidden="true">×</b>
+              </button>
+            )}
+            <button type="button" className="parcel-view__clear" onClick={onClearAll}>
+              {t('view.clearAll')}
             </button>
-          )}
-          {carrier && (
-            <button type="button" onClick={() => onCarrierChange('')}>
-              <span>{carrierInfo(carrier, locale).name}</span><b aria-hidden="true">×</b>
-            </button>
-          )}
-          {sort !== 'priority' && (
-            <button type="button" onClick={() => onSortChange('priority')}>
-              <span>{t(SORT_LABELS[sort])}</span><b aria-hidden="true">×</b>
-            </button>
-          )}
-          <button type="button" className="parcel-view__clear" onClick={onClearAll}>
-            {t('view.clearAll')}
-          </button>
-        </div>
-      )}
+          </div>
+        )}
+        <p className="parcel-view__count" aria-live="polite">
+          {t('view.shown', { count })}
+        </p>
+      </div>
 
       {advancedOpen && (
         <div className="parcel-view__advanced" id={`${id}-advanced`}>
@@ -155,9 +160,6 @@ export function ParcelViewControls({
           </div>
         </div>
       )}
-      <p className="parcel-view__count" aria-live="polite">
-        {t('view.shown', { count })}
-      </p>
     </div>
   );
 }
