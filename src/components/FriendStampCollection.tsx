@@ -3,6 +3,7 @@ import type { ApiFriendCard, ApiFriendStamp } from '../generated/apiContract';
 import { useI18n } from '../i18n';
 import { friendStamps } from '../lib/friends';
 import { Icon } from './Icon';
+import { placeBubble } from '../lib/bubble';
 
 /** Friends only exposes these shared milestones; never infer private tracking history. */
 export function FriendStampCollection({ stats }: { stats: NonNullable<ApiFriendCard['stats']> }) {
@@ -35,10 +36,7 @@ export function FriendStampCollection({ stats }: { stats: NonNullable<ApiFriendC
       if (!open) { delete bubble.dataset.positioned; return; }
       const anchor = document.querySelector(`[popovertarget="${CSS.escape(id)}"]`);
       if (!anchor) return;
-      const rect = anchor.getBoundingClientRect(), { width, height } = bubble.getBoundingClientRect();
-      const below = rect.bottom + 10, top = below + height <= innerHeight - 12 ? below : rect.top - height - 10;
-      bubble.style.left = `${Math.max(12, Math.min(innerWidth - width - 12, rect.left + rect.width / 2 - width / 2))}px`;
-      bubble.style.top = `${Math.max(12, Math.min(innerHeight - height - 12, top))}px`;
+      placeBubble(bubble, anchor.getBoundingClientRect());
       bubble.dataset.positioned = 'true'; bubble.focus({ preventScroll: true });
     }}><h3 id={`${id}-title`}>{t(stamp.title)}</h3><p>{t(stamp.explanation)}{progress && `\n${progress}`}</p></div></div>;
   })}</div>{hasMore && <button type="button" className="passport-collection-toggle" aria-expanded={showAll} aria-controls={`${prefix}-collection`} onClick={() => setShowAll((value) => !value)}>{t(showAll ? 'passport.showLess' : 'passport.showAll')}</button>}</section>;

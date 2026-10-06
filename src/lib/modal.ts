@@ -81,7 +81,8 @@ export function useModalDialog<T extends HTMLElement>(
       : null;
     const entry = { element: modal, original: hiddenState(modal) };
     modals.push(entry);
-    (initialFocus?.current ?? modal).focus();
+    // A sheet may still be on its way in from below the screen; nothing scrolls to meet it.
+    (initialFocus?.current ?? modal).focus({ preventScroll: true });
     if (modals.length === 1) {
       const previousOverflow = document.body.style.overflow;
       const original = background ? hiddenState(background) : null;
@@ -184,14 +185,21 @@ export function useSheetDialog<T extends HTMLElement>(
     }
     closing.current = true;
     const visible = getComputedStyle(element);
-    const animation = element.animate([
+    // A sheet that rose from the bottom edge leaves the same way; a centred one fades back.
+    const rose = visible.animationName.includes('sheet-rise');
+    const duration = rose ? 260 : 160;
+    if (rose) element.setAttribute('data-leaving', '');
+    const animation = element.animate(rose ? [
+      { transform: visible.transform },
+      { transform: 'translateY(100%)' },
+    ] : [
       { opacity: visible.opacity, transform: visible.transform },
       { opacity: 0, transform: 'translateY(28px)' },
-    ], { duration: 160, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
+    ], { duration, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
     element.closest('.sheet-backdrop')?.animate([
       { backgroundColor: 'rgba(15,22,15,.28)' },
       { backgroundColor: 'rgba(15,22,15,0)' },
-    ], { duration: 160, fill: 'forwards' });
+    ], { duration, fill: 'forwards' });
     void animation.finished.catch(() => undefined).then(() => {
       if (alive.current) finish.current();
     });

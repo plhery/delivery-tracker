@@ -6,6 +6,8 @@ import { useI18n, type MessageKey } from '../i18n';
 import { FriendsError, friendTone, ownFriendCard, type FriendsClient } from '../lib/friends';
 import { invitationURL } from '../lib/friendInvites';
 import { useSheetDialog } from '../lib/modal';
+import { useCardDialog } from '../lib/cardDialog';
+import { captureCardOrigin, type CardOrigin } from '../lib/cardTransition';
 import type { ParcelWithEvents } from '../types';
 import { Icon } from './Icon';
 import { InvitationParcel } from './InvitationParcel';
@@ -26,6 +28,7 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
   const [error, setError] = useState<MessageKey | null>(null);
   const [busy, setBusy] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
+  const [origin, setOrigin] = useState<CardOrigin | null>(null);
   const [invite, setInvite] = useState<{ code: string; previewId?: string; previousInviteCount?: number } | null>(null);
   const [notice, setNotice] = useState<MessageKey | null>(null);
   const generation = useRef(0);
@@ -100,7 +103,7 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
   const selected = typeof panel === 'object' && panel ? data?.friends.find((friend) => friend.id === panel.id) : null;
   const featured = data?.friends.find((friend) => friend.id === focusId);
   const remainingFriends = data?.friends.filter((friend) => friend.id !== featured?.id) ?? [];
-  const friendButton = (friend: ApiFriendCard) => <button key={friend.id} ref={friend.id === focusId ? arrivalCard : undefined} data-arriving={friend.id === focusId ? (landed ? 'landed' : 'waiting') : undefined} className={`friend-card tone-${friendTone(friend.id)}`} onClick={() => { setPanel(friend); trackAction('friend-open'); }}><FriendCardBody friend={friend} /></button>;
+  const friendButton = (friend: ApiFriendCard) => <button key={friend.id} ref={friend.id === focusId ? arrivalCard : undefined} data-arriving={friend.id === focusId ? (landed ? 'landed' : 'waiting') : undefined} data-friend={friend.id} className={`friend-card tone-${friendTone(friend.id)}`} onClick={(event) => { setOrigin(captureCardOrigin(event.currentTarget)); setPanel(friend); trackAction('friend-open'); }}><FriendCardBody friend={friend} /></button>;
   return <div className="friends-page" data-empty={!!data?.profile && !data.friends.length}>
     {data && focusId && checkedFocusId === focusId && !focusReady && <p className="friends-notice" role="status">{t('friends.friendUnavailable')}</p>}
     {notice && <p role="status" className="friends-notice"><Icon name="check" />{t(notice)}</p>}
@@ -116,11 +119,14 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
         <div className="friends-grid">{featured && friendButton(featured)}{remainingFriends.map(friendButton)}</div>
       </section> : <div className="friends-empty"><FriendsPostagePair /><h2>{t('friends.emptyTitle')}</h2><button className="button button--primary" disabled={busy} onClick={() => void inviteFriend()}><Icon name="plus" />{t('friends.invite')}</button></div>}
     </>}
-    {panel && <FriendsSheet kind={panel === 'invite' ? 'invite' : 'page'} title={typeof panel === 'object' ? t('passport.title') : t(panel === 'settings' ? 'friends.settings' : panel === 'create' ? 'friends.join' : 'friends.inviteTitle')} onClose={close} busy={busy}>
+    {panel && typeof panel === 'object' && <FriendPage friendId={panel.id} origin={origin} title={t('passport.title')} onClose={close} busy={busy}>
+      {errorView}
+      {selected && <FriendDetails friend={selected} busy={busy} onRemove={async () => { if (await act({ action: 'remove_friend', friendId: selected.id })) close(); }} />}
+    </FriendPage>}
+    {panel && typeof panel === 'string' && <FriendsSheet kind={panel === 'invite' ? 'invite' : 'page'} title={t(panel === 'settings' ? 'friends.settings' : panel === 'create' ? 'friends.join' : 'friends.inviteTitle')} onClose={close} busy={busy}>
       {errorView}
       {(panel === 'settings' || panel === 'create') && <FriendProfileForm profile={data?.profile ?? null} parcels={parcels} busy={busy} onSave={async (profile) => { if (await act({ action: 'save_profile', ...profile })) close(); }} />}
       {panel === 'invite' && (demo ? <><InvitationParcel nickname={data?.profile?.nickname ?? t('friends.you')} /><p>{t('friends.demoInvites')}</p>{onExitDemo && <button className="button button--primary" onClick={() => { close(); onExitDemo(); }}>{t('welcome.signInInstead')}</button>}</> : <FriendsInvite nickname={data?.profile?.nickname ?? t('friends.you')} code={invite?.code ?? null} previewId={invite?.previewId} previousInviteCount={invite?.previousInviteCount ?? 0} busy={busy} act={act} onRetry={inviteFriend} onClose={close} />)}
-      {selected && <FriendDetails friend={selected} busy={busy} onRemove={async () => { if (await act({ action: 'remove_friend', friendId: selected.id })) close(); }} />}
     </FriendsSheet>}
   </div>;
 }
@@ -134,8 +140,8 @@ export function FriendSharingPreview({ friend }: { friend: ApiFriendCard }) {
   const { t } = useI18n();
   return <div className="friend-sharing-preview tone-blue"><div><strong>{friend.nickname}</strong><FriendAvatar name={friend.nickname} /></div><p className="friend-sharing-preview__stats">{friend.stats ? <>{friend.stats.deliveredCount} {t('passport.delivered', { count: friend.stats.deliveredCount }).toLocaleLowerCase()} · {friend.stats.averageDays == null ? '—' : t(friend.stats.averageDays === 1 ? 'friends.day' : 'friends.days', { count: friend.stats.averageDays })} · {t('friends.stampCount', { count: friend.stats.stamps.length })}</> : t('friends.privateStats')}</p><p className="friend-sharing-preview__arrival" data-shared={friend.arrivedThisWeek !== null} aria-hidden={friend.arrivedThisWeek === null}>{t(friend.arrivedThisWeek ? 'friends.arrived' : 'friends.noArrival')}</p></div>;
 }
-export function FriendPostcard({ nickname, arrivedThisWeek }: { nickname: string; arrivedThisWeek?: boolean | null }) {
-  const { t } = useI18n();return <div className="friend-postcard tone-lilac"><div><h2>{nickname}</h2>{arrivedThisWeek && <span className="friend-card__arrival">{t('friends.arrived')}</span>}</div><FriendAvatar name={nickname} /></div>;
+export function FriendPostcard({ nickname, arrivedThisWeek, tone = 'lilac' }: { nickname: string; arrivedThisWeek?: boolean | null; tone?: string }) {
+  const { t } = useI18n();return <div className={`friend-postcard tone-${tone}`}><div><h2>{nickname}</h2>{arrivedThisWeek && <span className="friend-card__arrival">{t('friends.arrived')}</span>}</div><FriendAvatar name={nickname} /></div>;
 }
 export function FriendProfileForm({ profile, parcels, busy, onSave, submitKey }: { profile: ApiFriendProfile | null; parcels: ParcelWithEvents[]; busy: boolean; onSave: (value: ApiFriendProfile) => Promise<void>; submitKey?: MessageKey }) {
   const { t } = useI18n();
@@ -158,6 +164,17 @@ export function FriendsSheet({ title, children, onClose, busy = false, kind = 'p
   const { t } = useI18n();
   const [dialog, close] = useSheetDialog<HTMLDivElement>(true, onClose, undefined, busy);
   return createPortal(<div className={`sheet-backdrop friends-backdrop friends-backdrop--${kind}`} onClick={close}><div ref={dialog} className={`sheet friends-sheet friends-sheet--${kind}`} role="dialog" aria-modal="true" aria-labelledby="friends-sheet-title" aria-busy={busy} tabIndex={-1} onClick={(event) => event.stopPropagation()}><div className="sheet__grabber" aria-hidden="true" /><div className="sheet__heading"><h2 id="friends-sheet-title" className="sheet__title">{title}</h2><button className="sheet__close" aria-label={t('common.close')} disabled={busy} onClick={close}><Icon name="close" /></button></div>{children}</div></div>, document.body);
+}
+/** A friend's page opens out of their card and goes back into it, as a parcel's does. */
+function FriendPage({ friendId, origin, title, children, onClose, busy }: { friendId: string; origin: CardOrigin | null; title: string; children: ReactNode; onClose: () => void; busy: boolean }) {
+  const { t } = useI18n();
+  const [dialog, close] = useCardDialog<HTMLDivElement>(onClose, undefined, {
+    origin,
+    findCard: () => document.querySelector<HTMLElement>(`.friend-card[data-friend="${CSS.escape(friendId)}"]`),
+    anchor: (page) => page.querySelector<HTMLElement>('.friend-postcard'),
+    canClose: () => !busy,
+  });
+  return createPortal(<div className="sheet-backdrop friends-backdrop friends-backdrop--page" onClick={close}><div ref={dialog} className={`sheet friends-sheet friends-sheet--page${origin ? ' friends-sheet--from-card' : ''}`} role="dialog" aria-modal="true" aria-labelledby="friends-sheet-title" aria-busy={busy} tabIndex={-1} onClick={(event) => event.stopPropagation()}><div className="sheet__grabber" aria-hidden="true" /><div className="sheet__heading"><h2 id="friends-sheet-title" className="sheet__title">{title}</h2><button className="sheet__close" aria-label={t('common.close')} disabled={busy} onClick={close}><Icon name="close" /></button></div>{children}</div></div>, document.body);
 }
 type Act = (action: ApiFriendsActionRequest) => Promise<ApiFriendsActionResponse | null>;
 function FriendsInvite({ nickname, code, previewId, previousInviteCount, busy, act, onRetry, onClose }: { nickname: string; code: string | null; previewId?: string; previousInviteCount: number; busy: boolean; act: Act; onRetry: () => Promise<void>; onClose: () => void }) {
@@ -196,6 +213,6 @@ function FriendsInvite({ nickname, code, previewId, previousInviteCount, busy, a
 }
 function FriendDetails({ friend, busy, onRemove }: { friend: ApiFriendCard; busy: boolean; onRemove: () => Promise<void> }) {
   const { t } = useI18n(); const [removing, setRemoving] = useState(false);
-  return <div className="friend-details"><FriendPostcard nickname={friend.nickname} arrivedThisWeek={friend.arrivedThisWeek} />{friend.stats ? <><div className="friend-details__metrics"><div><strong>{friend.stats.deliveredCount}</strong><span>{t('passport.delivered', { count: friend.stats.deliveredCount })}</span></div><div><strong>{friend.stats.averageDays == null ? '—' : t(friend.stats.averageDays === 1 ? 'friends.day' : 'friends.days', { count: friend.stats.averageDays })}</strong><span>{t('passport.average')}</span></div></div><FriendStampCollection stats={friend.stats} /></> : <p className="friends-privacy"><Icon name="lock" />{t('friends.privateStats')}</p>}
+  return <div className="friend-details"><FriendPostcard nickname={friend.nickname} arrivedThisWeek={friend.arrivedThisWeek} tone={friendTone(friend.id)} />{friend.stats ? <><div className="friend-details__metrics"><div><strong>{friend.stats.deliveredCount}</strong><span>{t('passport.delivered', { count: friend.stats.deliveredCount })}</span></div><div><strong>{friend.stats.averageDays == null ? '—' : t(friend.stats.averageDays === 1 ? 'friends.day' : 'friends.days', { count: friend.stats.averageDays })}</strong><span>{t('passport.average')}</span></div></div><FriendStampCollection stats={friend.stats} /></> : <p className="friends-privacy"><Icon name="lock" />{t('friends.privateStats')}</p>}
   <details className="friends-manage"><summary>{t('friends.manageFriendship')}</summary>{removing ? <div className="friends-remove-confirm"><h3>{t('friends.removeTitle', { name: friend.nickname })}</h3><p>{t('friends.removeDetail')}</p><button className="button button--secondary" disabled={busy} onClick={() => void onRemove()}>{t('friends.remove')}</button><button className="text-button" disabled={busy} onClick={() => setRemoving(false)}>{t('common.cancel')}</button></div> : <button className="friends-remove" disabled={busy} onClick={() => setRemoving(true)}>{t('friends.remove')}</button>}</details></div>;
 }

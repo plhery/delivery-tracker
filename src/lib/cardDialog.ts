@@ -16,6 +16,8 @@ export interface CardDialogLink {
   worded?: (page: HTMLElement) => HTMLElement | null;
   /** Whether pulling the page down may close it now. */
   canPull?: () => boolean;
+  /** Whether the page may close at all now; it stays while something it started is still under way. */
+  canClose?: () => boolean;
 }
 
 /** A modal page that grows out of a card and goes back into it; under a finger, pulling it down closes it. */
@@ -38,7 +40,7 @@ export function useCardDialog<T extends HTMLElement>(
       anchor: () => latest.current.link.anchor?.(page) ?? null,
       header: () => latest.current.link.header?.(page) ?? null,
       worded: () => latest.current.link.worded?.(page) ?? null,
-      canPull: () => latest.current.link.canPull?.() ?? true,
+      canPull: () => (latest.current.link.canClose?.() ?? true) && (latest.current.link.canPull?.() ?? true),
       onClosed: () => latest.current.onClose(),
     });
     return () => {
@@ -55,6 +57,7 @@ export function useCardDialog<T extends HTMLElement>(
     };
   }, []);
   function dismiss() {
+    if (latest.current.link.canClose?.() === false) return;
     if (bound.current) bound.current.close();
     else latest.current.onClose();
   }

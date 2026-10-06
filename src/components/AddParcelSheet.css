@@ -41,6 +41,10 @@
   .sheet-backdrop.add-parcel-backdrop { top: var(--add-viewport-top, 0px); bottom: auto; height: var(--add-viewport-height, 100dvh); padding: 0; overflow: visible; align-items: stretch; }
   .add-parcel-backdrop[data-keyboard] .sheet.add-parcel-sheet { padding-bottom: 12px; }
   .sheet.add-parcel-sheet { max-width: none; max-height: none; height: 100%; border: 0; border-radius: 0; padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); box-shadow: 0 0 0 100vmax var(--canvas); }
+  /* While the sheet travels it has a sheet's corners and that shadow reaches only downwards, so the screen behind stays in view above its edge. */
+  .sheet.add-parcel-sheet { animation: sheet-rise .5s cubic-bezier(.32,.72,0,1) backwards, add-parcel-ground .5s step-end; }
+  .sheet.add-parcel-sheet[data-leaving] { border-radius: 24px 24px 0 0; box-shadow: 0 calc(100vmax + 40px) 0 100vmax var(--canvas), 0 -10px 40px rgb(0 0 0 / 12%); }
+  @keyframes add-parcel-ground { from { border-radius: 24px 24px 0 0; box-shadow: 0 calc(100vmax + 40px) 0 100vmax var(--canvas), 0 -10px 40px rgb(0 0 0 / 12%); } }
   .add-parcel-sheet .sheet__form { flex: 1; }
   .add-parcel-fields { flex: 1; align-content: start; }
   .add-parcel-sheet .sheet__actions { padding-top: 20px; }

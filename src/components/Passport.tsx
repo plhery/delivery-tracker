@@ -7,6 +7,7 @@ import { countryFlag, countryName } from 'universal-parcel-scraper/app';
 import type { ParcelWithEvents } from '../types';
 import type { IconName } from './Icon';
 import { Seal } from './Seal';
+import { placeBubble } from '../lib/bubble';
 
 export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; loading: boolean }) {
   const { t, languageTag } = useI18n();
@@ -43,11 +44,7 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
       const anchor = anchors.current.get(id);
       if (!anchor) { bubble.hidePopover(); return; }
       const rect = anchor.getBoundingClientRect();
-      const { width, height } = bubble.getBoundingClientRect();
-      const below = rect.bottom + 10;
-      const top = below + height <= window.innerHeight - 12 ? below : rect.top - height - 10;
-      bubble.style.left = `${Math.max(12, Math.min(window.innerWidth - width - 12, rect.left + rect.width / 2 - width / 2))}px`;
-      bubble.style.top = `${Math.max(12, Math.min(window.innerHeight - height - 12, top))}px`;
+      placeBubble(bubble, rect);
       bubble.dataset.positioned = 'true';
       bubble.focus({ preventScroll: true });
     }}><h3 id={`${detailId(id)}-title`}>{title}</h3><p>{explanation}</p></div>;
