@@ -7,7 +7,7 @@ public parcel links, whose owner keys it keeps in the keychain.
 
 ## Run the demo
 
-Open `PeekDeliveryTracker.xcodeproj` in Xcode 26, pick the `PeekDeliveryTracker` scheme
+Open `PeekDeliveryTracker.xcodeproj` in Xcode 27, pick the `PeekDeliveryTracker` scheme
 and an iPhone simulator, and press Run. That's it: the checked-in configuration starts in
 demo mode, so you need no account, no network and no Apple team. Refresh moves the
 made-up parcels along, and Account resets them.
@@ -115,7 +115,7 @@ xcodebuild -project PeekDeliveryTracker.xcodeproj -scheme PeekDeliveryTracker \
 ```
 
 To run the unit tests, swap `build` for `test` and name a real simulator, for example
-`-destination 'platform=iOS Simulator,name=iPhone 17 Pro'`. Push itself can only be tried
+`-destination 'platform=iOS Simulator,name=iPhone 18 Pro'`. Push itself can only be tried
 with a signed build on a real phone.
 
 Analytics (optional) follows [ANALYTICS.md](../docs/ANALYTICS.md). Simulator and demo

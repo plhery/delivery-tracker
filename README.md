@@ -104,7 +104,7 @@ fill in your Supabase project and set `NEXT_PUBLIC_USE_API=true`.
 
 A native SwiftUI app for iOS 18 and later. It isn't on the App Store yet, so for now you
 build it yourself: open [`ios/PeekDeliveryTracker.xcodeproj`](ios/PeekDeliveryTracker.xcodeproj)
-in Xcode 26 or newer, pick the `PeekDeliveryTracker` scheme and an iPhone simulator, and
+in Xcode 27 or newer, pick the `PeekDeliveryTracker` scheme and an iPhone simulator, and
 press Run. It starts with sample parcels, so it needs no account, no server and no Apple
 team.
 
