@@ -522,6 +522,17 @@ describe('input validation', () => {
     })).toThrow('include a digit');
   });
 
+  it('takes letters alone for a number only in a shape a carrier issues', () => {
+    const lettersOnly = (trackingNumber: string) => newPackageValues({
+      trackingNumber, label: 'Parcel', carrier: 'unknown', trackingUrl: '', dpdPostcode: '',
+    });
+    // Six letters are a GLS Track ID.
+    expect(lettersOnly(' abcdef ').trackingNumber).toBe('ABCDEF');
+    for (const word of ['bonjour', 'tracking', 'confirmation', 'abc def']) {
+      expect(() => lettersOnly(word)).toThrow('include a digit');
+    }
+  });
+
   it('counts user-visible characters and trims package labels', () => {
     expect(packageLabel({ label: '  Coffee  ' })).toBe('Coffee');
     expect(() => packageLabel({ label: '😀'.repeat(81) })).toThrow('80 characters');

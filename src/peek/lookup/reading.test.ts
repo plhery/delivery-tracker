@@ -10,6 +10,8 @@ describe('reading the field', () => {
     expect(readText('Your parcel 99.34.123456.78901234 is on its way').match)
       .toMatchObject({ trackingNumber: '99.34.123456.78901234', carrier: 'swiss-post', source: 'text' });
     expect(readText('  ').match.trackingNumber).toBe('');
+    // Six letters typed alone are a GLS Track ID; in a message they are a word.
+    expect(readText('ABCDEF').match).toMatchObject({ trackingNumber: 'ABCDEF', source: 'number', confidence: 'low' });
     expect(readText('Thanks for your order! We’ll let you know as soon as it ships.').match.trackingNumber).toBe('');
   });
 
