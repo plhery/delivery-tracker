@@ -1,8 +1,29 @@
 import { glideList, measureList } from './listGlide';
 import { springAt, springSettleTime, type Spring } from './spring';
 
-const CARD = '.parcel-card-swipe';
 const COUNT = '.parcel-section__heading > span';
+
+/** How a list draws its parcels, for what moves when one of them has arrived. */
+export interface CardList {
+  /** A parcel's card, and the attribute that names its parcel. */
+  card: string;
+  id: string;
+  /** The parcel's name on a card, its coloured surface and what rounds its corners; the card itself where absent. */
+  name: string;
+  surface?: string;
+  clip?: string;
+  /** The large card, which throws more paper. */
+  large: string;
+  /** The blocks that make room when a card leaves; the deliveries' own where absent. */
+  blocks?: string;
+}
+
+/** The deliveries. */
+export const DELIVERY_CARDS: CardList = {
+  card: '.parcel-card-swipe', id: 'data-parcel-id', name: '.parcel-card__label', surface: '.parcel-card', clip: '.parcel-card-swipe__clip',
+  large: '.parcel-card-swipe--hero',
+};
+
 /** Slower than the list's glide and with a soft landing: the card is carried to its place. */
 const TRAVEL: Spring = { duration: 0.62, bounce: 0.16 };
 /** The page's own card shows again under the flying one, which then fades from over it. */
@@ -29,10 +50,10 @@ const part = (value: number) => Math.min(1, Math.max(0, value));
 const ramp = (value: number, from: number, to: number) => part((value - from) / (to - from));
 const between = (from: number, to: number, share: number) => from + (to - from) * share;
 
-function see(element: HTMLElement, place: { x: number; y: number } | undefined): Seen {
+function see(element: HTMLElement, place: { x: number; y: number } | undefined, list: CardList): Seen {
   const box = element.getBoundingClientRect();
-  const name = element.querySelector('.parcel-card__label')?.getBoundingClientRect();
-  const clip = element.querySelector('.parcel-card-swipe__clip');
+  const name = element.querySelector(list.name)?.getBoundingClientRect();
+  const clip = list.clip ? element.querySelector(list.clip) : element;
   return {
     element,
     x: place?.x ?? box.left + window.scrollX,
@@ -44,18 +65,18 @@ function see(element: HTMLElement, place: { x: number; y: number } | undefined):
   };
 }
 
-function cardsIn(root: HTMLElement) {
+function cardsIn(root: HTMLElement, list: CardList) {
   const cards = new Map<string, HTMLElement>();
-  for (const card of root.querySelectorAll<HTMLElement>(CARD)) {
-    const id = card.dataset.parcelId;
+  for (const card of root.querySelectorAll<HTMLElement>(list.card)) {
+    const id = card.getAttribute(list.id);
     if (id && card.dataset.leaving === undefined && card.getClientRects().length) cards.set(id, card);
   }
   return cards;
 }
 
 /** A card shown in the flying box: out of the list's reach, at the size it had in the page. */
-function asFace(element: HTMLElement, { width, height }: Seen) {
-  element.removeAttribute('data-parcel-id');
+function asFace(element: HTMLElement, { width, height }: Seen, list: CardList) {
+  element.removeAttribute(list.id);
   element.dataset.leaving = '';
   Object.assign(element.style, { position: 'absolute', left: '0', top: '0', width: px(width), height: px(height), margin: '0' });
 }
@@ -80,7 +101,7 @@ function copyPictures(from: HTMLElement, to: HTMLElement) {
  * size from its far edges, the old card slides so that both names stay on the same line, and
  * the new card comes up over it. The card in the page stays unseen until the box lands on it.
  */
-function carry(layer: HTMLElement, was: Seen, now: Seen, lifted: boolean) {
+function carry(layer: HTMLElement, was: Seen, now: Seen, lifted: boolean, list: CardList) {
   const frame = layer.getBoundingClientRect();
   const origin = { x: frame.left + window.scrollX, y: frame.top + window.scrollY };
   const from = { x: was.x - origin.x, y: was.y - origin.y };
@@ -107,12 +128,12 @@ function carry(layer: HTMLElement, was: Seen, now: Seen, lifted: boolean) {
   next.className = `delivered-move__next${now.element.closest('.parcel-section--past') ? ' parcel-section--past' : ''}`;
   const ground = document.createElement('div');
   ground.className = 'delivered-move__ground';
-  const surface = now.element.querySelector('.parcel-card');
+  const surface = list.surface ? now.element.querySelector(list.surface) : now.element;
   if (surface) ground.style.background = getComputedStyle(surface).backgroundColor;
   const copy = now.element.cloneNode(true) as HTMLElement;
   copyPictures(now.element, copy);
-  asFace(was.element, was);
-  asFace(copy, now);
+  asFace(was.element, was, list);
+  asFace(copy, now, list);
   next.append(ground, copy);
   clip.append(was.element, next);
   box.append(clip);
@@ -167,28 +188,30 @@ function layerOf(root: HTMLElement) {
  * deliveries, the parcel that becomes Next up grows into its place, and the other blocks
  * glide as they do when a card leaves. Returns a way to call the whole thing off.
  */
-export function moveDeliveredCards(root: HTMLElement | null, ids: readonly string[], timeout = 4000): () => void {
+export function moveDeliveredCards(root: HTMLElement | null, ids: readonly string[], list: CardList = DELIVERY_CARDS, timeout = 4000): () => void {
   if (!root || typeof MutationObserver === 'undefined') return () => undefined;
-  const before = measureList(root);
-  const stood = new Map([...cardsIn(root)].map(([id, card]) => [id, see(card, before.get(card))]));
+  const before = measureList(root, list.blocks);
+  const stood = new Map([...cardsIn(root, list)].map(([id, card]) => [id, see(card, before.get(card), list)]));
   const counts = new Map([...root.querySelectorAll<HTMLElement>(COUNT)].map((count) => [count, count.textContent]));
-  const touchesCard = (node: Node) => node instanceof HTMLElement && (node.matches(CARD) || Boolean(node.querySelector(CARD)));
+  const touchesCard = (node: Node) => node instanceof HTMLElement && (node.matches(list.card) || Boolean(node.querySelector(list.card)));
   const observer = new MutationObserver((records) => {
     if (!records.some((record) => [...record.addedNodes, ...record.removedNodes].some(touchesCard))) return;
     stop();
     if (!root.animate || reducedMotion()) return;
-    const cards = cardsIn(root);
-    const after = measureList(root);
+    const cards = cardsIn(root, list);
+    const after = measureList(root, list.blocks);
     // A card that changed kind is another element: the one that was shown has left the page.
     const moves = [...stood].flatMap(([id, was]) => {
       const card = cards.get(id);
-      return card && card !== was.element && !was.element.isConnected ? [{ was, now: see(card, after.get(card)), lifted: ids.includes(id) }] : [];
+      return card && card !== was.element && !was.element.isConnected ? [{ was, now: see(card, after.get(card), list), lifted: ids.includes(id) }] : [];
     });
-    glideList(root, before, new Set(moves.map(({ now }) => now.element)));
+    // A card that flies is left alone by the glide, and so is the block that only holds it.
+    const flown = moves.flatMap(({ now }) => [now.element, ...(list.blocks ? [now.element.closest<HTMLElement>(list.blocks)].filter((block) => block !== null) : [])]);
+    glideList(root, before, new Set(flown), list.blocks);
     if (moves.length) {
       const layer = layerOf(root);
       // The arrivals are drawn last, over the card that takes their place.
-      for (const { was, now, lifted } of moves.sort((first, second) => Number(first.lifted) - Number(second.lifted))) carry(layer, was, now, lifted);
+      for (const { was, now, lifted } of moves.sort((first, second) => Number(first.lifted) - Number(second.lifted))) carry(layer, was, now, lifted, list);
     }
     for (const [count, text] of counts) {
       if (count.isConnected && count.textContent !== text) count.animate([{ scale: 1 }, { scale: 1.22, offset: .45 }, { scale: 1 }], { duration: 360, easing: 'ease-out' });

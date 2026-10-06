@@ -65,7 +65,7 @@ describe('a parcel delivered since the list was last shown', () => {
     expect(tea(past())).toBeNull();
     expect(within(active()).getByRole('button', { name: /^Lamp — / })).toBeInTheDocument();
     // Paper is thrown from its card while it stands there, once.
-    await waitFor(() => expect(throwConfetti).toHaveBeenCalledWith(document.querySelector('.deliveries-page'), ['tea']));
+    await waitFor(() => expect(throwConfetti).toHaveBeenCalledWith(document.querySelector('.deliveries-page'), ['tea'], expect.anything()));
     expect(tea(active())).toBeInTheDocument();
 
     await waitFor(() => expect(tea(past())).toHaveAccessibleName(/^Tea — Delivered/), { timeout: 2500 });

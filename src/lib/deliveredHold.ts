@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { throwConfetti } from './deliveredConfetti';
-import { moveDeliveredCards } from './deliveredMove';
+import { DELIVERY_CARDS, moveDeliveredCards, type CardList } from './deliveredMove';
 import { justDelivered } from './justDelivered';
 import { isDelivered } from './stages';
 import type { ParcelWithEvents } from '../types';
@@ -31,9 +31,10 @@ function moves() {
  * the list is arranged from `arranged`, in which every parcel is still as it was shown;
  * `arrived` tells which cards to draw with the news, and paper is thrown from the first of
  * them. Every card stays what it is under a finger, and a list that is covered, or that shows
- * no motion, changes without any of this.
+ * no motion, changes without any of this. `list` describes the cards of a list other than
+ * the deliveries.
  */
-export function useDeliveredHold(parcels: ParcelWithEvents[], watching: boolean, root: RefObject<HTMLElement | null>) {
+export function useDeliveredHold(parcels: ParcelWithEvents[], watching: boolean, root: RefObject<HTMLElement | null>, list: CardList = DELIVERY_CARDS) {
   const [seen, setSeen] = useState(parcels);
   const [held, setHeld] = useState(NONE);
   let holding = held;
@@ -71,7 +72,7 @@ export function useDeliveredHold(parcels: ParcelWithEvents[], watching: boolean,
         due = true;
         return;
       }
-      moveDeliveredCards(root.current, [...holding.arrivals]);
+      moveDeliveredCards(root.current, [...holding.arrivals], list);
       setHeld(NONE);
     };
     // A list that nobody sees keeps the card where it is until someone looks.
@@ -83,7 +84,7 @@ export function useDeliveredHold(parcels: ParcelWithEvents[], watching: boolean,
       const fresh = [...holding.arrivals].filter((id) => !celebrated.current.has(id));
       if (fresh.length) paper = window.setTimeout(() => {
         celebrated.current = holding.arrivals;
-        throwConfetti(root.current, fresh);
+        throwConfetti(root.current, fresh, list);
       }, CONFETTI_AT_MS);
     };
     const press = () => { pressing = true; };
@@ -107,7 +108,7 @@ export function useDeliveredHold(parcels: ParcelWithEvents[], watching: boolean,
       window.removeEventListener('pointerup', lift, { capture: true });
       window.removeEventListener('pointercancel', lift, { capture: true });
     };
-  }, [holding, root]);
+  }, [holding, root, list]);
 
   const arranged = useMemo(() => holding.arrivals.size ? parcels.map((parcel) => {
     // A parcel archived or brought back in the meantime is arranged as it is now.

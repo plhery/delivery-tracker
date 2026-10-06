@@ -1,4 +1,5 @@
-const CARD = '.parcel-card-swipe[data-arrived]';
+import { DELIVERY_CARDS, type CardList } from './deliveredMove';
+
 /** More paper from the large card than from a row of the list. */
 const PIECES = { next: 58, other: 38 };
 const GLINTS = 6;
@@ -34,9 +35,9 @@ function mouth(card: HTMLElement) {
 }
 
 /** The first of these cards whose paper would be seen. */
-function source(root: HTMLElement, ids: readonly string[]) {
-  for (const card of root.querySelectorAll<HTMLElement>(CARD)) {
-    if (!ids.includes(card.dataset.parcelId ?? '')) continue;
+function source(root: HTMLElement, ids: readonly string[], list: CardList) {
+  for (const card of root.querySelectorAll<HTMLElement>(`${list.card}[data-arrived]`)) {
+    if (!ids.includes(card.getAttribute(list.id) ?? '')) continue;
     const from = mouth(card);
     if (from && from.x >= 0 && from.x <= window.innerWidth && from.y >= 0 && from.y <= window.innerHeight) return { card, from };
   }
@@ -104,25 +105,28 @@ function glint(next: () => number, x: number, y: number, index: number) {
  * is on screen, in that card's colours. One burst, however many arrived, over the whole screen and never in
  * the way of a finger; none where nothing moves. Returns a way to clear it.
  */
-export function throwConfetti(root: HTMLElement | null, ids: readonly string[], seed = Date.now()): () => void {
+export function throwConfetti(root: HTMLElement | null, ids: readonly string[], list: CardList = DELIVERY_CARDS, seed = Date.now()): () => void {
   const none = () => undefined;
   if (!root || typeof root.animate !== 'function' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return none;
-  const found = source(root, ids);
+  const found = source(root, ids, list);
   if (!found) return none;
   const { card, from } = found;
   const layer = document.createElement('div');
   layer.className = 'delivered-confetti';
   layer.setAttribute('aria-hidden', 'true');
+  // Over the whole screen, and never in the way of a finger.
+  Object.assign(layer.style, { position: 'fixed', inset: '0', zIndex: '120', overflow: 'clip', pointerEvents: 'none', contain: 'strict' });
   // The paper flies outside the card, so it takes the card's colours with it.
   const look = getComputedStyle(card);
   for (const name of TONES) layer.style.setProperty(name, look.getPropertyValue(name));
   layer.style.colorScheme = look.colorScheme;
   const next = random(seed);
-  const count = card.classList.contains('parcel-card-swipe--hero') ? PIECES.next : PIECES.other;
+  const count = card.matches(list.large) ? PIECES.next : PIECES.other;
   const thrown = [
     ...Array.from({ length: count }, () => piece(next, from.x, from.y)),
     ...Array.from({ length: GLINTS }, (_, index) => glint(next, from.x, from.y, index)),
   ];
+  for (const { element } of thrown) Object.assign(element.style, { position: 'absolute', left: '0', top: '0', willChange: 'transform, opacity' });
   layer.append(...thrown.map(({ element }) => element));
   document.body.append(layer);
   void Promise.allSettled(thrown.map(({ element, frames, timing }) => element.animate(frames, timing).finished)).then(() => layer.remove());

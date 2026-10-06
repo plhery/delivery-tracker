@@ -49,8 +49,8 @@ function startGlide(element: HTMLElement, from: Point, velocity: Point) {
   animation.addEventListener('cancel', done);
 }
 
-function parentBlock(element: HTMLElement, root: HTMLElement) {
-  const parent = element.parentElement?.closest<HTMLElement>(BLOCKS);
+function parentBlock(element: HTMLElement, root: HTMLElement, blocks = BLOCKS) {
+  const parent = element.parentElement?.closest<HTMLElement>(blocks);
   return parent && root.contains(parent) ? parent : null;
 }
 
@@ -58,15 +58,18 @@ export function listRoot(element: Element) {
   return element.closest<HTMLElement>(ROOT);
 }
 
-/** Where each visible block sits in the page, without the glide that may still be moving it. */
-export function measureList(root: HTMLElement | null): ListLayout {
+/**
+ * Where each visible block sits in the page, without the glide that may still be moving it.
+ * `blocks` names the blocks of a list other than the deliveries.
+ */
+export function measureList(root: HTMLElement | null, blocks = BLOCKS): ListLayout {
   const layout: ListLayout = new Map();
   if (!root) return layout;
-  for (const element of root.querySelectorAll<HTMLElement>(BLOCKS)) {
+  for (const element of root.querySelectorAll<HTMLElement>(blocks)) {
     if (element.dataset.leaving !== undefined || !element.getClientRects().length) continue;
     const box = element.getBoundingClientRect();
     const place = { x: box.left + window.scrollX, y: box.top + window.scrollY };
-    for (let node: HTMLElement | null = element; node; node = parentBlock(node, root)) {
+    for (let node: HTMLElement | null = element; node; node = parentBlock(node, root, blocks)) {
       const { offset } = glideState(node);
       place.x -= offset.x;
       place.y -= offset.y;
@@ -80,22 +83,22 @@ export function measureList(root: HTMLElement | null): ListLayout {
  * Move blocks from where they were seen to their new places; new blocks fade in.
  * Blocks in `apart` arrive by a motion of their own and are left as they are.
  */
-export function glideList(root: HTMLElement | null, before: ListLayout, apart?: ReadonlySet<HTMLElement>) {
+export function glideList(root: HTMLElement | null, before: ListLayout, apart?: ReadonlySet<HTMLElement>, blocks = BLOCKS) {
   if (!root?.animate || !before.size || reducedMotion()) return;
-  const after = measureList(root);
+  const after = measureList(root, blocks);
   // Read every running glide before any of them is replaced.
   const running = new Map<HTMLElement, ReturnType<typeof glideState>>();
   const seen = new Map<HTMLElement, Point>();
   for (const element of after.keys()) {
     const state = glideState(element, 'now');
-    const parent = parentBlock(element, root);
+    const parent = parentBlock(element, root, blocks);
     const inherited = (parent && seen.get(parent)) || { x: 0, y: 0 };
     running.set(element, state);
     seen.set(element, { x: inherited.x + state.offset.x, y: inherited.y + state.offset.y });
   }
   const starts = new Map<HTMLElement, Point>();
   for (const [element, place] of after) {
-    const parent = parentBlock(element, root);
+    const parent = parentBlock(element, root, blocks);
     const inherited = (parent && starts.get(parent)) || { x: 0, y: 0 };
     const was = before.get(element);
     if (apart?.has(element)) {

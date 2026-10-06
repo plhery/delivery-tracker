@@ -46,7 +46,7 @@ describe('the paper thrown when a parcel has arrived', () => {
 
   it('comes out of Pip’s open box on the large card, in the card’s colours, and is cleared once it has fallen', async () => {
     const root = list([{ id: 'tea', hero: true, inside: PIP, at: box(200, 180, 66, 68) }]);
-    throwConfetti(root, ['tea'], 7);
+    throwConfetti(root, ['tea'], undefined, 7);
 
     const layer = paper() as HTMLElement;
     expect(layer).toHaveAttribute('aria-hidden', 'true');

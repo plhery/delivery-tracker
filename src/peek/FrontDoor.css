@@ -231,6 +231,17 @@ html[data-entry=device] .door > :not(.door-header), html[data-entry=device] .doo
 .door-device__cancel, .door-device__confirm { min-height: 44px; padding: 0 14px; border-radius: 12px; font-size: 13px; }
 .door-device__cancel { background: transparent; color: var(--ink-soft); }
 .door-device__confirm { background: var(--control); font-weight: 600; }
+/* A parcel that has just arrived says so on its card; when the list is then led by another, each card travels to its new place. */
+.door-device__list { position: relative; }
+.door-device__list .delivered-moves { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.door-device__list .delivered-move { position: absolute; --delivered-shadow: drop-shadow(0 16px 22px light-dark(rgb(18 20 14 / 20%), rgb(0 0 0 / 55%))); }
+.door-device__list :is(.delivered-move__clip, .delivered-move__next, .delivered-move__ground) { position: absolute; inset: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  [data-arrived]:is(.door-nextup, .door-parcel) :is(.door-nextup__text strong, .door-parcel__state) { animation: door-arrived .3s ease-out both; }
+  [data-arrived]:is(.door-nextup, .door-parcel) { animation: door-arrived-press .5s ease-out .3s; }
+}
+@keyframes door-arrived { from { opacity: 0; } }
+@keyframes door-arrived-press { 30% { scale: .985; } 62% { scale: 1.004; } }
 .door-device__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
 .door-parcel { position: relative; isolation: isolate; overflow: hidden; display: grid; align-content: space-between; gap: 4px; height: 100%; min-height: 112px; padding: 14px 16px; border-radius: 18px; background: var(--tone-surface); color: var(--ink); text-decoration: none; transition: scale .2s var(--spring); }
 .door-parcel:active { scale: .988; }

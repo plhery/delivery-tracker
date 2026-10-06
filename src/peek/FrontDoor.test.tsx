@@ -618,6 +618,35 @@ describe('FrontDoor: on this device', () => {
     expect(location.pathname).toBe(`/p/${OTHER_LINK_ID}`);
   });
 
+  it('lets a parcel that has just arrived say so where its card stands, before another leads the list', async () => {
+    stillMotion(false);
+    Element.prototype.animate = (() => ({ finished: new Promise(() => undefined), addEventListener() {}, cancel() {}, finish() {} })) as unknown as typeof Element.prototype.animate;
+    try {
+      const longAgo = Date.now() - 10 * 60_000;
+      rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: placedView(LINK_ID, ['accepted', 'in_transit']), now: longAgo });
+      rememberParcel({ id: OTHER_LINK_ID, view: placedView(OTHER_LINK_ID, ['accepted', 'out_for_delivery'], false), now: longAgo });
+      // The device asks again, and the parcel that led the list has been delivered meanwhile.
+      mocks.read.mockImplementation(async (id: string) => id === OTHER_LINK_ID
+        ? placedView(OTHER_LINK_ID, ['accepted', 'out_for_delivery', 'delivered'], false) : recentFor(id)?.snapshot ?? 'unavailable');
+      door();
+      expect(deviceLinks()[0]).toHaveAttribute('href', `/p/${OTHER_LINK_ID}`);
+
+      // It still leads, with the news.
+      await waitFor(() => expect(deviceLinks()[0]).toHaveAttribute('data-arrived'));
+      expect(deviceLinks()[0]).toHaveAttribute('href', `/p/${OTHER_LINK_ID}`);
+      expect(deviceLinks()[0]).toHaveClass('door-nextup');
+      expect(within(deviceLinks()[0]).getByText('Delivered').tagName).toBe('STRONG');
+
+      // Then the parcel still on its way leads, and the one that arrived rests among the others.
+      await waitFor(() => expect(deviceLinks()[0]).toHaveAttribute('href', `/p/${LINK_ID}`), { timeout: 2500 });
+      expect(deviceLinks()[1]).toHaveClass('door-parcel');
+      expect(deviceLinks()[1]).toHaveTextContent('Delivered');
+      expect(document.querySelector('[data-arrived]')).toBeNull();
+    } finally {
+      delete (Element.prototype as Partial<Element>).animate;
+    }
+  });
+
   it('draws the journey of the other parcels small, once their cards come near the screen', async () => {
     stubIntersections();
     rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: placedView(LINK_ID, ['accepted', 'in_transit']), now: Date.now() });

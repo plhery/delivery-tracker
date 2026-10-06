@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { CarrierMark } from '../../components/CarrierMark';
 import { pipMood } from '../../components/map/Pip';
 import { defaultMode } from '../../components/map/route';
@@ -7,6 +7,8 @@ import { CardRoute, useParcelRoute } from '../../components/ParcelMap';
 import { ProgressTrack } from '../../components/ProgressTrack';
 import { localizedExpectedDelivery, useI18n } from '../../i18n';
 import { carrierBrand } from '../../lib/carrierBrand';
+import { useDeliveredHold } from '../../lib/deliveredHold';
+import type { CardList } from '../../lib/deliveredMove';
 import { carrierInfo, displayedCarrierId, formatTrackingNumber, normalizeTrackingNumber } from '../../lib/carriers';
 import { localizedParcelCompletionDate, parcelDeliveryEstimate, parcelDisplayStatusKey } from '../../lib/parcelStatus';
 import { pickupPoint } from '../../lib/pickupPoint';
@@ -42,8 +44,11 @@ function openOnClick(id: string) {
   };
 }
 
-/** A card of the list, with the parcel's route small at its end once a scan has a place. */
-function DeviceParcel({ recent }: { recent: RecentParcel }) {
+/** The list's cards, for what moves when one of its parcels has arrived. */
+const DOOR_CARDS: CardList = { card: '[data-parcel-link]', id: 'data-parcel-link', name: '.door-nextup__name, strong', large: '.door-nextup', blocks: '.door-device__list > li' };
+
+/** A card of the list, with the parcel's route small at its end once a scan has a place. `arrived` marks one whose parcel has just been delivered. */
+function DeviceParcel({ recent, arrived = false }: { recent: RecentParcel; arrived?: boolean }) {
   const { t, locale, languageTag } = useI18n();
   const { parcel } = recent.snapshot;
   const carrier = carrierInfo(displayedCarrierId(parcel), locale);
@@ -51,7 +56,7 @@ function DeviceParcel({ recent }: { recent: RecentParcel }) {
   const when = estimate ? localizedExpectedDelivery(estimate, t, languageTag) : localizedParcelCompletionDate(parcel, languageTag, t);
   const title = useParcelTitle(recent);
   const { placed, route } = useParcelRoute(parcel, languageTag);
-  return <a className={`door-parcel${placed ? ' door-parcel--route' : ''}`} style={carrierBrand(carrier).style} href={parcelLinkPath(recent.id)} data-parcel-link={recent.id} onClick={openOnClick(recent.id)}>
+  return <a className={`door-parcel${placed ? ' door-parcel--route' : ''}`} style={carrierBrand(carrier).style} href={parcelLinkPath(recent.id)} data-parcel-link={recent.id} data-arrived={arrived ? '' : undefined} onClick={openOnClick(recent.id)}>
     {placed && <CardRoute route={route} />}
     <span className="door-parcel__top"><CarrierMark carrier={carrier} />{when && <span className="door-parcel__when">{when}</span>}</span>
     <strong>{title}</strong>
@@ -75,7 +80,7 @@ const LEAD_FLOOR = 150;
  * status as the headline, what is known about its arrival, and its route in
  * the carrier's colours with Pip beside the parcel.
  */
-function LeadParcel({ recent }: { recent: RecentParcel }) {
+function LeadParcel({ recent, arrived = false }: { recent: RecentParcel; arrived?: boolean }) {
   const { t, locale, languageTag } = useI18n();
   const now = useNow();
   const beside = useMedia(BESIDE);
@@ -90,7 +95,7 @@ function LeadParcel({ recent }: { recent: RecentParcel }) {
   // A parcel waiting to be collected says where.
   const detail = parcelDetail(parcel, wording) ?? (stage === 'ready_for_pickup' ? pickupPoint(parcel.pickupPoint)?.name : null);
   const mood = pipMood(stage ?? undefined);
-  return <a className="door-nextup" style={carrierBrand(carrier).style} href={parcelLinkPath(recent.id)} data-parcel-link={recent.id} onClick={openOnClick(recent.id)}>
+  return <a className="door-nextup" style={carrierBrand(carrier).style} href={parcelLinkPath(recent.id)} data-parcel-link={recent.id} data-arrived={arrived ? '' : undefined} onClick={openOnClick(recent.id)}>
     <span className="door-nextup__map" aria-hidden="true">
       {route && <WorldMap route={route} mode={defaultMode(route, stage ?? undefined)} time={time} look="tint" labels="ends" context={false}
         live={!stage || !isFinal(stage)} pip={mood && { mood, ceiling: LEAD_CEILING, floor: beside ? undefined : LEAD_FLOOR }} languageTag={languageTag}
@@ -136,6 +141,10 @@ export function DeviceParcels({ onSignIn, onForgotten, covered = false }: {
   const watching = listed && !covered;
   useEffect(() => watching ? watchDeviceParcels(() => list.current) : undefined, [watching]);
   useEffect(() => { if (asking) question.current?.focus(); }, [asking]);
+  // A parcel delivered since the list was last shown says so where its card stands, before the list is led by another.
+  const cards = useRef<HTMLUListElement>(null);
+  const parcels = useMemo(() => recents.map((recent) => ({ ...recent.snapshot.parcel, id: recent.id })), [recents]);
+  const delivered = useDeliveredHold(parcels, watching && !asking, cards, DOOR_CARDS);
 
   async function forget() {
     setForgetting(true);
@@ -148,7 +157,10 @@ export function DeviceParcels({ onSignIn, onForgotten, covered = false }: {
   }
 
   if (!listed) return null;
-  const lead = leadParcel(recents);
+  const shown = new Map(delivered.arranged.map((parcel) => [parcel.id, parcel]));
+  const led = leadParcel(recents.map((recent) => ({ ...recent, snapshot: { ...recent.snapshot, parcel: shown.get(recent.id) ?? recent.snapshot.parcel } })));
+  const lead = recents.find((recent) => recent.id === led?.id) ?? null;
+  const arrived = (recent: RecentParcel) => delivered.arrived({ ...recent.snapshot.parcel, id: recent.id });
   return <section className="door-device" aria-labelledby="door-device-title">
     <div className="door-device__heading">
       <h2 id="door-device-title">{t('peek.onThisDevice')}</h2>
@@ -162,9 +174,9 @@ export function DeviceParcels({ onSignIn, onForgotten, covered = false }: {
       </div>
     </div>}
     {failed && <p className="door-message" role="alert">{t('door.recents.forget.failed')}</p>}
-    <ul className="door-device__list">
-      {lead && <li key={lead.id} className="door-device__lead"><LeadParcel recent={lead} /></li>}
-      {recents.filter((recent) => recent !== lead).map((recent) => <li key={recent.id}><DeviceParcel recent={recent} /></li>)}
+    <ul ref={cards} className="door-device__list">
+      {lead && <li key={lead.id} className="door-device__lead"><LeadParcel recent={lead} arrived={arrived(lead)} /></li>}
+      {recents.filter((recent) => recent !== lead).map((recent) => <li key={recent.id}><DeviceParcel recent={recent} arrived={arrived(recent)} /></li>)}
     </ul>
     <p className="door-aside">{t('door.recents.kept')}{account !== 'signed-in' && <>{' '}<button type="button" className="door-link" onClick={onSignIn}>{t('door.recents.signIn')}</button></>}</p>
   </section>;
