@@ -41,6 +41,19 @@ function expectSameBox(actual: { x: number; y: number; width: number; height: nu
   for (const side of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(actual[side] - expected[side]), side).toBeLessThan(tolerance);
 }
 
+/**
+ * Scrolls a parcel's page down and tells how far it went. The demo's dates follow the clock, so the journey
+ * fills two calendar days at some hours and three at others, and the page has more or less to scroll.
+ */
+async function scrollDown(detail: Locator) {
+  const reached = await detail.evaluate((element) => {
+    element.scrollTop = 200;
+    return element.scrollTop;
+  });
+  expect(reached).toBeGreaterThan(0);
+  return reached;
+}
+
 test('opens from the tapped card, retaining focus and browser history', async ({ page }) => {
   await demo(page);
   const card = page.locator('.parcel-card--hero');
@@ -163,10 +176,10 @@ test('closes when the page is pulled down from its top, and scrolls when it is n
   await expect(detail).toHaveCSS('clip-path', 'none');
 
   // A scrolled page keeps scrolling under the finger.
-  await detail.evaluate((element) => { element.scrollTop = 200; });
+  const scrolled = await scrollDown(detail);
   await pull(120);
   await expect(detail).toHaveCSS('transform', 'none');
-  expect(await detail.evaluate((element) => element.scrollTop)).toBeLessThan(200);
+  expect(await detail.evaluate((element) => element.scrollTop)).toBeLessThan(scrolled);
 
   await expect.poll(() => detail.evaluate((element) => {
     element.scrollTop = 0;
@@ -198,13 +211,13 @@ test('is carried off sideways too, even when scrolled, and its header holds stil
   await expect.poll(() => detail.evaluate((element) => element.getAnimations().length)).toBe(0);
   // Pulled past its top, the page has no give: the header stays where it is.
   await expect(detail).toHaveCSS('overscroll-behavior-y', 'none');
-  await detail.evaluate((element) => { element.scrollTop = 200; });
+  const scrolled = await scrollDown(detail);
   // A short way to the side it settles back, still scrolled; further, it closes.
   await drag(-60, 4);
   expect((await detail.boundingBox())!.x).toBeLessThan(-20);
   await lift();
   await expect(detail).toHaveCSS('transform', 'none');
-  expect(await detail.evaluate((element) => element.scrollTop)).toBe(200);
+  expect(await detail.evaluate((element) => element.scrollTop)).toBe(scrolled);
   await drag(170, 6);
   await lift();
   await expect(detail).toHaveCount(0);
