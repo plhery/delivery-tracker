@@ -177,6 +177,18 @@ describe('map summary', () => {
     expect(screen.getByText('Last seen').nextElementSibling).toHaveTextContent('Bern');
   });
 
+  it('draws its line only once a third place stands on it', () => {
+    const osaka = city('Osaka', 'JP', 135.5, 34.69);
+    const far = sheet(buildRoute([scan(tokyo), scan(osaka), scan(bern)]), 'in_transit');
+    expect(document.querySelector('.parcel-map__line')).not.toBeNull();
+    far.unmount();
+    // Two places are named beside each other already: the distance between them is all that is left to say.
+    const route = buildRoute([scan(tokyo), scan(bern)]);
+    sheet(route, 'in_transit');
+    expect(document.querySelector('.parcel-map__line')).toBeNull();
+    expect(screen.getByText(`${formatKm(route.km, 'en-CH')} so far`)).toBeInTheDocument();
+  });
+
   it('shows a single place on its own', () => {
     sheet(buildRoute([scan(bern)]));
     expect(screen.getByRole('dialog', { name: 'Map showing Bern' })).toBeInTheDocument();

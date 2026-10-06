@@ -170,8 +170,8 @@ struct ParcelMapScreen: View {
                     if !single { endpoint(localizer.text("map.from"), origin.place, alignment: .leading) }
                     endpoint(localizer.text(endLabel), end, alignment: single ? .leading : .trailing)
                 }
+                if route.hasLine { RouteProgress(progress: progress, tint: accent) }
                 if !single {
-                    RouteProgress(progress: progress, tint: accent)
                     HStack(spacing: 16) {
                         if route.kilometres >= 1 {
                             let distance = kilometres(route.kilometres)

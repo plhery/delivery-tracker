@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EventPlace, Stage, TrackingEvent } from '../../types';
-import { buildRoute, countryPlace, defaultMode, flag, formatKm, hasNearView, placeFromEvent, placeName, routeFromEvents, type Place, type Scan } from './route';
+import { buildRoute, countryPlace, defaultMode, flag, formatKm, hasLine, hasNearView, placeFromEvent, placeName, routeFromEvents, type Place, type Scan } from './route';
 
 const city = (name: string, country: string, longitude: number, latitude: number): Place => ({
   id: name, name, country, coordinate: [longitude, latitude], precision: 'city',
@@ -71,6 +71,17 @@ describe('camera views', () => {
     expect(defaultMode(world, 'ready_for_pickup')).toBe('now');
     expect(defaultMode(world, 'delivered')).toBe('journey');
     expect(defaultMode(buildRoute([scan(bern), scan(zurich)]), 'out_for_delivery')).toBe('journey');
+  });
+});
+
+describe('summary line', () => {
+  it('takes a third place, passed or still ahead, to be worth drawing', () => {
+    const switzerland = countryPlace('CH', 'Switzerland', [7.46, 46.72]);
+    expect(hasLine(buildRoute([scan(kyoto), scan(basel), scan(zurich)]))).toBe(true);
+    // Two places are named beside each other already.
+    expect(hasLine(buildRoute([scan(kyoto), scan(zurich)]))).toBe(false);
+    expect(hasLine(buildRoute([scan(kyoto)], switzerland))).toBe(false);
+    expect(hasLine(buildRoute([scan(kyoto), scan(leipzig)], switzerland))).toBe(true);
   });
 });
 

@@ -68,6 +68,15 @@ final class ParcelRouteTests: XCTestCase {
         XCTAssertEqual(ParcelRoute(places: [bern, zurich]).defaultMode(for: .outForDelivery), .journey)
     }
 
+    func testALineTakesAThirdPlace() {
+        XCTAssertTrue(ParcelRoute(places: [kyoto, basel, zurich]).hasLine)
+        // Two places are named beside each other already.
+        XCTAssertFalse(ParcelRoute(places: [kyoto, zurich]).hasLine)
+        XCTAssertFalse(ParcelRoute(places: [kyoto], destination: switzerland).hasLine)
+        // The place still ahead is the third.
+        XCTAssertTrue(ParcelRoute(places: [kyoto, leipzig], destination: switzerland).hasLine)
+    }
+
     func testEventsAreOrderedByTimeAndCountriesNamedForTheReader() {
         func event(_ day: Int, _ place: EventPlace?) -> TrackingEvent {
             TrackingEvent(id: UUID(), packageID: UUID(), stage: .inTransit, description: "Scan", location: nil,

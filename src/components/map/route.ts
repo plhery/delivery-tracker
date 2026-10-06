@@ -156,6 +156,11 @@ export function hasNearView(route: Route): boolean {
   return route.near.length < route.stops.length || (route.remainingKm ?? 0) >= NEAR_KM;
 }
 
+/** A line between two places tells nothing their names do not: it takes a third, passed or still ahead, to be worth drawing. */
+export function hasLine(route: Route): boolean {
+  return route.stops.length + (route.destination ? 1 : 0) > 2;
+}
+
 /** The camera follows the parcel: the whole trip while it travels, a close-up for the last mile. */
 export function defaultMode(route: Route, stage?: Stage): MapMode {
   if (!hasNearView(route)) return 'journey';

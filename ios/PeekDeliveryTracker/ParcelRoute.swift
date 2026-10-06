@@ -201,6 +201,9 @@ struct ParcelRoute: Sendable {
     /// Both views only make sense when part of the journey, travelled or still to go, lies outside the close-up.
     var hasNearView: Bool { near.count < stops.count || (remainingKilometres ?? 0) >= Self.nearKilometres }
 
+    /// A line between two places tells nothing their names do not: it takes a third, passed or still ahead, to be worth drawing.
+    var hasLine: Bool { stops.count + (destination == nil ? 0 : 1) > 2 }
+
     /// The camera follows the parcel: the whole trip while it travels, a close-up for the last mile.
     func defaultMode(for stage: TrackingStage?) -> Mode {
         guard hasNearView else { return .journey }

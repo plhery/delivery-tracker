@@ -7,7 +7,7 @@ import { countryName } from 'universal-parcel-scraper/app';
 import type { ParcelWithEvents, Stage } from '../types';
 import { Icon } from './Icon';
 import { countryLabel, useWorld } from './map/geography';
-import { countryPlace, defaultMode, flag, formatKm, hasNearView, placeName, routeFromEvents, type MapMode, type Route } from './map/route';
+import { countryPlace, defaultMode, flag, formatKm, hasLine, hasNearView, placeName, routeFromEvents, type MapMode, type Route } from './map/route';
 import { pipMood } from './map/Pip';
 import { WorldMap, type PipPlacing } from './map/WorldMap';
 import './ParcelMap.css';
@@ -123,7 +123,7 @@ function RouteSummary({ route, stage }: { route: Route; stage?: Stage }) {
       <strong>{placeName(end, true)}</strong>
       <small><span aria-hidden="true">{flag(end.country)}</span> {countryName(end.country, languageTag)}</small>
     </div>
-    {!single && <div className="parcel-map__line" style={{ '--progress': progress } as CSSProperties} aria-hidden="true"><span /><i /></div>}
+    {hasLine(route) && <div className="parcel-map__line" style={{ '--progress': progress } as CSSProperties} aria-hidden="true"><span /><i /></div>}
     {!single && <p className="parcel-map__facts">
       {route.km >= 1 && <span>{finished ? formatKm(route.km, languageTag) : t('map.soFar', { distance: formatKm(route.km, languageTag) })}</span>}
       {!finished && route.remainingKm !== undefined && <span>{t('map.toGo', { distance: formatKm(route.remainingKm, languageTag) })}</span>}
