@@ -131,6 +131,12 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
     carrier: 'dhl', provider: 'ParcelsApp' });
   log.mockRestore();
   reportRoutingEvent('carrier_auto_swapped', { carrier: 'dhl', provider: 'ups', trackingNumber: 'TEST-first' });
+  const swapLog = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  reportRoutingEvent('carrier_auto_swapped', { carrier: 'unknown', provider: 'gls', category: 'detected', trackingNumber: 'TEST-detected' });
+  // Detection already names the new carrier: the correction is a log line and a breadcrumb, not an issue.
+  expect(JSON.parse(String(swapLog.mock.calls.at(-1)?.[0]))).toMatchObject({ event: 'tracking_routing', decision: 'carrier_auto_swapped',
+    carrier: 'unknown', provider: 'gls', category: 'detected' });
+  swapLog.mockRestore();
   reportRoutingEvent('provider_recovered', { carrier: 'dhl', provider: '17TRACK' });
   reportRoutingEvent('carrier_coverage_discovered', { carrier: 'dhl', provider: 'Example Parcel Co' });
   reportRoutingEvent('direct_support_opportunity', { carrier: 'fedex', provider: 'fedex' });
@@ -148,8 +154,12 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
     expect.objectContaining({ category: 'tracking-routing', message: 'fresher_provider_found', data: { provider: 'ParcelsApp' } }),
   ]));
   // Routing reports only names the catalog does not know, so each is worth an issue.
-  expect(captured.events.find((event) => event.message === 'Tracking routing: carrier_coverage_discovered'))
-    .toMatchObject({ level: 'warning', tags: { provider: 'Example Parcel Co' } });
+  const discovered = captured.events.find((event) => event.message === 'Tracking routing: carrier_coverage_discovered')!;
+  expect(discovered).toMatchObject({ level: 'warning', tags: { provider: 'Example Parcel Co' } });
+  expect(captured.events.filter((event) => event.message === 'Tracking routing: carrier_auto_swapped')).toHaveLength(1);
+  expect(discovered.breadcrumbs).toEqual(expect.arrayContaining([
+    expect.objectContaining({ category: 'tracking-routing', message: 'carrier_auto_swapped', data: { provider: 'gls' } }),
+  ]));
   expect(captured.events.some((event) => event.message === 'Tracking routing: direct_support_opportunity')).toBe(true);
 
   const refusedBody = '<h1>Access Denied</h1><p>Reference #18.test.123; parcel 8U00000000000</p>';

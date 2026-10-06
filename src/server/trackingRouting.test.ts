@@ -286,6 +286,37 @@ describe('persistent tracking routing', () => {
     expect(result.result).toMatchObject({ auto_changed_from: 'dhl', auto_changed_to: 'ups', auto_changed_at: time.toISOString() });
     expect(direct.mock.calls[1][0]).toMatchObject({ tracking_url: null, dpd_postcode: null });
   });
+  it.each(['unknown', 'dhl'])('logs the carrier detection names for a parcel filed as %s without a detection warning', async (carrier) => {
+    const { router, direct } = setup();
+    direct.mockImplementation(async (_parcel, asked) => {
+      if (asked !== 'ups') throw new NotFoundError(asked);
+      return directValue('ups');
+    });
+    const result = await router.fetch(parcel({ carrier, tracking_number: '1Z999AA10123456784' }), false);
+    expect(result.correction?.carrier).toBe('ups');
+    expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('detected_carrier_confirmed', expect.objectContaining({ carrier, provider: 'ups' }));
+    expect(monitoring.reportRoutingEvent).not.toHaveBeenCalledWith('carrier_mismatch_confirmed', expect.anything());
+  });
+  it('warns of a detection gap when a provider names a carrier detection does not', async () => {
+    // Detection cannot place the number.
+    const hinted = setup();
+    hinted.universal.mockResolvedValue({ ...history(), discovered_carrier: 'ups' });
+    await hinted.router.fetch(parcel(), false);
+    expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('carrier_mismatch_confirmed', expect.objectContaining({ carrier: 'unknown', provider: 'ups' }));
+    vi.mocked(monitoring.reportRoutingEvent).mockClear();
+    // Detection names UPS, which does not know the parcel; the saved hint's carrier does.
+    const contradicted = setup();
+    contradicted.direct.mockImplementation(async (_parcel, asked) => {
+      if (asked === 'ups') throw new NotFoundError('UPS');
+      return directValue(asked);
+    });
+    const result = await contradicted.router.fetch(parcel({ tracking_number: '1Z999AA10123456784',
+      carrier_data: { routing: state({ discovered_carrier: 'fedex' }) } }), false);
+    expect(contradicted.direct.mock.calls.map(([, asked]) => asked)).toEqual(['ups', 'fedex']);
+    expect(result.correction?.carrier).toBe('fedex');
+    expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('carrier_mismatch_confirmed', expect.objectContaining({ carrier: 'unknown', provider: 'fedex' }));
+    expect(monitoring.reportRoutingEvent).not.toHaveBeenCalledWith('detected_carrier_confirmed', expect.anything());
+  });
   it('confirms a newly returned universal hint in the same sync and then uses only direct', async () => {
     const { router, direct, universal } = setup();
     universal.mockResolvedValue({ ...history(), discovered_carrier: 'ups' });

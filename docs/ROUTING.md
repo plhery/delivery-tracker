@@ -323,8 +323,9 @@ parcel.
 | `provider_failed` | Add `failure_category:rate_limited` (needs less traffic) or `schema` (parser work) |
 | `all_providers_unavailable` | Uncovered parcel or broad outage |
 | `health_store_unavailable` | Migration or database coordination problem |
-| `carrier_auto_swapped` | A carrier correction was committed |
-| `carrier_mismatch_confirmed` | Detection rules could be improved |
+| `carrier_auto_swapped` | A carrier correction was committed. When detection already names the new carrier for the number, the log line has `category` `detected` and no issue is opened |
+| `carrier_mismatch_confirmed` | A carrier that detection does not name for the number tracks the parcel: detection rules could be improved |
+| `detected_carrier_confirmed` | The carrier detection names for the number tracks a parcel filed as unknown or under another carrier, such as one added before a detection rule existed (logs and breadcrumbs only) |
 | `candidate_probe_confirmed` | Carrier recognition found the carrier and it tracks the parcel (logs and breadcrumbs only) |
 | `foreign_history_rejected` | A universal returned an older parcel of another carrier for the number (logs and breadcrumbs only) |
 | `carrier_input_needed` | A recognized carrier needs the user's input (the GLS postcode); the parcel asks for it (logs and breadcrumbs only) |

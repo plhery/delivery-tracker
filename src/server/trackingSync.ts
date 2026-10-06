@@ -39,7 +39,7 @@ import {
 import { isRecord, type JsonObject } from './types';
 import { UniversalTracker } from 'universal-parcel-scraper/node';
 import type { UniversalSource } from 'universal-parcel-scraper';
-import { directCarrier, freshnessWindow, hasRoutingProgress, RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
+import { detectionNames, directCarrier, freshnessWindow, hasRoutingProgress, RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 import { upuHistory } from './upuHistory';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
 import { eventTimestamp, latestResultTime, resultTimezone } from 'universal-parcel-scraper/app';
@@ -1064,8 +1064,10 @@ export class TrackingSyncService {
         outcome,
         selected_stage: selectedStage,
       }));
+      // A correction to the carrier detection names is expected: it is logged without an issue.
       if (values.carrier) reportRoutingEvent('carrier_auto_swapped', {
         carrier: carrierId, provider: String(values.carrier), trackingNumber: String(parcel.tracking_number ?? ''),
+        ...(detectionNames(String(parcel.tracking_number ?? ''), String(values.carrier)) ? { category: 'detected' } : {}),
       });
       audit.record('persist_events', 'succeeded', 0, {
         events_persisted: persistedEvents.length,

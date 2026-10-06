@@ -170,6 +170,15 @@ function foreignHistory(result: CarrierResult, carrier: string, addedAt: unknown
 export function directCarrier(carrier: string): boolean {
   return AUTOMATIC_CARRIER_IDS.has(carrier) && carrierAdapter(carrier) !== 'universal';
 }
+/**
+ * Whether detection alone names this carrier for the number. Correcting a
+ * parcel to it, such as one filed before the rule existed, is the designed
+ * outcome and shows no gap in the detection rules.
+ */
+export function detectionNames(number: string, carrier: string): boolean {
+  const detected = detectCarrierMatch(number);
+  return detected.confidence === 'high' && detected.carrier === carrier;
+}
 
 const CANDIDATE_PROBE_WINDOW = 30 * DAY;
 /** Every recognition answer a sync waits for; later answers are ignored. */
@@ -364,9 +373,11 @@ export class TrackingRouter {
           && value.result.current_stage !== terminalStage) return null;
         if (capturedHistory) localHistory = capturedHistory;
         // A probe finding the carrier its number points to is the expected
-        // outcome, not a detection gap: log it without raising an alert.
+        // outcome, not a detection gap: log it without raising an alert. The
+        // same holds when detection already names the confirming carrier.
         if (carrier !== declared && state.confirmed_carrier !== carrier) {
-          report(probe ? 'candidate_probe_confirmed' : 'carrier_mismatch_confirmed', carrier);
+          report(probe ? 'candidate_probe_confirmed'
+            : detectionNames(number, carrier) ? 'detected_carrier_confirmed' : 'carrier_mismatch_confirmed', carrier);
         }
         state.confirmed_carrier = carrier;
         state.confirmed_number = number;

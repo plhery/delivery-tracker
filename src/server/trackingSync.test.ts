@@ -670,6 +670,33 @@ describe('TrackingSyncService', () => {
     expect(adapter.fetchUniversal).not.toHaveBeenCalled();
   });
 
+  it('marks a correction to the carrier detection names, and no other', async () => {
+    const report = vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
+    const progress = { status: 'in_transit', current_stage: 'in_transit', last_update: '2026-09-10T11:00:00Z',
+      events: [{ time: '2026-09-10T11:00:00Z', description: 'In transit', stage: 'in_transit' }] };
+    const sync = async (trackingNumber: string) => {
+      const client = { ...fakeClient(),
+        acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
+        finishTrackingProvider: vi.fn().mockResolvedValue(undefined) };
+      const adapter = { fetch: vi.fn().mockResolvedValue(progress),
+        fetchUniversal: vi.fn().mockResolvedValue({ ...progress, discovered_carrier: 'ups' }) };
+      const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null,
+        () => new Date('2026-09-10T12:00:00Z'));
+      await service.syncPackage({ id: 'filed-unknown', carrier: 'unknown', tracking_number: trackingNumber, current_stage: 'pending' });
+      expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ carrier: 'ups' });
+      return adapter;
+    };
+    // Detection names UPS for the number: the parcel was filed before it could.
+    expect((await sync('1Z999AA10123456784')).fetchUniversal).not.toHaveBeenCalled();
+    expect(report).toHaveBeenCalledWith('carrier_auto_swapped',
+      { carrier: 'unknown', provider: 'ups', trackingNumber: '1Z999AA10123456784', category: 'detected' });
+    expect(report).not.toHaveBeenCalledWith('carrier_mismatch_confirmed', expect.anything());
+    // A provider had to name the carrier: detection has a rule to gain.
+    expect((await sync('TEST1234')).fetchUniversal).toHaveBeenCalledOnce();
+    expect(report).toHaveBeenCalledWith('carrier_auto_swapped', { carrier: 'unknown', provider: 'ups', trackingNumber: 'TEST1234' });
+    expect(report).toHaveBeenCalledWith('carrier_mismatch_confirmed', expect.objectContaining({ provider: 'ups', trackingNumber: 'TEST1234' }));
+  });
+
   it('persists routing for a universal-only carrier and respects it on the next manual check', async () => {
     const client = { ...fakeClient(),
       acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
