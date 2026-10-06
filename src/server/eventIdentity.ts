@@ -61,8 +61,9 @@ function byInstant(rows: readonly JsonObject[]): Map<number, JsonObject[]> {
  * considered. It takes over a stored row at the exact same instant whose
  * identity has an allowed prefix and is not carried by any event of this
  * batch. The scan and stored row must match uniquely in both directions.
- * Sources without an evidence-based opt-in still require exactly one new
- * scan and one candidate at the instant. Ambiguous scans are inserted as before.
+ * A required provider code can distinguish scans sharing an instant. Sources
+ * without required codes or a per-scan evidence matcher still require exactly
+ * one new scan and one candidate there. Ambiguous scans are inserted as before.
  */
 export function sameInstantIdentities(
   events: readonly JsonObject[],
@@ -81,9 +82,10 @@ export function sameInstantIdentities(
   const candidates = byInstant(stored.filter((row) => (
     prefixes.some((prefix) => identity(row).startsWith(prefix)) && !claimed.has(identity(row)) && !observedOnly(row)
   )));
+  const matchEach = policy.requireProviderCode || (policy.matchEachScan === true && policy.matches !== undefined);
   for (const [instant, scans] of unmatched) {
     const rows = candidates.get(instant) ?? [];
-    if ((!policy.matchEachScan || !policy.matches) && (scans.length !== 1 || rows.length !== 1)) continue;
+    if (!matchEach && (scans.length !== 1 || rows.length !== 1)) continue;
     const matches = (scan: JsonObject, row: JsonObject) => {
       const code = providerCode(scan);
       if (policy.requireProviderCode && (!code || code.toLowerCase() === 'unknown' || code !== providerCode(row))) return false;

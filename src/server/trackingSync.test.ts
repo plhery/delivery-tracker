@@ -2507,6 +2507,29 @@ it('enriches a saved flight in place instead of storing a second event for notif
     description: rich, location: 'Frankfurt Airport (FRA), Germany', occurred_at: '2026-07-11T18:05:00Z' });
 });
 
+it('enriches coded India Post scans sharing a clock without creating notification events', async () => {
+  const store = eventStore();
+  const at = '2026-07-11T18:05:00Z';
+  const result = (location: string) => ({ status: 'in_transit', current_stage: 'in_transit', last_update: at,
+    last_status_text: 'Item received', events: [
+      { time: at, stage: 'in_transit', description: 'Arrived at sorting centre', provider_code: 'MailArrived', location },
+      { time: at, stage: 'in_transit', description: 'Item received', provider_code: 'ItemReceived', location },
+    ] });
+  const adapter = { fetch: vi.fn().mockResolvedValueOnce(result('Example Office 000000'))
+    .mockResolvedValue(result('Example Office 000001')) };
+  const service = new TrackingSyncService(store.client as unknown as SupabaseServiceClient, adapter, null,
+    () => new Date('2026-07-12T12:00:00Z'));
+  const load = () => ({ id: 'coded-parcel', user_id: 'owner', carrier: 'india-post', tracking_number: 'JN067614884IN',
+    current_stage: 'in_transit', [STORED_EVENT_IDENTITIES]: store.identities() });
+  await service.syncPackage(load());
+  const originals = [...store.rows.values()].map(({ id, provider_event_id }) => ({ id, provider_event_id }));
+  await service.syncPackage(load());
+  await service.syncPackage(load());
+  expect(store.rows.size).toBe(2);
+  expect([...store.rows.values()].map(({ id, provider_event_id }) => ({ id, provider_event_id }))).toEqual(originals);
+  expect([...store.rows.values()].map((row) => row.location)).toEqual(['Example Office 000001', 'Example Office 000001']);
+});
+
 describe('reworded DPD scans', () => {
   // The fixtures' synthetic number: a DPD reply must name the parcel asked for.
   const NUMBER = '06080000000001';

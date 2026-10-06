@@ -73,6 +73,34 @@ describe('same-instant identity reuse', () => {
     expect(sameInstantIdentities([{ ...incoming, raw_data: { provider_code: 'Unknown' } }],
       [{ ...saved, provider_code: 'Unknown' }], 'india-post').size).toBe(0);
   });
+
+  it('matches reworded scans sharing an instant by their unique provider codes', () => {
+    const at = '2026-07-11T18:05:00Z';
+    const saved = [
+      { ...row('india-post:arrival', at, 'Arrived at sorting centre'), location: 'Example Office 000000', provider_code: 'MailArrived' },
+      { ...row('india-post:receipt', at, 'Item received'), location: 'Example Office 000000', provider_code: 'ItemReceived' },
+    ];
+    const incoming = saved.map(({ provider_code, ...item }) => ({ ...item, provider_event_id: `${item.provider_event_id}-located`,
+      location: 'Example Office 000001', raw_data: { provider_code } }));
+    expect(pairs(sameInstantIdentities(incoming, saved, 'india-post'))).toEqual([
+      ['india-post:arrival-located', 'india-post:arrival'],
+      ['india-post:receipt-located', 'india-post:receipt'],
+    ]);
+    // An unchanged scan in the batch does not prevent the other code's reuse.
+    expect([...sameInstantIdentities([incoming[0]!, saved[1]!], saved, 'india-post')])
+      .toEqual([['india-post:arrival-located', 'india-post:arrival']]);
+    expect([...sameInstantIdentities([incoming[0]!], saved, 'india-post')])
+      .toEqual([['india-post:arrival-located', 'india-post:arrival']]);
+    // Repeated codes at one instant are still ambiguous in either direction.
+    expect([...sameInstantIdentities(incoming, [...saved, { ...saved[0]!, provider_event_id: 'india-post:another-arrival' }], 'india-post')])
+      .toEqual([['india-post:receipt-located', 'india-post:receipt']]);
+    expect([...sameInstantIdentities([...incoming, { ...incoming[0]!, provider_event_id: 'india-post:another-new-arrival' }], saved, 'india-post')])
+      .toEqual([['india-post:receipt-located', 'india-post:receipt']]);
+    for (const code of ['', 'Unknown', 'OtherCode']) {
+      const changed = [{ ...incoming[0]!, raw_data: { provider_code: code } }, incoming[1]!];
+      expect(sameInstantIdentities(changed, saved, 'india-post').has('india-post:arrival-located')).toBe(false);
+    }
+  });
   it('gives each reworded scan the one stored identity at its instant', () => {
     const stored = [
       row('dpd:unverified-delivered', '2026-07-16T08:12:00+00:00'),
