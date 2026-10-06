@@ -59,6 +59,9 @@
    past deliveries in a box of its own, drawn over the list and moving with it. */
 .app--deliveries .deliveries-page { position: relative; }
 .parcel-card-swipe[data-arrived] .parcel-card__next-label { visibility: hidden; }
+/* Paper thrown when a parcel has arrived: over the whole screen, and never in the way of a finger. */
+.delivered-confetti { position: fixed; inset: 0; z-index: 120; overflow: clip; pointer-events: none; contain: strict; }
+.delivered-confetti > * { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
 .delivered-moves { position: absolute; inset: 0; z-index: 2; overflow-y: clip; pointer-events: none; }
 .delivered-move { position: absolute; --delivered-shadow: drop-shadow(0 16px 22px light-dark(rgb(18 20 14 / 20%), rgb(0 0 0 / 55%))); }
 .delivered-move__clip, .delivered-move__next, .delivered-move__ground { position: absolute; inset: 0; }

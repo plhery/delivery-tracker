@@ -11,11 +11,20 @@ test.beforeEach(async ({ page }) => {
 test.afterEach(async ({ page }) => { expect(failures.get(page)).toEqual([]); });
 
 const HOUR = 3_600_000;
-function parcel(id: string, label: string, stages: Stage[]): ParcelWithEvents {
+const PLACES = [
+  { latitude: 51.34, longitude: 12.37, precision: 'city', country: 'DE', name: 'Leipzig' },
+  { latitude: 47.56, longitude: 7.59, precision: 'city', country: 'CH', name: 'Basel' },
+  { latitude: 47.37, longitude: 8.54, precision: 'city', country: 'CH', name: 'Zürich' },
+] as const;
+/** A parcel with a scan for each stage; `placed` gives its scans places, and so its card a map. */
+function parcel(id: string, label: string, stages: Stage[], placed = false): ParcelWithEvents {
   const now = Date.now();
   return {
     id, label, carrier: 'dhl', trackingNumber: `TRACK${id}`, createdAt: new Date(now - 90 * HOUR).toISOString(), syncStatus: 'ok',
-    events: stages.map((stage, index) => ({ id: `${id}-${stage}`, parcelId: id, stage, description: stage, occurredAt: new Date(now - (stages.length - index) * 6 * HOUR).toISOString() })),
+    events: stages.map((stage, index) => ({
+      id: `${id}-${stage}`, parcelId: id, stage, description: stage, occurredAt: new Date(now - (stages.length - index) * 6 * HOUR).toISOString(),
+      ...(placed ? { place: PLACES[Math.min(index, PLACES.length - 1)], location: PLACES[Math.min(index, PLACES.length - 1)].name } : {}),
+    })),
   };
 }
 
@@ -23,7 +32,7 @@ function parcel(id: string, label: string, stages: Stage[]): ParcelWithEvents {
  * The demo with a tea that is out for delivery: its next check delivers it. `held` keeps the card's flight
  * at its first moment, so that the test can look at it and end it when it has.
  */
-async function demo(page: Page, held = false) {
+async function demo(page: Page, held = false, placed = false) {
   await page.addInitScript(([parcels, held]) => {
     localStorage.setItem('sdt.web.experience.v1', 'demo');
     localStorage.setItem('sdt.demo.parcels.v1', JSON.stringify(parcels));
@@ -38,7 +47,7 @@ async function demo(page: Page, held = false) {
       return animation;
     };
   }, [[
-    parcel('tea', 'Tea', ['accepted', 'in_transit', 'out_for_delivery']),
+    parcel('tea', 'Tea', ['accepted', 'in_transit', 'out_for_delivery'], placed),
     parcel('lamp', 'Lamp', ['accepted']),
     parcel('vase', 'Vase', ['registered']),
     parcel('book', 'Book', ['accepted', 'in_transit', 'out_for_delivery', 'delivered']),
@@ -70,6 +79,9 @@ test('a delivered parcel says so where its card stands, then the card travels to
   await expect(next.locator('.parcel-stamp__postmark')).toBeVisible();
   await expect(page.getByRole('region', { name: 'On the way' }).locator('.parcel-section__heading > span')).toHaveText('3');
   await expect(page.locator('.parcel-section--past [data-parcel-id="tea"]')).toHaveCount(0);
+  // Paper is thrown from the card, over the screen and out of a finger's way.
+  await expect(page.locator('.delivered-confetti > i')).toHaveCount(58);
+  await expect(page.locator('.delivered-confetti')).toHaveCSS('pointer-events', 'none');
 
   // Then it is let go: the card it was flies from where it stood, and the page's own card waits unseen.
   const flight = page.locator('.delivered-move').last();
@@ -101,6 +113,36 @@ test('a delivered parcel says so where its card stands, then the card travels to
   await expect(arrived).not.toHaveAttribute('data-arrived');
   await expect(page.locator('.delivery-next .parcel-card-swipe')).toHaveCount(1);
   await expect(page.locator('.delivery-next [data-parcel-id="tea"]')).toHaveCount(0);
+  // The paper has fallen, and nothing of it is left.
+  await expect(page.locator('.delivered-confetti')).toHaveCount(0);
+});
+
+test('Pip opens his box on the map when the parcel arrives, and the paper comes out of it', async ({ page }) => {
+  await demo(page, true, true);
+  const pip = page.locator('.delivery-next [data-pip]');
+  await expect(pip).toHaveAttribute('data-pip', 'eager');
+  // His flaps are marked, and what turns them is noted when his mood changes.
+  await pip.evaluate((element) => {
+    const flaps = [...element.querySelectorAll('.parcel-illustration__flap')];
+    flaps.forEach((flap) => flap.setAttribute('data-kept', ''));
+    new MutationObserver(() => requestAnimationFrame(() => {
+      document.body.dataset.turning = flaps.flatMap((flap) => flap.getAnimations().map((animation) => (animation as CSSTransition).transitionProperty)).join(' ');
+    })).observe(element, { attributes: true, attributeFilter: ['data-pip'] });
+  });
+  await check(page);
+
+  // The same flaps turn on their hinges: he is not swapped for a picture of an open box.
+  await expect(page.locator('body')).toHaveAttribute('data-turning', /--fold/);
+  const flaps = page.locator('.parcel-illustration__flap[data-kept]');
+  await expect(flaps).toHaveCount(4);
+  await expect.poll(() => flaps.evaluateAll((all) => all.map((flap) => getComputedStyle(flap).getPropertyValue('--fold').trim()).join(' '))).toBe('1 1 1 1');
+  await expect(page.locator('[data-pip="joy"] [data-mood="joy"]')).toHaveCount(1);
+
+  // The paper is thrown once he is open, from where he is.
+  await expect(page.locator('.delivered-confetti > i')).toHaveCount(58);
+  await expect(page.locator('.delivered-confetti > svg')).toHaveCount(6);
+  await page.evaluate(() => document.getAnimations().filter((animation) => animation.id?.startsWith('delivered-')).forEach((animation) => animation.finish()));
+  await expect(page.locator('.delivered-moves, .delivered-confetti')).toHaveCount(0);
 });
 
 test('a tap on the card that has just arrived opens that parcel', async ({ page }) => {
@@ -108,7 +150,8 @@ test('a tap on the card that has just arrived opens that parcel', async ({ page 
   await check(page);
   const next = page.locator('.delivery-next [data-parcel-id="tea"]');
   await expect(next).toHaveAttribute('data-arrived', '');
-  await next.locator('.parcel-card').click();
+  // The card gives a little under the news and leaves within a second: the tap does not wait for it to hold still.
+  await next.locator('.parcel-card').click({ force: true });
   await expect(page.getByRole('dialog', { name: 'Tea', exact: true })).toBeVisible();
   // Under its page the list has settled, with no flight to see.
   await expect(page.locator('.parcel-section--past [data-parcel-id="tea"]')).toHaveCount(1);
@@ -119,7 +162,7 @@ test('the list changes at once for someone who asked for less motion', async ({ 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await demo(page);
   await page.evaluate(() => new MutationObserver(() => {
-    if (document.querySelector('[data-arrived], .delivered-moves')) document.body.dataset.moved = '';
+    if (document.querySelector('[data-arrived], .delivered-moves, .delivered-confetti')) document.body.dataset.moved = '';
   }).observe(document.body, { subtree: true, childList: true, attributes: true }));
   await check(page);
   await expect(page.locator('.parcel-section--past [data-parcel-id="tea"]')).toBeVisible();

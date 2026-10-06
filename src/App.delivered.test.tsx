@@ -1,8 +1,11 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { throwConfetti } from './lib/deliveredConfetti';
 import { ParcelsProvider } from './store/ParcelsContext';
 import type { ParcelRepo, ParcelWithEvents, Stage } from './types';
+
+vi.mock('./lib/deliveredConfetti', () => ({ throwConfetti: vi.fn() }));
 
 const HOUR = 3_600_000;
 const scan = (parcelId: string, stage: Stage, hoursAgo: number) => ({
@@ -45,6 +48,7 @@ describe('a parcel delivered since the list was last shown', () => {
 
   afterEach(() => {
     delete (Element.prototype as Partial<Element>).animate;
+    vi.mocked(throwConfetti).mockClear();
   });
 
   it('turns to Delivered where its card stands, then leaves for the past deliveries', async () => {
@@ -60,8 +64,13 @@ describe('a parcel delivered since the list was last shown', () => {
     expect(within(active()).getByText('2')).toBeInTheDocument();
     expect(tea(past())).toBeNull();
     expect(within(active()).getByRole('button', { name: /^Lamp — / })).toBeInTheDocument();
+    // Paper is thrown from its card while it stands there, once.
+    expect(throwConfetti).not.toHaveBeenCalled();
+    await waitFor(() => expect(throwConfetti).toHaveBeenCalledWith(document.querySelector('.deliveries-page'), ['tea']));
+    expect(tea(active())).toBeInTheDocument();
 
     await waitFor(() => expect(tea(past())).toHaveAccessibleName(/^Tea — Delivered/), { timeout: 2500 });
+    expect(throwConfetti).toHaveBeenCalledTimes(1);
     expect(tea(active())).toBeNull();
     expect(tea(past())!.closest('.parcel-card-swipe')).not.toHaveAttribute('data-arrived');
     expect(within(active()).getByRole('button', { name: /^Next up: Lamp — / })).toBeInTheDocument();
@@ -86,6 +95,9 @@ describe('a parcel delivered since the list was last shown', () => {
     expect(await screen.findByRole('dialog', { name: 'Tea' })).toBeInTheDocument();
     expect(document.querySelector('.parcel-section--past [data-parcel-id="tea"]')).toBeInTheDocument();
     expect(document.querySelector('[data-arrived]')).toBeNull();
+    // No paper over the page that has opened.
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    expect(throwConfetti).not.toHaveBeenCalled();
   });
 
   it('jumps there, as before, where nothing can be shown moving', async () => {
@@ -93,6 +105,7 @@ describe('a parcel delivered since the list was last shown', () => {
     renderApp();
     await waitFor(() => expect(tea(past())).toHaveAccessibleName(/^Tea — Delivered/));
     expect(document.querySelector('[data-arrived]')).toBeNull();
+    expect(throwConfetti).not.toHaveBeenCalled();
   });
 
   it('jumps there while its own page covers the list', async () => {

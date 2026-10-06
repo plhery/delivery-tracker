@@ -7,6 +7,7 @@ import { geography, useWorld, type Coordinate } from './geography';
 import { circleOf, layout, mapView, targetCamera, type Insets, type Overlay, type PipPlacing, type Shape, type Size } from './layout';
 import { InkPip } from './Pip';
 import { formatKm, type MapMode, type Route } from './route';
+import { springAt, springSettleTime, type Spring } from '../../lib/spring';
 import styles from './map.module.css';
 
 // What the map shows and where everything goes is worked out in `layout.ts`, which needs no browser.
@@ -301,11 +302,51 @@ export function WorldMap({
         <span><strong>{pointer.text}</strong> {pointer.detail}</span>
       </span>)}
     </div>
-    {overlay?.pip && <span className={styles.pip} data-pip={overlay.pip.mood} data-side={overlay.pip.side} data-glide={glide || undefined} aria-hidden="true"
-      style={{ transform: `translate(${overlay.pip.x.toFixed(1)}px, ${overlay.pip.y.toFixed(1)}px)`, width: overlay.pip.width }}>
-      <span className={styles.pipIn}><InkPip mood={overlay.pip.mood} side={overlay.pip.side} below={overlay.pip.below} /></span>
-    </span>}
+    {overlay?.pip && size && <MapPip pip={overlay.pip} dot={overlay.dots.find(dot => dot.kind === 'current')} glide={glide} frame={`${size.width} ${size.height}`} />}
   </div>;
+}
+
+/** How Pip goes to another spot beside the dot, and to another size. */
+const PIP_MOVE: Spring = { duration: 0.5, bounce: 0.18 };
+
+/**
+ * Pip beside the parcel's dot. When he takes another spot or another size, as he does when his box opens, he goes
+ * there from where he stood instead of appearing there. The camera may be carrying the dot meanwhile, so his place
+ * is kept from the dot; a map that eases his position itself only leaves his size to be eased here. A map that
+ * changes size is laid out anew, and he with it: that is no move of his.
+ */
+function MapPip({ pip, dot, glide, frame }: { pip: NonNullable<Overlay['pip']>; dot?: { x: number; y: number }; glide: boolean; frame: string }) {
+  const mover = useRef<HTMLSpanElement>(null);
+  const stood = useRef<{ x: number; y: number; width: number; frame: string } | null>(null);
+  const moving = useRef<Animation | null>(null);
+  const x = glide || !dot ? 0 : pip.x - dot.x;
+  const y = glide || !dot ? 0 : pip.y - dot.y;
+  const { width } = pip;
+  useLayoutEffect(() => {
+    const element = mover.current;
+    const was = stood.current;
+    stood.current = { x, y, width, frame };
+    if (!element || !was || was.frame !== frame || typeof element.animate !== 'function') return;
+    if (Math.abs(was.x - x) < .5 && Math.abs(was.y - y) < .5 && was.width === width) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    // A move still under way is taken up from where it has brought him.
+    const [scale = 1, , , , left = 0, top = 0] = getComputedStyle(element).transform.match(/-?[\d.]+(?:e-?\d+)?/g)?.map(Number) ?? [];
+    const from = { x: was.x + left - x, y: was.y + top - y, scale: was.width * scale / width };
+    const seconds = springSettleTime(PIP_MOVE, 1, 0, 0, .002);
+    const steps = Math.ceil(seconds * 60);
+    const frames = Array.from({ length: steps + 1 }, (_, step) => {
+      const left = step === steps ? 0 : springAt(PIP_MOVE, 1, 0, 0, seconds * step / steps).value;
+      return { transform: `translate(${(from.x * left).toFixed(2)}px, ${(from.y * left).toFixed(2)}px) scale(${(1 + (from.scale - 1) * left).toFixed(4)})` };
+    });
+    moving.current?.cancel();
+    moving.current = element.animate(frames, { duration: seconds * 1000, easing: 'linear' });
+  }, [x, y, width, frame]);
+  return <span className={styles.pip} data-pip={pip.mood} data-side={pip.side} data-glide={glide || undefined} aria-hidden="true"
+    style={{ transform: `translate(${pip.x.toFixed(1)}px, ${pip.y.toFixed(1)}px)`, width }}>
+    <span className={styles.pipIn}>
+      <span ref={mover} className={styles.pipMove}><InkPip mood={pip.mood} side={pip.side} below={pip.below} /></span>
+    </span>
+  </span>;
 }
 
 /**

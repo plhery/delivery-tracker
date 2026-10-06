@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { STAGES } from '../../generated/apiContract';
 import { PARCEL, ParcelIllustration, SmallPip, flapPoints } from '../Icon';
@@ -29,13 +29,37 @@ describe('Pip', () => {
       const { container, unmount } = render(<InkPip mood={mood} side={1} />);
       const open = mood === 'joy';
       expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
-      expect(container.querySelectorAll('polygon')).toHaveLength(open ? 4 : 2);
+      // The four flaps are always there, on their hinges: closed, the two that lie under the others are not shown.
+      expect(container.querySelectorAll('.parcel-illustration__flap polygon')).toHaveLength(4);
+      expect(container.querySelectorAll('.parcel-illustration__flap--hidden')).toHaveLength(2);
+      expect(container.querySelector('[data-mood]')).toHaveAttribute('data-mood', mood);
       expect(container.querySelector(`path[d="${PARCEL.tape}"]`) === null).toBe(open);
       expect(container.querySelectorAll(`path[d="${PARCEL.glint}"]`)).toHaveLength(open ? 6 : 0);
       // Every colour comes from the card: nothing keeps the kraft palette.
       expect(container.innerHTML).not.toMatch(/#[0-9a-f]{6}/i);
       unmount();
     }
+  });
+
+  it('opens his box when the parcel arrives while he is looked at', () => {
+    const { container, rerender } = render(<InkPip mood="eager" side={1} />);
+    const flaps = [...container.querySelectorAll('.parcel-illustration__flap')];
+    const faces = () => container.querySelectorAll(`g[transform="${PARCEL.facePlane}"]`);
+    expect(faces()).toHaveLength(1);
+
+    rerender(<InkPip mood="joy" side={1} />);
+    // The same flaps turn, rather than new ones being drawn open.
+    expect([...container.querySelectorAll('.parcel-illustration__flap')]).toEqual(flaps);
+    expect(container.querySelector('[data-mood]')).toHaveAttribute('data-mood', 'joy');
+    // The tape is still there to lift off, the face he had fades under the happy one, and the glints wait for the flaps.
+    expect(container.querySelector(`path[d="${PARCEL.tape}"]`)).toBeInTheDocument();
+    expect(faces()).toHaveLength(2);
+    expect(container.querySelector('[data-late]')!.querySelectorAll(`path[d="${PARCEL.glint}"]`)).toHaveLength(6);
+
+    // React listens for the prefixed name where the test browser knows no other.
+    fireEvent(faces()[1].parentElement!, new Event('webkitAnimationEnd', { bubbles: true }));
+    expect(faces()).toHaveLength(1);
+    expect(faces()[0].querySelector('ellipse[rx="9.75"]')).toBeInTheDocument();
   });
 
   it('looks toward the dot and trails its speed lines away from it', () => {

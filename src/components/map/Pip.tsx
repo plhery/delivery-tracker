@@ -1,5 +1,5 @@
-import type { CSSProperties } from 'react';
-import { PARCEL, flapPoints } from '../Icon';
+import { useState, type CSSProperties } from 'react';
+import { PARCEL, ParcelFlap } from '../Icon';
 import styles from './map.module.css';
 import { EAGER_LIFT, PIP_FRAME, type PipMood, type PipSide } from './pipGeometry';
 
@@ -60,11 +60,16 @@ function Face({ mood, side, below }: { mood: PipMood; side: PipSide; below: bool
   </g>;
 }
 
-function Flap({ name, open, fill }: { name: keyof typeof PARCEL.flaps; open: boolean; fill: string }) {
-  return <polygon points={flapPoints(PARCEL.flaps[name], open)} style={{ ...tone(fill), ...line }} strokeOpacity=".24" strokeWidth=".7" />;
+/** A flap on its hinge, in the card's ink: it turns as the kraft parcel's does when the box opens. */
+function Flap({ name, fill, rear = false, hidden = false }: { name: keyof typeof PARCEL.flaps; fill: string; rear?: boolean; hidden?: boolean }) {
+  return <ParcelFlap flap={PARCEL.flaps[name]} tone={`var(--pip-${fill})`} ink="var(--pip-ink)" rear={rear} hidden={hidden} />;
 }
 
-/** Pip in the card's own ink: the kraft parcel's geometry, recoloured, with a face for the stage. */
+/**
+ * Pip in the card's own ink: the kraft parcel's geometry, recoloured, with a face for the stage.
+ * When the parcel arrives while he is looked at, his box opens: the flaps turn on their hinges, the
+ * tape lifts off, the face he had gives way to a happy one and the glints come last.
+ */
 export function InkPip({ mood, side, below = false }: {
   mood: PipMood;
   side: PipSide;
@@ -74,34 +79,49 @@ export function InkPip({ mood, side, below = false }: {
   const open = mood === 'joy';
   const eager = mood === 'eager';
   const tilt = eager ? -5 : mood === 'worry' ? 3 : 0;
+  // Drawn open from the start, he has nothing to open: no tape to lift, and his glints are there at once.
+  const [first] = useState(mood);
+  const opened = open && first !== 'joy';
+  // The face he had fades out under the one he takes.
+  const [shown, setShown] = useState(mood);
+  const [before, setBefore] = useState<PipMood | null>(null);
+  if (mood !== shown) {
+    setBefore(shown);
+    setShown(mood);
+  }
   return <svg className={styles.pipArt} viewBox={`0 0 ${PIP_FRAME.width} ${PIP_FRAME.height}`} fill="none" aria-hidden="true">
     <ellipse cx="150" cy="286" rx={eager ? 69 : 84} ry="10" style={tone('shadow')} />
     {/* He hurries toward the dot, so his speed lines trail on the far side. */}
     {eager && <path d="M14 170H40M2 196H36M18 222H40" style={line} strokeWidth="7" strokeLinecap="round" opacity=".32"
       transform={side < 0 ? `matrix(-1 0 0 1 ${PIP_FRAME.width} 0)` : undefined} />}
-    <g transform={`translate(0 ${eager ? -EAGER_LIFT : 0}) rotate(${tilt} 150 230)`}>
+    <g className={styles.pipStance} style={{ transform: `translateY(${eager ? -EAGER_LIFT : 0}px) rotate(${tilt}deg)` }}>
       <g className={styles.pipBody} data-mood={mood}>
         <path d={PARCEL.inside} style={tone('deep')} />
-        {open && <Flap name="backLeft" open fill="back-left" />}
-        <Flap name="backRight" open={open} fill="back-right" />
+        <Flap name="backLeft" fill="back-left" rear hidden />
+        <Flap name="backRight" fill="back-right" rear />
         <path d={PARCEL.left} style={tone('left')} />
         <path d={PARCEL.right} style={tone('right')} />
         <path d={PARCEL.left} style={tone('paper')} opacity=".07" />
         <path d={PARCEL.hairlines} style={line} strokeOpacity=".25" strokeWidth=".8" />
         <path d={PARCEL.edges} style={{ stroke: 'var(--pip-paper)' }} strokeWidth="1" opacity=".4" />
         {/* The face is on the side, under the front flaps: open, the left one is a brim over his eyes. */}
-        <Face mood={mood} side={side} below={below} />
-        {open && <Flap name="frontRight" open fill="front-right" />}
-        <Flap name="frontLeft" open={open} fill="front-left" />
-        {!open && <>
+        {before && <g key={`was-${before}`} className={styles.pipFaceGone}><Face mood={before} side={side} below={below} /></g>}
+        <g key={mood} className={before ? styles.pipFaceNew : undefined} onAnimationEnd={() => setBefore(null)}>
+          <Face mood={mood} side={side} below={below} />
+        </g>
+        <Flap name="frontRight" fill="front-right" hidden />
+        <Flap name="frontLeft" fill="front-left" />
+        {(!open || opened) && <g className={styles.pipTape}>
           <path d={PARCEL.tape} style={tone('tape')} />
           <path d={PARCEL.seam} style={{ stroke: 'var(--pip-seam)' }} strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" />
-        </>}
-        {open && PARCEL.glints.map(({ x, y, size }, index) => <g key={index} transform={`translate(${x} ${y})`}>
-          <g className={styles.pipGlint} style={{ '--twinkle': `${2.2 + index % 3 * .5}s`, '--twinkle-delay': `${(index * .37).toFixed(2)}s` } as CSSProperties}>
-            <path d={PARCEL.glint} transform={`scale(${size / 2})`} style={tone(TWINKLES[index])} />
-          </g>
-        </g>)}
+        </g>}
+        {open && <g className={styles.pipGlints} data-late={opened || undefined}>
+          {PARCEL.glints.map(({ x, y, size }, index) => <g key={index} transform={`translate(${x} ${y})`}>
+            <g className={styles.pipGlint} style={{ '--twinkle': `${2.2 + index % 3 * .5}s`, '--twinkle-delay': `${(index * .37).toFixed(2)}s` } as CSSProperties}>
+              <path d={PARCEL.glint} transform={`scale(${size / 2})`} style={tone(TWINKLES[index])} />
+            </g>
+          </g>)}
+        </g>}
       </g>
     </g>
   </svg>;

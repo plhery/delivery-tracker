@@ -45,6 +45,48 @@ struct PipPlacement: Equatable {
     var box: CGRect
 }
 
+/// Pip's box on its way open: how far each part has come, so long after the news.
+struct PipOpening: Equatable {
+    /// How far the rear flaps have folded over, and the front ones turned on their hinges: 0 closed, 1 open,
+    /// and a little more while a front flap goes too far.
+    var rear: CGFloat
+    var front: CGFloat
+    /// The two flaps that lie under the others on a closed box show as it opens.
+    var under: Double
+    /// How much of the tape is left, and how far it has lifted off.
+    var tape: Double
+    var lift: CGFloat
+    /// The face he had, and the one he takes.
+    var faceBefore: Double
+    var face: Double
+    var glints: Double
+    /// How far he has settled from the stance he had into the one he takes.
+    var stance: CGFloat
+
+    static let closed = PipOpening(rear: 0, front: 0, under: 0, tape: 1, lift: 0, faceBefore: 1, face: 0, glints: 0, stance: 0)
+    static let open = PipOpening(rear: 1, front: 1, under: 1, tape: 0, lift: 1, faceBefore: 0, face: 1, glints: 1, stance: 1)
+    /// Seconds from the news to an open box at rest.
+    static let duration = 1.0
+
+    private static let ease = UnitCurve.bezier(startControlPoint: UnitPoint(x: 0.22, y: 1), endControlPoint: UnitPoint(x: 0.36, y: 1))
+}
+
+extension PipOpening {
+    /// The box so many seconds after the news: the rear flaps fold away first, the front ones swing up
+    /// through upright and settle, the tape lifts off, and the glints come once the flaps are up.
+    init(at seconds: Double) {
+        // Each part has its own stretch of the second, told apart so that every line is quick to compile.
+        func part(_ from: Double, _ length: Double) -> Double { min(1, max(0, (seconds - from) / length)) }
+        let rear: Double = Self.ease.value(at: part(0.07, 0.62))
+        let front: CGFloat = PipGeometry.settle(CGFloat(part(0.17, 0.78)))
+        let lift: Double = Self.ease.value(at: part(0, 0.4))
+        let tape: Double = 1 - part(0.05, 0.22)
+        let faceBefore: Double = 1 - part(0, 0.22)
+        self.init(rear: CGFloat(rear), front: front, under: part(0.1, 0.3), tape: tape, lift: CGFloat(lift),
+                  faceBefore: faceBefore, face: part(0.12, 0.3), glints: part(0.62, 0.35), stance: CGFloat(lift))
+    }
+}
+
 // MARK: - Geometry
 
 /// The box in its 300 × 310 frame, shared by the kraft parcel and by Pip on the card maps.
@@ -281,17 +323,26 @@ struct PipPalette {
 
 /// Draws Pip in his 300 × 310 frame: scale the context to the size wanted first.
 enum PipArtwork {
-    private static func flap(_ context: GraphicsContext, _ palette: PipPalette, _ paper: PipGeometry.Flap, _ color: Color, open: Bool) {
-        let path = PipGeometry.polygon(open ? paper.opened : paper.closed)
-        context.fill(path, with: .color(color))
-        context.stroke(path, with: .color(palette.hairline.opacity(0.24)), lineWidth: 0.7)
+    private static func flap(_ context: GraphicsContext, _ palette: PipPalette, _ paper: PipGeometry.Flap, _ color: Color,
+                             at progress: CGFloat, opacity: Double = 1) {
+        guard opacity > 0 else { return }
+        var layer = context
+        layer.opacity *= opacity
+        let path = PipGeometry.polygon(progress == 0 ? paper.closed : progress == 1 ? paper.opened : paper.points(at: progress))
+        layer.fill(path, with: .color(color))
+        layer.stroke(path, with: .color(palette.hairline.opacity(0.24)), lineWidth: 0.7)
     }
 
     /// The box up to its sides: closed, or with its rear flaps folded open. The face goes on next, then `frontFlaps`.
     static func box(_ context: GraphicsContext, _ palette: PipPalette, open: Bool) {
+        box(context, palette, opening: open ? .open : .closed)
+    }
+
+    /// The same box on its way open.
+    static func box(_ context: GraphicsContext, _ palette: PipPalette, opening: PipOpening) {
         context.fill(PipGeometry.polygon(PipGeometry.inside), with: .color(palette.inside))
-        if open { flap(context, palette, PipGeometry.backLeft, palette.backLeft, open: open) }
-        flap(context, palette, PipGeometry.backRight, palette.backRight, open: open)
+        flap(context, palette, PipGeometry.backLeft, palette.backLeft, at: opening.rear, opacity: opening.under)
+        flap(context, palette, PipGeometry.backRight, palette.backRight, at: opening.rear)
         context.fill(PipGeometry.polygon(PipGeometry.leftSide), with: .color(palette.left))
         context.fill(PipGeometry.polygon(PipGeometry.rightSide), with: .color(palette.right))
         context.fill(PipGeometry.polygon(PipGeometry.leftSide), with: .color(palette.highlight.opacity(0.07)))
@@ -301,8 +352,13 @@ enum PipArtwork {
 
     /// The front flaps, over the face: closed on the lid, or open just above level, the left one a brim over the eyes.
     static func frontFlaps(_ context: GraphicsContext, _ palette: PipPalette, open: Bool) {
-        if open { flap(context, palette, PipGeometry.frontRight, palette.frontRight, open: open) }
-        flap(context, palette, PipGeometry.frontLeft, palette.frontLeft, open: open)
+        frontFlaps(context, palette, opening: open ? .open : .closed)
+    }
+
+    /// The same flaps on their way open: up through upright, and out over the face.
+    static func frontFlaps(_ context: GraphicsContext, _ palette: PipPalette, opening: PipOpening) {
+        flap(context, palette, PipGeometry.frontRight, palette.frontRight, at: opening.front, opacity: opening.under)
+        flap(context, palette, PipGeometry.frontLeft, palette.frontLeft, at: opening.front)
     }
 
     /// The carrier's label on the box's right side: its truck, its name in its own colour, a barcode and the
@@ -357,46 +413,79 @@ enum PipArtwork {
         context.stroke(seam, with: .color(palette.seam.opacity(0.6)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
     }
 
+    /// The tape as the box opens: it lifts off its seam and is gone.
+    private static func tape(_ context: GraphicsContext, _ palette: PipPalette, opening: PipOpening) {
+        guard opening.tape > 0 else { return }
+        var lifted = context
+        lifted.opacity *= opening.tape
+        lifted.translateBy(x: -6 * opening.lift, y: -19 * opening.lift)
+        lifted.concatenate(rotation(degrees: -8 * opening.lift, around: PipGeometry.seam[0]))
+        tape(lifted, palette)
+    }
+
+    /// How a mood holds him: how far off the ground, how tilted, and how wide his shadow.
+    private static func stance(_ mood: PipMood) -> (lift: CGFloat, tilt: Double, shadow: CGFloat) {
+        switch mood {
+        case .eager: (PipGeometry.eagerLift, -5, 69)
+        case .worry: (0, 3, 84)
+        case .look, .wait, .joy: (0, 0, 84)
+        }
+    }
+
     /// Pip in a card's ink, with the face and the pose of his mood. `time` moves him; nil keeps him still.
-    static func ink(_ context: GraphicsContext, _ palette: PipPalette, mood: PipMood, side: Int, below: Bool, time: Double?) {
-        let eager = mood == .eager
-        let open = mood == .joy
-        context.fill(Path(ellipseIn: CGRect(x: 150 - (eager ? 69 : 84), y: 276, width: eager ? 138 : 168, height: 20)),
-                     with: .color(palette.shadow))
-        if eager {
-            // He hurries toward the dot, so his speed lines trail on the far side.
+    /// `opening` draws his box on its way open, from the mood he was in `before` the news.
+    static func ink(_ context: GraphicsContext, _ palette: PipPalette, mood: PipMood, side: Int, below: Bool, time: Double?,
+                    opening: PipOpening? = nil, before: PipMood? = nil) {
+        let state = opening ?? (mood == .joy ? .open : .closed)
+        let was = opening == nil ? mood : before ?? mood
+        let from = stance(was), to = stance(mood)
+        let settled = was == mood ? 1 : state.stance
+        let reach = from.shadow + (to.shadow - from.shadow) * settled
+        context.fill(Path(ellipseIn: CGRect(x: 150 - reach, y: 276, width: reach * 2, height: 20)), with: .color(palette.shadow))
+        // He hurries toward the dot, so his speed lines trail on the far side; they go once he is there.
+        let hurry = mood == .eager ? 1 : was == .eager ? 1 - Double(settled) : 0
+        if hurry > 0 {
             var lines = Path()
             for (from, to, y) in [(14.0, 40.0, 170.0), (2, 36, 196), (18, 40, 222)] {
                 let mirrored = side < 0
                 lines.move(to: CGPoint(x: mirrored ? PipGeometry.frame.width - from : from, y: y))
                 lines.addLine(to: CGPoint(x: mirrored ? PipGeometry.frame.width - to : to, y: y))
             }
-            context.stroke(lines, with: .color(palette.speedLines), style: StrokeStyle(lineWidth: 7, lineCap: .round))
+            context.stroke(lines, with: .color(palette.speedLines.opacity(hurry)), style: StrokeStyle(lineWidth: 7, lineCap: .round))
         }
 
         var body = context
         // Lifted and tilted as the mood has it, then moved about the bottom of the box.
-        body.translateBy(x: 0, y: eager ? -PipGeometry.eagerLift : 0)
-        body.concatenate(rotation(degrees: eager ? -5 : mood == .worry ? 3 : 0, around: CGPoint(x: 150, y: 230)))
+        body.translateBy(x: 0, y: -(from.lift + (to.lift - from.lift) * settled))
+        body.concatenate(rotation(degrees: from.tilt + (to.tilt - from.tilt) * Double(settled), around: CGPoint(x: 150, y: 230)))
         if let time { body.concatenate(motion(mood, at: time)) }
 
-        box(body, palette, open: open)
+        box(body, palette, opening: state)
         var face = body
         face.concatenate(PipGeometry.facePlane)
+        if was != mood, state.faceBefore > 0 {
+            var gone = face
+            gone.opacity *= state.faceBefore
+            inkFace(gone, palette, mood: was, side: side, below: below)
+        }
+        face.opacity *= was == mood ? 1 : state.face
         inkFace(face, palette, mood: mood, side: side, below: below)
-        frontFlaps(body, palette, open: open)
-        if open {
-            for (index, glint) in PipGeometry.glints.enumerated() {
-                let twinkle = time.map { Self.twinkle(index, at: $0) } ?? (opacity: 1, scale: 1, degrees: 0)
-                var star = body
-                star.opacity = twinkle.opacity
-                star.concatenate(CGAffineTransform(translationX: glint.center.x, y: glint.center.y)
-                    .rotated(by: twinkle.degrees * .pi / 180)
-                    .scaledBy(x: glint.size / 2 * twinkle.scale, y: glint.size / 2 * twinkle.scale))
-                star.fill(PipGeometry.glint, with: .color(palette.glints[[0, 1, 0, 2, 1, 0][index]]))
-            }
-        } else {
-            tape(body, palette)
+        frontFlaps(body, palette, opening: state)
+        tape(body, palette, opening: state)
+        if mood == .joy { glints(body, palette, time: time, opacity: state.glints) }
+    }
+
+    /// The glints around an open box, each twinkling on its own clock.
+    private static func glints(_ context: GraphicsContext, _ palette: PipPalette, time: Double?, opacity: Double) {
+        guard opacity > 0 else { return }
+        for (index, glint) in PipGeometry.glints.enumerated() {
+            let twinkle = time.map { Self.twinkle(index, at: $0) } ?? (opacity: 1, scale: 1, degrees: 0)
+            var star = context
+            star.opacity *= twinkle.opacity * opacity
+            star.concatenate(CGAffineTransform(translationX: glint.center.x, y: glint.center.y)
+                .rotated(by: twinkle.degrees * .pi / 180)
+                .scaledBy(x: glint.size / 2 * twinkle.scale, y: glint.size / 2 * twinkle.scale))
+            star.fill(PipGeometry.glint, with: .color(palette.glints[[0, 1, 0, 2, 1, 0][index]]))
         }
     }
 
@@ -698,6 +787,7 @@ struct KraftPipFace: View {
 }
 
 /// Pip in the card's own ink, beside the parcel's place on its map. Decorative.
+/// When the parcel arrives while he is looked at, his box opens instead of being drawn open.
 struct InkPip: View {
     let mood: PipMood
     let side: Int
@@ -708,24 +798,41 @@ struct InkPip: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var arrived = false
+    /// When the news came, and the mood he was in.
+    @State private var unboxing: (at: Date, from: PipMood)?
 
     var body: some View {
         let palette = PipPalette.ink(ink, on: surface, dark: colorScheme == .dark)
-        let moves = !reduceMotion && (mood == .eager || mood == .joy)
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !moves)) { timeline in
-            Canvas { context, size in
-                context.scaleBy(x: size.width / PipGeometry.frame.width, y: size.width / PipGeometry.frame.width)
-                PipArtwork.ink(context, palette, mood: mood, side: side, below: below,
-                               time: moves ? timeline.date.timeIntervalSinceReferenceDate : nil)
+        let moves: Bool = !reduceMotion && (mood == .eager || mood == .joy)
+        // The flaps swing faster than he bobs: a box that has opened is drawn at every frame.
+        let interval: Double? = unboxing == nil ? 1.0 / 30 : nil
+        let shape: CGFloat = PipGeometry.frame.width / PipGeometry.frame.height
+        return TimelineView(.animation(minimumInterval: interval, paused: !moves)) { (timeline: TimelineViewDefaultContext) in
+            Canvas { (context: inout GraphicsContext, size: CGSize) in
+                let scale: CGFloat = size.width / PipGeometry.frame.width
+                context.scaleBy(x: scale, y: scale)
+                draw(context, palette, moves: moves, at: timeline.date)
             }
         }
-        .aspectRatio(PipGeometry.frame.width / PipGeometry.frame.height, contentMode: .fit)
+        .aspectRatio(shape, contentMode: .fit)
         // He fades in while rising into place.
         .opacity(arrived ? 1 : 0)
         .offset(y: arrived || reduceMotion ? 0 : 7)
         .onAppear { withAnimation(reduceMotion ? nil : .spring(duration: 0.6)) { arrived = true } }
+        .onChange(of: mood) { was, now in
+            unboxing = now == .joy && was != .joy && !reduceMotion ? (at: Date.now, from: was) : nil
+        }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    private func draw(_ context: GraphicsContext, _ palette: PipPalette, moves: Bool, at date: Date) {
+        // His jump starts with the news, as his box does.
+        let since = unboxing.map { date.timeIntervalSince($0.at) }
+        let opening = since.flatMap { $0 < PipOpening.duration ? PipOpening(at: $0) : nil }
+        PipArtwork.ink(context, palette, mood: mood, side: side, below: below,
+                       time: moves ? since ?? date.timeIntervalSinceReferenceDate : nil,
+                       opening: mood == .joy ? opening : nil, before: unboxing?.from)
     }
 }
 
@@ -745,5 +852,55 @@ struct SmallPip: View {
         }
         .aspectRatio(Self.crop.width / Self.crop.height, contentMode: .fit)
         .accessibilityHidden(true)
+    }
+}
+
+// MARK: - On a map
+
+extension EnvironmentValues {
+    /// Told where Pip shows on the screen, by a card that has something come out of his box.
+    @Entry var pipSight: ((CGRect) -> Void)? = nil
+}
+
+/// Pip beside the parcel's dot. When he takes another spot or another size, as he does when his box opens,
+/// he goes there from where he stood instead of appearing there. The camera may be carrying the dot
+/// meanwhile, so his place is kept from the dot.
+struct MapPip: View {
+    let place: PipPlacement
+    /// The parcel's dot, which he stands beside.
+    let dot: CGPoint?
+    let ink: Color
+    let surface: Color
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.pipSight) private var sight
+
+    /// Where he stands from the dot, to the half point: the camera's own arithmetic is not a move.
+    private struct Stand: Equatable {
+        var x: CGFloat
+        var y: CGFloat
+        var width: CGFloat
+    }
+
+    var body: some View {
+        let anchor: CGPoint = dot ?? place.origin
+        let x: CGFloat = place.origin.x - anchor.x
+        let y: CGFloat = place.origin.y - anchor.y
+        let stand = Stand(x: (x * 2).rounded() / 2, y: (y * 2).rounded() / 2, width: place.width)
+        let spring: Animation? = reduceMotion ? nil : Animation.spring(duration: 0.5, bounce: 0.18)
+        return pip
+            .frame(width: 0, height: 0, alignment: .topLeading)
+            .offset(x: x, y: y)
+            .animation(spring, value: stand)
+            .position(anchor)
+    }
+
+    /// Pip at his size, telling where on the screen he shows.
+    private var pip: some View {
+        let height: CGFloat = place.width * PipGeometry.frame.height / PipGeometry.frame.width
+        let seen: (CGRect) -> Void = { frame in sight?(frame) }
+        return InkPip(mood: place.mood, side: place.side, below: place.below, ink: ink, surface: surface)
+            .frame(width: place.width, height: height)
+            .onGeometryChange(for: CGRect.self, of: { (proxy: GeometryProxy) -> CGRect in proxy.frame(in: .global) }, action: seen)
     }
 }

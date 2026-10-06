@@ -96,7 +96,20 @@
 .pipIn { display: block; animation: pip-in .6s var(--spring) both; }
 /* A card is a button, and buttons style their icons: Pip keeps his own size and strokes. */
 .pip .pipArt { display: block; width: 100%; height: auto; overflow: visible; stroke: none; stroke-width: 1; stroke-linecap: butt; stroke-linejoin: miter; }
+/* His stance changes with his mood: he settles into the new one. */
+.pipStance { transform-origin: 150px 230px; transition: transform .4s var(--spring); }
 .pipBody { transform-origin: 150px 277px; }
+/* His box opens as the kraft parcel's does: the same flaps on the same hinges, turned by the same number.
+   The tape lifts off, the face he had gives way to the happy one, and the glints come once the flaps are up. */
+.pipBody[data-mood=joy] :global(.parcel-illustration__flap) { --fold: 1; opacity: 1; }
+.pipTape { transform-origin: 103px 119px; transition: opacity .22s .05s, transform .4s var(--ease-out); }
+.pipBody[data-mood=joy] .pipTape { opacity: 0; transform: translate(-6px, -19px) rotate(-8deg); }
+.pipFaceGone { animation: pip-face-out .22s ease-out both; }
+.pipFaceNew { animation: settle .3s ease-out .12s both; }
+.pipGlints[data-late] { animation: settle .35s var(--ease-out) .62s both; }
+@keyframes pip-face-out { to { opacity: 0; } }
+/* When he takes another spot beside the dot, or another size, he goes there instead of appearing there. */
+.pipMove { display: block; transform-origin: 0 0; }
 .pipBody[data-mood=eager] { animation: pip-bob 1.1s ease-in-out infinite; }
 .pipBody[data-mood=joy] { animation: pip-joy 2.2s var(--spring) infinite; }
 .pipGlint { transform-box: fill-box; transform-origin: center; animation: pip-twinkle var(--twinkle) ease-in-out var(--twinkle-delay) infinite; }
@@ -110,5 +123,7 @@
 }
 @keyframes pip-twinkle { 0%, 100% { opacity: .2; transform: scale(.6) rotate(-10deg); } 50% { opacity: 1; transform: scale(1.1) rotate(8deg); } }
 @media (prefers-reduced-motion: reduce) {
-  .worldMap :is(.route, .leg[data-kind]), .dot[data-kind=current] .halo, .pointer, .placeLabel, .pipIn, .pipBody[data-mood], .pipGlint { animation: none; }
+  .worldMap :is(.route, .leg[data-kind]), .dot[data-kind=current] .halo, .pointer, .placeLabel, .pipIn, .pipBody[data-mood], .pipGlint, .pipGlints, .pipFaceNew { animation: none; }
+  .pipFaceGone { display: none; }
+  .pipStance, .pipTape, .pip :global(.parcel-illustration__flap) { transition: none; }
 }

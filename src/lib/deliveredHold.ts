@@ -1,4 +1,5 @@
-import { useLayoutEffect, useMemo, useState, type RefObject } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { throwConfetti } from './deliveredConfetti';
 import { moveDeliveredCards } from './deliveredMove';
 import { justDelivered } from './justDelivered';
 import { isDelivered } from './stages';
@@ -6,6 +7,8 @@ import type { ParcelWithEvents } from '../types';
 
 /** Long enough to read "Delivered" on the card and to see the postmark land on its stamp. */
 export const DELIVERED_HOLD_MS = 950;
+/** Pip's box, which opens with the news, is open by then: the paper comes out of it. */
+const CONFETTI_AT_MS = 330;
 /** After a finger lifts, long enough for its tap to have opened what it was aimed at. */
 const AFTER_TOUCH_MS = 150;
 
@@ -26,8 +29,9 @@ function moves() {
  * A parcel delivered since the list was last shown does not jump to the past deliveries.
  * Its card first turns to Delivered where it stands, then travels there. While `watching`,
  * the list is arranged from `arranged`, in which every parcel is still as it was shown;
- * `arrived` tells which cards to draw with the news. Every card stays what it is under a
- * finger, and a list that is covered, or that shows no motion, changes without any of this.
+ * `arrived` tells which cards to draw with the news, and paper is thrown from the first of
+ * them. Every card stays what it is under a finger, and a list that is covered, or that shows
+ * no motion, changes without any of this.
  */
 export function useDeliveredHold(parcels: ParcelWithEvents[], watching: boolean, root: RefObject<HTMLElement | null>) {
   const [seen, setSeen] = useState(parcels);
@@ -50,9 +54,15 @@ export function useDeliveredHold(parcels: ParcelWithEvents[], watching: boolean,
   if (!watching) holding = NONE;
   if (holding !== held) setHeld(holding);
 
+  // The parcels whose arrival has had its paper: those that arrive together share one burst.
+  const celebrated = useRef<ReadonlySet<string>>(NONE.arrivals);
   useLayoutEffect(() => {
-    if (!holding.arrivals.size) return;
+    if (!holding.arrivals.size) {
+      celebrated.current = NONE.arrivals;
+      return;
+    }
     let timer = 0;
+    let paper = 0;
     let pressing = false;
     let due = false;
     const release = () => {
@@ -67,7 +77,14 @@ export function useDeliveredHold(parcels: ParcelWithEvents[], watching: boolean,
     // A list that nobody sees keeps the card where it is until someone looks.
     const wait = () => {
       window.clearTimeout(timer);
-      if (!document.hidden) timer = window.setTimeout(release, DELIVERED_HOLD_MS);
+      window.clearTimeout(paper);
+      if (document.hidden) return;
+      timer = window.setTimeout(release, DELIVERED_HOLD_MS);
+      const fresh = [...holding.arrivals].filter((id) => !celebrated.current.has(id));
+      if (fresh.length) paper = window.setTimeout(() => {
+        celebrated.current = holding.arrivals;
+        throwConfetti(root.current, fresh);
+      }, CONFETTI_AT_MS);
     };
     const press = () => { pressing = true; };
     const lift = () => {
@@ -84,6 +101,7 @@ export function useDeliveredHold(parcels: ParcelWithEvents[], watching: boolean,
     window.addEventListener('pointercancel', lift, { capture: true, passive: true });
     return () => {
       window.clearTimeout(timer);
+      window.clearTimeout(paper);
       document.removeEventListener('visibilitychange', wait);
       window.removeEventListener('pointerdown', press, { capture: true });
       window.removeEventListener('pointerup', lift, { capture: true });

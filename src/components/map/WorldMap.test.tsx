@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { countryPlace, buildRoute, distanceKm, formatKm, type Place, type Route, type Scan } from './route';
 import { PIP_FRAME, outlineDistance, pipExtents, pipOutlines, type PipMood, type PipSide } from './Pip';
@@ -35,8 +35,15 @@ const context = new Proxy({} as Record<string | symbol, unknown>, {
 
 let frame = { width: 400, height: 300 };
 class FixedResizeObserver {
-  constructor(private readonly callback: ResizeObserverCallback) {}
+  /** The map last drawn, so that a test can change its size. */
+  static last: FixedResizeObserver | null = null;
+  constructor(private readonly callback: ResizeObserverCallback) {
+    FixedResizeObserver.last = this;
+  }
   observe() {
+    this.resize();
+  }
+  resize() {
     this.callback([{ contentRect: frame } as ResizeObserverEntry], this as unknown as ResizeObserver);
   }
   disconnect() {}
@@ -548,6 +555,79 @@ describe('WorldMap', () => {
     await waitFor(() => expect(legs(container).map((leg) => leg.dataset.late)).toEqual([undefined, undefined, undefined, 'true']));
     // The stroke keeps the time it was given, however the route grows.
     expect(Number.parseFloat(stroke.style.getPropertyValue('--map-stroke-time'))).toBe(lasting);
+  });
+
+  it('lets Pip grow and go to his new spot when his box opens, instead of appearing there', async () => {
+    const route = buildRoute([scan(leipzig), scan(zurich)]);
+    const moves: { element: Element; frames: Keyframe[]; cancel: ReturnType<typeof vi.fn> }[] = [];
+    Element.prototype.animate = function animate(this: Element, frames: Keyframe[]) {
+      const cancel = vi.fn();
+      moves.push({ element: this, frames, cancel });
+      return { cancel } as unknown as Animation;
+    } as typeof Element.prototype.animate;
+    const pip = (container: HTMLElement) => container.querySelector<HTMLElement>('[data-pip]')!;
+    const pose = (frame: Keyframe) => /^translate\((-?[\d.]+)px, (-?[\d.]+)px\) scale\(([\d.]+)\)$/.exec(String(frame.transform))!.slice(1).map(Number);
+    try {
+      const { container, rerender } = render(<WorldMap route={route} mode="journey" time={time} pip={{ mood: 'look' }} />);
+      await waitFor(() => expect(pip(container)).not.toBeNull());
+      const small = parseFloat(pip(container).style.width);
+      const mover = pip(container).firstElementChild!.firstElementChild!;
+
+      // Where nothing moves, he is there at once.
+      rerender(<WorldMap route={route} mode="journey" time={time} pip={{ mood: 'eager' }} />);
+      await waitFor(() => expect(pip(container)).toHaveAttribute('data-pip', 'eager'));
+      expect(moves).toHaveLength(0);
+
+      reducedMotion(false);
+      rerender(<WorldMap route={route} mode="journey" time={time} pip={{ mood: 'joy' }} />);
+      await waitFor(() => expect(pip(container)).toHaveAttribute('data-pip', 'joy'));
+      // The same Pip, larger: he starts at the size and in the place he had, and ends in his own.
+      expect(pip(container).firstElementChild!.firstElementChild).toBe(mover);
+      const large = parseFloat(pip(container).style.width);
+      expect(large).toBeGreaterThan(small);
+      expect(moves.map((move) => move.element)).toEqual([mover]);
+      const [x, y, scale] = pose(moves[0].frames[0]);
+      expect(scale).toBeCloseTo(small / large, 3);
+      expect(Math.hypot(x, y)).toBeGreaterThan(1);
+      expect(pose(moves[0].frames.at(-1)!)).toEqual([0, 0, 1]);
+
+      // A move still under way is given up for the next one.
+      rerender(<WorldMap route={route} mode="journey" time={time} pip={{ mood: 'look' }} />);
+      await waitFor(() => expect(moves).toHaveLength(2));
+      expect(moves[0].cancel).toHaveBeenCalled();
+      expect(pose(moves[1].frames[0])[2]).toBeCloseTo(large / small, 3);
+
+      // A map that changes size lays him out anew: that is no move of his.
+      frame = { width: 320, height: 240 };
+      act(() => {
+        FixedResizeObserver.last!.resize();
+        rerender(<WorldMap route={route} mode="journey" time={time} pip={{ mood: 'joy' }} />);
+      });
+      await waitFor(() => expect(pip(container)).toHaveAttribute('data-pip', 'joy'));
+      expect(parseFloat(pip(container).style.width)).toBeGreaterThan(small);
+      expect(moves).toHaveLength(2);
+    } finally {
+      delete (Element.prototype as Partial<Element>).animate;
+    }
+  });
+
+  it('only eases Pip’s size on a map that eases his place itself', async () => {
+    const route = buildRoute([scan(leipzig), scan(zurich)]);
+    const frames: Keyframe[][] = [];
+    Element.prototype.animate = function animate(this: Element, keyframes: Keyframe[]) {
+      frames.push(keyframes);
+      return { cancel: vi.fn() } as unknown as Animation;
+    } as typeof Element.prototype.animate;
+    try {
+      const { container, rerender } = render(<WorldMap route={route} mode="journey" time={time} glide pip={{ mood: 'look' }} />);
+      await waitFor(() => expect(container.querySelector('[data-pip]')).not.toBeNull());
+      reducedMotion(false);
+      rerender(<WorldMap route={route} mode="journey" time={time} glide pip={{ mood: 'joy' }} />);
+      await waitFor(() => expect(frames).toHaveLength(1));
+      expect(String(frames[0][0].transform)).toMatch(/^translate\(0\.00px, 0\.00px\) scale\(0\.\d+\)$/);
+    } finally {
+      delete (Element.prototype as Partial<Element>).animate;
+    }
   });
 
   it('places every dot by its attribute, and frames the route itself, unless told otherwise', async () => {

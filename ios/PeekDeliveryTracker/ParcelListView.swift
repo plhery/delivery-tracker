@@ -189,6 +189,7 @@ private struct DeliveryListView: View {
     @State private var flightProgress: CGFloat = 0
     @State private var flightRound = 0
     @State private var postmarks = 0
+    @State private var paper: DeliveredPaperBurst?
 
     @ObservedObject private var catalog = CarrierCatalog.shared
 
@@ -221,10 +222,38 @@ private struct DeliveryListView: View {
                     // The postmark lands, then the card has a moment to be read before it leaves.
                     try await Task.sleep(for: .milliseconds(300))
                     postmarks += 1
+                    throwPaper()
                     try await Task.sleep(for: .milliseconds(650))
                 } catch { return }
                 letGo()
             }
+            .overlay { DeliveredPaper(burst: paper) }
+    }
+
+    /// Paper for the parcels that have just arrived: one burst however many they are, out of Pip's open box
+    /// on the first of their cards that shows, in that card's colours.
+    private func throwPaper() {
+        let layout = arrangement(of: delivered.arranged(store.parcels))
+        // From the top of the list down: the large card first.
+        var cards: [(parcel: Parcel, top: CGFloat)] = []
+        for parcel in store.parcels where delivered.holds(parcel.id) {
+            if let place = places.place(of: parcel.id) { cards.append((parcel, place.frame.minY)) }
+        }
+        cards.sort { $0.top < $1.top }
+        for (parcel, _) in cards {
+            guard let mouth = places.mouth(of: parcel.id) else { continue }
+            let identity = CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
+            let count = layout.kind(of: parcel.id) == .next ? DeliveredConfetti.next : DeliveredConfetti.other
+            let confetti = DeliveredConfetti(origin: mouth, count: count, seed: UInt64.random(in: 0...UInt64.max))
+            let colors = DeliveredPaperBurst.colors(ink: identity.ink, surface: identity.surface, brand: identity.brand)
+            let burst = DeliveredPaperBurst(confetti: confetti, colors: colors, started: Date.now)
+            paper = burst
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(burst.confetti.duration))
+                if paper == burst { paper = nil }
+            }
+            return
+        }
     }
 
     private func screen(_ layout: DeliveryListLayout, leaving: Set<UUID>) -> some View {
@@ -816,6 +845,7 @@ private struct DeliveryListView: View {
         )
         .modifier(arrivalCelebration(for: parcel.id, stubInset: 43))
         .modifier(place(of: parcel.id, leaving: leaving))
+        .environment(\.pipSight) { places.see(pip: $0, on: parcel.id) }
         .id(parcel.id)
     }
 

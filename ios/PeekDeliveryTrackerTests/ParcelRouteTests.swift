@@ -312,6 +312,33 @@ final class ParcelRouteTests: XCTestCase {
         XCTAssertEqual(PipArtwork.motion(.eager, at: 0).b, PipArtwork.motion(.eager, at: 1.1).b, accuracy: 0.001)
     }
 
+    func testPipOpensHisBoxOverASecondRearFlapsFirst() {
+        let parts = { (box: PipOpening) in
+            [Double(box.rear), Double(box.front), box.under, box.tape, Double(box.lift), box.faceBefore, box.face, box.glints, Double(box.stance)]
+        }
+        for (box, rest) in [(PipOpening(at: 0), PipOpening.closed), (PipOpening(at: -1), .closed), (PipOpening(at: PipOpening.duration), .open)] {
+            for (part, value) in zip(parts(box), parts(rest)) { XCTAssertEqual(part, value, accuracy: 0.001) }
+        }
+        // The rear flaps fold away first; the front ones swing past open and come back.
+        let early = PipOpening(at: 0.2)
+        XCTAssertGreaterThan(early.rear, early.front)
+        XCTAssertGreaterThan(early.front, 0)
+        XCTAssertGreaterThan((0...20).map { PipOpening(at: 0.17 + Double($0) * 0.04).front }.max() ?? 0, 1.02)
+        // The two flaps that lie under the others show before they have turned far.
+        XCTAssertEqual(PipOpening(at: 0.4).under, 1, accuracy: 0.001)
+        // Half way, the tape is off and he has his new face; the glints wait for the flaps to settle.
+        let middle = PipOpening(at: 0.5)
+        XCTAssertEqual(middle.tape, 0, accuracy: 0.001)
+        XCTAssertEqual(middle.faceBefore, 0, accuracy: 0.001)
+        XCTAssertEqual(middle.face, 1, accuracy: 0.001)
+        XCTAssertEqual(middle.glints, 0, accuracy: 0.001)
+        XCTAssertEqual(middle.stance, 1, accuracy: 0.001)
+        // A flap part of the way open stands between closed and open.
+        let half = PipGeometry.backRight.points(at: PipOpening(at: 0.2).rear)[2]
+        XCTAssertLessThan(half.y, PipGeometry.backRight.closed[2].y)
+        XCTAssertGreaterThan(half.y, PipGeometry.backRight.opened[2].y)
+    }
+
     func testOpenFrontFlapsSwingThroughUprightAndRestAboveTheEyes() {
         for flap in [PipGeometry.frontLeft, PipGeometry.frontRight] {
             XCTAssertEqual(flap.points(at: 0), flap.closed)

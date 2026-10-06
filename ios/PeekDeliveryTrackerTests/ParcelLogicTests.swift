@@ -1393,6 +1393,50 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(unseen, DeliveredHold())
     }
 
+    func testDeliveredConfettiPopsOutOfItsOriginAndFallsAway() throws {
+        let origin = CGPoint(x: 200, y: 300)
+        let burst = DeliveredConfetti(origin: origin, count: DeliveredConfetti.next, seed: 7)
+        // A burst follows from its seed.
+        XCTAssertEqual(burst, DeliveredConfetti(origin: origin, count: DeliveredConfetti.next, seed: 7))
+        XCTAssertNotEqual(burst.pieces, DeliveredConfetti(origin: origin, count: DeliveredConfetti.next, seed: 8).pieces)
+        XCTAssertEqual(burst.pieces.count, 58)
+        XCTAssertEqual(DeliveredConfetti(origin: origin, count: DeliveredConfetti.other, seed: 7).pieces.count, 38)
+        XCTAssertEqual(burst.glints.count, 6)
+        XCTAssertGreaterThan(burst.duration, 1.5)
+        XCTAssertLessThanOrEqual(burst.duration, 2.4)
+        XCTAssertGreaterThan(Set(burst.pieces.map(\.tone)).count, 4)
+
+        for piece in burst.pieces {
+            XCTAssertTrue((0..<DeliveredConfetti.tones).contains(piece.tone))
+            // Not there before it is thrown, nor once it has gone.
+            XCTAssertNil(burst.pose(of: piece, at: piece.delay - 0.001))
+            XCTAssertNil(burst.pose(of: piece, at: piece.delay + piece.life + 0.001))
+            let start = try XCTUnwrap(burst.pose(of: piece, at: piece.delay))
+            XCTAssertEqual(start.center.x, origin.x, accuracy: 0.001)
+            XCTAssertEqual(start.center.y, origin.y, accuracy: 0.001)
+            XCTAssertEqual(start.opacity, 0, accuracy: 0.001)
+            // Up out of the box, then down, a long way below its highest point, and faint by the end.
+            let heights = stride(from: 0.0, to: piece.life, by: 0.02).compactMap { burst.pose(of: piece, at: piece.delay + $0)?.center.y }
+            let top = try XCTUnwrap(heights.min())
+            XCTAssertLessThan(top, origin.y - 5)
+            XCTAssertGreaterThan(try XCTUnwrap(heights.last), top + 100)
+            XCTAssertEqual(try XCTUnwrap(burst.pose(of: piece, at: piece.delay + 0.3)).opacity, 1, accuracy: 0.001)
+            XCTAssertLessThan(try XCTUnwrap(burst.pose(of: piece, at: piece.delay + piece.life - 0.01)).opacity, 0.05)
+        }
+        for glint in burst.glints {
+            XCTAssertNil(burst.pose(of: glint, at: glint.delay + glint.life + 0.001))
+            let start = try XCTUnwrap(burst.pose(of: glint, at: glint.delay))
+            XCTAssertEqual(start.center.x, origin.x, accuracy: 0.001)
+            XCTAssertEqual(start.scale.width, 0, accuracy: 0.001)
+            // It flies out as far as it reaches, shrinking to nothing.
+            let end = try XCTUnwrap(burst.pose(of: glint, at: glint.delay + glint.life - 0.0001))
+            XCTAssertEqual(hypot(end.center.x - origin.x, end.center.y - origin.y), glint.reach, accuracy: 0.5)
+            XCTAssertLessThan(end.scale.width, 0.01)
+        }
+        // The paper's colours: the card's ink, its carrier's and the app's yellow, one for each tone.
+        XCTAssertEqual(DeliveredPaperBurst.colors(ink: .black, surface: .white, brand: .red).count, DeliveredConfetti.tones)
+    }
+
     @MainActor func testDeliveredFlightFoldsEarlyGrowsLateAndKeepsTheNamesOnOneLine() {
         let high = DeliveryCardPlaces.Place(frame: CGRect(x: 16, y: 62, width: 370, height: 242), title: 166)
         let low = DeliveryCardPlaces.Place(frame: CGRect(x: 16, y: 474, width: 370, height: 102), title: 54)

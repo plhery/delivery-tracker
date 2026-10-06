@@ -1120,10 +1120,7 @@ struct WorldMapView: View {
                     .mask(LinearGradient(stops: [.init(color: fadesIn ? .clear : .black, location: 0), .init(color: .black, location: fadesIn ? 0.46 : 0)],
                                          startPoint: .leading, endPoint: .trailing))
                     if let place = overlay.pip, let card = palette.card {
-                        InkPip(mood: place.mood, side: place.side, below: place.below, ink: card.ink, surface: card.surface)
-                            .frame(width: place.width, height: place.width * PipGeometry.frame.height / PipGeometry.frame.width)
-                            .position(x: place.origin.x + place.width / 2,
-                                      y: place.origin.y + place.width * PipGeometry.frame.height / PipGeometry.frame.width / 2)
+                        MapPip(place: place, dot: overlay.dots.first { $0.kind == .current }?.point, ink: card.ink, surface: card.surface)
                     }
                 }
             }

@@ -135,7 +135,14 @@ export function flapPoints(flap: PaperFlap, open: boolean): string {
   }).join(' ');
 }
 
-export function ParcelFlap({ flap, tone, rear = false, hidden = false }: { flap: PaperFlap; tone: string; rear?: boolean; hidden?: boolean }) {
+export function ParcelFlap({ flap, tone, ink, rear = false, hidden = false }: {
+  flap: PaperFlap;
+  tone: string;
+  /** The colour of the flap's edge when it is not the kraft parcel's own: Pip on a map is drawn in his card's ink. */
+  ink?: string;
+  rear?: boolean;
+  hidden?: boolean;
+}) {
   const { origin, angle, local, scale, slant, arc } = flapFold(flap);
   const fold: Record<string, string | number> = arc ? {
     '--fold-turn': `${flap.swing}deg`,
@@ -148,7 +155,8 @@ export function ParcelFlap({ flap, tone, rear = false, hidden = false }: { flap:
   };
   return <g transform={`translate(${origin.join(' ')}) rotate(${coordinate(angle * 180 / Math.PI)})`}>
     <g className={`parcel-illustration__flap${arc ? ' parcel-illustration__flap--swing' : ''}${rear ? ' parcel-illustration__flap--rear' : ''}${hidden ? ' parcel-illustration__flap--hidden' : ''}`} style={fold as CSSProperties}>
-      <polygon points={flap.points.map((point) => local(point).map(coordinate).join(',')).join(' ')} fill={tone} stroke="#987450" strokeOpacity=".24" strokeWidth=".7" />
+      <polygon points={flap.points.map((point) => local(point).map(coordinate).join(',')).join(' ')} strokeOpacity=".24" strokeWidth=".7"
+        {...(ink ? { style: { fill: tone, stroke: ink } } : { fill: tone, stroke: '#987450' })} />
     </g>
   </g>;
 }

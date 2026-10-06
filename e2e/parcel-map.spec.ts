@@ -111,7 +111,16 @@ test('stands Pip beside the parcel\u2019s dot, in the mood of its stage', async 
     // He rises into place first.
     await card.locator('[data-pip] > span').evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
     const dot = (await card.locator('g[data-kind="current"] circle').last().boundingBox())!;
-    const pip = (await card.locator('[data-pip] svg > g > g').boundingBox())!;
+    // His flaps are drawn on their hinges, where a box around each would be a loose fit: he is measured by his corners.
+    const pip = await card.locator('[data-pip] svg > g > g').evaluate((body) => {
+      const corners = [...body.querySelectorAll<SVGGraphicsElement>(':scope > path, polygon')].flatMap((shape) => {
+        const { x, y, width, height } = shape.getBBox();
+        const own = shape instanceof SVGPolygonElement ? [...shape.points] : [{ x, y }, { x: x + width, y }, { x, y: y + height }, { x: x + width, y: y + height }];
+        return own.map((corner) => new DOMPoint(corner.x, corner.y).matrixTransform(shape.getScreenCTM()!));
+      });
+      const [left, top] = [Math.min(...corners.map((corner) => corner.x)), Math.min(...corners.map((corner) => corner.y))];
+      return { x: left, y: top, width: Math.max(...corners.map((corner) => corner.x)) - left, height: Math.max(...corners.map((corner) => corner.y)) - top };
+    });
     const map = (await card.locator('[data-scale]').boundingBox())!;
     return { dot, pip, map };
   };
