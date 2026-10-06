@@ -80,6 +80,9 @@ psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/retimed_scans.sql"
 
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
+  -f "$repo_root/supabase/tests/dhl_express_facility_clocks.sql"
+
+psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/planzer_event_stages.sql"
 
 psql "$database_url" -X -v ON_ERROR_STOP=1 \

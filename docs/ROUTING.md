@@ -272,6 +272,9 @@ copy of a stored scan counts at the stored scan's instant, and a copy a carrier'
 over at that scan's instant. A provider that misread the zone therefore cannot set the
 watermark hours ahead and make the carrier's own reply look older.
 
+When a scraper fix changes a stored scan's instant, a data migration repairs its row,
+summary and watermark together, preserving its creation time and notification receipts.
+
 ## Direct histories without complete timestamps
 
 Some direct feeds omit scan clocks, offsets or the event year. An adapter may guess a clock
