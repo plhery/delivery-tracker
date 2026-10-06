@@ -29,14 +29,27 @@ function parcel(id: string, label: string, stages: Stage[], placed = false): Par
 }
 
 /**
- * The demo with a tea that is out for delivery: its next check delivers it. `held` keeps the card's flight
- * at its first moment, so that the test can look at it and end it when it has.
+ * The demo with a tea that is out for delivery: its next check delivers it. `held` gives the test all the
+ * time it needs to look: a finger comes down on the screen as the news shows, under which the card stays
+ * where it stands until `lift`, and the card's flight then keeps to its first moment until the test ends it.
+ * What the paper was made of is noted on the page, since it is gone within seconds.
  */
 async function demo(page: Page, held = false, placed = false) {
   await page.addInitScript(([parcels, held]) => {
     localStorage.setItem('sdt.web.experience.v1', 'demo');
     localStorage.setItem('sdt.demo.parcels.v1', JSON.stringify(parcels));
     if (!held) return;
+    new MutationObserver((_, observer) => {
+      if (!document.querySelector('[data-arrived]')) return;
+      observer.disconnect();
+      window.dispatchEvent(new PointerEvent('pointerdown'));
+    }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-arrived'] });
+    new MutationObserver((_, observer) => {
+      const paper = document.querySelector('.delivered-confetti');
+      if (!paper) return;
+      observer.disconnect();
+      document.body.dataset.paper = [paper.querySelectorAll(':scope > i').length, paper.querySelectorAll(':scope > svg').length, getComputedStyle(paper).pointerEvents].join(' ');
+    }).observe(document, { subtree: true, childList: true });
     const animate = HTMLElement.prototype.animate;
     HTMLElement.prototype.animate = function (frames, options) {
       const animation = animate.call(this, frames, options);
@@ -55,6 +68,9 @@ async function demo(page: Page, held = false, placed = false) {
   await page.goto('/');
   await expect(page.locator('.delivery-next [data-parcel-id="tea"]')).toBeVisible();
 }
+
+/** The finger that came down with the news lifts: the card is let go. */
+const lift = (page: Page) => page.evaluate(() => { window.dispatchEvent(new PointerEvent('pointerup')); });
 
 /** The list's own refresh button is not shown on a touch screen, where the list is pulled: it is pressed from the page. */
 const check = (page: Page) => page.evaluate(() => document.querySelector<HTMLButtonElement>('.delivery-refresh')!.click());
@@ -80,10 +96,10 @@ test('a delivered parcel says so where its card stands, then the card travels to
   await expect(page.getByRole('region', { name: 'On the way' }).locator('.parcel-section__heading > span')).toHaveText('3');
   await expect(page.locator('.parcel-section--past [data-parcel-id="tea"]')).toHaveCount(0);
   // Paper is thrown from the card, over the screen and out of a finger's way.
-  await expect(page.locator('.delivered-confetti > i')).toHaveCount(58);
-  await expect(page.locator('.delivered-confetti')).toHaveCSS('pointer-events', 'none');
+  await expect(page.locator('body')).toHaveAttribute('data-paper', '58 6 none');
 
   // Then it is let go: the card it was flies from where it stood, and the page's own card waits unseen.
+  await lift(page);
   const flight = page.locator('.delivered-move').last();
   await expect(flight).toBeVisible();
   await expect(page.locator('.delivered-move')).toHaveCount(2);
@@ -138,9 +154,10 @@ test('Pip opens his box on the map when the parcel arrives, and the paper comes 
   await expect.poll(() => flaps.evaluateAll((all) => all.map((flap) => getComputedStyle(flap).getPropertyValue('--fold').trim()).join(' '))).toBe('1 1 1 1');
   await expect(page.locator('[data-pip="joy"] [data-mood="joy"]')).toHaveCount(1);
 
-  // The paper is thrown once he is open, from where he is.
-  await expect(page.locator('.delivered-confetti > i')).toHaveCount(58);
-  await expect(page.locator('.delivered-confetti > svg')).toHaveCount(6);
+  // The paper is thrown once he is open.
+  await expect(page.locator('body')).toHaveAttribute('data-paper', '58 6 none');
+  await lift(page);
+  await expect(page.locator('.delivered-move').last()).toBeVisible();
   await page.evaluate(() => document.getAnimations().filter((animation) => animation.id?.startsWith('delivered-')).forEach((animation) => animation.finish()));
   await expect(page.locator('.delivered-moves, .delivered-confetti')).toHaveCount(0);
 });

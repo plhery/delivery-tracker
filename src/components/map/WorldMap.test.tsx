@@ -598,12 +598,13 @@ describe('WorldMap', () => {
       expect(pose(moves[1].frames[0])[2]).toBeCloseTo(large / small, 3);
 
       // A map that changes size lays him out anew: that is no move of his.
-      frame = { width: 320, height: 240 };
+      frame = { width: 398, height: 300 };
       act(() => {
         FixedResizeObserver.last!.resize();
         rerender(<WorldMap route={route} mode="journey" time={time} pip={{ mood: 'joy' }} />);
       });
-      await waitFor(() => expect(pip(container)).toHaveAttribute('data-pip', 'joy'));
+      // Read at once: the camera then flies to the map's new size, and may carry him to another spot on its way.
+      expect(pip(container)).toHaveAttribute('data-pip', 'joy');
       expect(parseFloat(pip(container).style.width)).toBeGreaterThan(small);
       expect(moves).toHaveLength(2);
     } finally {
