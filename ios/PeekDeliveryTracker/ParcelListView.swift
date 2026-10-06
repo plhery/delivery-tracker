@@ -202,6 +202,32 @@ private struct DeliveryListView: View {
         let layout = arrangement(of: delivered.arranged(store.parcels))
         // The cards that are others once the held parcels are let go: those leave without a trace, and are flown.
         let leaving = delivered.isEmpty ? [] : Set(layout.changing(into: arrangement(of: store.parcels)).keys)
+        return holdingDelivered(screen(layout, leaving: leaving))
+    }
+
+    /// A parcel delivered since the list was last shown keeps its place for a moment, then its card leaves.
+    /// Kept apart from the screen's own modifiers, which are as many as the compiler takes in one expression.
+    private func holdingDelivered(_ screen: some View) -> some View {
+        screen
+            .sensoryFeedback(.success, trigger: postmarks)
+            // The store announces its next list before it shows it: what was shown is still at hand.
+            .onReceive(store.$parcels) { next in
+                delivered.receive(shown: store.parcels, next: next, watching: watching)
+            }
+            .onChange(of: watching) { _, watching in if !watching { delivered.release() } }
+            .task(id: delivered.ids) {
+                guard !delivered.isEmpty else { return }
+                do {
+                    // The postmark lands, then the card has a moment to be read before it leaves.
+                    try await Task.sleep(for: .milliseconds(300))
+                    postmarks += 1
+                    try await Task.sleep(for: .milliseconds(650))
+                } catch { return }
+                letGo()
+            }
+    }
+
+    private func screen(_ layout: DeliveryListLayout, leaving: Set<UUID>) -> some View {
         NavigationStack(path: $path) {
             ZStack {
                 ExperimentalBackdrop()
@@ -227,22 +253,6 @@ private struct DeliveryListView: View {
         .onChange(of: sort) { _, _ in DeliveryAnalytics.shared.action("sort-change") }
         .onChange(of: archivedExpanded) { _, open in if open { DeliveryAnalytics.shared.action("archive-open") } }
         .sensoryFeedback(.success, trigger: parcelBurstID) { _, next in next != nil }
-        .sensoryFeedback(.success, trigger: postmarks)
-        // The store announces its next list before it shows it: what was shown is still at hand.
-        .onReceive(store.$parcels) { next in
-            delivered.receive(shown: store.parcels, next: next, watching: watching)
-        }
-        .onChange(of: watching) { _, watching in if !watching { delivered.release() } }
-        .task(id: delivered.ids) {
-            guard !delivered.isEmpty else { return }
-            do {
-                // The postmark lands, then the card has a moment to be read before it leaves.
-                try await Task.sleep(for: .milliseconds(300))
-                postmarks += 1
-                try await Task.sleep(for: .milliseconds(650))
-            } catch { return }
-            letGo()
-        }
         .fullScreenCover(isPresented: $showingAdd, onDismiss: {
             scanning = false
             if let id = addedParcelID, scenePhase == .active {
@@ -344,32 +354,9 @@ private struct DeliveryListView: View {
                             )
                         }
                         listEmptyState(layout)
-                        if let nextParcel = layout.next {
-                            ExperimentalNextDeliveryPass(parcel: shown(nextParcel), transition: parcelTransition,
-                                arrived: delivered.holds(nextParcel.id), onName: { places.name(nextParcel.id, at: $0) },
-                                onOpen: { path.append(nextParcel.id) }, onArchive: { await archive(nextParcel) })
-                                .modifier(arrivalCelebration(for: nextParcel.id, stubInset: 43))
-                                .modifier(place(of: nextParcel.id, leaving: leaving))
-                                .id(nextParcel.id)
-                        }
-                        ForEach(layout.attention) { parcel in
-                            ExperimentalParcelPassCard(parcel: shown(parcel),
-                                notice: delivered.holds(parcel.id) ? nil : shown(parcel).attention().map { localizer.text($0.localizationKey) },
-                                transition: parcelTransition,
-                                arrived: delivered.holds(parcel.id), onName: { places.name(parcel.id, at: $0) },
-                                onOpen: { path.append(parcel.id) }, onArchive: { await archive(parcel) })
-                                .modifier(arrivalCelebration(for: parcel.id))
-                                .modifier(place(of: parcel.id, leaving: leaving))
-                                .id(parcel.id)
-                        }
-                        ForEach(layout.remaining) { parcel in
-                            ExperimentalParcelPassCard(parcel: shown(parcel), notice: nil, transition: parcelTransition,
-                                arrived: delivered.holds(parcel.id), onName: { places.name(parcel.id, at: $0) },
-                                onOpen: { path.append(parcel.id) }, onArchive: { await archive(parcel) })
-                                .modifier(arrivalCelebration(for: parcel.id))
-                                .modifier(place(of: parcel.id, leaving: leaving))
-                                .id(parcel.id)
-                        }
+                        if let nextParcel = layout.next { nextCard(nextParcel, leaving: leaving) }
+                        ForEach(layout.attention) { parcel in card(parcel, flagged: true, leaving: leaving) }
+                        ForEach(layout.remaining) { parcel in card(parcel, flagged: false, leaving: leaving) }
                     }
                     // Someone following parcels without an account is offered one, once and quietly.
                     if session.isGuest, !store.parcels.isEmpty, !hasCustomView { DeviceAccountRow() }
@@ -818,6 +805,32 @@ private struct DeliveryListView: View {
                 }
             }
         }
+    }
+
+    /// Next up, with the parcel as it is now on a card arranged as it was.
+    private func nextCard(_ parcel: Parcel, leaving: Set<UUID>) -> some View {
+        ExperimentalNextDeliveryPass(
+            parcel: shown(parcel), transition: parcelTransition,
+            arrived: delivered.holds(parcel.id), onName: { places.name(parcel.id, at: $0) },
+            onOpen: { path.append(parcel.id) }, onArchive: { await archive(parcel) }
+        )
+        .modifier(arrivalCelebration(for: parcel.id, stubInset: 43))
+        .modifier(place(of: parcel.id, leaving: leaving))
+        .id(parcel.id)
+    }
+
+    /// A parcel on its way. A flagged one says what it needs now, which is nothing once it has arrived.
+    private func card(_ parcel: Parcel, flagged: Bool, leaving: Set<UUID>) -> some View {
+        let arrived = delivered.holds(parcel.id)
+        let notice = flagged && !arrived ? shown(parcel).attention().map { localizer.text($0.localizationKey) } : nil
+        return ExperimentalParcelPassCard(
+            parcel: shown(parcel), notice: notice, transition: parcelTransition,
+            arrived: arrived, onName: { places.name(parcel.id, at: $0) },
+            onOpen: { path.append(parcel.id) }, onArchive: { await archive(parcel) }
+        )
+        .modifier(arrivalCelebration(for: parcel.id))
+        .modifier(place(of: parcel.id, leaving: leaving))
+        .id(parcel.id)
     }
 
     private func arrangement(of parcels: [Parcel]) -> DeliveryListLayout {
