@@ -1320,6 +1320,113 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertNil(unplaced.stampOrigin)
     }
 
+    func testJustDeliveredAreTheParcelsShownOnTheirWayThatHaveArrived() {
+        let tea = UUID(), lamp = UUID(), book = UUID()
+        let shown = [
+            makeParcel(id: tea, events: [event(tea, .outForDelivery, "2026-09-02T08:00:00Z")]),
+            makeParcel(id: lamp, events: [event(lamp, .inTransit, "2026-09-02T08:00:00Z")]),
+            makeParcel(id: book, events: [event(book, .delivered, "2026-09-01T08:00:00Z")]),
+        ]
+        var now = shown
+        now[0].trackingEvents.append(event(tea, .delivered, "2026-09-03T08:00:00Z"))
+        now[1].trackingEvents.append(event(lamp, .outForDelivery, "2026-09-03T08:00:00Z"))
+        // The parcel comes back as the list showed it: that is the place it keeps.
+        XCTAssertEqual(ParcelOrganizer.justDelivered(shown: shown, now: now), [shown[0]])
+        // One archived in the meantime, or gone, has no card to move.
+        now[0].archivedAt = "2026-09-03T09:00:00Z"
+        XCTAssertTrue(ParcelOrganizer.justDelivered(shown: shown, now: now).isEmpty)
+        XCTAssertTrue(ParcelOrganizer.justDelivered(shown: shown, now: []).isEmpty)
+    }
+
+    func testDeliveredHoldKeepsTheListAsItWasUntilItsCardsLeave() {
+        let tea = UUID(), lamp = UUID()
+        // Scanned in the last hours: neither parcel has been still for long enough to be flagged.
+        let earlier = DateParser.isoString(Date().addingTimeInterval(-7_200))
+        let lately = DateParser.isoString(Date().addingTimeInterval(-600))
+        let shown = [
+            makeParcel(id: tea, events: [event(tea, .outForDelivery, earlier)]),
+            makeParcel(id: lamp, events: [event(lamp, .inTransit, earlier)]),
+        ]
+        var now = shown
+        now[0].trackingEvents.append(event(tea, .delivered, lately))
+        // The same news makes the lamp the most urgent parcel: on its own, that would move the tea out of its place.
+        now[1].trackingEvents.append(event(lamp, .readyForPickup, lately))
+        func layout(_ parcels: [Parcel]) -> DeliveryListLayout {
+            DeliveryListLayout(parcels: parcels, query: "", status: .all, carrier: nil, sort: .priority, featuresNext: true)
+        }
+
+        var hold = DeliveredHold()
+        hold.receive(shown: shown, next: now, watching: true)
+        XCTAssertEqual(hold.ids, [tea])
+        XCTAssertTrue(hold.holds(tea))
+        let held = layout(hold.arranged(now))
+        XCTAssertEqual(held.next?.id, tea)
+        XCTAssertEqual(held.kind(of: lamp), .onTheWay)
+        XCTAssertEqual(held.active.count, 2)
+
+        // Let go, the tea joins the past deliveries and the lamp becomes Next up: those two cards are others.
+        let after = layout(now)
+        let changes = held.changing(into: after)
+        XCTAssertEqual(Set(changes.keys), [tea, lamp])
+        XCTAssertEqual(changes[tea]?.was, .next)
+        XCTAssertEqual(changes[tea]?.becomes, .past)
+        XCTAssertEqual(changes[lamp]?.becomes, .next)
+
+        // More news for a held parcel keeps it held; archiving it lets it go, and it is arranged as it is.
+        hold.receive(shown: now, next: now, watching: true)
+        XCTAssertEqual(hold.ids, [tea])
+        var archived = now
+        archived[0].archivedAt = lately
+        XCTAssertTrue(hold.arranged(archived)[0].isArchived)
+        hold.receive(shown: now, next: archived, watching: true)
+        XCTAssertTrue(hold.isEmpty)
+        XCTAssertEqual(hold.arranged(now), now)
+
+        // A list that nobody is looking at holds nothing, and one that stops being looked at lets go.
+        var unseen = DeliveredHold()
+        unseen.receive(shown: shown, next: now, watching: false)
+        XCTAssertTrue(unseen.isEmpty)
+        unseen.receive(shown: shown, next: now, watching: true)
+        XCTAssertFalse(unseen.isEmpty)
+        unseen.release()
+        XCTAssertTrue(unseen.isEmpty)
+        XCTAssertEqual(unseen, DeliveredHold())
+    }
+
+    @MainActor func testDeliveredFlightFoldsEarlyGrowsLateAndKeepsTheNamesOnOneLine() {
+        let high = DeliveryCardPlaces.Place(frame: CGRect(x: 16, y: 62, width: 370, height: 242), title: 166)
+        let low = DeliveryCardPlaces.Place(frame: CGRect(x: 16, y: 474, width: 370, height: 102), title: 54)
+        func falling(_ progress: CGFloat) -> DeliveredFlightPose {
+            DeliveredFlightPose(from: high, to: low, was: .next, becomes: .past, lifted: true, progress: progress)
+        }
+        XCTAssertEqual(falling(0).frame, high.frame)
+        XCTAssertEqual(falling(0).cornerRadius, 24)
+        XCTAssertEqual(falling(0).leaving, 0)
+        XCTAssertEqual(falling(0).arriving, 112)
+        XCTAssertEqual(falling(0).arrival, 0)
+        XCTAssertEqual(falling(0).shadow, 0)
+        // A card that shrinks is small well before it lands, and casts its shadow on the way.
+        XCTAssertEqual(falling(0.72).frame.height, 102, accuracy: 0.001)
+        XCTAssertEqual(falling(0.72).frame.minY, 62 + 412 * 0.72, accuracy: 0.001)
+        XCTAssertEqual(falling(0.5).shadow, 1)
+        XCTAssertEqual(falling(1).frame, low.frame)
+        XCTAssertEqual(falling(1).cornerRadius, 16)
+        XCTAssertEqual(falling(1).leaving, -112)
+        XCTAssertEqual(falling(1).arriving, 0)
+        XCTAssertEqual(falling(1).arrival, 1)
+        XCTAssertEqual(falling(1).shadow, 0)
+        // Past its place, as a spring goes, the card moves on but keeps its shape.
+        XCTAssertEqual(falling(1.02).frame.height, 102, accuracy: 0.001)
+        XCTAssertGreaterThan(falling(1.02).frame.minY, 474)
+
+        // The card that takes the place grows late, and is not lifted.
+        let rising = DeliveredFlightPose(from: low, to: high, was: .onTheWay, becomes: .next, lifted: false, progress: 0.28)
+        XCTAssertEqual(rising.frame.height, 102, accuracy: 0.001)
+        XCTAssertEqual(rising.arrival, 0)
+        XCTAssertEqual(rising.shadow, 0)
+        XCTAssertEqual(DeliveredFlightPose(from: low, to: high, was: .onTheWay, becomes: .next, lifted: false, progress: 1).frame, high.frame)
+    }
+
     private func makeParcel(
         id: UUID = UUID(),
         trackingNumber: String = "1Z999AA10123456784",

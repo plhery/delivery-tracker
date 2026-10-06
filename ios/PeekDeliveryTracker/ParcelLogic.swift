@@ -477,11 +477,75 @@ enum ParcelOrganizer {
         return DateParser.date(parcel.createdAt) ?? .distantPast
     }
 
+    /// The parcels the list last showed on their way that have since been delivered, as the list
+    /// showed them: each keeps that place until its card leaves for the past deliveries.
+    static func justDelivered(shown: [Parcel], now: [Parcel]) -> [Parcel] {
+        let current = Dictionary(now.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return shown.filter { was in
+            guard was.isActive, let parcel = current[was.id] else { return false }
+            return !parcel.isArchived && parcel.isDelivered
+        }
+    }
+
     /// The local calendar day as `yyyy-MM-dd`, without building a formatter per call.
     static func dayKey(_ date: Date) -> String {
         let parts = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
+}
+
+/// A parcel delivered since the list was last shown does not jump to the past deliveries: its
+/// card first says so where it stands, then travels there. Until then the list keeps the
+/// arrangement it had, whatever else the same news changed.
+struct DeliveredHold: Equatable {
+    /// The parcels that have just arrived.
+    private(set) var ids: Set<UUID> = []
+    /// Every parcel as the list showed it before they did.
+    private var shown: [UUID: Parcel] = [:]
+
+    var isEmpty: Bool { ids.isEmpty }
+    func holds(_ id: UUID) -> Bool { ids.contains(id) }
+
+    /// The list is about to show `next` where it showed `before`. A list that nobody is
+    /// looking at holds nothing, and changes at once.
+    mutating func receive(shown before: [Parcel], next: [Parcel], watching: Bool) {
+        guard watching else {
+            release()
+            return
+        }
+        let current = Dictionary(next.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        // A held parcel stays in its place for as long as it is still a delivery to show.
+        var holding = ids.filter { id in current[id].map { !$0.isArchived && $0.isDelivered } ?? false }
+        let arrivals = ParcelOrganizer.justDelivered(shown: before, now: next)
+        if holding.isEmpty, !arrivals.isEmpty {
+            shown = Dictionary(before.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        }
+        holding.formUnion(arrivals.map(\.id))
+        if holding.isEmpty {
+            release()
+        } else if holding != ids {
+            ids = holding
+        }
+    }
+
+    mutating func release() {
+        if !ids.isEmpty { ids = [] }
+        if !shown.isEmpty { shown = [:] }
+    }
+
+    /// The parcels as the list arranges them: as they were shown, but for one archived or brought back since.
+    func arranged(_ parcels: [Parcel]) -> [Parcel] {
+        guard !ids.isEmpty else { return parcels }
+        return parcels.map { parcel in
+            guard let was = shown[parcel.id], was.isArchived == parcel.isArchived else { return parcel }
+            return was
+        }
+    }
+}
+
+/// The card a parcel is shown on in the deliveries.
+enum DeliveryCardKind: Equatable {
+    case next, attention, onTheWay, past
 }
 
 /// Everything the Deliveries list shows, derived in one pass per render.
@@ -515,5 +579,24 @@ struct DeliveryListLayout {
         sections = ParcelOrganizer.sections(from: visible, now: now).filter {
             $0.kind == .delivered || $0.kind == .returned || $0.kind == .archived
         }
+    }
+
+    /// The card this parcel is shown on, outside the archive.
+    func kind(of id: UUID) -> DeliveryCardKind? {
+        if next?.id == id { return .next }
+        if attention.contains(where: { $0.id == id }) { return .attention }
+        if remaining.contains(where: { $0.id == id }) { return .onTheWay }
+        let past = sections.contains { $0.kind != .archived && $0.parcels.contains { $0.id == id } }
+        return past ? .past : nil
+    }
+
+    /// The parcels whose card is another once the list becomes `next`: those take their new place in front of the reader.
+    func changing(into next: DeliveryListLayout) -> [UUID: (was: DeliveryCardKind, becomes: DeliveryCardKind)] {
+        var changes: [UUID: (was: DeliveryCardKind, becomes: DeliveryCardKind)] = [:]
+        for parcel in visible {
+            guard let was = kind(of: parcel.id), let becomes = next.kind(of: parcel.id), was != becomes else { continue }
+            changes[parcel.id] = (was, becomes)
+        }
+        return changes
     }
 }

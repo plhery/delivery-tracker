@@ -76,8 +76,11 @@ export function measureList(root: HTMLElement | null): ListLayout {
   return layout;
 }
 
-/** Move blocks from where they were seen to their new places; new blocks fade in. */
-export function glideList(root: HTMLElement | null, before: ListLayout) {
+/**
+ * Move blocks from where they were seen to their new places; new blocks fade in.
+ * Blocks in `apart` arrive by a motion of their own and are left as they are.
+ */
+export function glideList(root: HTMLElement | null, before: ListLayout, apart?: ReadonlySet<HTMLElement>) {
   if (!root?.animate || !before.size || reducedMotion()) return;
   const after = measureList(root);
   // Read every running glide before any of them is replaced.
@@ -95,6 +98,10 @@ export function glideList(root: HTMLElement | null, before: ListLayout) {
     const parent = parentBlock(element, root);
     const inherited = (parent && starts.get(parent)) || { x: 0, y: 0 };
     const was = before.get(element);
+    if (apart?.has(element)) {
+      starts.set(element, inherited);
+      continue;
+    }
     if (!was) {
       starts.set(element, inherited);
       if (!parent || before.has(parent)) element.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240, easing: 'ease-out' });

@@ -162,12 +162,33 @@ struct DeliveryPostageStamp: View {
                 .opacity(0.8)
                 .position(x: 38 * unit, y: 36 * unit)
                 .allowsHitTesting(false)
+                // On a stamp that is being looked at, the postmark comes down: large and askew above the paper, then pressed home.
+                .transition(.asymmetric(
+                    insertion: .modifier(active: PostmarkPose(scale: 2.6, degrees: 16, opacity: 0), identity: PostmarkPose(scale: 1, degrees: 0, opacity: 1)),
+                    removal: .identity
+                ))
             }
         }
+        .animation(reduceMotion ? nil : .easeIn(duration: 0.28).delay(0.2), value: parcel.stampDeliveryDate)
         .rotationEffect(.degrees(reduceMotion || appeared ? -2 : -10))
         .scaleEffect(reduceMotion || appeared ? 1 : 1.12)
         .animation(reduceMotion ? nil : .spring(response: 0.48, dampingFraction: 0.6).delay(0.08), value: appeared)
         .accessibilityHidden(true)
+    }
+}
+
+/// The postmark's place on the stamp, and how far it still is from the paper.
+private struct PostmarkPose: ViewModifier {
+    let scale: CGFloat
+    let degrees: Double
+    let opacity: Double
+    private static let mark = UnitPoint(x: 38.0 / 44, y: 36.0 / 56)
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(scale, anchor: Self.mark)
+            .rotationEffect(.degrees(degrees), anchor: Self.mark)
+            .opacity(opacity)
     }
 }
 

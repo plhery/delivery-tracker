@@ -53,3 +53,25 @@
 @media (max-width: 760px) {
   .app--deliveries .parcel-sections .parcel-section .parcel-grid { grid-template-columns: 1fr; }
 }
+
+/* A parcel delivered since the list was last shown says so where its card stands: the words change,
+   the postmark comes down on the stamp and the card gives under it. Then the card travels to the
+   past deliveries in a box of its own, drawn over the list and moving with it. */
+.app--deliveries .deliveries-page { position: relative; }
+.parcel-card-swipe[data-arrived] .parcel-card__next-label { visibility: hidden; }
+.delivered-moves { position: absolute; inset: 0; z-index: 2; overflow-y: clip; pointer-events: none; }
+.delivered-move { position: absolute; --delivered-shadow: drop-shadow(0 16px 22px light-dark(rgb(18 20 14 / 20%), rgb(0 0 0 / 55%))); }
+.delivered-move__clip, .delivered-move__next, .delivered-move__ground { position: absolute; inset: 0; }
+/* A wide list has cards of two widths: the box of the wider one is cut at the list's sides, past its shadow. */
+@media (min-width: 761px) { .delivered-moves { inset: 0 -40px; overflow-x: clip; } }
+@media (prefers-reduced-motion: no-preference) {
+  .parcel-card-swipe[data-arrived] :is(.parcel-card__summary, .parcel-card__completion),
+  .parcel-card-swipe[data-arrived]:not(.parcel-card-swipe--hero) .parcel-card__state { animation: delivered-words .3s ease-out both; }
+  .parcel-card-swipe[data-arrived] .parcel-stamp__ink { animation: postmark-land .3s cubic-bezier(.5, 0, .8, .5) .22s both; }
+  .parcel-card-swipe--hero[data-arrived] .parcel-card { animation: delivered-press .56s ease-out .37s; }
+  .parcel-card-swipe[data-arrived]:not(.parcel-card-swipe--hero) .parcel-card { animation: delivered-pulse .46s ease-out; }
+}
+@keyframes delivered-words { from { opacity: 0; } }
+@keyframes postmark-land { 0% { opacity: 0; transform: scale(2.6) rotate(16deg); } 55% { opacity: 1; transform: scale(1.5) rotate(7deg); } 82% { transform: scale(.9) rotate(-2deg); } }
+@keyframes delivered-press { 30% { scale: .982; } 62% { scale: 1.004; } }
+@keyframes delivered-pulse { 40% { scale: 1.022; } }

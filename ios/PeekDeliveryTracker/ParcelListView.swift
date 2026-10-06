@@ -182,6 +182,13 @@ private struct DeliveryListView: View {
     @State private var toast: ListToast?
     @State private var actionError: String?
     @State private var pull = PullToRefreshModel()
+    /// Parcels delivered since the list was last shown, held in place until their cards leave.
+    @State private var delivered = DeliveredHold()
+    @State private var places = DeliveryCardPlaces()
+    @State private var flights: [DeliveredFlight] = []
+    @State private var flightProgress: CGFloat = 0
+    @State private var flightRound = 0
+    @State private var postmarks = 0
 
     @ObservedObject private var catalog = CarrierCatalog.shared
 
@@ -192,14 +199,13 @@ private struct DeliveryListView: View {
 
     var body: some View {
         // Filtering, sorting and grouping run once per render, not once per section.
-        let layout = DeliveryListLayout(
-            parcels: store.parcels, query: query, status: statusFilter,
-            carrier: carrierFilter, sort: sort, featuresNext: !hasCustomView
-        )
+        let layout = arrangement(of: delivered.arranged(store.parcels))
+        // The cards that are others once the held parcels are let go: those leave without a trace, and are flown.
+        let leaving = delivered.isEmpty ? [] : Set(layout.changing(into: arrangement(of: store.parcels)).keys)
         NavigationStack(path: $path) {
             ZStack {
                 ExperimentalBackdrop()
-                content(layout)
+                content(layout, leaving: leaving)
             }
             .safeAreaInset(edge: .top, spacing: 0) { DemoModeBar() }
             .navigationTitle(localizer.text("native.deliveries"))
@@ -221,6 +227,22 @@ private struct DeliveryListView: View {
         .onChange(of: sort) { _, _ in DeliveryAnalytics.shared.action("sort-change") }
         .onChange(of: archivedExpanded) { _, open in if open { DeliveryAnalytics.shared.action("archive-open") } }
         .sensoryFeedback(.success, trigger: parcelBurstID) { _, next in next != nil }
+        .sensoryFeedback(.success, trigger: postmarks)
+        // The store announces its next list before it shows it: what was shown is still at hand.
+        .onReceive(store.$parcels) { next in
+            delivered.receive(shown: store.parcels, next: next, watching: watching)
+        }
+        .onChange(of: watching) { _, watching in if !watching { delivered.release() } }
+        .task(id: delivered.ids) {
+            guard !delivered.isEmpty else { return }
+            do {
+                // The postmark lands, then the card has a moment to be read before it leaves.
+                try await Task.sleep(for: .milliseconds(300))
+                postmarks += 1
+                try await Task.sleep(for: .milliseconds(650))
+            } catch { return }
+            letGo()
+        }
         .fullScreenCover(isPresented: $showingAdd, onDismiss: {
             scanning = false
             if let id = addedParcelID, scenePhase == .active {
@@ -272,7 +294,7 @@ private struct DeliveryListView: View {
             consumeSharedDraft()
             consumePendingParcelNotification()
         }
-        .onDisappear { addedParcelID = nil; revealParcelID = nil; parcelBurstID = nil }
+        .onDisappear { addedParcelID = nil; revealParcelID = nil; parcelBurstID = nil; flights = [] }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { addedParcelID = nil; revealParcelID = nil; parcelBurstID = nil }
         }
@@ -303,7 +325,7 @@ private struct DeliveryListView: View {
         }
     }
 
-    private func content(_ layout: DeliveryListLayout) -> some View {
+    private func content(_ layout: DeliveryListLayout, leaving: Set<UUID>) -> some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
@@ -323,23 +345,29 @@ private struct DeliveryListView: View {
                         }
                         listEmptyState(layout)
                         if let nextParcel = layout.next {
-                            ExperimentalNextDeliveryPass(parcel: nextParcel, transition: parcelTransition,
+                            ExperimentalNextDeliveryPass(parcel: shown(nextParcel), transition: parcelTransition,
+                                arrived: delivered.holds(nextParcel.id), onName: { places.name(nextParcel.id, at: $0) },
                                 onOpen: { path.append(nextParcel.id) }, onArchive: { await archive(nextParcel) })
                                 .modifier(arrivalCelebration(for: nextParcel.id, stubInset: 43))
+                                .modifier(place(of: nextParcel.id, leaving: leaving))
                                 .id(nextParcel.id)
                         }
                         ForEach(layout.attention) { parcel in
-                            ExperimentalParcelPassCard(parcel: parcel,
-                                notice: parcel.attention().map { localizer.text($0.localizationKey) },
+                            ExperimentalParcelPassCard(parcel: shown(parcel),
+                                notice: delivered.holds(parcel.id) ? nil : shown(parcel).attention().map { localizer.text($0.localizationKey) },
                                 transition: parcelTransition,
+                                arrived: delivered.holds(parcel.id), onName: { places.name(parcel.id, at: $0) },
                                 onOpen: { path.append(parcel.id) }, onArchive: { await archive(parcel) })
                                 .modifier(arrivalCelebration(for: parcel.id))
+                                .modifier(place(of: parcel.id, leaving: leaving))
                                 .id(parcel.id)
                         }
                         ForEach(layout.remaining) { parcel in
-                            ExperimentalParcelPassCard(parcel: parcel, notice: nil, transition: parcelTransition,
+                            ExperimentalParcelPassCard(parcel: shown(parcel), notice: nil, transition: parcelTransition,
+                                arrived: delivered.holds(parcel.id), onName: { places.name(parcel.id, at: $0) },
                                 onOpen: { path.append(parcel.id) }, onArchive: { await archive(parcel) })
                                 .modifier(arrivalCelebration(for: parcel.id))
+                                .modifier(place(of: parcel.id, leaving: leaving))
                                 .id(parcel.id)
                         }
                     }
@@ -355,6 +383,16 @@ private struct DeliveryListView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 28)
                 .animation(reduceMotion ? nil : .snappy(duration: 0.32), value: store.parcels.filter { !$0.isArchived }.map(\.id))
+                .coordinateSpace(.named(DeliveryListSpace.name))
+                // A card that takes another place is flown there, over the list and moving with it.
+                .overlay(alignment: .topLeading) {
+                    ZStack(alignment: .topLeading) {
+                        ForEach(flights) { flight in
+                            DeliveredFlightCard(flight: flight, progress: flightProgress, transition: parcelTransition)
+                        }
+                    }
+                }
+                .background { DeliveryScrollProbe(places: places) }
                 .background(alignment: .top) {
                     PullToRefreshIndicator(model: pull, pullLabel: localizer.text("app.pullToRefresh"))
                 }
@@ -430,6 +468,7 @@ private struct DeliveryListView: View {
                 Text(localizer.text("app.onTheWaySection"))
                     .font(.headline.weight(.semibold))
                 Text("\(layout.active.count)")
+                    .contentTransition(.numericText())
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 6).frame(minHeight: 20)
@@ -701,6 +740,7 @@ private struct DeliveryListView: View {
             Text(sectionTitle(section.kind))
                 .font(.headline.weight(.semibold))
             Text("\(section.parcels.count)")
+                .contentTransition(.numericText())
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)
@@ -720,10 +760,12 @@ private struct DeliveryListView: View {
                     ExperimentalDeliveredParcelCard(
                         parcel: parcel,
                         transition: parcelTransition,
+                        onName: { places.name(parcel.id, at: $0) },
                         onOpen: { path.append(parcel.id) },
                         onArchive: { await archive(parcel) }
                     )
                     .modifier(arrivalCelebration(for: parcel.id))
+                    .modifier(place(of: parcel.id, leaving: []))
                     .id(parcel.id)
                 }
             }
@@ -774,6 +816,80 @@ private struct DeliveryListView: View {
                         .id(parcel.id)
                     }
                 }
+            }
+        }
+    }
+
+    private func arrangement(of parcels: [Parcel]) -> DeliveryListLayout {
+        DeliveryListLayout(
+            parcels: parcels, query: query, status: statusFilter,
+            carrier: carrierFilter, sort: sort, featuresNext: !hasCustomView
+        )
+    }
+
+    /// Whether the list is looked at, and may show a card moving.
+    private var watching: Bool {
+        isSelected && scenePhase == .active && path.isEmpty && !showingAdd && !showingAccount && !showingFilters
+            && sitePage == nil && !hasCustomView && !reduceMotion
+    }
+
+    /// The parcel as it is now, for a card arranged as it was.
+    private func shown(_ parcel: Parcel) -> Parcel {
+        delivered.isEmpty ? parcel : store.parcels.first { $0.id == parcel.id } ?? parcel
+    }
+
+    private func place(of id: UUID, leaving: Set<UUID>) -> DeliveryCardPlace {
+        DeliveryCardPlace(id: id, places: places, flying: flights.contains { $0.id == id }, leaving: leaving.contains(id))
+    }
+
+    /// The held parcels take their new places: each card that becomes another is pictured where it
+    /// stands and flown to where the list now has it, and the other cards make room.
+    private func letGo() {
+        let ids = delivered.ids
+        guard !ids.isEmpty else { return }
+        let now = arrangement(of: store.parcels)
+        let changes = arrangement(of: delivered.arranged(store.parcels)).changing(into: now)
+        let visible = places.visible
+        var taking: [DeliveredFlight] = []
+        for parcel in store.parcels {
+            // Only a card that shows whole can be pictured whole: another simply takes its new place.
+            guard let change = changes[parcel.id], let from = places.place(of: parcel.id),
+                  visible?.contains(from.frame) ?? false, let picture = places.picture(of: from.frame) else { continue }
+            taking.append(DeliveredFlight(
+                id: parcel.id, parcel: parcel, was: change.was, becomes: change.becomes,
+                picture: picture, from: from, to: nil, lifted: ids.contains(parcel.id)
+            ))
+        }
+        // The arrivals are drawn last, over the card that takes their place.
+        taking.sort { !$0.lifted && $1.lifted }
+        for flight in taking { places.forget(flight.id) }
+        flightRound += 1
+        let round = flightRound
+        flightProgress = 0
+        flights = taking
+        withAnimation(.spring(duration: 0.42)) { delivered.release() }
+        guard !taking.isEmpty else { return }
+        Task { @MainActor in
+            // The list lays its new cards out; one that stays unplaced is beyond the screen, and its picture flies out.
+            for _ in 0..<4 {
+                try? await Task.sleep(for: .milliseconds(30))
+                if flights.allSatisfy({ places.place(of: $0.id) != nil }) { break }
+            }
+            guard round == flightRound else { return }
+            for index in flights.indices {
+                let flight = flights[index]
+                flights[index].to = places.place(of: flight.id) ?? DeliveryCardPlaces.Place(
+                    frame: CGRect(x: flight.from.frame.minX, y: max(flight.from.frame.maxY, visible?.maxY ?? 0) + 40,
+                                  width: flight.from.frame.width, height: min(flight.from.frame.height, 102)),
+                    title: min(flight.from.title, 50)
+                )
+            }
+            withAnimation(.spring(duration: 0.62, bounce: 0.16)) {
+                flightProgress = 1
+            } completion: {
+                guard round == flightRound else { return }
+                flights = []
+                flightProgress = 0
             }
         }
     }
@@ -885,6 +1001,12 @@ private struct DeliveryListView: View {
 private struct ExperimentalNextDeliveryPass: View {
     let parcel: Parcel
     let transition: Namespace.ID
+    /// Just delivered, and still shown where it stood: the card says so before it leaves for the past deliveries.
+    var arrived = false
+    /// Drawn for its look alone, on a card that flies over the list.
+    var decorative = false
+    /// Where the parcel's name is written, in the list's space.
+    var onName: ((CGFloat) -> Void)?
     let onOpen: () -> Void
     let onArchive: () async -> Bool
 
@@ -901,23 +1023,43 @@ private struct ExperimentalNextDeliveryPass: View {
     private var placed: Bool { parcel.trackingEvents.contains { $0.place != nil } }
 
     var body: some View {
+        if decorative {
+            card.allowsHitTesting(false).accessibilityHidden(true)
+        } else {
+            card
+                .matchedTransitionSource(id: parcel.id, in: transition)
+                .accessibilityElement(children: .combine)
+                .experimentalSwipeToArchive(
+                    title: localizer.text("parcel.archive"), cornerRadius: 24,
+                    onOpen: onOpen, action: onArchive
+                )
+                .opacity(appeared ? 1 : 0)
+                .accessibilityHint(localizer.text("detail.label"))
+        }
+    }
+
+    private var card: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 12) {
                 CarrierFleetMark(identity: identity)
                 Spacer(minLength: 0)
+                // A parcel that has arrived is nobody's next: the words keep their room and go.
                 Text(localizer.text("app.nextUp"))
                     .font(.caption2)
                     .textCase(.uppercase)
                     .tracking(1.2)
                     .foregroundStyle(identity.ink.opacity(0.75))
                     .fixedSize(horizontal: false, vertical: true)
+                    .opacity(arrived ? 0 : 1)
+                    .accessibilityHidden(arrived)
             }
             HStack(alignment: .center, spacing: 16) {
                 Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
                     .font(.title2.weight(.semibold))
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                DeliveryPostageStamp(parcel: parcel, identity: identity, appeared: appeared)
+                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(DeliveryListSpace.name)).midY } action: { onName?($0) }
+                DeliveryPostageStamp(parcel: parcel, identity: identity, appeared: appeared || decorative)
             }
             // Room for the route engraved behind the top of the card.
             .padding(.top, placed ? 101 : 19)
@@ -930,8 +1072,12 @@ private struct ExperimentalNextDeliveryPass: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text([localizer.parcelStatus(parcel), parcel.pickupPlace, localizer.parcelDeliveryEstimate(parcel)]
-                .compactMap { $0 }.joined(separator: " · "))
+            HStack(spacing: 5) {
+                if arrived { Image(systemName: "checkmark").font(.caption2.weight(.light)).accessibilityHidden(true) }
+                Text([localizer.parcelStatus(parcel), parcel.pickupPlace,
+                      localizer.parcelDeliveryEstimate(parcel) ?? (arrived ? localizer.parcelCompletionDate(parcel) : nil)]
+                    .compactMap { $0 }.joined(separator: " · "))
+            }
                 .font(.caption)
                 .foregroundStyle(identity.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -958,14 +1104,7 @@ private struct ExperimentalNextDeliveryPass: View {
             }
         }
         .experimentalSurface(fill: identity.surface, cornerRadius: 24)
-        .matchedTransitionSource(id: parcel.id, in: transition)
-        .accessibilityElement(children: .combine)
-        .experimentalSwipeToArchive(
-            title: localizer.text("parcel.archive"), cornerRadius: 24,
-            onOpen: onOpen, action: onArchive
-        )
-        .opacity(appeared ? 1 : 0)
-        .accessibilityHint(localizer.text("detail.label"))
+        .modifier(DeliveredPress(arrived: arrived, dip: 0.982, wait: 0.42))
         .onAppear { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { appeared = true } }
         .task(id: placed) {
             guard placed, atlas == nil else { return }
@@ -979,6 +1118,12 @@ private struct ExperimentalParcelPassCard: View {
     let parcel: Parcel
     let notice: String?
     let transition: Namespace.ID
+    /// Just delivered, and still shown among the parcels on their way.
+    var arrived = false
+    /// Drawn for its look alone, on a card that flies over the list.
+    var decorative = false
+    /// Where the parcel's name is written, in the list's space.
+    var onName: ((CGFloat) -> Void)?
     let onOpen: () -> Void
     let onArchive: (() async -> Bool)?
 
@@ -993,8 +1138,8 @@ private struct ExperimentalParcelPassCard: View {
     private var date: String? { localizer.parcelDeliveryEstimate(parcel) ?? localizer.parcelCompletionDate(parcel) }
     /// Scans with places are drawn as a small route at the end of the card.
     private var placed: Bool { parcel.trackingEvents.contains { $0.place != nil } }
-    /// A past delivery's card is paler.
-    private var past: Bool { parcel.currentStage?.isFinal == true || parcel.isArchived }
+    /// A past delivery's card is paler, once it stands among the past deliveries.
+    private var past: Bool { !arrived && (parcel.currentStage?.isFinal == true || parcel.isArchived) }
     /// The words under the top row keep clear of the route.
     private var clearance: CGFloat { placed ? CardRoute.clearance : 0 }
     /// Carrier-reported stages already say what needs attention in the status line.
@@ -1005,6 +1150,20 @@ private struct ExperimentalParcelPassCard: View {
     }
 
     var body: some View {
+        if decorative {
+            card.allowsHitTesting(false).accessibilityHidden(true)
+        } else {
+            card
+                .matchedTransitionSource(id: parcel.id, in: transition)
+                .experimentalSwipeToArchive(
+                    title: localizer.text("parcel.archive"), cornerRadius: 16, shadow: false,
+                    onOpen: onOpen, action: onArchive
+                )
+                .accessibilityElement(children: .combine)
+        }
+    }
+
+    private var card: some View {
         VStack(alignment: .leading, spacing: 5) {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .top, spacing: 12) {
@@ -1022,6 +1181,7 @@ private struct ExperimentalParcelPassCard: View {
                 Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
                     .font(.headline.weight(.semibold))
                     .fixedSize(horizontal: false, vertical: true)
+                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(DeliveryListSpace.name)).midY } action: { onName?($0) }
                 AutomaticCarrierNotice(parcel: parcel)
                 if parcel.activeTrackingCarrier != parcel.displayedCarrier {
                     Text(localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName]))
@@ -1064,12 +1224,7 @@ private struct ExperimentalParcelPassCard: View {
                 .overlay { RoundedRectangle(cornerRadius: 16).fill(identity.surface.opacity(past ? 0.35 : 1)) }
         }
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .matchedTransitionSource(id: parcel.id, in: transition)
-        .experimentalSwipeToArchive(
-            title: localizer.text("parcel.archive"), cornerRadius: 16, shadow: false,
-            onOpen: onOpen, action: onArchive
-        )
-        .accessibilityElement(children: .combine)
+        .modifier(DeliveredPress(arrived: arrived, dip: 1.022, wait: 0.01))
         .task(id: placed) {
             guard placed, atlas == nil else { return }
             let loaded = await WorldAtlas.bundled.value
@@ -1105,6 +1260,7 @@ private struct ParcelFlag: View {
 private struct ExperimentalDeliveredParcelCard: View {
     let parcel: Parcel
     let transition: Namespace.ID
+    var onName: ((CGFloat) -> Void)?
     let onOpen: () -> Void
     let onArchive: (() async -> Bool)?
 
@@ -1113,9 +1269,99 @@ private struct ExperimentalDeliveredParcelCard: View {
             parcel: parcel,
             notice: nil,
             transition: transition,
+            onName: onName,
             onOpen: onOpen,
             onArchive: onArchive
         )
+    }
+}
+
+/// A card tells the list where it stands. While its picture flies to another place, the card stays unseen,
+/// and one that is about to become another card leaves without fading.
+private struct DeliveryCardPlace: ViewModifier {
+    let id: UUID
+    let places: DeliveryCardPlaces
+    let flying: Bool
+    let leaving: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(DeliveryListSpace.name)) } action: { places.stand(id, at: $0) }
+            .opacity(flying ? 0 : 1)
+            .transition(leaving ? .identity : .opacity)
+    }
+}
+
+/// The card gives a little as the news of its delivery lands on it.
+private struct DeliveredPress: ViewModifier {
+    let arrived: Bool
+    let dip: CGFloat
+    let wait: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        let still = reduceMotion
+        content.keyframeAnimator(initialValue: CGFloat(1), trigger: arrived) { view, scale in
+            view.scaleEffect(still ? 1 : scale)
+        } keyframes: { _ in
+            KeyframeTrack {
+                LinearKeyframe(CGFloat(1), duration: wait)
+                CubicKeyframe(dip, duration: 0.17)
+                CubicKeyframe(CGFloat(1), duration: 0.3)
+            }
+        }
+    }
+}
+
+/// One card on its way to another place in the list. A picture of the card it was and the card it
+/// becomes ride in one box: the box changes size from its far edge, the picture slides so that both
+/// names stay on one line, and the new card comes up over it.
+private struct DeliveredFlightCard: View, Animatable {
+    let flight: DeliveredFlight
+    var progress: CGFloat
+    let transition: Namespace.ID
+
+    @EnvironmentObject private var localizer: Localizer
+    @ObservedObject private var catalog = CarrierCatalog.shared
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    var body: some View {
+        let to = flight.to ?? flight.from
+        let pose = DeliveredFlightPose(from: flight.from, to: to, was: flight.was, becomes: flight.becomes, lifted: flight.lifted, progress: progress)
+        let identity = CarrierVisualIdentity.of(flight.parcel.displayedCarrier, catalog: catalog, language: localizer.language)
+        ZStack(alignment: .topLeading) {
+            Image(uiImage: flight.picture)
+                .resizable()
+                .frame(width: flight.from.frame.width, height: flight.from.frame.height)
+                .offset(y: pose.leaving)
+            ZStack(alignment: .topLeading) {
+                // A paler card shows its own ground around it while the box is still tall.
+                Rectangle().fill(Brand.paper)
+                    .overlay { Rectangle().fill(identity.surface.opacity(flight.becomes == .past ? 0.35 : 1)) }
+                face
+                    .frame(width: to.frame.width, height: to.frame.height, alignment: .top)
+                    .offset(y: pose.arriving)
+            }
+            .opacity(pose.arrival)
+        }
+        .frame(width: pose.frame.width, height: pose.frame.height, alignment: .topLeading)
+        .clipShape(RoundedRectangle(cornerRadius: pose.cornerRadius, style: .continuous))
+        .shadow(color: .black.opacity(0.2 * pose.shadow), radius: 14, y: 12)
+        .offset(x: pose.frame.minX, y: pose.frame.minY)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder private var face: some View {
+        if flight.becomes == .next {
+            ExperimentalNextDeliveryPass(parcel: flight.parcel, transition: transition, decorative: true, onOpen: {}, onArchive: { false })
+        } else {
+            ExperimentalParcelPassCard(parcel: flight.parcel, notice: nil, transition: transition, decorative: true, onOpen: {}, onArchive: nil)
+        }
     }
 }
 

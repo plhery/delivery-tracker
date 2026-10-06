@@ -14,12 +14,14 @@ import { CardRoute, NextUpEngraving, useParcelRoute } from './ParcelMap';
 import { ParcelStamp } from './ParcelStamp';
 import { bindSwipeRow, type SwipeRow } from '../lib/swipeRow';
 
-export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regular' }: {
+export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regular', arrived = false }: {
   parcel: ParcelWithEvents;
   onOpen: (parcel: ParcelWithEvents, source: HTMLButtonElement) => void;
   onArchive?: (parcel: ParcelWithEvents) => Promise<unknown>;
   notice?: string;
   variant?: 'regular' | 'hero';
+  /** Just delivered, and still shown where it stood: the card says so before it leaves for the past deliveries. */
+  arrived?: boolean;
 }) {
   const { locale, languageTag, t } = useI18n();
   const carrier = carrierInfo(displayedCarrierId(parcel), locale);
@@ -83,7 +85,9 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
 
   const label = [statusAria, flag, deliveryLabel].filter(Boolean).join('. ');
 
-  return <div ref={row} data-parcel-id={parcel.id} data-carrier={carrier.id} style={branding.style} className={`parcel-card-swipe${hero ? ' parcel-card-swipe--hero' : ''}`}>
+  const check = current?.stage === 'delivered' && <Icon name="check" />;
+
+  return <div ref={row} data-parcel-id={parcel.id} data-carrier={carrier.id} data-arrived={arrived ? '' : undefined} style={branding.style} className={`parcel-card-swipe${hero ? ' parcel-card-swipe--hero' : ''}`}>
     <div className="parcel-card-swipe__clip">
       {onArchive && <div ref={tray} className="parcel-card-swipe__tray">
         <div ref={block} className="parcel-card-swipe__block">
@@ -93,7 +97,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
         </div>
       </div>}
       <button ref={button} type="button" className={`parcel-card${hero ? ' parcel-card--hero' : ''}${placed ? (hero ? ' parcel-card--map' : ' parcel-card--route') : ''}${parcel.archivedAt ? ' parcel-card--archived' : ''}`}
-        disabled={archiving} aria-busy={archiving} aria-label={hero ? `${t('app.nextUp')}: ${label}` : label}
+        disabled={archiving} aria-busy={archiving} aria-label={hero && !arrived ? `${t('app.nextUp')}: ${label}` : label}
         onClick={(event) => { if (!swipe.current?.consumeClick()) onOpen(parcel, event.currentTarget); }}>
         {hero ? <>
           {placed && <NextUpEngraving route={route} stage={current?.stage} />}
@@ -101,7 +105,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
           <span className="parcel-card__hero-main"><strong className="parcel-card__label">{parcelName}</strong><ParcelStamp parcel={parcel} /></span>
           {deliveryLabel && <span className="parcel-card__sender">{deliveryLabel}</span>}
           <AutoCarrierNotice parcel={parcel} className="parcel-card__sender" />
-          <span className="parcel-card__summary"><span className="parcel-card__state">{statusLabel}</span>{pickupPlace && <><span aria-hidden="true">·</span><span className="parcel-card__place">{pickupPlace}</span></>}{expectedDelivery && <><span aria-hidden="true">·</span><span className="parcel-card__eta">{expectedDelivery}</span></>}</span>
+          <span className="parcel-card__summary"><span className="parcel-card__state">{arrived && check}{statusLabel}</span>{pickupPlace && <><span aria-hidden="true">·</span><span className="parcel-card__place">{pickupPlace}</span></>}{(expectedDelivery || (arrived && completionDate)) && <><span aria-hidden="true">·</span><span className="parcel-card__eta">{expectedDelivery || completionDate}</span></>}</span>
           {flagChip}
         </> : <>
           {placed && <CardRoute route={route} />}
@@ -109,7 +113,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
           <strong className="parcel-card__label">{parcelName}</strong>
           {deliveryLabel && <span className="parcel-card__sender">{deliveryLabel}</span>}
           <AutoCarrierNotice parcel={parcel} className="parcel-card__sender" />
-          {(!flag || parcelHasCarrierUpdate(parcel)) && <span className="parcel-card__state">{current?.stage === 'delivered' && <Icon name="check" />}{statusLabel}{pickupPlace && <><span aria-hidden="true">·</span><span className="parcel-card__place">{pickupPlace}</span></>}</span>}
+          {(!flag || parcelHasCarrierUpdate(parcel)) && <span className="parcel-card__state">{check}{statusLabel}{pickupPlace && <><span aria-hidden="true">·</span><span className="parcel-card__place">{pickupPlace}</span></>}</span>}
           {flagChip}
         </>}
       </button>

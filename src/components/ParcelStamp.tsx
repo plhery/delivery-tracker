@@ -73,10 +73,13 @@ export function ParcelStamp({ parcel }: { parcel: ParcelWithEvents }) {
       <rect x="1.7" y="1.7" width={PRINT.width - 3.4} height={PRINT.height - 3.4} className="parcel-stamp__frame" />
       {origin && <text x={cx} y={PRINT.height - 4.7} className="parcel-stamp__code">{origin}</text>}
     </g>
+    {/* The ink is a group of its own, centred on the mark, so that it can come down on the paper. */}
     {delivered && <g className="parcel-stamp__postmark" transform={`translate(${PAPER.width - 6} 36) rotate(-12)`}>
-      <circle r="11.5" />
-      <circle r="8.7" />
-      <text y="1.8">{delivered}</text>
+      <g className="parcel-stamp__ink">
+        <circle r="11.5" />
+        <circle r="8.7" />
+        <text y="1.8">{delivered}</text>
+      </g>
     </g>}
   </svg>;
 }

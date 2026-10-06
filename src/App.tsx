@@ -2,6 +2,7 @@ import './components/Deliveries.css';
 import { trackAction, trackScreen } from './lib/analytics';
 import { focusClickedButton } from './lib/modal';
 import { glideNextListChange } from './lib/listGlide';
+import { useDeliveredHold } from './lib/deliveredHold';
 import { takeResumedScreen, type ResumedScreen } from './lib/pwaUpdates';
 import { REFRESH_MESSAGES, refreshOutcome, userErrorMessage } from './lib/userMessages';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -33,6 +34,7 @@ import { usedCarrierIds } from './lib/carrierPicker';
 import {
   isActiveParcel,
   nextPriorityParcel,
+  parcelAttention,
   prioritizeActiveParcels,
   type ParcelAttention,
 } from './lib/parcelPriority';
@@ -294,31 +296,34 @@ export default function App({
     }
   }, [loading, parcelOpen]);
 
+  const hasCustomView = query.trim().length > 0
+    || statusFilter !== 'all'
+    || carrierFilter !== ''
+    || sort !== 'priority';
+  // A parcel delivered since the list was last shown keeps its place until its card leaves for the past deliveries.
+  const delivered = useDeliveredHold(parcels, tab === 'deliveries' && !loading && !openParcelId && !adding && !hasCustomView, deliveriesPage);
+  const listed = delivered.arranged;
   const visibleParcels = useMemo(
-    () => viewParcels(parcels, {
+    () => viewParcels(listed, {
       query,
       status: statusFilter,
       carrier: carrierFilter || undefined,
       sort,
       now: viewNow,
     }),
-    [parcels, query, statusFilter, carrierFilter, sort, viewNow],
+    [listed, query, statusFilter, carrierFilter, sort, viewNow],
   );
   const availableCarriers = useMemo(
     () => [...new Set(parcels.map((parcel) => parcel.carrier))]
       .sort((first, second) => first.localeCompare(second)),
     [parcels],
   );
-  const hasCustomView = query.trim().length > 0
-    || statusFilter !== 'all'
-    || carrierFilter !== ''
-    || sort !== 'priority';
 
   const activeParcels = useMemo(
     () => visibleParcels.filter(isActiveParcel),
     [visibleParcels],
   );
-  const nextParcel = useMemo(() => hasCustomView ? null : nextPriorityParcel(parcels, viewNow), [parcels, viewNow, hasCustomView]);
+  const nextParcel = useMemo(() => hasCustomView ? null : nextPriorityParcel(listed, viewNow), [listed, viewNow, hasCustomView]);
   const prioritized = useMemo(
     () => prioritizeActiveParcels(activeParcels.filter((parcel) => parcel.id !== nextParcel?.id), viewNow, parcelComparator(sort)),
     [activeParcels, nextParcel, sort, viewNow],
@@ -424,22 +429,28 @@ export default function App({
     setViewNow(Date.now());
   }
 
+  // A card held where it stood is flagged for what its parcel needs now, which may be nothing.
+  const noticeFor = (parcel: ParcelWithEvents, reason: ParcelAttention) => {
+    const now = listed === parcels ? reason : parcelAttention(parcel, viewNow);
+    return now ? t(ATTENTION_LABELS[now]) : undefined;
+  };
   const remainingDeliveries = [...prioritized.arrivingToday, ...prioritized.onTheWay];
-  const allArrived = !hasCustomView && parcels.length > 0
-    && parcels.every((parcel) => isDelivered(parcel.events));
+  const allArrived = !hasCustomView && listed.length > 0
+    && listed.every((parcel) => isDelivered(parcel.events));
   const onTheWayCards = remainingDeliveries.length > 0 ? (
     <div className="parcel-grid">
       {remainingDeliveries.map((parcel) => (
         <ParcelCard
           key={parcel.id}
-          parcel={parcel}
+          parcel={delivered.current(parcel)}
+          arrived={delivered.arrived(parcel)}
           onOpen={(p, source) => openParcelDetail(p.id, source)}
           onArchive={handleArchive}
         />
       ))}
     </div>
   ) : null;
-  const nextCard = nextParcel && <div className="delivery-next"><ParcelCard key={nextParcel.id} parcel={nextParcel} variant="hero" onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>;
+  const nextCard = nextParcel && <div className="delivery-next"><ParcelCard key={nextParcel.id} parcel={delivered.current(nextParcel)} arrived={delivered.arrived(nextParcel)} variant="hero" onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>;
 
   // The landing opens at its top: the links to it stand at the foot of the list and of Settings.
   const openLanding = onOpenLanding && (() => {
@@ -576,8 +587,8 @@ export default function App({
             <h2 id="attention-parcels-title" className="sr-only">{t('app.needsAttention')}</h2>
             <div className="parcel-grid">
               {prioritized.attention.map(({ parcel, reason }) => (
-                <ParcelCard key={parcel.id} parcel={parcel}
-                  notice={t(ATTENTION_LABELS[reason])}
+                <ParcelCard key={parcel.id} parcel={delivered.current(parcel)} arrived={delivered.arrived(parcel)}
+                  notice={noticeFor(delivered.current(parcel), reason)}
                   onOpen={(p, source) => openParcelDetail(p.id, source)} onArchive={handleArchive} />
               ))}
             </div>
