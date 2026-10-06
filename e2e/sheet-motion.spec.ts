@@ -11,6 +11,22 @@ const settle = (sheet: Locator) => sheet.evaluate((element) => Promise.all(eleme
   return animation.finished;
 })));
 
+// A busy machine can spend a whole movement before the test looks: every movement of these
+// elements waits, paused, for the test to place it.
+const holdMotion = (page: Page, selector: string) => page.addInitScript((held) => {
+  const matches = (target: Node): target is Element => target instanceof Element && target.matches(held);
+  new MutationObserver((records) => records.forEach((record) => record.addedNodes.forEach((node) => {
+    if (!(node instanceof Element)) return;
+    [node, ...node.querySelectorAll(held)].filter(matches).forEach((element) => element.getAnimations().forEach((animation) => animation.pause()));
+  }))).observe(document, { childList: true, subtree: true });
+  const animate = Element.prototype.animate;
+  Element.prototype.animate = function heldAnimate(...frames) {
+    const animation = animate.apply(this, frames);
+    if (matches(this)) animation.pause();
+    return animation;
+  };
+}, selector);
+
 async function rises(page: Page, sheet: Locator) {
   const height = page.viewportSize()!.height;
   await expect(sheet).toBeAttached();
@@ -31,6 +47,7 @@ async function rises(page: Page, sheet: Locator) {
 test('sheets rise from the bottom edge on phones and leave the same way', async ({ page }) => {
   test.skip(page.viewportSize()!.width > 760, 'Wide screens show sheets as centred dialogs.');
   await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
+  await holdMotion(page, '.sheet');
   await page.goto('/');
 
   await page.locator('.account-trigger').click();
@@ -111,12 +128,16 @@ test('a stamp’s bubble grows out of it, and a friend’s page out of their car
 
 test('search folds open over the list and folds shut again', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
+  await holdMotion(page, '.parcel-view-shell');
   await page.goto('/');
 
   const toggle = page.locator('.delivery-search');
   const list = page.locator('.parcel-card').first();
   await expect(list).toBeVisible();
-  await page.locator('.deliveries-page').evaluate((element) => Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)));
+  // The entrance has to be over; looping animations never finish and are left alone.
+  await page.locator('.deliveries-page').evaluate((element) => Promise.all(element.getAnimations({ subtree: true })
+    .filter((animation) => Number.isFinite(animation.effect?.getComputedTiming().endTime))
+    .map((animation) => animation.finished)));
   const before = (await list.boundingBox())!.y;
   await toggle.click();
   const shell = page.locator('.parcel-view-shell');
