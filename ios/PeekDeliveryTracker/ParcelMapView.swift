@@ -163,14 +163,14 @@ struct ParcelMapScreen: View {
             let end = route.destination ?? current.place
             let endLabel = delivered ? "map.delivered" : route.destination != nil ? "map.to" : route.latestLocated ? "map.now" : "map.lastSeen"
             let single = route.stops.count == 1 && route.destination == nil
-            let total = route.kilometres + (route.remainingKilometres ?? 0)
-            let progress = delivered || route.destination == nil ? 1 : total > 0 ? route.kilometres / total : 0
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top, spacing: 14) {
                     if !single { endpoint(localizer.text("map.from"), origin.place, alignment: .leading) }
                     endpoint(localizer.text(endLabel), end, alignment: single ? .leading : .trailing)
                 }
-                if route.hasLine { RouteProgress(progress: progress, tint: accent) }
+                if let line = route.line(arrived: delivered) {
+                    RouteLine(line: line, tint: accent, live: stage != .delivered && stage != .returned)
+                }
                 if !single {
                     HStack(spacing: 16) {
                         if route.kilometres >= 1 {
@@ -239,35 +239,128 @@ struct ParcelMapScreen: View {
 }
 
 /// How far along the parcel is, from the first place to the last or to its destination.
-private struct RouteProgress: View {
-    let progress: Double
+/// The journey in small, under the two names: a dot for each place passed, a flag where a border was crossed, the parcel's
+/// own dot where it is now and, dashed, the way still to go. It is drawn as the map opens, in a time that grows with its
+/// places. The map above names them, so the line is not read aloud.
+private struct RouteLine: View {
+    let line: ParcelRoute.Line
     let tint: Color
+    /// The parcel's dot pulses until the journey is over, as it does on the map.
+    let live: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pen = 0.0
+    @State private var arrived = false
 
     var body: some View {
-        GeometryReader { proxy in
-            let width = proxy.size.width
-            ZStack(alignment: .topLeading) {
-                Path { path in
-                    path.move(to: CGPoint(x: 0, y: 6))
-                    path.addLine(to: CGPoint(x: width, y: 6))
+        RouteLineDrawing(line: line, tint: tint, pen: reduceMotion ? 1 : pen, ahead: reduceMotion || arrived ? 1 : 0)
+            .background {
+                if live, arrived, !reduceMotion {
+                    GeometryReader { proxy in
+                        PulsingHalo(color: tint)
+                            .position(x: RouteLineDrawing.x(line.now, in: proxy.size.width), y: proxy.size.height / 2)
+                    }
                 }
-                .stroke(Color.primary.opacity(0.28), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-                Capsule().fill(tint).frame(width: width * progress, height: 2).offset(y: 5)
-                Circle()
-                    .fill(Brand.paper)
-                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.4), lineWidth: 1.5))
-                    .frame(width: 8, height: 8)
-                    .position(x: width, y: 6)
-                Circle()
-                    .fill(tint)
-                    .overlay(Circle().stroke(Brand.paper, lineWidth: 3))
-                    .frame(width: 10, height: 10)
-                    .position(x: width * progress, y: 6)
             }
-            .frame(width: width, height: 12)
+            // Taller than its place in the summary, so that no flag is cut.
+            .frame(height: 22)
+            .padding(.vertical, -4)
+            .accessibilityHidden(true)
+            .task {
+                try? await Task.sleep(for: .milliseconds(350))
+                guard !Task.isCancelled, pen == 0 else { return }
+                let time = min(1.5, 0.7 + Double(line.stops.count) * 0.11)
+                withAnimation(.timingCurve(0.45, 0, 0.2, 1, duration: time)) {
+                    pen = 1
+                } completion: {
+                    // The way still to go, and the pulse, wait for the pen.
+                    withAnimation(.easeOut(duration: 0.5)) { arrived = true }
+                }
+            }
+    }
+}
+
+/// One frame of the line. The summary lies on glass, so a mark is kept clear of the line by cutting the line away around it.
+private struct RouteLineDrawing: View, Animatable {
+    let line: ParcelRoute.Line
+    let tint: Color
+    /// How much of the way to the parcel is drawn.
+    var pen: Double
+    /// How far the way still to go has shown.
+    var ahead: Double
+
+    /// Room at both ends for the dots that stand there.
+    private static let inset = 5.0
+
+    var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(pen, ahead) }
+        set {
+            pen = newValue.first
+            ahead = newValue.second
         }
-        .frame(height: 12)
-        .padding(.horizontal, 5)
-        .accessibilityHidden(true)
+    }
+
+    static func x(_ share: Double, in width: Double) -> Double {
+        inset + share * (width - inset * 2)
+    }
+
+    var body: some View {
+        Canvas { context, size in
+            let middle = size.height / 2
+            let drawn = pen * line.now
+            let point = { (share: Double) in CGPoint(x: Self.x(share, in: size.width), y: middle) }
+            let stroke = { (from: CGPoint, to: CGPoint) in
+                Path { path in
+                    path.move(to: from)
+                    path.addLine(to: to)
+                }
+            }
+            context.stroke(stroke(point(0), point(line.now)), with: .color(.primary.opacity(0.11)), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+            if line.now < 1, ahead > 0 {
+                var faint = context
+                faint.opacity = ahead
+                let end = point(1)
+                // The dashes stop at the ring that marks the destination.
+                faint.stroke(stroke(point(line.now), CGPoint(x: end.x - 4, y: middle)), with: .color(.primary.opacity(0.28)), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                faint.stroke(Path(ellipseIn: CGRect(x: end.x - 3.25, y: middle - 3.25, width: 6.5, height: 6.5)), with: .color(.primary.opacity(0.4)), lineWidth: 1.5)
+            }
+            context.stroke(stroke(point(0), point(drawn)), with: .color(tint), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+            for stop in line.stops {
+                dot(&context, at: point(stop), radius: 3 * shown(stop, drawn: drawn), clear: 2)
+            }
+            for border in line.borders {
+                flag(&context, border.country, at: point(border.at), scale: shown(border.at, drawn: drawn))
+            }
+            dot(&context, at: point(drawn), radius: 5, clear: 3)
+        }
+    }
+
+    /// A mark shows as the pen reaches it: from nothing to its full size over the last stretch before it.
+    private func shown(_ at: Double, drawn: Double) -> Double {
+        min(1, max(0, (drawn - at) * 26 + 1))
+    }
+
+    private func dot(_ context: inout GraphicsContext, at centre: CGPoint, radius: Double, clear: Double) {
+        guard radius > 0 else { return }
+        let circle = { (radius: Double) in Path(ellipseIn: CGRect(x: centre.x - radius, y: centre.y - radius, width: radius * 2, height: radius * 2)) }
+        context.blendMode = .destinationOut
+        context.fill(circle(radius + clear), with: .color(.black))
+        context.blendMode = .normal
+        context.fill(circle(radius), with: .color(tint))
+    }
+
+    private func flag(_ context: inout GraphicsContext, _ country: String, at centre: CGPoint, scale: Double) {
+        guard scale > 0 else { return }
+        let text = context.resolve(Text(TrackingLocation.flag(country)).font(.system(size: 13)))
+        let size = text.measure(in: CGSize(width: 40, height: 40))
+        let width = (size.width + 4) * scale
+        let height = 14 * scale
+        context.blendMode = .destinationOut
+        context.fill(Path(roundedRect: CGRect(x: centre.x - width / 2, y: centre.y - height / 2, width: width, height: height), cornerRadius: 4 * scale), with: .color(.black))
+        context.blendMode = .normal
+        var flag = context
+        flag.translateBy(x: centre.x, y: centre.y)
+        flag.scaleBy(x: scale, y: scale)
+        flag.draw(text, at: .zero)
     }
 }

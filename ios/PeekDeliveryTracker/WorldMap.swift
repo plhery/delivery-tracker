@@ -1298,7 +1298,8 @@ struct WorldMapView: View {
     }
 }
 
-private struct PulsingHalo: View {
+/// The ring that spreads from the parcel's dot while it is on its way, on the map and on the summary's line.
+struct PulsingHalo: View {
     let color: Color
     @State private var expanded = false
 

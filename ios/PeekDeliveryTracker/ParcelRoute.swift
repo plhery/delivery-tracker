@@ -201,8 +201,67 @@ struct ParcelRoute: Sendable {
     /// Both views only make sense when part of the journey, travelled or still to go, lies outside the close-up.
     var hasNearView: Bool { near.count < stops.count || (remainingKilometres ?? 0) >= Self.nearKilometres }
 
-    /// A line between two places tells nothing their names do not: it takes a third, passed or still ahead, to be worth drawing.
-    var hasLine: Bool { stops.count + (destination == nil ? 0 : 1) > 2 }
+    /// The journey as a line: how far along it each mark stands, from 0 at the first place to 1 at the last, or at the destination.
+    struct Line: Equatable, Sendable {
+        struct Border: Equatable, Sendable {
+            let at: Double
+            let country: String
+        }
+
+        /// The places passed, in order, without the one the parcel is at.
+        let stops: [Double]
+        /// Each new country's flag, halfway along the leg that crosses into it.
+        let borders: [Border]
+        /// Where the parcel is. The line beyond it is the way still to go.
+        let now: Double
+    }
+
+    /// The share of the line a leg keeps however short it is, so that no two places touch; a leg over a border keeps room for its flag.
+    private static let lineGap = 0.045
+    private static let lineBorder = 0.09
+    /// On a line crowded with places, one standing closer than this to the one before it is left out.
+    private static let lineApart = 0.02
+
+    /// The line under the summary's two names. A long leg is longer on it, by its square root: to scale, a flight would leave
+    /// the last mile no room. Between two places the line would tell nothing their names do not, so it takes a third, passed
+    /// or still ahead, to be worth drawing. A delivered parcel has arrived, wherever its last scan with a place was.
+    func line(arrived: Bool = false) -> Line? {
+        let places = stops.map(\.place) + (destination.map { [$0] } ?? [])
+        guard places.count > 2 else { return nil }
+        // The place the parcel is at: its last stop, or the destination once it is delivered.
+        let here = arrived ? places.count - 1 : stops.count - 1
+        let ways = Array(places.indices.dropLast())
+        let roots = ways.map { ($0 < legs.count ? legs[$0].kilometres : remainingKilometres ?? 0).squareRoot() }
+        // The way still to go has crossed no border yet.
+        let crossings = ways.map { $0 < here && places[$0 + 1].country != places[$0].country }
+        let borders = Double(crossings.filter { $0 }.count)
+        let plain = Double(crossings.count) - borders
+        var border = Self.lineBorder
+        var gap = Self.lineGap
+        // A journey of many legs shares out most of the line, the flags first.
+        if borders * border + plain * gap > 0.7 {
+            if borders > 0 { border = min(border, 0.5 / borders) }
+            gap = plain > 0 ? (0.7 - borders * border) / plain : 0
+        }
+        let free = 1 - borders * border - plain * gap
+        let total = roots.reduce(0, +)
+        var at = [0.0]
+        for way in ways {
+            let share = total > 0 ? roots[way] / total : 1 / Double(ways.count)
+            at.append(at[way] + (crossings[way] ? border : gap) + free * share)
+        }
+        at[at.count - 1] = 1
+        var marks: [Double] = []
+        for index in stops.indices where index != here {
+            if let last = marks.last, at[index] - last < Self.lineApart { continue }
+            marks.append(at[index])
+        }
+        return Line(
+            stops: marks,
+            borders: ways.filter { crossings[$0] }.map { Line.Border(at: (at[$0] + at[$0 + 1]) / 2, country: places[$0 + 1].country) },
+            now: at[here]
+        )
+    }
 
     /// The camera follows the parcel: the whole trip while it travels, a close-up for the last mile.
     func defaultMode(for stage: TrackingStage?) -> Mode {

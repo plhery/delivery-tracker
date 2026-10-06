@@ -69,12 +69,66 @@ final class ParcelRouteTests: XCTestCase {
     }
 
     func testALineTakesAThirdPlace() {
-        XCTAssertTrue(ParcelRoute(places: [kyoto, basel, zurich]).hasLine)
+        XCTAssertNotNil(ParcelRoute(places: [kyoto, basel, zurich]).line())
         // Two places are named beside each other already.
-        XCTAssertFalse(ParcelRoute(places: [kyoto, zurich]).hasLine)
-        XCTAssertFalse(ParcelRoute(places: [kyoto], destination: switzerland).hasLine)
+        XCTAssertNil(ParcelRoute(places: [kyoto, zurich]).line())
+        XCTAssertNil(ParcelRoute(places: [kyoto], destination: switzerland).line())
         // The place still ahead is the third.
-        XCTAssertTrue(ParcelRoute(places: [kyoto, leipzig], destination: switzerland).hasLine)
+        XCTAssertNotNil(ParcelRoute(places: [kyoto, leipzig], destination: switzerland).line())
+    }
+
+    func testTheLineMarksThePlacesPassedFurtherApartTheLongerTheWay() throws {
+        let line = try XCTUnwrap(ParcelRoute(places: [bern, basel, zurich, mulligen]).line())
+        // The parcel is at the end; the three places before it are marked, and no border was crossed.
+        XCTAssertEqual(line.now, 1)
+        XCTAssertEqual(line.borders, [])
+        XCTAssertEqual(line.stops.count, 3)
+        XCTAssertEqual(line.stops[0], 0)
+        let first = line.stops[1], second = line.stops[2] - line.stops[1], last = 1 - line.stops[2]
+        // Zürich to Mülligen is a few kilometres: it keeps the room two dots need, and no more than the longer legs.
+        XCTAssertGreaterThan(last, 0.045)
+        XCTAssertLessThan(last, second)
+        XCTAssertLessThan(last, first)
+    }
+
+    func testTheLineFliesANewCountrysFlagHalfwayAlongTheLegThatCrossesIntoIt() throws {
+        let line = try XCTUnwrap(ParcelRoute(places: [kyoto, leipzig, basel, zurich]).line())
+        XCTAssertEqual(line.borders.map(\.country), ["DE", "CH"])
+        XCTAssertEqual(line.borders[0].at, line.stops[1] / 2, accuracy: 0.0001)
+        XCTAssertEqual(line.borders[1].at, (line.stops[1] + line.stops[2]) / 2, accuracy: 0.0001)
+        // A flag has room between its two places, however short the leg; a flight is still the longest.
+        XCTAssertGreaterThan(line.stops[2] - line.stops[1], 0.09)
+        XCTAssertGreaterThan(line.stops[1], line.stops[2] - line.stops[1])
+    }
+
+    func testTheWayStillToGoStaysBareUntilTheParcelHasArrived() throws {
+        let route = ParcelRoute(places: [kyoto, leipzig], destination: switzerland)
+        let line = try XCTUnwrap(route.line())
+        XCTAssertEqual(line.stops, [0])
+        XCTAssertGreaterThan(line.now, 0.5)
+        XCTAssertLessThan(line.now, 1)
+        // Germany was reached; Switzerland has not been yet.
+        XCTAssertEqual(line.borders.map(\.country), ["DE"])
+        // Delivered, it is at the end, wherever its last scan with a place was.
+        let arrived = try XCTUnwrap(route.line(arrived: true))
+        XCTAssertEqual(arrived.now, 1)
+        XCTAssertEqual(arrived.borders.map(\.country), ["DE", "CH"])
+        // The last leg now keeps room for its flag, so Leipzig stands a little earlier.
+        XCTAssertEqual(arrived.stops.count, 2)
+        XCTAssertLessThan(arrived.stops[1], line.now)
+        XCTAssertEqual(arrived.borders[1].at, (arrived.stops[1] + 1) / 2, accuracy: 0.0001)
+    }
+
+    func testACrowdedLineThinsItsPlaces() throws {
+        let route = ParcelRoute(places: [kyoto] + Array(repeating: [zurich, mulligen], count: 30).flatMap { $0 })
+        let line = try XCTUnwrap(route.line())
+        XCTAssertLessThan(line.stops.count, route.stops.count - 1)
+        XCTAssertGreaterThan(line.stops.count, 20)
+        for (before, after) in zip(line.stops, line.stops.dropFirst()) {
+            XCTAssertGreaterThanOrEqual(after - before, 0.02)
+        }
+        XCTAssertLessThan(try XCTUnwrap(line.stops.last), 1)
+        XCTAssertEqual(line.borders.count, 1)
     }
 
     func testEventsAreOrderedByTimeAndCountriesNamedForTheReader() {
