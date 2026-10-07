@@ -2357,7 +2357,7 @@ export const CARRIER_CAPABILITIES = {
         "domains": [
           "tip-sa.com"
         ],
-        "path": "^/cliente/datos(?:_prestashop)?\\.php$",
+        "path": "^/cliente/datos(?:_prestashop|_env)?\\.php$",
         "params": [
           "id"
         ]
@@ -2374,7 +2374,7 @@ export const CARRIER_CAPABILITIES = {
         "preferred": true
       }
     ],
-    "trackingUrlTemplate": "https://www.tip-sa.com/cliente/datos_prestashop.php?id={trackingNumber}",
+    "trackingUrlTemplate": "https://www.tip-sa.com/cliente/datos_env.php?id={trackingNumber}",
     "countries": [
       "ES",
       "PT",
