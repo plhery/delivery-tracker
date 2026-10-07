@@ -236,11 +236,11 @@ describe('App', () => {
     expect(detail).toHaveAttribute('inert');
     expect(detail).toHaveAttribute('aria-hidden', 'true');
     expect(carrier).toHaveFocus();
-    await pickCarrier(user, carrier, 'DPD');
+    await pickCarrier(user, carrier, 'DPD Switzerland');
     // The picker hands focus back to the carrier field.
     expect(carrier).toHaveFocus();
-    expect(carrier).toHaveAccessibleName('Carrier DPD');
-    expect(carrier).toHaveAccessibleDescription(/check DPD for updates automatically/);
+    expect(carrier).toHaveAccessibleName('Carrier DPD Switzerland');
+    expect(carrier).toHaveAccessibleDescription(/check DPD Switzerland for updates automatically/);
     await user.tab();
     expect(within(sheet).getByLabelText(/postcode/i)).toHaveFocus();
     await user.tab({ shift: true });
@@ -269,7 +269,7 @@ describe('App', () => {
     await pickCarrier(user, within(sheet).getByRole('button', { name: /^Carrier / }), 'GLS Switzerland');
     expect(within(sheet).getByLabelText(/delivery postcode/i)).toBeRequired();
     expect(within(sheet).getByRole('button', { name: 'Save carrier' })).toBeDisabled();
-    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Carrier / }), 'DPD');
+    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Carrier / }), 'DPD Switzerland');
     expect(within(sheet).getByLabelText(/delivery postcode/i)).not.toBeRequired();
     await user.click(within(sheet).getByRole('button', { name: 'Save carrier' }));
     expect(changeCarrier).toHaveBeenLastCalledWith(expect.any(String), {
@@ -280,7 +280,7 @@ describe('App', () => {
     await user.keyboard('{Escape}');
 
     await user.click(await screen.findByText('Trail weekend kit 🏕️'));
-    await user.click(screen.getByRole('button', { name: 'Change carrier from DPD' }));
+    await user.click(screen.getByRole('button', { name: 'Change carrier from DPD Switzerland' }));
     sheet = screen.getByRole('dialog', { name: 'Change carrier' });
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).toHaveValue('8000');
@@ -739,7 +739,7 @@ describe('App', () => {
       within(sheet).getByLabelText(/tracking number/i),
       '06080000000002',
     );
-    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'DPD');
+    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'DPD Switzerland');
 
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).not.toBeRequired();
@@ -747,7 +747,7 @@ describe('App', () => {
     expect(postcode).toHaveValue('');
     expect(postcode).toHaveAttribute('placeholder', '75001');
     expect(postcode.closest('label')).toHaveTextContent(/delivery postcode\s*optional/i);
-    expect(within(sheet).getByText(/DPD also shows verified scans/i)).toBeInTheDocument();
+    expect(within(sheet).getByText(/DPD Switzerland also shows verified scans/i)).toBeInTheDocument();
     expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeEnabled();
     for (const unfinished of ['12', 'abcde', '75001/2']) {
       await user.type(postcode, unfinished);
@@ -782,7 +782,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /add a parcel/i }));
     const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
     await user.type(within(sheet).getByLabelText(/tracking number/i), '06080000000001');
-    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'DPD');
+    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'DPD Switzerland');
     await user.clear(within(sheet).getByLabelText(/delivery postcode/i));
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
@@ -813,7 +813,7 @@ describe('App', () => {
       within(sheet).getByLabelText(/tracking number/i),
       '06080000000003',
     );
-    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'DPD');
+    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'DPD Switzerland');
 
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).toHaveValue('');

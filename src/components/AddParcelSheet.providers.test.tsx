@@ -124,7 +124,7 @@ describe('DPD carrier lookup', () => {
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput="0608 0000 0000 02" />);
     await waitFor(() => expect(lookupCarrier).toHaveBeenCalledWith('06080000000002', apiAuth, expect.anything()));
     await screen.findByRole('textbox', { name: /^Delivery postcode/ });
-    expect(screen.getByText('DPD')).toBeInTheDocument();
+    expect(screen.getByText('DPD Switzerland')).toBeInTheDocument();
     const button = screen.getByRole('button', { name: /^add parcel$/i });
     expect(button).toBeEnabled();
     await user.click(button);
@@ -143,7 +143,7 @@ describe('DPD carrier lookup', () => {
     await user.tab();
     await waitFor(() => expect(lookupCarrier).toHaveBeenCalledOnce());
     expect(lookupCarrier).toHaveBeenCalledWith('06080000000002', apiAuth, expect.anything());
-    expect(await screen.findByRole('button', { name: /^DPD has this parcel/ })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^DPD Switzerland has this parcel/ })).toBeInTheDocument();
   });
 
   it('saves instead of asking when the field is left for the Add button', async () => {
@@ -175,10 +175,10 @@ describe('DPD carrier lookup', () => {
     const onAdd = vi.fn().mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput="12345678901231" />);
-    await user.click(await screen.findByRole('button', { name: 'Detect automatically DPD and Hermes Germany know it Choose' }));
+    await user.click(await screen.findByRole('button', { name: 'Detect automatically DPD Switzerland and Hermes Germany know it Choose' }));
     const known = within(carrierPicker()).getByRole('group', { name: 'Know this number' });
     expect(within(known).getAllByRole('option').map((option) => option.textContent)).toEqual([
-      expect.stringMatching(/^DPD.*Knows this number$/),
+      expect.stringMatching(/^DPD Switzerland.*Knows this number$/),
       expect.stringMatching(/^Hermes Germany.*Knows this number$/),
     ]);
     // Automatic detection is still offered, but no longer recommended.
@@ -194,9 +194,9 @@ describe('DPD carrier lookup', () => {
     const user = userEvent.setup();
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput="06080000000002" />);
     await pickCarrier(user, carrierLine(/^(Detect automatically|DPD)/), 'Asendia');
-    expect(await screen.findByText('DPD knows this number.')).toBeInTheDocument();
+    expect(await screen.findByText('DPD Switzerland knows this number.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^add parcel$/i })).toBeEnabled();
-    await user.click(screen.getByRole('button', { name: 'Use DPD' }));
+    await user.click(screen.getByRole('button', { name: 'Use DPD Switzerland' }));
     await user.click(screen.getByRole('button', { name: /^add parcel$/i }));
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'dpd' }));
   });
@@ -210,7 +210,7 @@ describe('DPD carrier lookup', () => {
     await waitFor(() => expect(lookupCarrier).toHaveBeenCalledOnce());
     await pickCarrier(user, carrierLine(/^Detect automatically/), 'SEUR');
     finish({ trackingNumber: '06080000000002', carrier: 'dpd', asked: ['dpd', 'ciblex'] });
-    expect(await screen.findByText('DPD knows this number.')).toBeInTheDocument();
+    expect(await screen.findByText('DPD Switzerland knows this number.')).toBeInTheDocument();
     expect(carrierLine(/^SEUR Chosen by you/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /^add parcel$/i }));
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'seur' }));
@@ -225,7 +225,7 @@ describe('DPD carrier lookup', () => {
     await user.click(carrierLine(/^Detect automatically/));
     const auto = within(carrierPicker()).getByRole('option', { name: /^Detect automatically/ });
     expect(auto).toHaveAttribute('aria-selected', 'true');
-    expect(auto).toHaveTextContent('Recommended Not found at DPD and Ciblex yet. We’ll keep checking after you add it.');
+    expect(auto).toHaveTextContent('Recommended Not found at DPD Switzerland and Ciblex yet. We’ll keep checking after you add it.');
   });
 
   it('tells a carrier that could not answer from one that said no', async () => {

@@ -104,7 +104,7 @@ describe('shipment details', () => {
 
   it('says when DPD rejected the postcode and opens the editor to change it', async () => {
     const view = show({ carrier: 'dpd', trackingNumber: '06080000000002', dpdPostcode: '8000', dpdPostcodeVerified: false });
-    expect(screen.getByText(/DPD didn't accept postcode 8000, so it shows fewer details\./)).toBeInTheDocument();
+    expect(screen.getByText(/DPD Switzerland didn't accept postcode 8000, so it shows fewer details\./)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Edit postcode' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     view.unmount();

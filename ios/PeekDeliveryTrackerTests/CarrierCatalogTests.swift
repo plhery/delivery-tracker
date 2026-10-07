@@ -376,7 +376,7 @@ final class CarrierCatalogTests: XCTestCase {
             CarrierPickerSearch.search(query, catalog: catalog, language: .en, preferred: preferred)
                 .map { catalog.info(for: $0.carrier).displayName }
         }
-        XCTAssertEqual(Array(names("dpd").prefix(2)), ["DPD", "DPD France"])
+        XCTAssertEqual(Array(names("dpd").prefix(2)), ["DPD France", "DPD Germany"])
         XCTAssertEqual(names("colis prive").first, "Colis Privé")
         XCTAssertEqual(Array(names("jt").prefix(2)), ["J&T Cargo", "J&T Express"])
         XCTAssertEqual(names("4px").first, "4PX")

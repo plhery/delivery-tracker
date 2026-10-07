@@ -84,7 +84,7 @@ test('asks four questions in order, with the field first and the name, the code 
     'Where’s my parcel?', 'Will I know when it moves?', 'Following more than one?', 'Who’s behind Peek?',
   ]);
   await expect(page.getByRole('link', { name: 'Open source 3,500+ carriers' })).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Works with Swiss Post, DHL, UPS, DPD, GLS and 100 more carriers' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Works with Swiss Post, DHL, UPS, DPD Switzerland, GLS and 100 more carriers' })).toBeVisible();
   const moves = page.getByRole('region', { name: 'Will I know when it moves?' });
   await expect(moves.getByRole('listitem')).toHaveText(['Checked every 10 min', 'Every 2 min on the last mile']);
 

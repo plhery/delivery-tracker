@@ -210,7 +210,7 @@ describe('FrontDoor', () => {
     await user.type(field, `${SHARED}{Enter}`);
     const choices = await screen.findAllByRole('radio');
     expect(document.querySelector('.door-line')).toHaveTextContent('2 carriers know this number choose yours');
-    expect(choices.map((choice) => choice.closest('label')!.textContent)).toEqual(['DPDKnows this number', 'SEURKnows this number']);
+    expect(choices.map((choice) => choice.closest('label')!.textContent)).toEqual(['DPD SwitzerlandKnows this number', 'SEURKnows this number']);
     // Going on stopped at the choice: the focus is there, and nothing was looked up.
     expect(choices[0]).toHaveFocus();
     expect(mocks.lookup).not.toHaveBeenCalled();
@@ -277,7 +277,7 @@ describe('FrontDoor', () => {
     expect(field).toHaveAccessibleDescription(notFound);
     const shapes = screen.getByRole('region', { name: 'What tracking numbers look like' });
     expect(within(shapes).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-      'UPS1Z and 16 letters or digits', 'DHL10 digits, or JJD and 18 digits', 'Swiss Post2 letters, 9 digits, 2 letters', 'DPD14 digits',
+      'UPS1Z and 16 letters or digits', 'DHL10 digits, or JJD and 18 digits', 'Swiss Post2 letters, 9 digits, 2 letters', 'DPD Switzerland14 digits',
     ]);
     expect(document.querySelector('.door-pip')).toBeNull();
     expect(mocks.lookup).not.toHaveBeenCalled();

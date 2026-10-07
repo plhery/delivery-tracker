@@ -24,7 +24,7 @@ const names = (query: string, preferred?: CarrierId[]) => search(query, preferre
 
 describe('carrier search', () => {
   it('finds a name by its start, then by a later word', () => {
-    expect(names('dpd').slice(0, 2)).toEqual(['DPD', 'DPD France']);
+    expect(names('dpd').slice(0, 2)).toEqual(['DPD France', 'DPD Germany']);
     expect(names('post').slice(0, 3)).toEqual(['Poste Italiane', 'Posti', 'PostLogistics']);
     expect(names('post')).toContain('Swiss Post');
   });
@@ -145,7 +145,7 @@ describe('what a picker beside a number leads with', () => {
   const shape = (carrier: CarrierId, confidence: 'high' | 'low' | 'none', candidates: CarrierId[] = []) => ({ carrier, confidence, candidates });
 
   it('names carriers as one phrase in the reader’s language', () => {
-    expect(carrierNameList(['dhl', 'ups', 'dpd'], 'en', 'en-CH')).toBe('DHL, UPS and DPD');
+    expect(carrierNameList(['dhl', 'ups', 'dpd'], 'en', 'en-CH')).toBe('DHL, UPS and DPD Switzerland');
     expect(carrierNameList(['dhl', 'ups'], 'de', 'de-CH')).toBe('DHL und UPS');
     expect(carrierNameList([], 'en', 'en-CH')).toBe('');
   });

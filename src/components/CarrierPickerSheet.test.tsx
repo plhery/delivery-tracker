@@ -64,7 +64,7 @@ describe('carrier picker', () => {
 
   it('keeps its order when an answer arrives, and only adds tags', () => {
     const { picker, rerender, onSelect, onClose } = renderPicker({ tags: { dpd: { label: 'Asking…', tone: 'quiet' }, ciblex: { label: 'Asking…', tone: 'quiet' } } });
-    const dpd = within(within(picker).getByRole('group', { name: 'Fits this number' })).getByRole('option', { name: 'DPD' });
+    const dpd = within(within(picker).getByRole('group', { name: 'Fits this number' })).getByRole('option', { name: 'DPD Switzerland' });
     expect(dpd).toHaveAccessibleDescription('Switzerland, Asking…');
     rerender(<CarrierPickerSheet
       selected="auto"

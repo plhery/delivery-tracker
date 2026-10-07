@@ -806,7 +806,7 @@ export const CARRIER_CAPABILITIES = {
     ]
   },
   "dpd": {
-    "displayName": "DPD",
+    "displayName": "DPD Switzerland",
     "color": "#dc0032",
     "selectable": true,
     "timezone": "Europe/Zurich",
@@ -859,7 +859,6 @@ export const CARRIER_CAPABILITIES = {
       }
     ],
     "aliases": [
-      "DPD Switzerland",
       "DPD (Schweiz) AG",
       "myDPD"
     ],

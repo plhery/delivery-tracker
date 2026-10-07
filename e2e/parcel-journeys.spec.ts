@@ -152,7 +152,7 @@ test('adds a DPD parcel without its optional postcode', async ({ page }) => {
   await sheet.getByLabel(/^Name/).fill('Postcode-free DPD parcel');
   await sheet.getByLabel('Tracking number or link')
     .fill('https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber=06080000000001');
-  await expect(sheet.getByText('DPD', { exact: true })).toBeVisible();
+  await expect(sheet.getByText('DPD Switzerland', { exact: true })).toBeVisible();
   await expect(sheet.getByText('Optional', { exact: true })).toHaveCount(2);
   await sheet.getByLabel(/^Delivery postcode/).fill('');
   const add = sheet.getByRole('button', { name: 'Add parcel' });
@@ -161,7 +161,7 @@ test('adds a DPD parcel without its optional postcode', async ({ page }) => {
   await expect(sheet).toBeHidden();
   await page.getByRole('button', { name: /^(?:Next up: )?Postcode-free DPD parcel —/ }).click();
   const detail = page.getByRole('dialog', { name: 'Postcode-free DPD parcel' });
-  await detail.getByRole('button', { name: 'Change carrier from DPD' }).click();
+  await detail.getByRole('button', { name: 'Change carrier from DPD Switzerland' }).click();
   const edit = page.getByRole('dialog', { name: 'Change carrier', exact: true });
   await expect(edit.getByLabel(/^Delivery postcode/)).toHaveValue('');
   await expect(edit.getByRole('button', { name: 'Save carrier' })).toBeDisabled();
@@ -193,7 +193,7 @@ test.describe('with the clock of another country', () => {
     await expect(sheet).toBeHidden();
     await page.getByRole('button', { name: /^(?:Next up: )?DPD parcel abroad —/ }).click();
     const detail = page.getByRole('dialog', { name: 'DPD parcel abroad' });
-    await detail.getByRole('button', { name: 'Change carrier from DPD' }).click();
+    await detail.getByRole('button', { name: 'Change carrier from DPD Switzerland' }).click();
     const edit = page.getByRole('dialog', { name: 'Change carrier', exact: true });
     await expect(edit.getByLabel(/^Delivery postcode/)).toHaveValue('SW1A 1AA');
     await expect(edit.getByLabel(/^Delivery postcode/)).toHaveAttribute('placeholder', '75001');
@@ -321,10 +321,10 @@ test('navigates nested carrier dialogs entirely by keyboard', async ({ page }) =
   await page.keyboard.press('Enter');
   const picker = page.getByRole('dialog', { name: 'Carrier', exact: true });
   await picker.getByRole('combobox', { name: 'Search carriers' }).fill('DPD');
-  await picker.getByRole('option', { name: 'DPD', exact: true }).click();
+  await picker.getByRole('option', { name: 'DPD Switzerland', exact: true }).click();
   await expect(picker).toBeHidden();
   await expect(carrier).toBeFocused();
-  await expect(carrier).toHaveAccessibleName('Carrier DPD');
+  await expect(carrier).toHaveAccessibleName('Carrier DPD Switzerland');
   await page.keyboard.press('Tab');
   const postcode = sheet.getByLabel(/postcode/i);
   await expect(postcode).toBeFocused();

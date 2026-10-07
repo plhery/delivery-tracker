@@ -11,7 +11,7 @@ afterEach(() => { vi.unstubAllGlobals(); });
 describe('CarrierRibbon', () => {
   it('rolls the carriers by in their own liveries, as one image with a name', () => {
     render(<CarrierRibbon />);
-    const road = screen.getByRole('img', { name: 'Works with Swiss Post, DHL, UPS, DPD, GLS and 100 more carriers' });
+    const road = screen.getByRole('img', { name: 'Works with Swiss Post, DHL, UPS, DPD Switzerland, GLS and 100 more carriers' });
     // The line of trucks stands twice in the lane, so it can roll without a gap.
     const trucks = road.querySelectorAll('.door-ribbon__truck');
     expect(trucks).toHaveLength(RIBBON_CARRIERS.length * 2);
