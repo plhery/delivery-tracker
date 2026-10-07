@@ -137,6 +137,18 @@
   "dhl-ecommerce": {
     "family": "dhl"
   },
+  "dhl-ecommerce-es": {
+    "family": "dhl"
+  },
+  "dhl-ecommerce-nl": {
+    "family": "dhl"
+  },
+  "dhl-ecommerce-pl": {
+    "family": "dhl"
+  },
+  "dhl-ecommerce-uk": {
+    "family": "dhl"
+  },
   "dhl-express": {
     "family": "dhl"
   },

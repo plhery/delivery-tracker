@@ -58,7 +58,8 @@ describe('carrier brand', () => {
   });
 
   it.each([
-    ['dhl-ecommerce', 'dhl'], ['dpd-fr', 'dpd'], ['amazon-shipping', 'amazon-logistics'],
+    ['dhl-ecommerce', 'dhl'], ['dhl-ecommerce-es', 'dhl'], ['dhl-ecommerce-nl', 'dhl'], ['dhl-ecommerce-pl', 'dhl'],
+    ['dhl-ecommerce-uk', 'dhl'], ['dpd-fr', 'dpd'], ['amazon-shipping', 'amazon-logistics'],
     ['swiss-post-cargo', 'swiss-post'], ['postlogistics', 'swiss-post'],
     ['dpd-de', 'dpd'], ['dpd-uk', 'dpd'], ['evri-uk', 'evri'], ['delivengo', 'la-poste'],
   ])('shares %s branding with %s', (id, owner) => {
