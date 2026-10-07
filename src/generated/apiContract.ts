@@ -459,7 +459,12 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^0034043[345]\\d{12}$",
-        "confidence": "high"
+        "confidence": "high",
+        "checksum": "sscc"
+      },
+      {
+        "pattern": "^0034043[345]\\d{12}$",
+        "confidence": "low"
       }
     ],
     "aliases": [
@@ -558,7 +563,12 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^1Z[A-Z0-9]{16}$",
-        "confidence": "high"
+        "confidence": "high",
+        "checksum": "ups"
+      },
+      {
+        "pattern": "^1Z[A-Z0-9]{16}$",
+        "confidence": "low"
       },
       {
         "pattern": "^[HJKV]\\d{10}$",
@@ -719,7 +729,9 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{12}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "fedex",
+        "preferred": true
       },
       {
         "pattern": "^\\d{15}$",
@@ -1023,15 +1035,21 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^(?:[68][A-Z]|5[N-Z])\\d{11}$",
+        "confidence": "high",
+        "checksum": "colissimo"
+      },
+      {
+        "pattern": "^870\\d{11}$",
         "confidence": "high"
       },
       {
-        "pattern": "^870\\d{11,12}$",
-        "confidence": "high"
+        "pattern": "^(?:870|880)\\d{11}[0-9A-Z]$",
+        "confidence": "high",
+        "checksum": "dpd"
       },
       {
-        "pattern": "^(?:870|880)\\d{11}[A-Z]$",
-        "confidence": "high"
+        "pattern": "^(?:870|880)\\d{11}[0-9A-Z]$",
+        "confidence": "low"
       },
       {
         "pattern": "^[A-Z0-9]{2}\\d{11}$",
@@ -1082,8 +1100,9 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       },
       {
-        "pattern": "^\\d{14}[A-Z]$",
-        "confidence": "low"
+        "pattern": "^\\d{14}[0-9A-Z]$",
+        "confidence": "low",
+        "checksum": "dpd"
       },
       {
         "pattern": "^[A-Z]{2}\\d{9}[A-Z]{2}$",
@@ -1805,8 +1824,9 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^H[A-Z0-9]{15}$",
-        "confidence": "low"
+        "pattern": "^[HT][0-9A-Z]{5}\\d{10}$",
+        "confidence": "low",
+        "checksum": "evri"
       }
     ],
     "trackingUrlTemplate": "https://globaleco.app/track",
@@ -2036,11 +2056,13 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{16}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "gs1"
       },
       {
         "pattern": "^\\d{23}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "gs1"
       }
     ],
     "trackingUrlTemplate": "https://s.correosexpress.com/",
@@ -2403,7 +2425,8 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{13}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "ukrposhta"
       }
     ],
     "trackingUrlTemplate": "https://track.ukrposhta.ua/en/?barcode={trackingNumber}",
@@ -2434,7 +2457,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^9[234]\\d{20}(?:\\d{4})?$",
+        "pattern": "^9[1-5]\\d{20}(?:\\d{4})?$",
         "confidence": "low",
         "checksum": "usps",
         "preferred": true
@@ -2448,7 +2471,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       },
       {
-        "pattern": "^420(?:\\d{5}9[234]\\d{20}(?:\\d{4})?|\\d{9}9[234]\\d{20})$",
+        "pattern": "^420(?:\\d{5}9[1-5]\\d{20}(?:\\d{4})?|\\d{9}9[1-5]\\d{20})$",
         "confidence": "low",
         "checksum": "usps",
         "preferred": true
@@ -2486,7 +2509,8 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{16}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "gs1"
       },
       {
         "pattern": "^[A-Z]{2}\\d{9}CA$",
@@ -2524,7 +2548,8 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^[0-5]\\d{11}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "luhn"
       },
       {
         "pattern": "^(?!(?:BYS|LTN))[A-Z]{3}\\d{9}$",
@@ -2591,7 +2616,8 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^[CD]\\d{14}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "ontrac"
       },
       {
         "pattern": "^L[AIEHNX]\\d{8}$",
@@ -3013,7 +3039,8 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{11}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "mod7"
       }
     ],
     "trackingUrlTemplate": "https://www.bluedart.com/trackdartresultthirdparty?trackFor=0&trackNo={trackingNumber}",
@@ -3170,11 +3197,22 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{12}$",
+        "confidence": "low",
+        "checksum": "sf-express",
+        "preferred": true
+      },
+      {
+        "pattern": "^\\d{12}$",
         "confidence": "low"
       },
       {
         "pattern": "^SF\\d{13}$",
-        "confidence": "high"
+        "confidence": "high",
+        "checksum": "sf-express"
+      },
+      {
+        "pattern": "^SF\\d{13}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://htm.sf-express.com/tw/en/dynamic_function/waybill/#search/bill-number/{trackingNumber}",
@@ -3344,7 +3382,8 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{12}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "mod7"
       }
     ],
     "trackingUrlTemplate": "https://toi.kuronekoyamato.co.jp/cgi-bin/tneko",
@@ -3688,7 +3727,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       },
       {
-        "pattern": "^\\d{20}$",
+        "pattern": "^00\\d5900773\\d{10}$",
         "confidence": "low",
         "checksum": "poczta-polska",
         "preferred": true
@@ -3771,7 +3810,8 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{11}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "mod7"
       }
     ],
     "trackingUrlTemplate": "https://www.aramex.com/us/en/track/shipments?ShipmentNumber={trackingNumber}",
@@ -4259,8 +4299,9 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^H[A-Z0-9]{15}$",
-        "confidence": "low"
+        "pattern": "^[HT][0-9A-Z]{5}\\d{10}$",
+        "confidence": "low",
+        "checksum": "evri"
       },
       {
         "pattern": "^\\d{16}$",
