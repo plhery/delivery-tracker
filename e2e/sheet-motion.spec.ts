@@ -103,7 +103,6 @@ test('a stamp’s bubble grows out of it, and a friend’s page out of their car
   const card = page.locator('.friend-card').nth(1);
   await card.evaluate((element) => Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)));
   const tone = await card.evaluate((element) => getComputedStyle(element).backgroundColor);
-  const place = (await card.boundingBox())!;
   await card.click();
   const friend = page.locator('.friends-sheet--page');
   await expect.poll(() => friend.evaluate((element) => element.getAnimations().some((animation) => animation.id === 'parcel-card-expand'))).toBe(true);
@@ -112,12 +111,12 @@ test('a stamp’s bubble grows out of it, and a friend’s page out of their car
   const postcard = friend.locator('.friend-postcard');
   expect(await postcard.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(tone);
   const start = (await postcard.boundingBox())!;
-  if (page.viewportSize()!.width <= 760) {
-    // The block is taller than the card: it starts at the card's top, as wide as the card.
-    expect(Math.abs(start.x - place.x)).toBeLessThan(2);
-    expect(Math.abs(start.width - place.width)).toBeLessThan(2);
-    expect(Math.abs(start.y - place.y)).toBeLessThan(12);
-  }
+  // Read once the page is held: the tab's own entrance has carried the card to its place by then.
+  const place = (await card.boundingBox())!;
+  // The block is taller than the card: it starts at the card's top, as wide as the card.
+  expect(Math.abs(start.x - place.x)).toBeLessThan(2);
+  expect(Math.abs(start.width - place.width)).toBeLessThan(2);
+  expect(Math.abs(start.y - place.y)).toBeLessThan(2);
   await friend.evaluate((element) => element.getAnimations().forEach((animation) => animation.finish()));
   await friend.getByRole('button', { name: 'Close' }).click();
   await expect.poll(() => friend.evaluate((element) => element.getAnimations().some((animation) => animation.id === 'detail-card-return'))).toBe(true);

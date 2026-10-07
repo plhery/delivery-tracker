@@ -37,7 +37,8 @@
 :root .friends-sheet--invite { max-width: 350px; padding: 20px; border-radius: 23px; animation: friends-invite-arrive .55s var(--spring) both; }
 @keyframes friends-invite-arrive { from { opacity: 0; transform: translateY(56px) scale(.9); } 45% { opacity: 1; } }
 /* Opened from a friend's card, the page grows out of it instead. */
-:root .friends-sheet.friends-sheet--from-card { animation: none; }
+/* The flight out of the card measures from the page's corner. */
+:root .friends-sheet.friends-sheet--from-card { animation: none; transform-origin: 0 0; }
 :root .friends-sheet--invite .sheet__heading { margin-bottom: 6px; }
 :root .friends-sheet--invite .sheet__title { font-size: 21px; }
 :root .friends-profile { gap: 18px; }
@@ -87,7 +88,7 @@
 @keyframes friend-parcel-glint { 0% { opacity: 0; transform: scale(.3); } 35% { opacity: .65; } 100% { opacity: 0; transform: translateY(-7px) scale(.65); } }
 :root .invitation-accept .friend-postcard { margin-bottom: 22px; }:root .invitation-accept .friends-privacy { margin-top: 15px; }:root .invitation-sharing-heading { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; }:root .invitation-sharing-heading h2 { font-size: 16px; margin: 0; }:root .invitation-sharing-heading button { font-size: 12px; background: none; text-decoration: underline; color: var(--ink-soft); }
 @media(max-width:600px) { :root .friends-backdrop--page { padding: 0; }:root .friends-sheet--page { border-radius: 0; max-height: 100dvh; height: 100dvh; max-width: none; padding: max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom)); animation: sheet-rise .5s cubic-bezier(.32,.72,0,1) backwards; }/* On a phone the invitation is a sheet that rises from the bottom edge. */
-:root .friends-backdrop--invite { padding: 0; align-items: flex-end; }:root .friends-sheet--invite { max-width: none; padding: 12px 20px max(22px,env(safe-area-inset-bottom)); border-radius: 26px 26px 0 0; border-bottom: 0; animation: sheet-rise .5s cubic-bezier(.32,.72,0,1) backwards; }:root .friends-sheet--invite .sheet__grabber { display: block; margin-bottom: 14px; }:root .friends-invite-trigger { font-size: 11px; }:root .friends-sheet .sheet__title { font-size: 18px; } }
+:root .friends-backdrop--invite { padding: 18px; }:root .friends-invite-trigger { font-size: 11px; }:root .friends-sheet .sheet__title { font-size: 18px; } }
 @media(prefers-reduced-motion:reduce) { :root .invitation-parcel *, :root .invitation-parcel.opening * { animation: none!important; transition: none!important; } }
 :root .arrival--accepting .arrival__parcel { display: none; }
 :root .arrival--accepting .arrival__sign-in { padding-top: 10px; }
