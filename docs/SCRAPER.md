@@ -29,6 +29,13 @@ the requirements and checked inputs ([`lib/carriers.ts`](../src/lib/carriers.ts)
 [`server/carriers.ts`](../src/server/carriers.ts)), the input a recognised carrier still
 needs ([`trackingRouting.ts`](../src/server/trackingRouting.ts)) and the contract generator.
 
+A national carrier's postcode requirement states its own example. One that takes any
+country's postcode leaves it out, and the forms show the reader's country
+([`postcodeExample.ts`](../src/lib/postcodeExample.ts), `CarrierCatalog.postcodeExample`
+on iPhone): the device's time zone or language region on the web, its region setting on
+iPhone, the carrier's own country otherwise. The examples live in
+[`shared/postcode-examples.json`](../shared/postcode-examples.json).
+
 The scraper validates its own catalog. The app contract generator projects the catalog
 onto the client API, excluding what only retrieval uses: refresh pacing, clocks and the
 page the scraper's canary probes. The scraper's stage vocabulary must agree with the

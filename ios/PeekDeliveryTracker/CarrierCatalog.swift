@@ -26,11 +26,31 @@ struct CarrierRequirement: Codable, Hashable, Sendable {
             value = value.filter(\.isNumber)
         } else if validator == "paackPostcode" {
             value = value.uppercased().filter { !$0.isWhitespace }
+        } else if takesAnyPostcode {
+            // As the country writes it: capitals, one space between groups.
+            value = value.uppercased().split(whereSeparator: \.isWhitespace).joined(separator: " ")
         }
         if let maxLength {
             value = String(value.prefix(maxLength))
         }
         return value
+    }
+
+    /// The carrier delivers abroad too and takes any country's postcode.
+    var takesAnyPostcode: Bool { validator == "internationalPostcode" }
+
+    /// The value a field keeps while it is typed: `normalizedValue`, with the
+    /// space a postcode in two groups ("SW1A 1AA") needs before its second group.
+    func typedValue(_ rawValue: String) -> String {
+        let value = normalizedValue(rawValue)
+        guard takesAnyPostcode, rawValue.last?.isWhitespace == true,
+              !value.isEmpty, value.count < maxLength ?? .max else { return value }
+        return value + " "
+    }
+
+    /// Number keys first where the example is all digits; letters stay one tap away.
+    func startsWithNumberKeys(example: String?) -> Bool {
+        takesAnyPostcode && example?.contains(where: \.isLetter) != true
     }
 
     /// The parcel can be saved without it; a value that is typed is still checked.
@@ -441,6 +461,28 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     func trackingHintKey(for carrier: CarrierID) -> String {
         if requiresAmazonAccount(carrier) { return "add.amazonAccount" }
         return tracksAutomatically(carrier) ? "add.autoSync" : "add.linkSync"
+    }
+
+    /// One postcode per country, shown as the example in a field that takes any country's.
+    static let postcodeExamples: [String: String] = {
+        guard let url = Bundle.main.url(forResource: "PostcodeExamples", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let examples = try? JSONDecoder().decode([String: String].self, from: data) else { return [:] }
+        return examples
+    }()
+
+    /// The example in a carrier's field. A national carrier states its own
+    /// postcode; one that takes any country's leaves it out and shows the
+    /// device's region, or the carrier's own country when that has no example.
+    func postcodeExample(
+        for carrier: CarrierID,
+        requirement: CarrierRequirement,
+        region: String? = Locale.current.region?.identifier
+    ) -> String? {
+        if let placeholder = requirement.placeholder, !placeholder.isEmpty { return placeholder }
+        guard requirement.field == .dpdPostcode else { return nil }
+        return ([region].compactMap { $0?.uppercased() } + (info(for: carrier).countries ?? []))
+            .lazy.compactMap { Self.postcodeExamples[$0] }.first
     }
 
     func requirements(for carrier: CarrierID, trackingNumber: String) -> [CarrierRequirement] {

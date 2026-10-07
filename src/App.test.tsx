@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import App from './App';
 import { ApiAuthenticationError } from './lib/apiClient';
 import { announceKeepOutcome } from './peek/pending';
@@ -703,7 +703,10 @@ describe('App', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('offers an optional DPD postcode and submits only four digits', async () => {
+  it("offers an optional DPD postcode of any country, with the reader's own as the example", async () => {
+    const clock = vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions')
+      .mockReturnValue({ ...new Intl.DateTimeFormat().resolvedOptions(), timeZone: 'Europe/Paris' });
+    onTestFinished(() => clock.mockRestore());
     const base = createDemoRepo(window.localStorage);
     const add = vi.fn(base.add);
     const user = userEvent.setup();
@@ -722,22 +725,30 @@ describe('App', () => {
     expect(postcode).not.toBeRequired();
     // Optional, so the last DPD postcode is offered rather than filled in.
     expect(postcode).toHaveValue('');
+    expect(postcode).toHaveAttribute('placeholder', '75001');
     expect(postcode.closest('label')).toHaveTextContent(/delivery postcode\s*optional/i);
     expect(within(sheet).getByText(/DPD also shows verified scans/i)).toBeInTheDocument();
     expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeEnabled();
-    await user.type(postcode, '800');
-    expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeDisabled();
-    await user.clear(postcode);
+    for (const unfinished of ['12', 'abcde', '75001/2']) {
+      await user.type(postcode, unfinished);
+      expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeDisabled();
+      await user.clear(postcode);
+    }
+    for (const national of ['8000', '75001', '1012 AB', '00-001']) {
+      await user.type(postcode, national);
+      expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeEnabled();
+      await user.clear(postcode);
+    }
 
-    await user.type(postcode, '80A00');
-    expect(postcode).toHaveValue('8000');
+    await user.type(postcode, ' sw1a  1aa ');
+    expect(postcode).toHaveValue('sw1a 1aa ');
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
     expect(add).toHaveBeenCalledWith({
       trackingNumber: '06080000000002',
       label: '',
       carrier: 'dpd',
-      dpdPostcode: '8000',
+      dpdPostcode: 'SW1A 1AA',
     });
   });
 
@@ -835,6 +846,8 @@ describe('App', () => {
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).toHaveValue('');
     expect(postcode).toHaveAttribute('maxlength', '5');
+    // A national carrier shows its own country's postcode wherever the reader is.
+    expect(postcode).toHaveAttribute('placeholder', '75001');
     expect(within(sheet).getByText(/carrier needs the delivery postcode/i))
       .toBeInTheDocument();
 

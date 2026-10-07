@@ -921,10 +921,15 @@ private struct ChangeCarrierView: View {
                     localizer.text("add.requirement.dpdPostcode"),
                     text: $deliveryPostcode
                 )
-                .keyboardType(requirement.inputMode == "numeric" ? .numberPad : .asciiCapable)
+                .keyboardType(requirement.inputMode == "numeric" ? .numberPad
+                    : requirement.startsWithNumberKeys(
+                        example: catalog.postcodeExample(for: selectedCarrier, requirement: requirement)
+                    ) ? .numbersAndPunctuation : .asciiCapable)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
                 .textContentType(.postalCode)
                 .onChange(of: deliveryPostcode) { _, value in
-                    deliveryPostcode = requirement.normalizedValue(value)
+                    deliveryPostcode = requirement.typedValue(value)
                 }
                 if requirement.isOptional {
                     Text(localizer.text("add.optional"))

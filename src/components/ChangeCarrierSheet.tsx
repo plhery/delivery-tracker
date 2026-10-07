@@ -10,7 +10,9 @@ import {
   detectCarrierMatch,
   formatTrackingNumber,
   requirementSatisfied,
+  typedRequirementValue,
 } from '../lib/carriers';
+import { lettersPostcode, postcodeExample } from '../lib/postcodeExample';
 import { useI18n } from '../i18n';
 import { useSheetDialog } from '../lib/modal';
 import type {
@@ -74,7 +76,7 @@ export function ChangeCarrierSheet({
     ? trackingUrl.trim()
     : undefined;
   const nextPostcode = requirements.some(({ field }) => field === 'dpdPostcode')
-    ? dpdPostcode.trim()
+    ? dpdPostcode.trim().toUpperCase()
     : undefined;
   const changed = Boolean(normalizedProviderPostcode) || selectedCarrier !== parcel.carrier
     || (nextTrackingUrl ?? '') !== (parcel.trackingUrl ?? '')
@@ -174,22 +176,21 @@ export function ChangeCarrierSheet({
                 {requirement.optional && <> <small>{t('add.optional')}</small></>}
               </span>
               <input
-                className="field__input"
+                className={`field__input${lettersPostcode(requirement) ? ' field__input--postcode' : ''}`}
                 type={requirement.type}
                 inputMode={requirement.inputMode}
                 autoComplete={requirement.autoComplete}
                 value={valueFor(requirement.field)}
-                placeholder={requirement.placeholder}
+                placeholder={postcodeExample(selectedCarrier, requirement)}
                 pattern={requirement.pattern}
                 maxLength={requirement.maxLength}
                 onChange={(event) => {
-                  const value = requirement.inputMode === 'numeric'
-                    ? event.target.value.replace(/\D/g, '').slice(0, requirement.maxLength)
-                    : event.target.value;
+                  const value = typedRequirementValue(requirement, event.target.value);
                   if (requirement.field === 'trackingUrl') setTrackingUrl(value);
                   else setDpdPostcode(value);
                 }}
-                autoCapitalize={requirement.type === 'url' ? 'none' : undefined}
+                onBlur={requirement.field === 'dpdPostcode' ? () => setDpdPostcode((value) => value.trim()) : undefined}
+                autoCapitalize={requirement.type === 'url' ? 'none' : lettersPostcode(requirement) ? 'characters' : undefined}
                 autoCorrect="off"
                 spellCheck={false}
                 required={!requirement.optional}

@@ -1970,7 +1970,10 @@ describe('carrier metadata', () => {
 
   it('offers the DPD delivery postcode as an optional input', () => {
     expect(carrierRequirements('dpd', '06080000000001')).toMatchObject([
-      { field: 'dpdPostcode', optional: true, pattern: '^[0-9]{4}$' },
+      { field: 'dpdPostcode', optional: true, inputMode: 'text', maxLength: 12 },
+    ]);
+    expect(carrierRequirements('dpd-de', '06080000000001')).toMatchObject([
+      { field: 'dpdPostcode', optional: true, pattern: '^[0-9]{5}$', placeholder: '10115' },
     ]);
     expect(carrierRequirements('gls-ch', '993990103198').map((item) => [item.field, item.optional]))
       .toEqual([['dpdPostcode', undefined]]);

@@ -513,17 +513,47 @@ final class CarrierCatalogTests: XCTestCase {
             catalog.requirements(for: .dpd, trackingNumber: "12345678901234")
                 .first(where: { $0.field == .dpdPostcode })
         )
-        XCTAssertEqual(dpd.placeholder, "8000")
-        XCTAssertEqual(dpd.maxLength, 4)
-        XCTAssertEqual(dpd.normalizedValue("80 A00 9"), "8000")
-        XCTAssertTrue(dpd.accepts("8000"))
-        XCTAssertFalse(dpd.accepts("75001"))
+        // DPD delivers abroad too: any country's postcode, as that country writes it.
+        XCTAssertNil(dpd.placeholder)
+        XCTAssertEqual(dpd.maxLength, 12)
+        XCTAssertEqual(dpd.normalizedValue(" sw1a  1aa "), "SW1A 1AA")
+        XCTAssertEqual(dpd.typedValue("sw1a "), "SW1A ")
+        XCTAssertEqual(dpd.typedValue("sw1a  "), "SW1A ")
+        XCTAssertEqual(dpd.typedValue(" "), "")
+        XCTAssertEqual(dpd.typedValue("123456789012 "), "123456789012")
+        for postcode in ["8000", "75001", "SW1A 1AA", "1012 AB", "00-001", "sw1a 1aa "] {
+            XCTAssertTrue(dpd.accepts(postcode), postcode)
+        }
+        for postcode in ["12", "ABCDE", "75001/2", "75 - 001", "1234567890123"] {
+            XCTAssertFalse(dpd.accepts(postcode), postcode)
+        }
         // DPD tracks without the postcode; one that is typed must still be valid.
         XCTAssertTrue(dpd.isOptional)
         XCTAssertTrue(dpd.isSatisfied(by: ""))
         XCTAssertTrue(dpd.isSatisfied(by: "  "))
         XCTAssertTrue(dpd.isSatisfied(by: "8000"))
-        XCTAssertFalse(dpd.isSatisfied(by: "800"))
+        XCTAssertFalse(dpd.isSatisfied(by: "80"))
+
+        // The example is the device's country, then the carrier's own.
+        XCTAssertEqual(catalog.postcodeExample(for: .dpd, requirement: dpd, region: "FR"), "75001")
+        XCTAssertEqual(catalog.postcodeExample(for: .dpd, requirement: dpd, region: "gb"), "SW1A 1AA")
+        XCTAssertEqual(catalog.postcodeExample(for: .dpd, requirement: dpd, region: "BR"), "8000")
+        XCTAssertEqual(catalog.postcodeExample(for: .dpd, requirement: dpd, region: nil), "8000")
+        XCTAssertTrue(dpd.startsWithNumberKeys(example: "75001"))
+        XCTAssertFalse(dpd.startsWithNumberKeys(example: "SW1A 1AA"))
+        for example in CarrierCatalog.postcodeExamples.values {
+            XCTAssertTrue(dpd.accepts(example), example)
+        }
+
+        // A national network keeps its own shape and example wherever the device is.
+        let dpdGermany = try XCTUnwrap(
+            catalog.requirements(for: .dpdDe, trackingNumber: "12345678901234")
+                .first(where: { $0.field == .dpdPostcode })
+        )
+        XCTAssertEqual(catalog.postcodeExample(for: .dpdDe, requirement: dpdGermany, region: "FR"), "10115")
+        XCTAssertEqual(dpdGermany.typedValue("10 115 "), "10115")
+        XCTAssertFalse(dpdGermany.accepts("8000"))
+        XCTAssertFalse(dpdGermany.startsWithNumberKeys(example: "10115"))
 
         let mondialRelay = try XCTUnwrap(
             catalog.requirements(for: .mondialRelay, trackingNumber: "76434219")

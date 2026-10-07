@@ -623,7 +623,7 @@ begin
 
   begin
     perform public.create_owned_package(
-      '06080000000003', '', 'dpd', null, '80A4'
+      '06080000000003', '', 'dpd', null, '80/4'
     );
     raise exception 'invalid DPD postcode was accepted';
   exception when invalid_parameter_value then
@@ -2120,7 +2120,7 @@ begin
     raise exception 'A DPD postcode added later was not stored';
   end if;
   begin
-    perform public.change_owned_package_carrier(parcel.id, 'dpd', null, '80A4');
+    perform public.change_owned_package_carrier(parcel.id, 'dpd', null, '80/4');
     raise exception 'Invalid DPD postcode was accepted on a carrier change' using errcode = 'P0002';
   exception when invalid_parameter_value then null; end;
   begin

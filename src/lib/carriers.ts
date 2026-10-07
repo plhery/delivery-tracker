@@ -63,6 +63,18 @@ export function carrierRequirements(carrierId: CarrierId, trackingNumber: string
     return named;
   });
 }
+
+/**
+ * What a form keeps of a typed value: the digits of a numeric field, single
+ * spaces in a postcode. Letters keep their case, so the caret stays in place.
+ */
+export function typedRequirementValue(
+  requirement: Pick<CarrierInputRequirement, 'field' | 'inputMode' | 'maxLength'>,
+  raw: string,
+): string {
+  if (requirement.inputMode === 'numeric') return raw.replace(/\D/g, '').slice(0, requirement.maxLength);
+  return requirement.field === 'dpdPostcode' ? raw.replace(/\s+/g, ' ').trimStart() : raw;
+}
 export type {
   CarrierDetection,
   DetectionConfidence,

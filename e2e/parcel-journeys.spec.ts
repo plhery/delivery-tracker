@@ -163,6 +163,39 @@ test('adds a DPD parcel without its optional postcode', async ({ page }) => {
   await expect(edit.getByRole('button', { name: 'Save carrier' })).toBeDisabled();
 });
 
+test.describe('with the clock of another country', () => {
+  test.use({ timezoneId: 'Europe/Paris' });
+
+  test("adds a DPD parcel with that country's postcode", async ({ page }) => {
+    await page.getByRole('button', { name: 'Add a parcel' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
+    await sheet.getByLabel(/^Name/).fill('DPD parcel abroad');
+    await sheet.getByLabel('Tracking number or link')
+      .fill('https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber=06080000000001');
+    const postcode = sheet.getByLabel(/^Delivery postcode/);
+    // The example is the reader's country, not the carrier's.
+    await expect(postcode).toHaveAttribute('placeholder', '75001');
+    const add = sheet.getByRole('button', { name: 'Add parcel' });
+    await postcode.fill('75');
+    await expect(add).toBeDisabled();
+    for (const national of ['75001', '8000', '1012 AB', '00-001']) {
+      await postcode.fill(national);
+      await expect(add).toBeEnabled();
+      expect(await postcode.evaluate((field: HTMLInputElement) => field.validity.valid), national).toBe(true);
+    }
+    await postcode.fill('sw1a 1aa');
+    await expect(postcode).toHaveCSS('text-transform', 'uppercase');
+    await add.click();
+    await expect(sheet).toBeHidden();
+    await page.getByRole('button', { name: /^(?:Next up: )?DPD parcel abroad —/ }).click();
+    const detail = page.getByRole('dialog', { name: 'DPD parcel abroad' });
+    await detail.getByRole('button', { name: 'Change carrier from DPD' }).click();
+    const edit = page.getByRole('dialog', { name: 'Change carrier', exact: true });
+    await expect(edit.getByLabel(/^Delivery postcode/)).toHaveValue('SW1A 1AA');
+    await expect(edit.getByLabel(/^Delivery postcode/)).toHaveAttribute('placeholder', '75001');
+  });
+});
+
 test('parcel celebration respects reduced motion and clears before the next interaction', async ({ page }) => {
   // Hold the short celebration while inspecting it, even on a busy CI runner.
   const now = Date.now();

@@ -792,15 +792,14 @@
         "requirements": [
           {
             "field": "dpdPostcode",
-            "validator": "swissPostcode",
+            "validator": "internationalPostcode",
             "optional": true,
             "label": "Delivery postcode",
             "type": "text",
-            "placeholder": "8000",
             "help": "Optional. DPD uses it to unlock verified scans and the delivery window.",
-            "pattern": "^[0-9]{4}$",
-            "maxLength": 4,
-            "inputMode": "numeric",
+            "pattern": "^(?=.{3,12}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ \\-][A-Za-z0-9]+)*$",
+            "maxLength": 12,
+            "inputMode": "text",
             "autoComplete": "postal-code"
           }
         ],
@@ -4059,6 +4058,7 @@
             "optional": true,
             "label": "Delivery postcode",
             "type": "text",
+            "placeholder": "10115",
             "pattern": "^[0-9]{5}$",
             "maxLength": 5,
             "inputMode": "numeric",
@@ -7358,8 +7358,8 @@
               "string",
               "null"
             ],
-            "pattern": "^(?=.{3,10}$)(?=.*[0-9])[A-Z0-9]+(?:-[A-Z0-9]+)*$",
-            "description": "Canonical recipient postcode used by DPD and GLS Switzerland, Mondial Relay, Heppner or Paack. Paack postcodes are stored uppercase without spaces; the database field keeps its historical name for API compatibility."
+            "pattern": "^(?=.{3,12}$)(?=.*[0-9])[A-Z0-9]+(?:[ -][A-Z0-9]+)*$",
+            "description": "Canonical recipient postcode used by DPD and GLS Switzerland, Mondial Relay, Heppner or Paack. DPD postcodes are stored uppercase with single spaces, Paack postcodes uppercase without spaces; the database field keeps its historical name for API compatibility."
           },
           "carrier_data": {
             "type": "object",
@@ -7655,8 +7655,8 @@
           },
           "dpdPostcode": {
             "type": "string",
-            "pattern": "^(?=.{3,10}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
-            "description": "Recipient postcode, optional for DPD Switzerland (four digits; it unlocks verified scans) and required by GLS Switzerland (four digits), GLS Germany and Heppner (four or five digits), Mondial Relay short shipment numbers (five digits; optional for validated 26-digit barcodes) and Paack (carrier-specific alphanumeric format). It is rejected for other carriers. This property keeps its historical name for API compatibility."
+            "pattern": "^(?=.{3,12}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
+            "description": "Recipient postcode, optional for DPD Switzerland (any country\u2019s postcode, 3 to 12 letters and digits in groups joined by a space or hyphen; it unlocks verified scans) and DPD Germany (five digits), and required by GLS Switzerland (four digits), GLS Germany and Heppner (four or five digits), Mondial Relay short shipment numbers (five digits; optional for validated 26-digit barcodes) and Paack (carrier-specific alphanumeric format). It is rejected for other carriers. This property keeps its historical name for API compatibility."
           }
         }
       },
@@ -7690,8 +7690,8 @@
           },
           "dpdPostcode": {
             "type": "string",
-            "pattern": "^(?=.{3,10}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
-            "description": "Recipient postcode, optional for DPD Switzerland and required by GLS Switzerland, GLS Germany, Mondial Relay short shipment numbers, Heppner or Paack."
+            "pattern": "^(?=.{3,12}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
+            "description": "Recipient postcode, optional for DPD Switzerland and DPD Germany and required by GLS Switzerland, GLS Germany, Mondial Relay short shipment numbers, Heppner or Paack."
           },
           "providerPostcode": {
             "type": "string",
@@ -9039,7 +9039,7 @@
           },
           "dpdPostcode": {
             "type": "string",
-            "pattern": "^(?=.{3,10}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
+            "pattern": "^(?=.{3,12}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
             "description": "Recipient postcode, for the carriers that take one; see CreatePackageRequest."
           }
         }

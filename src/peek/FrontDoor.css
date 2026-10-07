@@ -137,6 +137,7 @@ html[data-entry=device] .door > :not(.door-header), html[data-entry=device] .doo
 .door-input label { font-size: 13px; font-weight: 600; }
 .door-input label small { color: var(--ink-soft); font-size: 11px; font-weight: 400; }
 .door-input__field { width: 100%; min-width: 0; min-height: 54px; padding: 6px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); font-size: 16px; transition: border-color .2s, box-shadow .2s; }
+.door-input__field--postcode { text-transform: uppercase; }
 .door-input__field::placeholder { color: var(--ink-soft); opacity: .72; }
 .door-input__field:focus { outline: none; border-color: var(--ochre); box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 22%, transparent); }
 .door-input__field[aria-invalid] { border-color: var(--orange); }

@@ -442,8 +442,16 @@ describe('input validation', () => {
       label: 'Parcel',
       carrier: 'dpd',
       trackingUrl: '',
-      dpdPostcode: '80A4',
-    })).toThrow('four-digit');
+      dpdPostcode: '80/4',
+    })).toThrow('valid delivery postcode');
+    // DPD delivers abroad too: another country's postcode is kept as that country writes it.
+    expect(newPackageValues({
+      trackingNumber: '06080000000001',
+      label: 'Parcel',
+      carrier: 'dpd',
+      trackingUrl: '',
+      dpdPostcode: ' sw1a  1aa ',
+    })).toMatchObject({ carrier: 'dpd', dpdPostcode: 'SW1A 1AA' });
     expect(newPackageValues({
       trackingNumber: '76434219',
       label: 'Relay parcel',
@@ -562,6 +570,10 @@ describe('input validation', () => {
       .toEqual({ carrier: 'dpd', trackingUrl: null, dpdPostcode: null });
     expect(packageCarrierValues({ carrier: 'dpd', dpdPostcode: '8000' }, '06080000000001'))
       .toMatchObject({ dpdPostcode: '8000' });
+    expect(packageCarrierValues({ carrier: 'dpd', dpdPostcode: '75001' }, '06080000000001'))
+      .toMatchObject({ dpdPostcode: '75001' });
+    expect(() => packageCarrierValues({ carrier: 'dpd-de', dpdPostcode: '8000' }, '06080000000001'))
+      .toThrow('postcode');
     expect(() => packageCarrierValues({ carrier: 'gls-ch' }, '993990103198'))
       .toThrow('four-digit');
     expect(() => packageCarrierValues({ carrier: 42 }, '76434219'))

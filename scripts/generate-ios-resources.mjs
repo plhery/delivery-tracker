@@ -69,6 +69,10 @@ const outputs = new Map([
     ])),
   }, null, 2)}\n`],
   ['FriendsDemo.json', fs.readFileSync(path.join(root, 'shared', 'friends-demo.json'), 'utf8')],
+  // One postcode per country; the iPhone reads the country from its region setting.
+  ['PostcodeExamples.json', `${JSON.stringify(
+    JSON.parse(fs.readFileSync(path.join(root, 'shared', 'postcode-examples.json'), 'utf8')).examples, null, 2,
+  )}\n`],
   ['ContractFixtures.json', `${JSON.stringify(apiFixture, null, 2)}\n`],
   // Replayed by the native detection test so the Swift port cannot drift from the shared engine.
   ['DetectionGolden.json', fs.readFileSync(fileURLToPath(import.meta.resolve('universal-parcel-scraper/data/detection-golden.json')), 'utf8')],

@@ -4,7 +4,8 @@ import { Icon } from '../../components/Icon';
 import { useI18n, type MessageKey } from '../../i18n';
 import { amazonOrdersUrl } from '../../lib/amazon';
 import { carrierBrand } from '../../lib/carrierBrand';
-import { carrierInfo, carrierTrackingHintKey, formatTrackingNumber, tracksAutomatically } from '../../lib/carriers';
+import { carrierInfo, carrierTrackingHintKey, formatTrackingNumber, tracksAutomatically, typedRequirementValue } from '../../lib/carriers';
+import { lettersPostcode, postcodeExample } from '../../lib/postcodeExample';
 import type { CarrierId } from '../../types';
 import { usePeekSession } from '../session';
 import { DoorNote } from './DoorNote';
@@ -145,16 +146,17 @@ export function LookupFeedback({ lookup, pointer, onSignIn, onPickCarrier, onSug
           {locale === 'en' ? requirement.label : t(`add.requirement.${requirement.field}`)}
           {requirement.optional && <> <small>{t('add.optional')}</small></>}
         </label>
-        <input id={id} className="door-input__field" type={requirement.type} inputMode={requirement.inputMode} autoComplete={requirement.autoComplete}
-          value={found.input(requirement.field)} placeholder={requirement.placeholder} pattern={requirement.pattern} maxLength={requirement.maxLength}
+        <input id={id} className={`door-input__field${lettersPostcode(requirement) ? ' door-input__field--postcode' : ''}`}
+          type={requirement.type} inputMode={requirement.inputMode} autoComplete={requirement.autoComplete}
+          value={found.input(requirement.field)} placeholder={postcodeExample(found.carrier, requirement)} pattern={requirement.pattern} maxLength={requirement.maxLength}
           readOnly={Boolean(state.job)} required={!requirement.optional} aria-describedby={`${id}-help`}
           aria-invalid={inputTrouble && found.missing?.field === requirement.field ? true : undefined}
-          autoCapitalize={requirement.type === 'url' ? 'none' : undefined} autoCorrect="off" spellCheck={false}
+          autoCapitalize={requirement.type === 'url' ? 'none' : lettersPostcode(requirement) ? 'characters' : undefined} autoCorrect="off" spellCheck={false}
           onChange={(event) => send({
             type: 'fill',
             carrier: found.carrier,
             field: requirement.field,
-            value: requirement.inputMode === 'numeric' ? event.target.value.replace(/\D/g, '').slice(0, requirement.maxLength) : event.target.value,
+            value: typedRequirementValue(requirement, event.target.value),
           })} />
         {inputTrouble && found.missing?.field === requirement.field && <p className="door-message" role="alert">{t(validation)}</p>}
         <p id={`${id}-help`} className="door-aside">

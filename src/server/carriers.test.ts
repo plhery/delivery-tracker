@@ -23,7 +23,8 @@ describe('optional carrier inputs', () => {
   it('lets DPD track without a postcode and still checks one that is supplied', () => {
     expect(normalizeCarrierInputs('dpd', dpdNumber, '', '')).toEqual({ trackingUrl: null, dpdPostcode: null });
     expect(normalizeCarrierInputs('dpd', dpdNumber, '', ' 8000 ').dpdPostcode).toBe('8000');
-    expect(() => normalizeCarrierInputs('dpd', dpdNumber, '', '800')).toThrow('postcode');
+    expect(normalizeCarrierInputs('dpd', dpdNumber, '', '1012 ab').dpdPostcode).toBe('1012 AB');
+    expect(() => normalizeCarrierInputs('dpd', dpdNumber, '', '80')).toThrow('postcode');
     expect(() => normalizeCarrierInputs('dpd', dpdNumber, 'https://example.com', '')).toThrow('tracking URL');
   });
 

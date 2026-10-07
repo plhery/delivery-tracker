@@ -236,6 +236,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .field__input::placeholder, .auth-flow__form input::placeholder { color: var(--ink-soft); opacity: .72; }
 .field__input:focus, .auth-flow__form input:focus { outline: none; border-color: var(--ochre); box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 20%, transparent); }
 .field__input--tracking { resize: vertical; min-height: 102px; font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--yellow-soft); border-color: color-mix(in srgb, var(--ochre) 20%, transparent); }
+.field__input--postcode { text-transform: uppercase; }
 .field__inline-action { display: flex; align-items: center; gap: 5px; margin: -8px 0 -8px auto; min-height: 44px; padding: 5px 8px; color: var(--ink-soft); background: transparent; font-size: 12px; border-radius: 9px; }
 .field__inline-action svg { width: 16px; height: 16px; }
 .field__help { color: var(--ink-soft); font-size: 12px; line-height: 1.5; }

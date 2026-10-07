@@ -464,14 +464,18 @@ struct AddParcelView: View {
                             : localizer.text("add.requirement.dpdPostcodeHelp"),
                         optional: requirement.isOptional
                     ) {
-                        TextField(requirement.placeholder ?? "", text: $deliveryPostcode)
+                        let example = catalog.postcodeExample(for: resolvedCarrier, requirement: requirement)
+                        TextField(example ?? "", text: $deliveryPostcode)
                             .font(.body.monospacedDigit())
-                            .keyboardType(requirement.inputMode == "numeric" ? .numberPad : .asciiCapable)
+                            .keyboardType(requirement.inputMode == "numeric" ? .numberPad
+                                : requirement.startsWithNumberKeys(example: example) ? .numbersAndPunctuation : .asciiCapable)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
                             .textContentType(.postalCode)
                             .focused($focusedField, equals: .deliveryPostcode)
                             .accessibilityLabel(localizer.text("add.requirement.dpdPostcode"))
                             .onChange(of: deliveryPostcode) { _, value in
-                                deliveryPostcode = requirement.normalizedValue(value)
+                                deliveryPostcode = requirement.typedValue(value)
                             }
                     }
                     // An optional postcode is offered, never filled in for the user.
@@ -828,7 +832,7 @@ struct AddParcelView: View {
                     carrier: resolvedCarrier,
                     trackingURL: trackingURLRequirement != nil
                         ? (parsed.trackingURL ?? trackingURL) : nil,
-                    dpdPostcode: postcodeRequirement != nil ? deliveryPostcode : nil
+                    dpdPostcode: postcodeRequirement?.normalizedValue(deliveryPostcode)
                 )
                 onAdded(parcel.id)
                 dismiss()
