@@ -172,6 +172,15 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(pages.own.map { $0.map(\.carrier) }, [[.chronopost], [.dpdDe]])
         XCTAssertTrue(pages.loose.isEmpty)
 
+        // A parcel link brings both.
+        let shared = Parcel(shared: PublicPackage(
+            id: named.id, trackingNumber: named.trackingNumber, label: "", carrier: .chronopost, createdAt: named.createdAt, syncStatus: .ok,
+            carrierData: PublicPackageCarrierData(deliveryCarrier: .dpdDe, deliveryTrackingNumber: "01234567890123"), notificationsMuted: false,
+            trackingEvents: []
+        ))
+        XCTAssertEqual(shared.deliveringCarrier, .dpdDe)
+        XCTAssertEqual(shared.trackingNumbers.map(\.number), ["XY123456789FR", "01234567890123"])
+
         // Named without a number of its own: who delivers, and no second number.
         named.carrierData?.deliveryTrackingNumber = nil
         XCTAssertEqual(named.deliveringCarrier, .dpdDe)

@@ -348,6 +348,16 @@ describe('ParcelPage stages and troubles', () => {
     expect(links.map((link) => link.textContent)).toEqual(['Open the Swiss Post website', 'Open the AliExpress / Cainiao website']);
   });
 
+  it('names the carrier its carrier says will deliver, under the number it follows', async () => {
+    await shown(view(journey, { carrier: 'chronopost', trackingNumber: 'XY123456789FR', deliveryCarrier: 'dpd-de', deliveryTrackingNumber: '01234567890123' }));
+    expect([...card().querySelectorAll('.peekp-card__top .carrier-mark')].map((mark) => mark.getAttribute('title'))).toEqual(['Chronopost', 'DPD Germany']);
+    expect(within(card()).getByText('Delivery with DPD Germany')).toBeVisible();
+    const links = screen.getAllByRole('link', { name: /^Open the .+ website$/ });
+    expect(links.map((link) => link.previousElementSibling!.querySelector('button')!.getAttribute('aria-label'))).toEqual([
+      'Copy tracking number — Chronopost', 'Copy tracking number — DPD Germany',
+    ]);
+  });
+
   it('keeps a single mark for a parcel one carrier carries', async () => {
     await shown(view(journey));
     expect(card().querySelectorAll('.carrier-mark')).toHaveLength(1);

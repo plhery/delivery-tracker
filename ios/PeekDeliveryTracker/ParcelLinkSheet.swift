@@ -350,12 +350,13 @@ private struct SharedParcelCard: View {
     var body: some View {
         let identity = identity
         let route = placed ? atlas.map { ParcelRoute(parcel: parcel, atlas: $0, language: localizer.language) } : nil
-        // Handed from one carrier to another, the card carries both marks and says who delivers, as the parcel's own card does.
-        let handedOver = parcel.activeTrackingCarrier != parcel.displayedCarrier
-        let delivery = handedOver ? CarrierVisualIdentity.of(parcel.activeTrackingCarrier, catalog: catalog, language: localizer.language) : nil
-        let deliveryLine = handedOver ? localizer.text("parcel.deliveryCarrier", [
-            "carrier": catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName,
-        ]) : nil
+        // Handed from one carrier to another, or about to be, the card carries both marks and says who delivers, as the
+        // parcel's own card does.
+        let delivering = parcel.deliveringCarrier
+        let delivery = delivering.map { CarrierVisualIdentity.of($0, catalog: catalog, language: localizer.language) }
+        let deliveryLine = delivering.map {
+            localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: $0, language: localizer.language).displayName])
+        }
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .firstMark, spacing: 4) {
                 marks(identity, delivery: delivery).layoutPriority(1)

@@ -145,7 +145,7 @@ describe('what a link shows', () => {
     const stored = Object.fromEntries([
       ...Object.keys(contract.components.schemas.PackageRow.properties.carrier_data.properties),
       'delivery_probe', 'swiss_post_probe', 'upu_history', 'direct_local_history', 'canonical_tracking_number',
-      'international_tracking_number', 'delivery_tracking_number', 'pickup_code', 'last_update', 'events',
+      'international_tracking_number', 'pickup_code', 'last_update', 'events',
     ].map((key) => [key, ['carrier_answered', 'swiss_post_ready', 'dpd_postcode_verified'].includes(key) ? true
       : key === 'weight_kg' ? 2 : key === 'routing' ? { confirmed_postcode: '9999' } : `stored ${key}`]));
     const shown = (link: Record<string, unknown>) => publicParcelResponse({

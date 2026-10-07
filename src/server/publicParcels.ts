@@ -200,6 +200,7 @@ const amount = (value: unknown): value is number => typeof value === 'number' &&
 const SHOWN_CARRIER_DATA: Record<string, (value: unknown) => boolean> = {
   active_tracking_carrier: text,
   original_carrier: text,
+  delivery_carrier: text,
   tracking_provider: text,
   carrier_answered: flag,
   auto_changed_from: text,
@@ -217,6 +218,7 @@ const SHOWN_CARRIER_DATA: Record<string, (value: unknown) => boolean> = {
 const SHOWN_WITH_NUMBER: Record<string, (value: unknown) => boolean> = {
   active_tracking_number: text,
   original_tracking_number: text,
+  delivery_tracking_number: text,
 };
 
 /**
@@ -226,7 +228,7 @@ const SHOWN_WITH_NUMBER: Record<string, (value: unknown) => boolean> = {
  * until it is listed here.
  */
 const SHOWN_IN_GIFT = new Set([
-  'active_tracking_carrier', 'original_carrier', 'tracking_provider', 'carrier_answered', 'auto_changed_from',
+  'active_tracking_carrier', 'original_carrier', 'delivery_carrier', 'tracking_provider', 'carrier_answered', 'auto_changed_from',
   'auto_changed_to', 'auto_changed_at', 'swiss_post_ready', 'expected_delivery_from', 'destination_country',
 ]);
 

@@ -20,6 +20,8 @@ extension Parcel {
             carrierData: CarrierData(
                 activeTrackingCarrier: data.activeTrackingCarrier,
                 activeTrackingNumber: data.activeTrackingNumber,
+                deliveryCarrier: data.deliveryCarrier,
+                deliveryTrackingNumber: data.deliveryTrackingNumber,
                 originalCarrier: data.originalCarrier,
                 originalTrackingNumber: data.originalTrackingNumber,
                 trackingProvider: data.trackingProvider,

@@ -109,6 +109,12 @@ describe('deliveryEmailContent', () => {
     expect(cardInput().carrier).toMatchObject({ id: 'dhl' });
   });
 
+  it('names the carrier its carrier said would deliver, before that one was followed', async () => {
+    const named = row({ carrier: 'chronopost', carrier_data: { delivery_carrier: 'dpd-de', delivery_tracking_number: '01234567890123' } });
+    expect(sentence((await deliveryEmailContent(input({ parcel: named }))).text)).toBe(english('email.delivered.by.today', { carrier: 'DPD Germany', time: '14:12' }));
+    expect(cardInput().carrier).toMatchObject({ id: 'chronopost' });
+  });
+
   it('has a subject and a title for a parcel without a name', async () => {
     for (const label of ['', '  \n ']) {
       const email = await deliveryEmailContent(input({ parcel: row({ label }) }));

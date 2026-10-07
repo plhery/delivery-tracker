@@ -12,7 +12,7 @@ import { TrackingJournal } from '../components/TrackingJournal';
 import { localizedDeliveryWindow, localizedEventDescription, stageLabel, useI18n, type MessageKey } from '../i18n';
 import { trackAction, trackScreen } from '../lib/analytics';
 import { carrierBrand } from '../lib/carrierBrand';
-import { activeTrackingCarrierId, carrierInfo, displayedCarrierId, formatTrackingNumber, tracksAutomatically } from '../lib/carriers';
+import { activeTrackingCarrierId, carrierInfo, deliveringCarrierId, displayedCarrierId, formatTrackingNumber, tracksAutomatically } from '../lib/carriers';
 import { LANDING_PATH } from '../lib/experience';
 import { captureCardOrigin } from '../lib/cardTransition';
 import { useCardDialog } from '../lib/cardDialog';
@@ -246,11 +246,13 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const openMap = () => { if (route) { trackAction('parcel-map-open'); setMapOpen(true); } };
 
   const activeCarrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
-  // Handed from one carrier to another, the card carries both marks and says who delivers, as a parcel's own card does.
-  const handedOver = !present && carrierKnown && activeCarrier.id !== displayed.id;
+  // Handed from one carrier to another, or about to be, the card carries both marks and says who delivers, as a parcel's
+  // own card does.
+  const deliveringId = deliveringCarrierId(parcel);
+  const delivering = !present && carrierKnown && deliveringId ? carrierInfo(deliveringId, locale) : null;
   const notes = present ? [] : !carrierKnown ? [t('link.unknown.body', { number: number ?? t('common.parcel') })] : [
     previousEstimateLine(previousEstimate, parcel, wording),
-    handedOver ? t('parcel.deliveryCarrier', { carrier: activeCarrier.name }) : null,
+    delivering ? t('parcel.deliveryCarrier', { carrier: delivering.name }) : null,
     !checking && (parcelIsUnannounced(parcel) || stage === 'registered') ? t('link.notScanned', { carrier: displayed.name }) : null,
   ].filter((note): note is string => !!note);
 
@@ -436,7 +438,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
       <div className="peekp-column">
         {followed && <AlreadyFollowed name={followed.label || t('common.parcel')} onOpen={() => { trackAction('parcel-link-open-existing'); openDeliveries?.(followed.id); }} />}
         {sample ? <SampleNote landingPath={landingPath} onLanding={toLanding} /> : !owner && !present && <SharedWithYou visitor={!signedIn} until={worksUntil} />}
-        <LinkCard parcel={parcel} stage={stage} carrier={carrierKnown ? displayed : null} delivery={handedOver ? activeCarrier : null}
+        <LinkCard parcel={parcel} stage={stage} carrier={carrierKnown ? displayed : null} delivery={delivering}
           headline={headline} name={name} detail={detail} notes={notes} flag={flag} figure={figure} number={number} settled={entrance === 'reveal' && !checking}
           gift={wrapped ? 'wrapped' : opened ? 'opened' : link.gift ? 'own' : undefined}
           map={figure === 'map' ? (covered) => map('card', covered) : undefined}

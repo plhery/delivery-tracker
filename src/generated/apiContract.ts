@@ -5349,6 +5349,8 @@ export interface ApiPublicPackage {
   "active_tracking_number"?: string;
   "original_carrier"?: ApiCarrierId;
   "original_tracking_number"?: string;
+  "delivery_carrier"?: ApiCarrierId;
+  "delivery_tracking_number"?: string;
   "tracking_provider"?: string;
   "carrier_answered"?: boolean;
   "auto_changed_from"?: ApiCarrierId;

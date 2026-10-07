@@ -9077,6 +9077,14 @@
                 "type": "string",
                 "description": "Only when the number is shown."
               },
+              "delivery_carrier": {
+                "$ref": "#/components/schemas/CarrierId",
+                "description": "The carrier the followed one names as delivering, before that carrier is followed."
+              },
+              "delivery_tracking_number": {
+                "type": "string",
+                "description": "Only when the number is shown."
+              },
               "tracking_provider": {
                 "type": "string"
               },

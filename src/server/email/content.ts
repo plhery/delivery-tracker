@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { activeTrackingCarrierId, carrierInfo, displayedCarrierId, type CarrierInfo } from '../../lib/carriers';
+import { activeTrackingCarrierId, carrierInfo, deliveringCarrierId, displayedCarrierId, type CarrierInfo } from '../../lib/carriers';
 import { isLocale, type Locale } from '../../lib/locale';
 import { languageTags, translateMessage, type Translate } from '../../lib/messages';
 import { SOURCE_URL } from '../../lib/source';
@@ -55,8 +55,9 @@ async function emailContent(input: DeliveryEmailInput, draw = drawCard): Promise
   // Cut like a push title, and kept on one line: the name is also the subject.
   const name = notificationText(String(input.parcel.label ?? '').replace(/\p{Cc}/gu, ' '), 80);
   const named = (carrier: CarrierInfo) => UNNAMED_CARRIERS.has(carrier.id) ? null : carrier;
-  // The sentence names who brought it to the door; the card keeps the carrier the app marks the parcel with.
-  const deliverer = named(carrierInfo(activeTrackingCarrierId(parcel), locale));
+  // The sentence names who brought it to the door, even one its first carrier named and nobody followed; the card
+  // keeps the carrier the app marks the parcel with.
+  const deliverer = named(carrierInfo(deliveringCarrierId(parcel) ?? activeTrackingCarrierId(parcel), locale));
   const marked = named(carrierInfo(displayedCarrierId(parcel), locale));
   const when = deliveredWhen(parcel, { known: input.deliveredTime, timezone: input.timezone, now: input.now, languageTag });
 

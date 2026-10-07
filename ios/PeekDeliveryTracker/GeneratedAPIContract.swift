@@ -1147,6 +1147,8 @@ struct PublicPackageCarrierData: Codable, Equatable, Hashable, Sendable {
     var activeTrackingNumber: String? = nil
     var originalCarrier: CarrierID? = nil
     var originalTrackingNumber: String? = nil
+    var deliveryCarrier: CarrierID? = nil
+    var deliveryTrackingNumber: String? = nil
     var trackingProvider: String? = nil
     var carrierAnswered: Bool? = nil
     var autoChangedFrom: CarrierID? = nil
