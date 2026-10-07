@@ -1014,7 +1014,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
 
     static func isValidS10(_ raw: String) -> Bool {
         let value = normalize(raw)
-        guard matches(value, pattern: "^[A-Z]{2}\\d{9}[A-Z]{2}$") else { return false }
+        guard matches(value, pattern: "^[A-Z]{2}[0-9]{9}[A-Z]{2}$") else { return false }
         let characters = Array(value)
         let weights = [8, 6, 4, 2, 3, 5, 9, 7]
         let sum = weights.enumerated().reduce(0) { partial, item in
