@@ -73,7 +73,8 @@ gives the command that starts it again.
 not check them here, so [a test](../src/server/scraperDependency.test.ts) does. When a
 release asks for other versions than the app pins, the run fails and names them: move
 those pins and the scraper in one commit by hand, with `npm run contract:generate`,
-`npm run ios:resources` and the app's validation.
+`npm run ios:resources` and the app's validation. A new `playwright-core` also moves
+`@playwright/test` and the browser journeys' Playwright image in `.github/workflows/ci.yml`.
 
 `SCRAPER_ADOPTION_TOKEN` is a fine-grained token with read and write access to this
 repository's contents, stored as a secret in both repositories. The scraper starts the

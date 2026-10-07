@@ -108,6 +108,11 @@ jobs:
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Playwright's image comes with the browsers and the system libraries they need. Installing
+    # those libraries on the runner often stalled on its package mirror for ten minutes or more.
+    # Its version follows playwright-core's (scripts/ci-workflow.test.mjs).
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     strategy:
       fail-fast: false
       matrix:
@@ -119,18 +124,6 @@ jobs:
           node-version: 26
           cache: npm
       - run: npm ci
-      - name: Restore the browsers
-        id: browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - name: Download the browsers
-        if: steps.browsers.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium webkit
-      - name: Install the browsers' system libraries
-        if: steps.browsers.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium webkit
       - run: npm run test:e2e -- --shard=${{ matrix.shard }}/8
 
   # Builds the container while the tests run. On main, where the instance's public build
