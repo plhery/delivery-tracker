@@ -229,6 +229,12 @@ jobs:
             echo "Skipping the re-run of $GITHUB_SHA: main is now $current_sha"
             echo 'latest=false' >> "$GITHUB_OUTPUT"
           fi
+      - name: Check that production has this commit's migrations
+        if: steps.current.outputs.latest == 'true'
+        env:
+          SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+        run: scripts/check-production-migrations.sh
       - name: Deploy this commit
         if: steps.current.outputs.latest == 'true'
         env:

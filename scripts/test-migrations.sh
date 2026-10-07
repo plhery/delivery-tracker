@@ -64,6 +64,16 @@ while IFS= read -r migration; do
   fi
 done < <(find "$repo_root/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | sort)
 
+# A deployment asks production which migrations it lacks, so each one must record itself.
+unrecorded=$(comm -23 \
+  <(find "$repo_root/supabase/migrations" -maxdepth 1 -type f -name '*.sql' -exec basename {} .sql \; | sort) \
+  <(psql "$database_url" -X -At -v ON_ERROR_STOP=1 -c 'select name from public.applied_migrations order by name' | sort))
+if [[ -n "$unrecorded" ]]; then
+  echo "These migrations do not end by recording themselves:" >&2
+  sed "s/.*/  insert into public.applied_migrations (name) values ('&') on conflict do nothing;/" <<< "$unrecorded" >&2
+  exit 1
+fi
+
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/assertions.sql"
 
@@ -194,3 +204,5 @@ psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/international_dpd_postcode.sql"
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/international_mondial_relay_gls_postcode.sql"
+psql "$database_url" -X -v ON_ERROR_STOP=1 \
+  -f "$repo_root/supabase/tests/applied_migrations.sql"

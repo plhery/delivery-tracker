@@ -28,7 +28,8 @@ run `scripts/test-migrations.sh`.
 
 **Upgrades.** Migrations are append-only and written to be compatible with the running
 version. Apply new ones **before** deploying the server that needs them. Deploy the
-server before releasing iPhone builds that call new endpoints.
+server before releasing iPhone builds that call new endpoints. Each migration ends by
+recording its file name in `public.applied_migrations`, which the deployment checks.
 
 Relaxing a carrier input (making a postcode optional, say) follows the same order:
 migration, then server, then app. Until an updated iPhone app first reaches
@@ -135,8 +136,10 @@ run iPhone tests; web changes run web checks, unit tests, browser journeys and t
 build. Dependencies and shared client data run both web and iPhone tests. Scraper updates
 keep browser journeys because the package supplies browser code too.
 
-For web changes, once all selected checks have passed, the workflow runs `deploy <commit>`
-over SSH on the target and then the smoke test on `DEPLOY_URL`. Intentionally skipped
+For web changes, once all selected checks have passed, the workflow asks the database,
+with the publishable key, which of the commit's migrations it lacks, and stops if any are
+missing: apply them, then re-run the job. It then runs `deploy <commit>`
+over SSH on the target and the smoke test on `DEPLOY_URL`. Intentionally skipped
 migration tests allow deployment; failures and canceled checks block it. Restrict the key
 on the host to a command that accepts only that request and starts the published image.
 Runs on `main` go one at a time; of the pushes that arrive during a run, only the newest
