@@ -30,9 +30,9 @@ describe('reading the field', () => {
   });
 
   it('lists every certain number in a text once, in the order written, links included', () => {
-    const text = 'Your order ships in 3 parcels:\nUPS 1ZDEMO202600000001\nUPS 1ZDEMO202600000002\nSwiss Post 99.34.123456.78901234\nagain: 1zdemo202600000001';
+    const text = 'Your order ships in 3 parcels:\nUPS 1ZDEMO202600000001\nUPS 1ZDEMO202600000029\nSwiss Post 99.34.123456.78901234\nagain: 1zdemo202600000001';
     expect(numbersInText(text).map(({ normalized, match }) => [normalized, match.carrier])).toEqual([
-      ['1ZDEMO202600000001', 'ups'], ['1ZDEMO202600000002', 'ups'], ['993412345678901234', 'swiss-post'],
+      ['1ZDEMO202600000001', 'ups'], ['1ZDEMO202600000029', 'ups'], ['993412345678901234', 'swiss-post'],
     ]);
     expect(readText(text).numbers).toHaveLength(3);
     expect(numbersInText('https://www.dhl.com/track?tracking-id=1234567899 and 1ZDEMO202600000001').map(({ normalized }) => normalized))

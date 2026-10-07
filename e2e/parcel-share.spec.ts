@@ -100,7 +100,7 @@ test('the owner chooses what the link shows: a recipient reads the number’s en
 });
 
 test('once the parcel is delivered, the share sheet and the recipient read the day the link stops working', async ({ page, browser }) => {
-  await track(page, '1ZDEMO202600000009');
+  await track(page, '1ZDEMO202600000092');
   const address = page.url();
   await expect(status(page)).toHaveText('In transit');
   const check = page.getByRole('button', { name: /Check now$/ });

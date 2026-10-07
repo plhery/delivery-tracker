@@ -13,6 +13,44 @@ struct DeviceParcel: Codable, Equatable, Sendable {
     var replaced: UUID? = nil
 }
 
+/// The last postcodes given for lookups without an account, with their carriers, newest first.
+/// They belong to this iPhone rather than to a parcel: they outlast forgotten parcels and a
+/// sign-in, and fill in the next parcel's field. An account's postcodes stay on its parcels.
+struct PostcodeMemory {
+    private static let key = "sdt.postcodeMemory.v1"
+    /// Most parcels go to the same few addresses.
+    static let limit = 5
+
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
+    var entries: [GivenPostcode] {
+        defaults.data(forKey: Self.key).flatMap { try? JSONDecoder().decode([GivenPostcode].self, from: $0) } ?? []
+    }
+
+    /// The pair goes first; given before, it moves there rather than coming twice.
+    func remember(_ postcode: String, for carrier: CarrierID) {
+        guard let postcode = postcode.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty else { return }
+        write([GivenPostcode(carrier: carrier, postcode: postcode)]
+            + entries.filter { $0.carrier != carrier || Self.bare($0.postcode) != Self.bare(postcode) })
+    }
+
+    /// Forgets the postcode for every carrier it was given to, however its spaces were written.
+    func forget(_ postcode: String) {
+        write(entries.filter { Self.bare($0.postcode) != Self.bare(postcode) })
+    }
+
+    private func write(_ entries: [GivenPostcode]) {
+        guard !entries.isEmpty else { defaults.removeObject(forKey: Self.key); return }
+        defaults.set(try? JSONEncoder().encode(Array(entries.prefix(Self.limit))), forKey: Self.key)
+    }
+
+    private static func bare(_ postcode: String) -> String { postcode.uppercased().filter { !$0.isWhitespace } }
+}
+
 /// Lookups are counted for each network; the day's count is spent.
 struct DeviceLookupsSpent: Error, Equatable {}
 
@@ -147,14 +185,18 @@ final class DeviceParcels {
 
     private let client: DeviceParcelClient?
     private let storage: any DeviceParcelStorage
+    /// The postcodes its lookups were given, kept apart from the parcels.
+    let postcodes: PostcodeMemory
     private let now: () -> Date
     private var entries: [DeviceParcel]
     private var keys: [String: String]
 
     /// A build without a server follows nothing.
-    init(client: DeviceParcelClient?, storage: any DeviceParcelStorage = DeviceParcelFiles(), now: @escaping () -> Date = Date.init) {
+    init(client: DeviceParcelClient?, storage: any DeviceParcelStorage = DeviceParcelFiles(),
+         postcodes: PostcodeMemory = PostcodeMemory(), now: @escaping () -> Date = Date.init) {
         self.client = client
         self.storage = storage
+        self.postcodes = postcodes
         self.now = now
         (entries, keys) = storage.load()
     }
@@ -193,6 +235,7 @@ final class DeviceParcels {
         entries.append(entry)
         keys[entry.linkID] = response.key
         save()
+        if let postcode = request.dpdPostcode { postcodes.remember(postcode, for: request.carrier ?? response.package.carrier) }
         return Self.shown(entry)
     }
 

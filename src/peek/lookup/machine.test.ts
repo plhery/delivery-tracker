@@ -10,6 +10,7 @@ import {
   type LookupEvent,
   type LookupState,
 } from './machine';
+import type { GivenPostcode } from '../../lib/postcodeMemory';
 
 // Every number here is fictional.
 const UPS = '1ZDEMO202600000001';
@@ -19,8 +20,13 @@ const SHAPELESS = 'DEMO4471203'; // No carrier's shape: nobody can be asked.
 const AMAZON = 'TBA123456789012';
 const TYPO = 'LX1234567B5DE';
 
-function run(events: LookupEvent[], device: readonly DeviceParcel[] = [], from: LookupState = initialLookup()): LookupState {
-  return events.reduce((state, event) => lookupStep(state, event, device), from);
+function run(
+  events: LookupEvent[],
+  device: readonly DeviceParcel[] = [],
+  from: LookupState = initialLookup(),
+  postcodes: readonly GivenPostcode[] = [],
+): LookupState {
+  return events.reduce((state, event) => lookupStep(state, event, device, postcodes), from);
 }
 const typed = (text: string): LookupEvent => ({ type: 'edit', text, via: 'typing' });
 const pasted = (text: string): LookupEvent => ({ type: 'edit', text, via: 'paste' });
@@ -189,17 +195,17 @@ describe('input edge cases', () => {
   });
 
   it('lists several numbers, tracks the first unless another is picked, and never picks for a paste', () => {
-    const text = `UPS ${UPS}\nUPS 1ZDEMO202600000002\nSwiss Post 99.34.123456.78901234`;
+    const text = `UPS ${UPS}\nUPS 1ZDEMO202600000029\nSwiss Post 99.34.123456.78901234`;
     const state = run([pasted(text)]);
     expect(state.job).toBeNull();
-    expect(survey(state).several.map(({ normalized }) => normalized)).toEqual([UPS, '1ZDEMO202600000002', '993412345678901234']);
+    expect(survey(state).several.map(({ normalized }) => normalized)).toEqual([UPS, '1ZDEMO202600000029', '993412345678901234']);
     expect(survey(state)).toMatchObject({ normalized: UPS, carrier: 'ups' });
     expect(run([track], [], state).job).toMatchObject({ input: { trackingNumber: UPS, carrier: 'ups' } });
     const picked = run([{ type: 'pick', number: '993412345678901234' }], [], state);
     expect(picked.job).toBeNull();
     expect(run([track], [], picked).job).toMatchObject({ input: { trackingNumber: '993412345678901234', carrier: 'swiss-post' } });
     // A pick that is no longer in the text is dropped.
-    expect(run([typed(`UPS ${UPS}\nUPS 1ZDEMO202600000002`)], [], picked).pick).toBeNull();
+    expect(run([typed(`UPS ${UPS}\nUPS 1ZDEMO202600000029`)], [], picked).pick).toBeNull();
   });
 
   it('asks about a check digit that does not add up, with the likely number', () => {
@@ -276,6 +282,45 @@ describe('what a carrier asks for', () => {
     expect(pressed.offered).toBe(`dpd:${SHARED}`);
     const filled = run([{ type: 'fill', carrier: 'dpd', field: 'dpdPostcode', value: '8004' }, track], [], pressed);
     expect(filled.job).toMatchObject({ input: { trackingNumber: SHARED, carrier: 'dpd', dpdPostcode: '8004' } });
+  });
+});
+
+describe('a postcode this device gave before', () => {
+  const GLS = 'gls-ch';
+  const choose = (carrier: GivenPostcode['carrier'], postcodes: readonly GivenPostcode[]) =>
+    run([typed(SHARED), { type: 'choose', carrier }], [], initialLookup(), postcodes);
+
+  it('fills a required postcode in, and the visitor can still change or clear it', () => {
+    const postcodes = [{ carrier: 'dpd', postcode: '8004' }] as const;
+    const chosen = choose(GLS, postcodes);
+    expect(survey(chosen, [], postcodes)).toMatchObject({ need: null, missing: null, remembered: '8004' });
+    expect(survey(chosen, [], postcodes).input('dpdPostcode')).toBe('8004');
+    expect(run([track], [], chosen, postcodes).job)
+      .toEqual({ type: 'lookup', carrier: GLS, input: { trackingNumber: SHARED, carrier: GLS, dpdPostcode: '8004' } });
+    const cleared = run([{ type: 'fill', carrier: GLS, field: 'dpdPostcode', value: '' }], [], chosen, postcodes);
+    expect(survey(cleared, [], postcodes)).toMatchObject({ need: 'input', missing: { field: 'dpdPostcode' } });
+  });
+
+  it('leaves an optional one empty, for the visitor to use', () => {
+    const postcodes = [{ carrier: GLS, postcode: '8004' }] as const;
+    const chosen = choose('dpd', postcodes);
+    expect(survey(chosen, [], postcodes)).toMatchObject({ remembered: '8004' });
+    expect(survey(chosen, [], postcodes).input('dpdPostcode')).toBe('');
+    expect(run([track], [], chosen, postcodes).job).toEqual({ type: 'lookup', carrier: 'dpd', input: { trackingNumber: SHARED, carrier: 'dpd' } });
+  });
+
+  it("prefers the same carrier's, and skips one the field does not take", () => {
+    const glsField = (postcodes: GivenPostcode[]) => survey(choose(GLS, postcodes), [], postcodes);
+    expect(glsField([{ carrier: 'dpd', postcode: '8004' }, { carrier: GLS, postcode: '1200' }]).input('dpdPostcode')).toBe('1200');
+    // A French postcode never fills a Swiss carrier's four digits.
+    expect(glsField([{ carrier: 'dpd', postcode: '75001' }])).toMatchObject({ remembered: null, missing: { field: 'dpdPostcode' } });
+    expect(glsField([{ carrier: 'dpd', postcode: '75001' }, { carrier: 'dpd', postcode: '8004' }]).input('dpdPostcode')).toBe('8004');
+  });
+
+  it('is never sent with a carrier that asks for no postcode', () => {
+    const postcodes = [{ carrier: 'dpd', postcode: '8004' }] as const;
+    expect(run([pasted(UPS)], [], initialLookup(), postcodes).job)
+      .toEqual({ type: 'lookup', carrier: 'ups', input: { trackingNumber: UPS, carrier: 'ups' } });
   });
 });
 

@@ -17,6 +17,7 @@ struct AddParcelView: View {
     @State private var trackingInput: String
     @State private var trackingURL = ""
     @State private var deliveryPostcode = ""
+    @State private var postcodeFill = PostcodeFill()
     @State private var showingScanner = false
     @State private var showingCarrierPicker = false
     @State private var didFocusTracking = false
@@ -477,9 +478,17 @@ struct AddParcelView: View {
                     }
                     // An optional postcode is offered, never filled in for the user.
                     if requirement.isOptional, deliveryPostcode.isEmpty,
-                       let suggestion = previousPostcode(for: resolvedCarrier).map(requirement.normalizedValue)?.nonEmpty {
+                       let suggestion = postcodeFill.offering(previousPostcode(for: resolvedCarrier, requirement: requirement)) {
                         Button(localizer.text("add.usePostcode", ["postcode": suggestion])) {
-                            deliveryPostcode = suggestion
+                            deliveryPostcode = postcodeFill.fill(suggestion)
+                        }
+                        .font(.subheadline)
+                    }
+                    // Without an account every suggestion is this iPhone's own, so it can forget them.
+                    if store.isGuest, postcodeFill.holds(deliveryPostcode) {
+                        Button(localizer.text("add.forgetPostcode")) {
+                            if let postcode = postcodeFill.forget(deliveryPostcode) { store.forgetPostcode(postcode) }
+                            deliveryPostcode = ""
                         }
                         .font(.subheadline)
                     }
@@ -761,18 +770,19 @@ struct AddParcelView: View {
         return true
     }
 
-    private func previousPostcode(for carrier: CarrierID) -> String? {
-        store.parcels
-            .sorted(by: { $0.createdAt > $1.createdAt })
-            .first(where: { $0.carrier == carrier && $0.dpdPostcode != nil })?
-            .dpdPostcode
+    /// The last postcode given that fits the field, this carrier's first: from the parcels,
+    /// then from what this iPhone remembers.
+    private func previousPostcode(for carrier: CarrierID, requirement: CarrierRequirement) -> String? {
+        requirement.suggestedPostcode(for: carrier, among: store.givenPostcodes)
     }
 
-    /// A required postcode starts from the last one used for this carrier; an
-    /// optional one is only offered (see `requiredDetails`).
+    /// A required postcode starts from the last one that fits; an optional one is
+    /// only offered (see `requiredDetails`).
     private func prepareRequiredDetails(for carrier: CarrierID) {
-        guard let requirement = postcodeRequirement, !requirement.isOptional, deliveryPostcode.isEmpty else { return }
-        deliveryPostcode = requirement.normalizedValue(previousPostcode(for: carrier) ?? "")
+        postcodeFill.prepare()
+        guard let requirement = postcodeRequirement, !requirement.isOptional, deliveryPostcode.isEmpty,
+              let suggestion = previousPostcode(for: carrier, requirement: requirement) else { return }
+        deliveryPostcode = postcodeFill.fill(suggestion)
     }
 
     private func paste() {
@@ -842,6 +852,33 @@ struct AddParcelView: View {
             }
         }
     }
+}
+
+/// The postcode a field was filled with from those given before. While the field still holds
+/// it, it can be forgotten; then no other fills the field until its details are prepared again.
+struct PostcodeFill: Equatable {
+    private(set) var postcode: String?
+    private(set) var forgotten = false
+
+    /// What may fill the field: nothing just after a postcode was forgotten in it.
+    func offering(_ suggestion: String?) -> String? { forgotten ? nil : suggestion }
+
+    mutating func fill(_ suggestion: String) -> String {
+        postcode = suggestion
+        return suggestion
+    }
+
+    func holds(_ field: String) -> Bool { !field.isEmpty && postcode == field }
+
+    /// The postcode to forget, when the field still holds it.
+    mutating func forget(_ field: String) -> String? {
+        guard holds(field) else { return nil }
+        defer { postcode = nil; forgotten = true }
+        return postcode
+    }
+
+    /// Another carrier's details: what was given before may fill the field again.
+    mutating func prepare() { forgotten = false }
 }
 
 /// Applied outside the card's swipe clipping so the little parcels can leave its edge.

@@ -1,6 +1,6 @@
 # Peek privacy notice
 
-Effective: 4 October 2026
+Effective: 7 October 2026
 
 Peek follows parcels, on the web and in its iPhone app. This notice says what
 the official service at peektracker.com processes to do that. Peek does not
@@ -173,6 +173,12 @@ Your browser, or the iPhone app, keeps a list of the parcels you followed or ope
 link, its key if this device made the lookup, the name you gave it and the last
 tracking history it showed, so the parcel is still there offline. The list
 stays on the device until the parcel is forgotten or kept in an account.
+
+Apart from that list, it keeps the last five postcodes you entered for these
+lookups, each with the carrier it was for, so the next parcel's postcode field
+can start from yours. They stay on the device after the parcels are forgotten,
+until you choose Forget this postcode beside one or clear the site's or the
+app's data.
 
 To limit abuse, the service counts lookups, and numbers it asked carriers
 about, per day under a keyed hash of the network address and the date. The

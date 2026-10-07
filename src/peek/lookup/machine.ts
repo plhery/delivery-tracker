@@ -10,6 +10,7 @@ import {
   type CarrierInputRequirement,
   type TrackingInputMatch,
 } from '../../lib/carriers';
+import { rememberedPostcode, type GivenPostcode } from '../../lib/postcodeMemory';
 import type { CarrierId } from '../../types';
 import type { CarrierAnswer, ParcelLookupInput } from '../linkModel';
 import { checkDigitTrouble, readText, type CheckDigitTrouble, type NumberInText, type Reading } from './reading';
@@ -133,6 +134,11 @@ export interface Survey {
   /** The first input that is required and not filled in properly. */
   missing: CarrierInputRequirement | null;
   input(field: CarrierInputField): string;
+  /**
+   * The postcode this device gave before that the carrier's field takes: a
+   * required field starts from it, an optional one offers it.
+   */
+  remembered: string | null;
   /** The number whose carriers should be asked now. */
   ask: string | null;
   /** The first thing the visitor has to settle before a lookup can go. */
@@ -141,7 +147,7 @@ export interface Survey {
 
 const offer = (carrier: CarrierId, normalized: string) => `${carrier}:${normalized}`;
 
-export function survey(state: LookupState, device: readonly DeviceParcel[] = []): Survey {
+export function survey(state: LookupState, device: readonly DeviceParcel[] = [], postcodes: readonly GivenPostcode[] = []): Survey {
   const reading = readText(state.text);
   const calm = state.raised ? reading : readText(state.settled);
   const several = reading.numbers;
@@ -192,7 +198,11 @@ export function survey(state: LookupState, device: readonly DeviceParcel[] = [])
 
   const requirements = match && !onDevice && carrier !== 'unknown' ? carrierRequirements(carrier, match.trackingNumber) : [];
   const pastedUrl = match && match.carrier === carrier ? match.trackingUrl : undefined;
-  const input = (field: CarrierInputField) => field === 'trackingUrl' && pastedUrl ? pastedUrl : state.inputs[carrier]?.[field] ?? '';
+  // A required postcode starts from one given before; an optional one is only offered.
+  const postcodeField = requirements.find((requirement) => requirement.field === 'dpdPostcode');
+  const remembered = (postcodeField && rememberedPostcode(carrier, postcodeField, postcodes)) || null;
+  const input = (field: CarrierInputField) => field === 'trackingUrl' && pastedUrl ? pastedUrl
+    : state.inputs[carrier]?.[field] ?? (field === 'dpdPostcode' && !postcodeField?.optional ? remembered : null) ?? '';
   // A link that came with the paste needs no field of its own.
   const fields = requirements.filter((requirement) =>
     !(requirement.field === 'trackingUrl' && pastedUrl && requirementSatisfied(requirement, pastedUrl)));
@@ -207,7 +217,7 @@ export function survey(state: LookupState, device: readonly DeviceParcel[] = [])
 
   return {
     reading, several, match, normalized, nothing, order: order && (state.raised || calm.order), typo, onDevice, amazon, account,
-    check, carrier, source, certain, fields, missing, input, ask, need,
+    check, carrier, source, certain, fields, missing, input, remembered, ask, need,
   };
 }
 
@@ -226,9 +236,9 @@ function lookupInput(found: Survey): ParcelLookupInput {
 }
 
 /** Goes on with what the visitor asked for, as far as the state allows: waits, stops to ask, or starts the job. */
-function advance(state: LookupState, device: readonly DeviceParcel[]): LookupState {
+function advance(state: LookupState, device: readonly DeviceParcel[], postcodes: readonly GivenPostcode[]): LookupState {
   if (state.job || state.intent === 'none') return state;
-  const found = survey(state, device);
+  const found = survey(state, device, postcodes);
   const track = state.intent === 'track';
   const stop = (changes: Partial<LookupState> = {}): LookupState => ({ ...state, intent: 'none', halted: state.halted + 1, ...changes });
   if (!found.match || found.typo || state.trouble?.kind === 'burst') return stop();
@@ -252,28 +262,33 @@ function advance(state: LookupState, device: readonly DeviceParcel[]): LookupSta
 /** A limit outlasts an edit: the countdown and the day's refusal are about the network, not about the text. */
 const lasting = (trouble: LookupTrouble | null) => trouble?.kind === 'burst' || trouble?.kind === 'daily' ? trouble : null;
 
-export function lookupStep(state: LookupState, event: LookupEvent, device: readonly DeviceParcel[] = []): LookupState {
+export function lookupStep(
+  state: LookupState,
+  event: LookupEvent,
+  device: readonly DeviceParcel[] = [],
+  postcodes: readonly GivenPostcode[] = [],
+): LookupState {
   switch (event.type) {
     case 'edit': {
       if (state.job) return state;
-      const before = survey(state, device).normalized;
+      const before = survey(state, device, postcodes).normalized;
       let next: LookupState = { ...state, text: event.text, intent: 'none', raised: false, paste: null, trouble: lasting(state.trouble) };
-      const after = survey(next, device);
+      const after = survey(next, device, postcodes);
       if (!after.several.some((number) => number.normalized === next.pick)) next = { ...next, pick: null };
       // A carrier chosen by hand was chosen for the number it stood beside.
       if (after.normalized !== before) next = { ...next, carrier: 'auto' };
       if (event.via !== 'paste') return next;
-      return advance({ ...next, settled: event.text, asked: after.normalized || null, intent: 'paste' }, device);
+      return advance({ ...next, settled: event.text, asked: after.normalized || null, intent: 'paste' }, device, postcodes);
     }
     case 'pause':
       return event.text === state.text && state.settled !== state.text ? { ...state, settled: state.text } : state;
     case 'blur': {
-      const { normalized } = survey(state, device);
+      const { normalized } = survey(state, device, postcodes);
       return normalized && state.asked !== normalized ? { ...state, asked: normalized } : state;
     }
     case 'submit': {
       if (state.job || state.trouble?.kind === 'burst') return state;
-      const before = survey(state, device);
+      const before = survey(state, device, postcodes);
       return advance({
         ...state,
         settled: state.text,
@@ -285,15 +300,15 @@ export function lookupStep(state: LookupState, event: LookupEvent, device: reado
         // Pressing Track with the question about the check digit in view answers it: track it as typed.
         asTyped: before.typo ? before.normalized : state.asTyped,
         offered: before.fields.length ? offer(before.carrier, before.normalized) : state.offered,
-      }, device);
+      }, device, postcodes);
     }
     case 'asTyped': {
       if (state.job) return state;
-      const { normalized } = survey(state, device);
-      return advance({ ...state, settled: state.text, raised: true, intent: 'track', trouble: lasting(state.trouble), asked: normalized || state.asked, asTyped: normalized }, device);
+      const { normalized } = survey(state, device, postcodes);
+      return advance({ ...state, settled: state.text, raised: true, intent: 'track', trouble: lasting(state.trouble), asked: normalized || state.asked, asTyped: normalized }, device, postcodes);
     }
     case 'answer':
-      return event.answer.trackingNumber === state.asked ? advance({ ...state, answer: event.answer }, device) : state;
+      return event.answer.trackingNumber === state.asked ? advance({ ...state, answer: event.answer }, device, postcodes) : state;
     case 'recheck':
       return state.answer ? { ...state, answer: null } : state;
     case 'pick':

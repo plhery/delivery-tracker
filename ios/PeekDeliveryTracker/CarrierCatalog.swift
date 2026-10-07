@@ -71,6 +71,39 @@ struct CarrierRequirement: Codable, Hashable, Sendable {
         if isOptional, rawValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
         return accepts(rawValue)
     }
+
+    /// The postcode this field suggests for `carrier`, from the postcodes given before in the
+    /// order they come: the first given to that carrier that fits, otherwise the first given to
+    /// any carrier that fits, since most parcels go to the same address. Returned as the field
+    /// takes it.
+    func suggestedPostcode(for carrier: CarrierID, among given: [GivenPostcode]) -> String? {
+        let fitting = given.compactMap { entry in fitted(entry.postcode).map { (carrier: entry.carrier, postcode: $0) } }
+        return (fitting.first { $0.carrier == carrier } ?? fitting.first)?.postcode
+    }
+
+    /// A postcode as this field takes it, or nil when it does not fit as written: "1012 AB" is
+    /// not "1012" in a four-digit field. Like the web, the pattern is tried on the postcode in
+    /// capitals with single spaces.
+    private func fitted(_ postcode: String) -> String? {
+        let value = postcode.uppercased().split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        guard !value.isEmpty else { return nil }
+        if let pattern = pattern?.nonEmpty, value.range(of: pattern, options: .regularExpression) == nil { return nil }
+        return normalizedValue(value)
+    }
+}
+
+/// A postcode given to a carrier for an earlier parcel.
+struct GivenPostcode: Codable, Hashable, Sendable {
+    var carrier: CarrierID
+    var postcode: String
+
+    /// What the add sheet suggests from: the postcodes of the account's parcels, newest parcel
+    /// first, then the ones this iPhone remembers, in their order.
+    static func candidates(parcels: [Parcel], remembered: [GivenPostcode]) -> [GivenPostcode] {
+        parcels.sorted { $0.createdAt > $1.createdAt }
+            .compactMap { parcel in parcel.dpdPostcode.map { GivenPostcode(carrier: parcel.carrier, postcode: $0) } }
+            + remembered
+    }
 }
 
 struct CarrierDefinition: Codable, Sendable {

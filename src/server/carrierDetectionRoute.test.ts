@@ -43,9 +43,9 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
-// The scraper may add a network to the fourteen-digit shape; the known ones keep their order.
+// The scraper decides which carriers share the fourteen-digit shape, and in what order;
+// these tests need several of them, DPD first for its Swiss depot prefix.
 const fourteen = recognitionAskedCarriers('06080000000002');
-const pinned = ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex'];
 
 // Answers are cached per number for a few minutes, so every test uses its own numbers.
 
@@ -102,7 +102,8 @@ it('returns the one carrier that knows an ambiguous number', async () => {
   expect(await response.json()).toEqual({ trackingNumber: '06080000000002', carrier: 'dpd', asked: fourteen });
   // Every carrier that can answer is asked at once, number evidence first.
   expect(asked()).toEqual(fourteen);
-  expect(fourteen.filter(carrier => pinned.includes(carrier))).toEqual(pinned);
+  expect(fourteen.length, 'several carriers share the shape').toBeGreaterThan(1);
+  expect(fourteen[0]).toBe('dpd');
 });
 
 it('offers a carrier that needs a postcode so the sheet can ask for it', async () => {
@@ -152,7 +153,9 @@ it('retains unresolved public submissions even when the detection answer is cach
 
 it('does not retain confirmed, invalid or refused detections', async () => {
   const retain = vi.mocked(SupabaseServiceClient.prototype.recordTrackingSupportObservation);
-  expect((await request('1Z0000000012345678')).status).toBe(200);
+  const confirmed = '1Z0000000012345670';
+  expect(detectCarrierMatch(confirmed), 'a UPS number its shape and check digit confirm').toMatchObject({ carrier: 'ups', confidence: 'high' });
+  expect((await request(confirmed)).status).toBe(200);
   expect((await request('invalid!')).status).toBe(400);
   expect((await request('0000000043', false)).status).toBe(401);
   vi.spyOn(SupabaseServiceClient.prototype, 'claimPublicAllowance').mockResolvedValue({ allowed: false, scope: 'bucket', overallUsed: 1 });
@@ -176,11 +179,15 @@ it('lets the user choose between unrelated carriers that both know the number', 
 });
 
 it('ignores an answer about an old parcel that reused the number', async () => {
-  recognize.mockImplementation(async (carrier: string) => ({ known: carrier === 'dpd' || carrier === 'ciblex',
+  // DPD knows the number from an old parcel; another carrier asked knows the current one.
+  const current = fourteen.filter((carrier) => carrier !== 'dpd').at(-1);
+  expect(fourteen).toContain('dpd');
+  expect(current).toBeDefined();
+  recognize.mockImplementation(async (carrier: string) => ({ known: carrier === 'dpd' || carrier === current,
     lastActivityAt: carrier === 'dpd' ? '2026-01-01T00:00:00Z' : null }));
   vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-09-10T12:00:00Z') });
   try {
-    expect(await (await request('06080000000019')).json()).toEqual({ trackingNumber: '06080000000019', carrier: 'ciblex', asked: fourteen });
+    expect(await (await request('06080000000019')).json()).toEqual({ trackingNumber: '06080000000019', carrier: current, asked: fourteen });
   } finally { vi.useRealTimers(); }
 });
 
@@ -212,17 +219,23 @@ it('does not ask carriers for selected shapes, formats without candidates or una
   expect(recognize).not.toHaveBeenCalled();
 });
 
+// The scraper names the carriers asked about each shape; the route asks them all and returns the one that knows it.
 it.each([
-  ['12345678901242', 'brt', fourteen],
-  ['12345678901243', 'seur', fourteen],
-  ['9900002', 'seur', ['seur']],
-  ['1000000000000001', 'tnt', ['tnt', 'correos-express', 'dhl-ecommerce', 'canada-post']],
-  ['1000000000000002', 'correos-express', ['tnt', 'correos-express', 'dhl-ecommerce', 'canada-post']],
-  ['98765432109876543211', 'nz-post', ['nz-post']],
-  ['98765432109876543210', 'poczta-polska', ['poczta-polska', 'nz-post']],
-  ['1000000000000000000001', 'austrian-post', ['austrian-post']],
-])('recognizes newly supported %s shapes only through carrier answers', async (number, carrier, candidates) => {
-  recognize.mockImplementation(knows(carrier as string));
+  ['12345678901242', 'brt'],
+  ['12345678901243', 'seur'],
+  ['9900002', 'seur'],
+  ['1000000000000001', 'tnt'],
+  // Correos Express is asked only when the GS1 check digit adds up.
+  ['1000000000000007', 'correos-express'],
+  ['98765432109876543211', 'nz-post'],
+  // Poczta Polska is asked about barcodes under its own GS1 prefix.
+  ['00159007731234567899', 'poczta-polska'],
+  ['1000000000000000000001', 'austrian-post'],
+])('recognizes newly supported %s shapes only through carrier answers', async (number, carrier) => {
+  const candidates = recognitionAskedCarriers(number);
+  expect(detectCarrierMatch(number).carrier, 'the shape alone names no carrier').toBe('unknown');
+  expect(candidates, `${carrier} is asked about ${number}`).toContain(carrier);
+  recognize.mockImplementation(knows(carrier));
   expect(await (await request(number)).json()).toEqual({ trackingNumber: number, carrier, asked: candidates });
   expect(asked()).toEqual(candidates);
 });

@@ -176,6 +176,18 @@ final class ParcelStore: ObservableObject {
     /// Whether tracking without an account works at all: a build without a server only has its demo.
     var tracksWithoutAccount: Bool { configuration.mode == .api }
 
+    /// The postcodes given before, for the add sheet to suggest: the parcels' own, then the
+    /// ones this iPhone remembers from lookups without an account.
+    var givenPostcodes: [GivenPostcode] {
+        GivenPostcode.candidates(parcels: parcels, remembered: device.postcodes.entries)
+    }
+
+    /// This iPhone stops suggesting the postcode, for every carrier.
+    func forgetPostcode(_ postcode: String) {
+        objectWillChange.send()
+        device.postcodes.forget(postcode)
+    }
+
     func detectCarrier(trackingNumber: String) async throws -> CarrierDetectionResponse {
         if isGuest { return try await device.detect(trackingNumber: trackingNumber) }
         return try await api.detectCarrier(trackingNumber: trackingNumber)

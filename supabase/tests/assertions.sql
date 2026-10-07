@@ -641,7 +641,7 @@ begin
 
   begin
     perform public.create_owned_package(
-      '76434220', '', 'mondial-relay', null, '5965'
+      '76434220', '', 'mondial-relay', null, '59/65'
     );
     raise exception 'invalid Mondial Relay postcode was accepted';
   exception when invalid_parameter_value then
@@ -2062,7 +2062,7 @@ begin
   select * into parcel from public.create_owned_package('12345678902', '', 'gls-de', null, '8000');
   if parcel.dpd_postcode <> '8000' then raise exception 'Swiss postcode was not accepted for GLS Germany'; end if;
   begin
-    perform public.create_owned_package('12345678903', '', 'gls-de', null, '800');
+    perform public.create_owned_package('12345678903', '', 'gls-de', null, '80/0');
     raise exception 'Accepted invalid postcode for German GLS' using errcode = 'P0002';
   exception when invalid_parameter_value then null; end;
   begin

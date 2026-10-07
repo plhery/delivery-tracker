@@ -159,7 +159,7 @@ describe('keeping in the demo', () => {
   beforeEach(() => { mocks.demo = createDemoLinks(window.localStorage); });
 
   async function lookedUp(name?: string) {
-    const lookup = await mocks.demo!.lookupParcel({ trackingNumber: '1ZDEMO202600000009' });
+    const lookup = await mocks.demo!.lookupParcel({ trackingNumber: '1ZDEMO202600000092' });
     const view = await mocks.demo!.readParcelLink(lookup.id, { key: lookup.key, advance: true });
     if (view === 'unavailable') throw new Error('The demo link should exist');
     rememberParcel({ id: lookup.id, key: lookup.key, view, name });
@@ -174,7 +174,7 @@ describe('keeping in the demo', () => {
     const outcome = await keepPendingInDemo(repo);
     expect(outcome).toMatchObject({ id, outcome: 'kept', name: 'Kind of Blue' });
     const kept = (await repo.list()).find((parcel) => parcel.id === outcome!.packageId)!;
-    expect(kept).toMatchObject({ trackingNumber: '1ZDEMO202600000009', label: 'Kind of Blue', carrier: 'ups' });
+    expect(kept).toMatchObject({ trackingNumber: '1ZDEMO202600000092', label: 'Kind of Blue', carrier: 'ups' });
     expect(kept.events.map((event) => event.stage)).toEqual(['registered', 'accepted', 'in_transit']);
     expect(recentFor(id)).toBeNull();
     expect(await mocks.demo!.readParcelLink(id, { key })).toBe('unavailable');

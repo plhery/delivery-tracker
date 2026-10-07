@@ -3,7 +3,8 @@ import type { CarrierResult } from 'universal-parcel-scraper';
 import { retainDetectionSupport, trackingSupportContext, trackingSupportEvidence } from './trackingSupport';
 import { SupabaseServiceClient } from './supabase';
 
-const number = '1Z0000000012345678';
+// A UPS number its check digit confirms.
+const number = '1Z0000000012345670';
 const parcel = { tracking_number: number, carrier: 'ups' };
 const progress: CarrierResult = {
   status: 'in_transit', current_stage: 'in_transit', last_update: '2026-09-10T11:00:00Z',

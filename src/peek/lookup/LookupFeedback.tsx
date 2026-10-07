@@ -5,6 +5,7 @@ import { useI18n, type MessageKey } from '../../i18n';
 import { amazonOrdersUrl } from '../../lib/amazon';
 import { carrierBrand } from '../../lib/carrierBrand';
 import { carrierInfo, carrierTrackingHintKey, formatTrackingNumber, tracksAutomatically, typedRequirementValue } from '../../lib/carriers';
+import { forgetPostcode } from '../../lib/postcodeMemory';
 import { lettersPostcode, postcodeExample } from '../../lib/postcodeExample';
 import type { CarrierId } from '../../types';
 import { usePeekSession } from '../session';
@@ -141,6 +142,10 @@ export function LookupFeedback({ lookup, pointer, onSignIn, onPickCarrier, onSug
     {found.fields.map((requirement) => {
       const id = `door-${requirement.field}`;
       const postcode = requirement.field === 'dpdPostcode';
+      const value = found.input(requirement.field);
+      // The postcode this device gave before: an empty optional field offers it, and a field holding it can forget it.
+      const remembered = postcode ? found.remembered : null;
+      const holdsRemembered = remembered !== null && value.trim().toUpperCase().replace(/\s+/g, ' ') === remembered;
       return <div key={requirement.field} className="door-input">
         <label htmlFor={id}>
           {locale === 'en' ? requirement.label : t(`add.requirement.${requirement.field}`)}
@@ -148,7 +153,7 @@ export function LookupFeedback({ lookup, pointer, onSignIn, onPickCarrier, onSug
         </label>
         <input id={id} className={`door-input__field${lettersPostcode(requirement) ? ' door-input__field--postcode' : ''}`}
           type={requirement.type} inputMode={requirement.inputMode} autoComplete={requirement.autoComplete}
-          value={found.input(requirement.field)} placeholder={postcodeExample(found.carrier, requirement)} pattern={requirement.pattern} maxLength={requirement.maxLength}
+          value={value} placeholder={postcodeExample(found.carrier, requirement)} pattern={requirement.pattern} maxLength={requirement.maxLength}
           readOnly={Boolean(state.job)} required={!requirement.optional} aria-describedby={`${id}-help`}
           aria-invalid={inputTrouble && found.missing?.field === requirement.field ? true : undefined}
           autoCapitalize={requirement.type === 'url' ? 'none' : lettersPostcode(requirement) ? 'characters' : undefined} autoCorrect="off" spellCheck={false}
@@ -158,6 +163,19 @@ export function LookupFeedback({ lookup, pointer, onSignIn, onPickCarrier, onSug
             field: requirement.field,
             value: typedRequirementValue(requirement, event.target.value),
           })} />
+        {remembered && !value && requirement.optional && <button type="button" className="door-suggestion" disabled={Boolean(state.job)}
+          onClick={() => send({ type: 'fill', carrier: found.carrier, field: requirement.field, value: remembered })}>
+          {t('add.usePostcode', { postcode: remembered })}
+        </button>}
+        {holdsRemembered && <button type="button" className="door-input__forget" disabled={Boolean(state.job)}
+          onClick={() => {
+            forgetPostcode(remembered);
+            send({ type: 'fill', carrier: found.carrier, field: requirement.field, value: '' });
+            // The button goes with the postcode: the focus stays with the field it emptied.
+            document.getElementById(id)?.focus();
+          }}>
+          {t('add.forgetPostcode')}
+        </button>}
         {inputTrouble && found.missing?.field === requirement.field && <p className="door-message" role="alert">{t(validation)}</p>}
         <p id={`${id}-help`} className="door-aside">
           {t(!postcode ? 'add.requirement.trackingUrlHelp' : requirement.optional ? 'add.requirement.dpdPostcodeOptionalHelp' : 'add.requirement.dpdPostcodeHelp', { carrier: carrier.name })}

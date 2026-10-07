@@ -892,6 +892,7 @@
   "event.carrier.preparing": "Zamówienie w przygotowaniu",
   "add.carrierKnownElsewhere": "{{carrier}} zna ten numer.",
   "add.useCarrier": "Wybierz: {{carrier}}",
+  "add.forgetPostcode": "Zapomnij ten kod pocztowy",
   "add.usePostcode": "Użyj {{postcode}}",
   "detail.postcodeNotVerified": "Kod pocztowy {{postcode}} nie został przyjęty przez {{carrier}}, więc widać mniej szczegółów.",
   "detail.editPostcode": "Zmień kod pocztowy",

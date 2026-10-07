@@ -918,15 +918,14 @@ export const CARRIER_CAPABILITIES = {
       "requirements": [
         {
           "field": "dpdPostcode",
-          "whenTrackingNumber": "^(?![0-9]{26}$).*$",
-          "validator": "francePostcode",
+          "whenTrackingNumber": "^[0-9]{8}$",
+          "validator": "internationalPostcode",
           "label": "Delivery postcode",
           "type": "text",
-          "placeholder": "75001",
-          "help": "Short Mondial Relay shipment numbers require the recipient postcode; validated 26-digit label barcodes do not.",
-          "pattern": "^[0-9]{5}$",
-          "maxLength": 5,
-          "inputMode": "numeric",
+          "help": "8-digit Mondial Relay shipment numbers require the recipient postcode; longer numbers and label barcodes do not.",
+          "pattern": "^(?=.{3,12}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ \\-][A-Za-z0-9]+)*$",
+          "maxLength": 12,
+          "inputMode": "text",
           "autoComplete": "postal-code"
         }
       ]
@@ -1075,7 +1074,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Paris",
     "tracking": {
       "mode": "automatic",
-      "adapter": "la-poste",
+      "adapter": "chronopost",
       "recognitionRank": 45
     },
     "trackingUrlTemplate": "https://www.chronopost.fr/tracking-no-cms/suivi-page?langue=fr&listeNumerosLT={trackingNumber}",
@@ -1591,14 +1590,13 @@ export const CARRIER_CAPABILITIES = {
       "requirements": [
         {
           "field": "dpdPostcode",
-          "validator": "swissOrFrancePostcode",
+          "validator": "internationalPostcode",
           "label": "Delivery postcode",
           "type": "text",
-          "placeholder": "10115",
-          "help": "GLS requires the four- or five-digit delivery postcode to show the detailed event history.",
-          "pattern": "^[0-9]{4,5}$",
-          "maxLength": 5,
-          "inputMode": "numeric",
+          "help": "GLS requires the delivery postcode to show the detailed event history.",
+          "pattern": "^(?=.{3,12}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ \\-][A-Za-z0-9]+)*$",
+          "maxLength": 12,
+          "inputMode": "text",
           "autoComplete": "postal-code"
         }
       ],

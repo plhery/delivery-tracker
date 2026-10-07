@@ -192,3 +192,5 @@ psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/dhl_ecommerce_national_networks.sql"
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/international_dpd_postcode.sql"
+psql "$database_url" -X -v ON_ERROR_STOP=1 \
+  -f "$repo_root/supabase/tests/international_mondial_relay_gls_postcode.sql"

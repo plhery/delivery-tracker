@@ -16,12 +16,12 @@ const status = (page: Page) => page.getByRole('heading', { level: 1 });
 test('follows one parcel without an account: a number typed at the door gets its own page, which a reload keeps', async ({ page }) => {
   const sent: string[] = [];
   page.on('request', (request) => sent.push(`${request.method()} ${request.url()} ${request.postData() ?? ''}`));
-  await track(page, '1ZDEMO202600000009');
+  await track(page, '1ZDEMO202600000092');
   // The page opens with the lookup's answer, then the first check lands and the status is the headline.
   await expect(page.locator('.peekp-main')).toHaveAttribute('data-entrance', 'reveal');
   // The page lies over the door, which lists the parcel too.
   await expect(page.locator('.peekp').getByLabel('UPS', { exact: true })).toBeVisible();
-  await expect(page.locator('.peekp').getByText('1ZDEMO202600000009', { exact: true }).first()).toBeVisible();
+  await expect(page.locator('.peekp').getByText('1ZDEMO202600000092', { exact: true }).first()).toBeVisible();
   await expect(status(page)).toHaveText('In transit');
   await expect(page).toHaveTitle(/^In transit · /);
   // The reveal ends by offering the parcel's own link.
@@ -33,12 +33,12 @@ test('follows one parcel without an account: a number typed at the door gets its
   await expect(status(page)).toHaveText('In transit');
   await expect(page.locator('main')).toHaveAttribute('data-entrance', 'direct');
   await expect(page.getByText('This parcel has its own link')).toHaveCount(0);
-  await expect(page.getByText('1ZDEMO202600000009', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('1ZDEMO202600000092', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Peek forgets this parcel 30 days after delivery.')).toBeVisible();
   // Pip and the map are drawings: assistive tech gets the status, the carrier and the journal instead.
   await expect(page.locator('.peekp-card [aria-hidden=true]').first()).toBeAttached();
   // The demo asks no server about the parcel, and its number never leaves the browser.
-  expect(sent.filter((entry) => entry.includes('/api/public/') || entry.includes('1ZDEMO202600000009'))).toEqual([]);
+  expect(sent.filter((entry) => entry.includes('/api/public/') || entry.includes('1ZDEMO202600000092'))).toEqual([]);
 });
 
 test('goes back to the front door, lists the parcel on this device, and forward to its page again', async ({ page }) => {
@@ -69,7 +69,7 @@ test('goes back to the front door, lists the parcel on this device, and forward 
 });
 
 test('a manual check moves the fictional parcel on, down to delivery, where the box opens and the forget date appears', async ({ page }) => {
-  await track(page, '1ZDEMO202600000009');
+  await track(page, '1ZDEMO202600000092');
   await expect(status(page)).toHaveText('In transit');
   const check = page.getByRole('button', { name: /Check now$/ });
   await check.click();
@@ -194,7 +194,7 @@ test('fits a phone at 320 px, in German and in the dark', async ({ page }) => {
 
 test('shows still frames under reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await track(page, '1ZDEMO202600000009');
+  await track(page, '1ZDEMO202600000092');
   await expect(status(page)).toHaveText('In transit');
   const running = () => page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === 'running'
     && Number(animation.effect?.getComputedTiming().duration) > 1).length);
@@ -208,7 +208,7 @@ test('shows still frames under reduced motion', async ({ page }) => {
 
 test('keeps the parcel after “Create an account”: the demo takes it with its name and history, then offers the device’s other parcels', async ({ page }) => {
   // Two parcels looked up on this device; the first gets a name.
-  await track(page, '1ZDEMO202600000009');
+  await track(page, '1ZDEMO202600000092');
   await page.getByRole('button', { name: 'Name it' }).click();
   await page.keyboard.type('Kind of Blue');
   await page.keyboard.press('Enter');
@@ -248,7 +248,7 @@ test('lists the device’s other parcels at the foot of a page, and opens one on
   // Nothing else on this device, and the parcel is on its way: the page ends with its journey.
   await expect(page.getByRole('region', { name: 'Also on this device' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Waiting for something else?' })).toHaveCount(0);
-  await track(page, '1ZDEMO202600000009');
+  await track(page, '1ZDEMO202600000092');
   await expect(status(page)).toHaveText('In transit');
   const check = page.getByRole('button', { name: /Check now$/ });
   await check.click();

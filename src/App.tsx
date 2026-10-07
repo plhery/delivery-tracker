@@ -30,6 +30,7 @@ import {
 } from './i18n';
 import type { ApiAuth } from './lib/apiClient';
 import { carrierInfo } from './lib/carriers';
+import { usePostcodeMemory } from './lib/postcodeMemory';
 import { usedCarrierIds } from './lib/carrierPicker';
 import {
   isActiveParcel,
@@ -359,12 +360,17 @@ export default function App({
     () => usedCarrierIds(parcels, (carrier) => carrierInfo(carrier).capabilities.selectable),
     [parcels],
   );
-  const lastDpdPostcode = useMemo(
-    () => [...parcels]
-      .sort((first, second) => second.createdAt.localeCompare(first.createdAt))
-      .find((parcel) => parcel.carrier === 'dpd' && parcel.dpdPostcode)
-      ?.dpdPostcode,
-    [parcels],
+  const devicePostcodes = usePostcodeMemory();
+  // The account's own postcodes first, then the ones this device gave without it.
+  const givenPostcodes = useMemo(
+    () => [
+      ...[...parcels]
+        .filter((parcel) => parcel.dpdPostcode)
+        .sort((first, second) => second.createdAt.localeCompare(first.createdAt))
+        .map(({ carrier, dpdPostcode }) => ({ carrier, postcode: dpdPostcode })),
+      ...devicePostcodes,
+    ],
+    [parcels, devicePostcodes],
   );
 
   // The other cards glide into place when a parcel leaves or returns.
@@ -704,7 +710,7 @@ export default function App({
             setParcelBurst(id);
           }}
           onOpenParcel={(parcelId) => openParcelDetail(parcelId)}
-          lastDpdPostcode={lastDpdPostcode}
+          postcodes={givenPostcodes}
           usedCarriers={usedCarriers}
           initialLabel={sharedParcelInput?.label}
           initialTrackingInput={sharedParcelInput?.trackingInput}

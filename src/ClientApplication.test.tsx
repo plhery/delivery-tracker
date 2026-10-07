@@ -63,11 +63,11 @@ describe('DemoApplication', () => {
     app();
     expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Tap to open your parcel' })).not.toBeInTheDocument();
-    await user.type(screen.getByRole('textbox', { name: 'Tracking number or link' }), '1ZDEMO202600000009{Enter}');
+    await user.type(screen.getByRole('textbox', { name: 'Tracking number or link' }), '1ZDEMO202600000092{Enter}');
     await waitFor(() => expect(location.pathname).toMatch(/^\/p\/[2-9A-HJ-NP-Za-km-z]{12}$/));
     // The parcel's page lies over the door, which lists the parcel too.
     expect(within(await screen.findByRole('dialog', { name: 'Parcel details' })).getByLabelText('UPS')).toBeVisible();
-    expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('1ZDEMO202600000009');
+    expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('1ZDEMO202600000092');
     const id = location.pathname.slice(3);
     expect(recentFor(id)?.key).toMatch(/^[A-Za-z0-9_-]{43}$/);
   });
@@ -128,7 +128,7 @@ describe('DemoApplication', () => {
   });
 
   it('brings the parcel a visitor asked to keep into the demo deliveries, with its history and its name', async () => {
-    const { id, key } = await lookupParcel({ trackingNumber: '1ZDEMO202600000009' });
+    const { id, key } = await lookupParcel({ trackingNumber: '1ZDEMO202600000092' });
     const view = await readParcelLink(id, { key, advance: true });
     if (view === 'unavailable') throw new Error('The demo link should exist');
     rememberParcel({ id, key, view });
@@ -166,7 +166,7 @@ describe('DemoApplication', () => {
   });
 
   it('shows a parcel’s page at its address whatever this browser was doing, and leaves it for sign-in', async () => {
-    const { id, key, view } = await lookupParcel({ trackingNumber: '1ZDEMO202600000009' });
+    const { id, key, view } = await lookupParcel({ trackingNumber: '1ZDEMO202600000092' });
     rememberParcel({ id, key, view });
     experience('demo');
     history.replaceState(null, '', `/p/${id}`);

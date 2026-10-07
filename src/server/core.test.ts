@@ -468,8 +468,24 @@ describe('input validation', () => {
       label: 'Relay parcel',
       carrier: 'mondial-relay',
       trackingUrl: '',
-      dpdPostcode: '5965',
-    })).toThrow('five-digit');
+      dpdPostcode: '59/65',
+    })).toThrow('valid delivery postcode');
+    // Mondial Relay delivers across Europe: a Belgian or Dutch recipient's postcode is kept as written.
+    expect(newPackageValues({
+      trackingNumber: '76434219',
+      label: 'Relay parcel',
+      carrier: 'mondial-relay',
+      trackingUrl: '',
+      dpdPostcode: ' 1012  ab ',
+    })).toMatchObject({ carrier: 'mondial-relay', dpdPostcode: '1012 AB' });
+    // The 10- and 12-digit forms carry the brand and need no postcode.
+    expect(newPackageValues({
+      trackingNumber: '1276434219',
+      label: 'Relay parcel',
+      carrier: 'mondial-relay',
+      trackingUrl: '',
+      dpdPostcode: '',
+    })).toMatchObject({ carrier: 'mondial-relay', dpdPostcode: null });
     expect(newPackageValues({
       trackingNumber: '993990103198',
       label: 'GLS parcel',
@@ -554,8 +570,10 @@ describe('input validation', () => {
       expect(packageCarrierValues({ carrier: 'gls-de', dpdPostcode }, '123456789018'))
         .toMatchObject({ carrier: 'gls-de', dpdPostcode });
     }
-    expect(() => packageCarrierValues({ carrier: 'gls-de', dpdPostcode: '800' }, '123456789018'))
-      .toThrow('four- or five-digit');
+    expect(packageCarrierValues({ carrier: 'gls-de', dpdPostcode: '1012 ab' }, '123456789018'))
+      .toMatchObject({ carrier: 'gls-de', dpdPostcode: '1012 AB' });
+    expect(() => packageCarrierValues({ carrier: 'gls-de', dpdPostcode: '80/0' }, '123456789018'))
+      .toThrow('valid delivery postcode');
     expect(packageCarrierValues({
       carrier: 'mondial-relay',
       dpdPostcode: '59650',
@@ -565,7 +583,7 @@ describe('input validation', () => {
       dpdPostcode: '59650',
     });
     expect(() => packageCarrierValues({ carrier: 'mondial-relay' }, '76434219'))
-      .toThrow('five-digit');
+      .toThrow('requires the delivery postcode');
     expect(packageCarrierValues({ carrier: 'dpd' }, '06080000000001'))
       .toEqual({ carrier: 'dpd', trackingUrl: null, dpdPostcode: null });
     expect(packageCarrierValues({ carrier: 'dpd', dpdPostcode: '8000' }, '06080000000001'))

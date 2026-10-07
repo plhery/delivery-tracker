@@ -17,6 +17,7 @@ import {
   typedRequirementValue,
 } from '../lib/carriers';
 import { lettersPostcode, postcodeExample } from '../lib/postcodeExample';
+import { rememberedPostcode, type GivenPostcode } from '../lib/postcodeMemory';
 import { canAskCarrier, carrierCheck, carrierChoiceSections, carrierChoiceTags, carrierNameList, shapeCarrier } from '../lib/carrierPicker';
 import {
   ParcelAlreadyExistsError,
@@ -53,7 +54,7 @@ function isTextField(element: unknown): element is HTMLInputElement | HTMLTextAr
 export function AddParcelSheet({
   onAdd,
   onClose: onDismissed,
-  lastDpdPostcode,
+  postcodes = [],
   initialLabel = '',
   initialTrackingInput = '',
   onOpenParcel,
@@ -65,7 +66,8 @@ export function AddParcelSheet({
   onClose: () => void;
   onOpenParcel?: (parcelId: string) => void;
   onAdded?: (parcelId: string) => void;
-  lastDpdPostcode?: string;
+  /** The postcodes given for earlier parcels, newest first. */
+  postcodes?: readonly GivenPostcode[];
   initialLabel?: string;
   initialTrackingInput?: string;
   apiAuth?: ApiAuth;
@@ -81,7 +83,7 @@ export function AddParcelSheet({
     trackingUrl: '',
     dpdPostcode: '',
   });
-  // DPD's postcode is optional: the last one is offered, never filled in.
+  // Each carrier's postcode is kept apart: one typed for a carrier never goes to another.
   const [carrierPostcodes, setCarrierPostcodes] = useState<Partial<Record<CarrierId, string>>>({});
   const [selectedCarrier, setSelectedCarrier] = useState<CarrierId | 'auto'>('auto');
   const [verifiedCarrier, setVerifiedCarrier] = useState<ApiCarrierDetectionResponse>();
@@ -224,12 +226,16 @@ export function AddParcelSheet({
     && !tracksAutomatically(parsedTracking.carrier);
   const parsedCarrierTrackingUrl =
     parsedTracking.carrier === resolvedCarrier ? parsedTracking.trackingUrl : undefined;
+  // A required postcode starts from one given before; an optional one is only offered.
+  const postcodeRequirement = requirements.find(({ field }) => field === 'dpdPostcode');
+  const remembered = postcodeRequirement ? rememberedPostcode(resolvedCarrier, postcodeRequirement, postcodes) : undefined;
   const carrierInputValue = (field: CarrierInputField) =>
     field === 'trackingUrl' && parsedCarrierTrackingUrl
       ? parsedCarrierTrackingUrl
       : field === 'dpdPostcode'
-        ? carrierPostcodes[resolvedCarrier] ?? ''
+        ? carrierPostcodes[resolvedCarrier] ?? (postcodeRequirement?.optional ? undefined : remembered) ?? ''
         : carrierInputs[field];
+  const offeredPostcode = postcodeRequirement?.optional && !carrierInputValue('dpdPostcode') ? remembered : undefined;
   const requirementsSatisfied = requirements.every((requirement) =>
     requirementSatisfied(requirement, carrierInputValue(requirement.field)));
   const carrierHint = carrier
@@ -510,14 +516,13 @@ export function AddParcelSheet({
                       spellCheck={false}
                       required={!requirement.optional}
                     />
-                    {requirement.field === 'dpdPostcode' && requirement.optional && resolvedCarrier === 'dpd'
-                      && lastDpdPostcode && !carrierInputValue('dpdPostcode') && (
+                    {requirement.field === 'dpdPostcode' && offeredPostcode && (
                       <button
                         type="button"
                         className="field__suggestion"
-                        onClick={() => setCarrierPostcodes((current) => ({ ...current, dpd: lastDpdPostcode }))}
+                        onClick={() => setCarrierPostcodes((current) => ({ ...current, [resolvedCarrier]: offeredPostcode }))}
                       >
-                        {t('add.usePostcode', { postcode: lastDpdPostcode })}
+                        {t('add.usePostcode', { postcode: offeredPostcode })}
                       </button>
                     )}
                     {requirement.help && (

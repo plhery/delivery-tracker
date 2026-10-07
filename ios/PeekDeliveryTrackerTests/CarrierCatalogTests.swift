@@ -534,10 +534,12 @@ final class CarrierCatalogTests: XCTestCase {
             catalog.requirements(for: .glsDe, trackingNumber: "123456789018")
                 .first(where: { $0.field == .dpdPostcode })
         )
+        // GLS Germany delivers abroad too: any country's postcode.
+        XCTAssertTrue(glsGermany.takesAnyPostcode)
         XCTAssertTrue(glsGermany.accepts("8000"))
         XCTAssertTrue(glsGermany.accepts("01067"))
-        XCTAssertFalse(glsGermany.accepts("800"))
-        XCTAssertFalse(glsGermany.accepts("123456"))
+        XCTAssertTrue(glsGermany.accepts("SW1A 1AA"))
+        XCTAssertFalse(glsGermany.accepts("12"))
         XCTAssertFalse(glsGermany.isOptional)
         XCTAssertFalse(glsGermany.isSatisfied(by: ""))
         XCTAssertEqual(catalog.info(for: .unknown, language: .en).displayName, "Unknown carrier")
@@ -592,13 +594,16 @@ final class CarrierCatalogTests: XCTestCase {
             catalog.requirements(for: .mondialRelay, trackingNumber: "76434219")
                 .first(where: { $0.field == .dpdPostcode })
         )
-        XCTAssertEqual(mondialRelay.placeholder, "75001")
-        XCTAssertEqual(mondialRelay.maxLength, 5)
-        XCTAssertEqual(mondialRelay.normalizedValue("75 A001 9"), "75001")
+        // Mondial Relay asks for it on eight-digit shipment numbers only, in any country's form.
+        XCTAssertTrue(mondialRelay.takesAnyPostcode)
+        XCTAssertNil(mondialRelay.placeholder)
+        XCTAssertEqual(mondialRelay.maxLength, 12)
+        XCTAssertEqual(mondialRelay.normalizedValue(" 1012  ab "), "1012 AB")
         XCTAssertTrue(mondialRelay.accepts("75001"))
-        XCTAssertFalse(mondialRelay.accepts("8000"))
+        XCTAssertTrue(mondialRelay.accepts("8000"))
         XCTAssertFalse(mondialRelay.isOptional)
         XCTAssertFalse(mondialRelay.isSatisfied(by: ""))
+        XCTAssertTrue(catalog.requirements(for: .mondialRelay, trackingNumber: "1234567890").isEmpty)
 
         let gls = try XCTUnwrap(
             catalog.requirements(for: .glsCh, trackingNumber: "993990103198")
@@ -628,6 +633,62 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(paack.normalizedValue("sw1a 1aa"), "SW1A1AA")
         XCTAssertFalse(paack.isOptional)
         XCTAssertFalse(paack.isSatisfied(by: ""))
+    }
+
+    func testThePostcodeSuggestedIsTheNewestThatFitsTheCarriersOwnFirst() throws {
+        func requirement(_ carrier: CarrierID, _ number: String) throws -> CarrierRequirement {
+            try XCTUnwrap(catalog.requirements(for: carrier, trackingNumber: number).first { $0.field == .dpdPostcode })
+        }
+        func parcel(_ carrier: CarrierID, _ postcode: String?, day: Int) -> Parcel {
+            Parcel(id: UUID(), trackingNumber: "TESTPARCEL123", label: "", carrier: carrier, createdAt: "2026-10-0\(day)T08:00:00Z",
+                   syncStatus: .ok, dpdPostcode: postcode, notificationsMuted: false)
+        }
+        func given(_ parcels: [Parcel], remembered: [GivenPostcode] = []) -> [GivenPostcode] {
+            GivenPostcode.candidates(parcels: parcels, remembered: remembered)
+        }
+        // Mondial Relay and DPD take any country's postcode; GLS Switzerland, Heppner and DPD Germany their countries'.
+        let dpd = try requirement(.dpd, "12345678901234")
+        let mondialRelay = try requirement(.mondialRelay, "76434219")
+        let gls = try requirement(.glsCh, "993990103198")
+        let heppner = try requirement(.heppner, "23456789")
+        let dpdGermany = try requirement(.dpdDe, "12345678901234")
+
+        // The carrier's own postcode wins over a newer one given to another carrier.
+        let parcels = given([parcel(.mondialRelay, "75002", day: 1), parcel(.glsCh, "8000", day: 2), parcel(.dpd, "75001", day: 3)])
+        XCTAssertEqual(mondialRelay.suggestedPostcode(for: .mondialRelay, among: parcels), "75002")
+        XCTAssertEqual(gls.suggestedPostcode(for: .glsCh, among: parcels), "8000")
+        XCTAssertEqual(dpd.suggestedPostcode(for: .dpd, among: given([parcel(.dpd, "75001", day: 1), parcel(.dpd, "75002", day: 2)])), "75002")
+        // Otherwise the newest one given to any carrier, as the field takes it.
+        XCTAssertEqual(heppner.suggestedPostcode(for: .heppner, among: parcels), "75001")
+        XCTAssertEqual(mondialRelay.suggestedPostcode(for: .mondialRelay, among: given([parcel(.dpd, "75001", day: 1)])), "75001")
+        XCTAssertEqual(dpd.suggestedPostcode(for: .dpd, among: given([parcel(.glsDe, " sw1a  1aa ", day: 1)])), "SW1A 1AA")
+
+        // One that does not fit is passed over, even the carrier's own.
+        XCTAssertNil(dpdGermany.suggestedPostcode(for: .dpdDe, among: given([parcel(.glsCh, "8000", day: 1)])))
+        XCTAssertNil(gls.suggestedPostcode(for: .glsCh, among: given([parcel(.mondialRelay, "75001", day: 1)])))
+        XCTAssertEqual(gls.suggestedPostcode(for: .glsCh, among: given([parcel(.glsCh, "8000", day: 1), parcel(.glsCh, "75001", day: 2)])), "8000")
+        let abroad = given([parcel(.dpd, "75001", day: 1), parcel(.dpd, "8000", day: 2), parcel(.dpd, "1012 AB", day: 3)])
+        XCTAssertEqual(dpd.suggestedPostcode(for: .dpd, among: abroad), "1012 AB")
+        XCTAssertEqual(mondialRelay.suggestedPostcode(for: .mondialRelay, among: abroad), "1012 AB")
+        XCTAssertEqual(gls.suggestedPostcode(for: .glsCh, among: abroad), "8000")
+        XCTAssertEqual(dpdGermany.suggestedPostcode(for: .dpdDe, among: abroad), "75001")
+        // It must fit as written: "1012 AB" is not "1012", nor "00-001" "00001", nor "75 001" "75001".
+        XCTAssertNil(gls.suggestedPostcode(for: .glsCh, among: given([parcel(.dpd, "1012 AB", day: 1)])))
+        XCTAssertNil(dpdGermany.suggestedPostcode(for: .dpdDe, among: given([parcel(.mondialRelay, "00-001", day: 1)])))
+        XCTAssertNil(heppner.suggestedPostcode(for: .heppner, among: given([parcel(.dpd, "75 001", day: 1)])))
+
+        XCTAssertNil(dpd.suggestedPostcode(for: .dpd, among: given([parcel(.dpd, nil, day: 1)])))
+        XCTAssertNil(dpd.suggestedPostcode(for: .dpd, among: []))
+
+        // The account's parcels come first, newest first, then what this iPhone remembers, in its order.
+        let remembered = [GivenPostcode(carrier: .mondialRelay, postcode: "1012 AB"), GivenPostcode(carrier: .glsCh, postcode: "3000")]
+        let both = given([parcel(.dpd, "75001", day: 1), parcel(.glsCh, "8000", day: 2), parcel(.dpd, nil, day: 3)], remembered: remembered)
+        XCTAssertEqual(both, [GivenPostcode(carrier: .glsCh, postcode: "8000"), GivenPostcode(carrier: .dpd, postcode: "75001")] + remembered)
+        XCTAssertEqual(gls.suggestedPostcode(for: .glsCh, among: both), "8000")
+        XCTAssertEqual(heppner.suggestedPostcode(for: .heppner, among: both), "8000")
+        XCTAssertEqual(dpdGermany.suggestedPostcode(for: .dpdDe, among: both), "75001")
+        XCTAssertEqual(mondialRelay.suggestedPostcode(for: .mondialRelay, among: both), "1012 AB", "The carrier's own, though only remembered")
+        XCTAssertEqual(gls.suggestedPostcode(for: .glsCh, among: given([], remembered: remembered)), "3000")
     }
 
     func testBuildsUsableCarrierLinks() throws {

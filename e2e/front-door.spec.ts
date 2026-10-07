@@ -74,7 +74,7 @@ test('a typed number waits for Track, with its carrier on the line and its label
 
 test('several numbers in one text are listed, and the chosen one is tracked', async ({ page }) => {
   await openDoor(page);
-  await paste(page, 'Your order ships in 3 parcels:\nUPS 1ZDEMO202600000001\nUPS 1ZDEMO202600000002\nSwiss Post 99.34.123456.78901234');
+  await paste(page, 'Your order ships in 3 parcels:\nUPS 1ZDEMO202600000001\nUPS 1ZDEMO202600000029\nSwiss Post 99.34.123456.78901234');
   const numbers = page.getByRole('group', { name: '3 tracking numbers in this text' });
   await expect(numbers.getByRole('radio')).toHaveCount(3);
   await expect(numbers.getByRole('radio').first()).toBeChecked();
@@ -216,7 +216,7 @@ test('fits a 320 px phone in German and in the dark, in every state of the field
   expect(await fits(page)).toBe(true);
 
   for (const text of [
-    'Bestellung unterwegs:\nUPS 1ZDEMO202600000001\nUPS 1ZDEMO202600000002\nSwiss Post 99.34.123456.78901234',
+    'Bestellung unterwegs:\nUPS 1ZDEMO202600000001\nUPS 1ZDEMO202600000029\nSwiss Post 99.34.123456.78901234',
     'Danke für deine Bestellung! Wir melden uns, sobald sie unterwegs ist.',
     '302-4571983-2294617',
     'LX1234567B5DE',

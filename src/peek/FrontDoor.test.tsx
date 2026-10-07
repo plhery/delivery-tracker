@@ -13,6 +13,7 @@ import { FIRST_SAMPLE_MS, SAMPLE_PERIOD_MS } from './landing/useSampleLoop';
 import { ParcelLinkError, type ParcelLookup } from './links';
 import { forgetDeviceChecks } from './lookup/deviceList';
 import { forgetAllRecents, recentFor, rememberParcel, renameParcel } from './recents';
+import { POSTCODES_STORAGE_KEY, rememberPostcode } from '../lib/postcodeMemory';
 
 const mocks = vi.hoisted(() => ({ lookup: vi.fn(), detect: vi.fn(), read: vi.fn(), forget: vi.fn(), sample: vi.fn() }));
 vi.mock('./links', async (original) => ({
@@ -74,6 +75,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   forgetAllRecents();
   forgetDeviceChecks();
+  localStorage.removeItem(POSTCODES_STORAGE_KEY);
   history.replaceState(null, '', '/');
 });
 
@@ -222,10 +224,10 @@ describe('FrontDoor', () => {
   it('lists several numbers found in one text and tracks the chosen one', async () => {
     const { user, field } = door();
     await user.click(field);
-    await user.paste(`Your order ships in 3 parcels:\nUPS ${UPS}\nUPS 1ZDEMO202600000002\nSwiss Post 99.34.123456.78901234`);
+    await user.paste(`Your order ships in 3 parcels:\nUPS ${UPS}\nUPS 1ZDEMO202600000029\nSwiss Post 99.34.123456.78901234`);
     const list = screen.getByRole('group', { name: '3 tracking numbers in this text' });
     const numbers = within(list).getAllByRole('radio');
-    expect(numbers.map((number) => number.closest('label')!.textContent)).toEqual([`UPS${UPS}`, 'UPS1ZDEMO202600000002', 'Swiss Post99.34.123456.78901234']);
+    expect(numbers.map((number) => number.closest('label')!.textContent)).toEqual([`UPS${UPS}`, 'UPS1ZDEMO202600000029', 'Swiss Post99.34.123456.78901234']);
     expect(numbers[0]).toBeChecked();
     expect(numbers[0]).toHaveFocus();
     expect(mocks.lookup).not.toHaveBeenCalled();
@@ -345,6 +347,57 @@ describe('FrontDoor', () => {
     await user.type(postcode, '{Enter}');
     await waitFor(() => expect(onTracked).toHaveBeenCalledOnce());
     expect(mocks.lookup).toHaveBeenCalledWith({ trackingNumber: SHARED, carrier: 'gls-ch', dpdPostcode: '8004' }, expect.any(AbortSignal));
+    // The device keeps the postcode apart from the parcel, for the next one.
+    expect(JSON.parse(localStorage.getItem(POSTCODES_STORAGE_KEY) ?? '[]')).toEqual([{ carrier: 'gls-ch', postcode: '8004' }]);
+    expect(JSON.stringify(recentFor(LINK_ID))).not.toContain('8004');
+  });
+
+  it('fills a required postcode in from one this device gave before, even for a parcel it forgot', async () => {
+    rememberPostcode('dpd', '8004');
+    mocks.detect.mockResolvedValueOnce({ trackingNumber: SHARED, carrier: 'gls-ch', asked: ['gls-ch'] });
+    const { user, field, track } = door();
+    await user.click(field);
+    await user.paste(SHARED);
+    const postcode = await screen.findByRole('textbox', { name: 'Delivery postcode' });
+    expect(postcode).toHaveValue('8004');
+    expect(screen.queryByRole('button', { name: 'Use 8004' })).not.toBeInTheDocument();
+    expect(mocks.lookup).not.toHaveBeenCalled();
+    await user.click(track);
+    await waitFor(() => expect(mocks.lookup).toHaveBeenCalledWith({ trackingNumber: SHARED, carrier: 'gls-ch', dpdPostcode: '8004' }, expect.any(AbortSignal)));
+  });
+
+  it('only offers a postcode this device gave before when the carrier can do without', async () => {
+    rememberPostcode('gls-ch', '8004');
+    mocks.detect.mockResolvedValueOnce({ trackingNumber: SHARED, carrier: 'dpd', asked: ['dpd'] });
+    const { user, field } = door();
+    await user.click(field);
+    await user.paste(SHARED);
+    const postcode = await screen.findByRole('textbox', { name: /Delivery postcode/ });
+    expect(postcode).toHaveValue('');
+    await user.click(screen.getByRole('button', { name: 'Use 8004' }));
+    expect(postcode).toHaveValue('8004');
+    expect(screen.queryByRole('button', { name: 'Use 8004' })).not.toBeInTheDocument();
+  });
+
+  it('forgets a postcode this device gave before, for every carrier', async () => {
+    rememberPostcode('dpd', '8004');
+    rememberPostcode('gls-ch', '8004');
+    rememberPostcode('dpd', '1200');
+    mocks.detect.mockResolvedValueOnce({ trackingNumber: SHARED, carrier: 'gls-ch', asked: ['gls-ch'] });
+    const { user, field } = door();
+    await user.click(field);
+    await user.paste(SHARED);
+    const postcode = await screen.findByRole('textbox', { name: 'Delivery postcode' });
+    expect(postcode).toHaveValue('8004');
+    await user.click(screen.getByRole('button', { name: 'Forget this postcode' }));
+    expect(postcode).toHaveValue('');
+    expect(postcode).toHaveFocus();
+    // The field stays empty for the visitor, rather than taking the next one.
+    expect(screen.queryByRole('button', { name: 'Forget this postcode' })).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(POSTCODES_STORAGE_KEY) ?? '[]')).toEqual([{ carrier: 'dpd', postcode: '1200' }]);
+    // A postcode typed by hand is not one to forget.
+    await user.type(postcode, '3000');
+    expect(screen.queryByRole('button', { name: 'Forget this postcode' })).not.toBeInTheDocument();
   });
 
   it('offers the carrier picker beside the carrier line', async () => {
@@ -1046,7 +1099,7 @@ describe('FrontDoor: for someone signed in', () => {
     mocks.lookup.mockRejectedValueOnce(new ParcelLinkError('daily', { retryAfterSeconds: 3_600 }));
     const { user, field } = await accountDoor();
     await user.click(field);
-    await user.paste(`UPS ${UPS}\nUPS 1ZDEMO202600000002`);
+    await user.paste(`UPS ${UPS}\nUPS 1ZDEMO202600000029`);
     const list = screen.getByRole('group', { name: '2 tracking numbers in this text' });
     expect(within(list).queryByRole('button', { name: /Sign in/ })).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Track this one' }));

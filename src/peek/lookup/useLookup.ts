@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { trackAction } from '../../lib/analytics';
 import { normalizeTrackingNumber } from '../../lib/carriers';
+import { rememberPostcode, usePostcodeMemory } from '../../lib/postcodeMemory';
 import { useTypingPause } from '../../lib/typingPause';
 import { detectCarrierPublic, lookupParcel, ParcelLinkError, parcelLinkErrorKey, type ParcelLookup } from '../links';
 import { useRecents } from '../recents';
@@ -59,11 +60,12 @@ export function useLookup(onTracked: (lookup: ParcelLookup) => void): Lookup {
   const recents = useRecents();
   const device = useMemo<DeviceParcel[]>(() => recents.flatMap(({ id, snapshot: { parcel } }) =>
     parcel.trackingNumber ? [{ id, number: normalizeTrackingNumber(parcel.trackingNumber), carrier: parcel.carrier }] : []), [recents]);
+  const postcodes = usePostcodeMemory();
   const [state, setState] = useState(initialLookup);
   const [retryIn, setRetryIn] = useState(0);
   // The requests outlive a render: they read and move the latest state, not the one they started from.
-  const live = useRef({ state, device, onTracked });
-  useEffect(() => { live.current.device = device; live.current.onTracked = onTracked; });
+  const live = useRef({ state, device, postcodes, onTracked });
+  useEffect(() => { live.current.device = device; live.current.postcodes = postcodes; live.current.onTracked = onTracked; });
   const asking = useRef<{ number: string; stop: () => void } | null>(null);
   const working = useRef<{ job: LookupJob; stop: () => void } | null>(null);
   const ticking = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -71,14 +73,14 @@ export function useLookup(onTracked: (lookup: ParcelLookup) => void): Lookup {
 
   const send = useCallback((event: LookupEvent) => {
     const previous = live.current.state;
-    const next = lookupStep(previous, event, live.current.device);
+    const next = lookupStep(previous, event, live.current.device, live.current.postcodes);
     if (next === previous) return;
     live.current.state = next;
     setState(next);
     const dispatch = sendRef.current;
 
     // Ask the carriers about the number the state now wants asked, and nobody about any other.
-    const ask = survey(next, live.current.device).ask;
+    const ask = survey(next, live.current.device, live.current.postcodes).ask;
     if (asking.current?.number !== ask) {
       asking.current?.stop();
       asking.current = null;
@@ -108,6 +110,8 @@ export function useLookup(onTracked: (lookup: ParcelLookup) => void): Lookup {
           await beat;
           if (controller.signal.aborted) return;
           trackAction('parcel-lookup', 'success');
+          // The postcode it was given is kept apart from the parcel, for the next one.
+          if (job.input.carrier && job.input.dpdPostcode) rememberPostcode(job.input.carrier, job.input.dpdPostcode);
           live.current.onTracked(lookup);
           handOver = setTimeout(() => dispatch({ type: 'done' }), HAND_OVER_MS);
         }, (error: unknown) => {
@@ -149,6 +153,6 @@ export function useLookup(onTracked: (lookup: ParcelLookup) => void): Lookup {
     };
   }, [send]);
 
-  const found = useMemo(() => survey(state, device), [state, device]);
+  const found = useMemo(() => survey(state, device, postcodes), [state, device, postcodes]);
   return { state, found, retryIn, send };
 }
