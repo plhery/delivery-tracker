@@ -261,6 +261,19 @@ struct ParcelTrackingLink: Identifiable, Sendable {
     let url: URL
     let role: Role
     var id: String { "\(role):\(url.absoluteString)" }
+
+    /// Each carrier's page under its own tracking number: the one the parcel is followed on under the first number, an
+    /// earlier carrier's under its own. `loose` are the pages with no number of their own, such as a carrier not ready yet.
+    static func byNumber(_ links: [ParcelTrackingLink], numbers: [(carrier: CarrierID, number: String)])
+        -> (own: [[ParcelTrackingLink]], loose: [ParcelTrackingLink]) {
+        var own = numbers.map { _ in [ParcelTrackingLink]() }
+        var loose: [ParcelTrackingLink] = []
+        for link in links {
+            let row = link.role == .active ? numbers.indices.first : numbers.indices.dropFirst().first { numbers[$0].carrier == link.carrier }
+            if let row { own[row].append(link) } else { loose.append(link) }
+        }
+        return (own, loose)
+    }
 }
 
 enum CarrierCatalogRefreshResult: Equatable, Sendable {

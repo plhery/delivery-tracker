@@ -13,6 +13,11 @@
 .detail--postcard .detail__hero { margin: 20px 24px 0; padding: 20px; border-radius: 20px; background: var(--tone-surface); }
 .detail--postcard .detail__carrier { min-height: 36px; padding: 0; }
 .detail--postcard .detail__carrier .carrier-mark__truck { width: 27px; height: 18px; }
+/* Handed from one carrier to another, the card carries both marks: the delivering carrier's under the first, in its own
+   colours. The first mark and the buttons beside it stay where they are on any other card. */
+.detail--postcard .detail__hero--handover .detail__hero-meta { align-items: flex-start; }
+.detail--postcard .detail__hero--handover .detail__carrier { display: grid; justify-items: start; gap: 7px; padding-top: 13px; }
+.detail--postcard .detail__delivery-mark { display: flex; --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark)); }
 .detail--postcard .detail__notification { display: grid; place-items: center; width: 44px; height: 44px; background: transparent; color: var(--tone); opacity: .75; }
 .detail--postcard .detail__notification svg { width: 18px; height: 18px; stroke-width: 1.2; }
 .detail__notification .parcel-bell__body { transform-origin: 12px 4px; }
@@ -60,6 +65,9 @@
 .detail--postcard .detail__title { flex: 1; min-width: 0; font-size: 28px; letter-spacing: -.8px; }
 .detail--postcard .detail__title-row .parcel-stamp { width: 50px; height: 64px; }
 .detail--postcard .detail__sender { margin-top: 8px; color: var(--ink-soft); font-size: 12px; overflow-wrap: anywhere; }
+/* Who delivers, as the next line of who sent it. */
+.detail--postcard .detail__sender:has(+ .detail__delivery) { margin-bottom: 0; }
+.detail--postcard .detail__sender + .detail__delivery { margin-top: 2px; }
 .detail--postcard .detail__postcode-note { margin-top: 8px; color: var(--ink-soft); font-size: 12px; line-height: 1.4; }
 .detail__postcode-edit { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
 /* The pickup point, while the parcel waits there. */
@@ -119,6 +127,8 @@
 .detail--postcard .detail__carrier-links { gap: 0; }
 .detail--postcard .detail__carrier-link { justify-content: flex-start; gap: 7px; min-height: 36px; padding: 4px 0; color: var(--tone); font-weight: 400; }
 .detail--postcard .detail__carrier-link svg { width: 13px; height: 13px; }
+/* A second number, with its own carrier's page, stands a little apart from the first. */
+.detail--postcard .detail__carrier-links + .detail__tracking-ticket { margin-top: 10px; }
 .detail--postcard .detail__timeline { margin: 22px 26px 0; }
 .detail--postcard .detail__sync { margin: 8px 26px 20px; }
 .detail--postcard .detail__freshness { padding-top: 10px; }
@@ -157,9 +167,5 @@
 }
 .tracking-journal__count svg { fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
 
-.detail--postcard .detail__carrier-links--journey { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.detail--postcard .detail__carrier-links--journey .detail__carrier-link { display: grid; grid-template-columns: minmax(0, 1fr) 14px; flex: 1 1 140px; gap: 4px 8px; min-height: 56px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--tone) 18%, transparent); border-radius: 10px; }
-.detail--postcard .detail__carrier-links--journey small { grid-column: 1 / -1; font-size: 11px; color: var(--ink-soft); }
-.detail--postcard .detail__carrier-links--journey .detail__carrier-link--active { background: color-mix(in srgb, var(--tone) 7%, transparent); }
 .detail__input-needed { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: 14px; }
 .detail__input-needed p { margin: 0; }

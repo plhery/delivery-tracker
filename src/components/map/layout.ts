@@ -26,6 +26,8 @@ export type Shape = 'rect' | 'circle';
 const MIN_SPAN: Record<Scale, number> = { world: 400, region: 300, local: 120, city: 24, point: 260, none: 0 };
 // A town is named once, however many of its sites the parcel passed through.
 const SAME_TOWN_KM = 30;
+/** How much more of the frame's side a route leaves to what is written there, at each try. */
+const FURTHER = 16;
 // With nothing to show yet, the globe rests on the parcel's likely destination.
 const RESTING_CENTER: Coordinate = [8.2, 42];
 
@@ -36,7 +38,37 @@ export function circleOf(size: Size, insets: Insets) {
   return { x: insets.left + width / 2, y: insets.top + height / 2, radius: Math.min(width, height) / 2 };
 }
 
-export function targetCamera(route: Route, mode: MapMode, size: Size, insets: Insets, shape: Shape): Camera {
+/**
+ * The camera that frames a route in the room the insets leave. `covered` is a box the card writes over the map, such as
+ * a second carrier's mark in its corner, and `named` tells how many places of the journey a camera names, around the
+ * box when it is given one. A route that would pass under the box, or that loses a name to it, is framed below it or
+ * beside it: where it keeps most names, then where it is drawn larger. Every other route keeps its usual frame.
+ */
+export function targetCamera(route: Route, mode: MapMode, size: Size, insets: Insets, shape: Shape, covered?: Rect,
+  named?: (camera: Camera, covered?: Rect) => number): Camera {
+  const usual = framedCamera(route, mode, size, insets, shape);
+  if (!covered || shape === 'circle') return usual;
+  const under = passesUnder(route, usual, covered);
+  const names = (camera: Camera) => named?.(camera, covered) ?? 0;
+  const kept = names(usual);
+  if (!under && kept >= (named?.(usual) ?? 0)) return usual;
+  const left = Math.max(insets.left, covered.x + covered.width);
+  const beside = framedCamera(route, mode, size, { ...insets, left }, shape);
+  const below = framedCamera(route, mode, size, { ...insets, top: Math.max(insets.top, covered.y + covered.height) }, shape);
+  const frames = [{ camera: below, scale: below.scale }, { camera: beside, scale: beside.scale }];
+  // Further from the box for as long as the route is drawn as large: a name may need the room between them.
+  for (let further = FURTHER; further <= FURTHER * 6; further += FURTHER) {
+    const camera = framedCamera(route, mode, size, { ...insets, left: left + further }, shape);
+    if (camera.scale < beside.scale * .999) break;
+    frames.push({ camera, scale: beside.scale });
+  }
+  const [best] = frames.map((frame, index) => ({ ...frame, index, names: names(frame.camera) }))
+    .sort((a, b) => b.names - a.names || b.scale - a.scale || a.index - b.index);
+  // Nothing under the box and no name to win back: the route stays where every card shows it.
+  return under || best.names > kept ? best.camera : usual;
+}
+
+function framedCamera(route: Route, mode: MapMode, size: Size, insets: Insets, shape: Shape): Camera {
   let box: Box;
   if (shape === 'circle') {
     const { x, y, radius } = circleOf(size, insets);
@@ -117,10 +149,52 @@ export interface Overlay {
   pip: (PipSpot & { x: number; y: number; mood: PipMood }) | null;
 }
 
-type Rect = { x: number; y: number; width: number; height: number };
+export type Rect = { x: number; y: number; width: number; height: number };
 /** A hop is drawn whole, however far outside the frame it starts. */
 const UNCUT: Rect = { x: -1e9, y: -1e9, width: 2e9, height: 2e9 };
 const intersects = (a: Rect, b: Rect) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+
+/**
+ * A leg as it is drawn, sampled along its curve: a short hop bows slightly to the left of travel, a hop and not a
+ * road, and a long leg follows the globe. `hop` holds the bowed line's ends and the point it bends towards.
+ */
+function legTrack(a: Coordinate, b: Coordinate, km: number, at: (point: Coordinate) => readonly [number, number], visible: (point: Coordinate) => boolean) {
+  if (km < 900 && visible(a) && visible(b)) {
+    const [x1, y1] = at(a);
+    const [x2, y2] = at(b);
+    const length = Math.hypot(x2 - x1, y2 - y1) || 1;
+    const bend = Math.min(length * .18, 70);
+    const cx = (x1 + x2) / 2 + (y2 - y1) / length * bend;
+    const cy = (y1 + y2) / 2 - (x2 - x1) / length * bend;
+    const steps = Math.max(8, Math.ceil(length / 3));
+    return {
+      hop: [x1, y1, cx, cy, x2, y2] as const,
+      points: Array.from({ length: steps + 1 }, (_, index): [number, number] => {
+        const t = index / steps;
+        return [(1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2, (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2];
+      }),
+    };
+  }
+  const along = geoInterpolate(a, b);
+  return {
+    hop: null,
+    points: Array.from({ length: 121 }, (_, index) => along(index / 120) as Coordinate).filter(visible).map((point): [number, number] => [...at(point)]),
+  };
+}
+
+/** Whether a place of the route, or one of its legs, would be drawn under a box of the frame. */
+function passesUnder(route: Route, camera: Camera, box: Rect): boolean {
+  const project = projection(camera);
+  const visible = (point: Coordinate) => geoDistance(point, camera.center) < Math.PI / 2 - .02;
+  const at = (point: Coordinate) => project(point) ?? [0, 0];
+  // A dot is drawn around its place and a leg has a width: both keep a little way off.
+  const near = ([x, y]: readonly [number, number]) => x > box.x - 10 && x < box.x + box.width + 10 && y > box.y - 10 && y < box.y + box.height + 10;
+  const places = [...route.stops.map(stop => stop.place.coordinate), ...(route.destination ? [route.destination.coordinate] : [])];
+  const legs = [...route.legs.map(leg => [leg.from.place.coordinate, leg.to.place.coordinate, leg.km] as const),
+    ...(route.current && route.destination ? [[route.current.place.coordinate, route.destination.coordinate, route.remainingKm ?? 0] as const] : [])];
+  return places.some(place => visible(place) && near(at(place)))
+    || legs.some(([from, to, km]) => legTrack(from, to, km, at, visible).points.some(near));
+}
 
 /** How far a line runs before it first enters a box, and how far it runs inside it. */
 function runThrough(track: readonly (readonly [number, number])[], box: Rect): { before: number; inside: number } {
@@ -154,7 +228,7 @@ function runThrough(track: readonly (readonly [number, number])[], box: Rect): {
  */
 export function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape: Shape, labels: 'all' | 'ends' | 'none', sites: boolean,
   mode: MapMode, context: boolean, languageTag: string, pip: PipPlacing | null, textWidth: (text: string) => number,
-  towns?: readonly Town[]): Overlay {
+  towns?: readonly Town[], covered?: Rect): Overlay {
   // Long legs are cut a little outside the frame.
   const cut: Rect = { x: -400, y: -400, width: size.width + 800, height: size.height + 800 };
   const project = projection(camera).clipExtent([[cut.x, cut.y], [cut.x + cut.width, cut.y + cut.height]]);
@@ -171,24 +245,11 @@ export function layout(route: Route, camera: Camera, size: Size, insets: Insets,
   const frame: Rect = shape === 'circle' ? { x: centerX - radius, y: centerY - radius, width: radius * 2, height: radius * 2 }
     : { x: 0, y: 0, width: size.width, height: size.height };
   const legPath = (a: Coordinate, b: Coordinate, km: number): { d: string; drawn: Rect } => {
-    if (km < 900 && visible(a) && visible(b)) {
-      // Short hops bow slightly to the left of travel: a hop, not a road.
-      const [x1, y1] = at(a);
-      const [x2, y2] = at(b);
-      const length = Math.hypot(x2 - x1, y2 - y1) || 1;
-      const bend = Math.min(length * .18, 70);
-      const cx = (x1 + x2) / 2 + (y2 - y1) / length * bend;
-      const cy = (y1 + y2) / 2 - (x2 - x1) / length * bend;
-      const steps = Math.max(8, Math.ceil(length / 3));
-      tracks.push(Array.from({ length: steps + 1 }, (_, index) => {
-        const t = index / steps;
-        return [(1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2, (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2];
-      }));
-      return { d: `M${x1.toFixed(1)},${y1.toFixed(1)}Q${cx.toFixed(1)},${cy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`, drawn: UNCUT };
-    }
-    const along = geoInterpolate(a, b);
-    tracks.push(Array.from({ length: 121 }, (_, index) => along(index / 120) as Coordinate).filter(visible).map(point => at(point) as [number, number]));
-    return { d: svgPath({ type: 'LineString', coordinates: [a, b] }) ?? '', drawn: cut };
+    const { hop, points } = legTrack(a, b, km, at, visible);
+    tracks.push(points);
+    if (!hop) return { d: svgPath({ type: 'LineString', coordinates: [a, b] }) ?? '', drawn: cut };
+    const [x1, y1, cx, cy, x2, y2] = hop;
+    return { d: `M${x1.toFixed(1)},${y1.toFixed(1)}Q${cx.toFixed(1)},${cy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`, drawn: UNCUT };
   };
 
   // The stroke spends its time where it can be seen: a leg's turn lasts as long as its run through the frame, and starts
@@ -243,6 +304,9 @@ export function layout(route: Route, camera: Camera, size: Size, insets: Insets,
 
   // Place names, most important first, skipping any that would collide.
   const placed: Rect[] = dots.map(dot => ({ x: dot.x - 6, y: dot.y - 6, width: 12, height: 12 }));
+  // What the card writes over the map is a mark like any other, with a little air around it: names and Pip keep off it.
+  const written = covered && { x: covered.x - 3, y: covered.y - 3, width: covered.width + 6, height: covered.height + 6 };
+  if (written) placed.push(written);
   const overlaps = (box: Rect) => placed.some(other => intersects(box, other));
   const candidates = [
     ...(route.current ? [{ id: route.current.id, place: route.current.place, kind: 'current' as const, priority: 0 }] : []),
@@ -363,14 +427,25 @@ export function layout(route: Route, camera: Camera, size: Size, insets: Insets,
       } else {
         x = Math.max(insets.left + half + 8, Math.min(size.width - insets.right - half - 8, x));
         y = Math.max(insets.top + 21, Math.min(size.height - insets.bottom - 21, y));
+        // A chip the card would write over stands beside it or just below it instead: off the parcel's own dot first, then whichever is nearer.
+        const chip = (chipX: number, chipY: number): Rect => ({ x: chipX - half, y: chipY - 13, width: half * 2, height: 26 });
+        if (written && intersects(chip(x, y), written)) {
+          const [dotX, dotY] = at(route.current.place.coordinate);
+          const parcel: Rect = { x: dotX - 10, y: dotY - 10, width: 20, height: 20 };
+          const [nearest] = [{ x: written.x + written.width + half + 4, y }, { x, y: Math.min(size.height - insets.bottom - 21, written.y + written.height + 13) }]
+            .filter(spot => spot.x <= size.width - insets.right - half - 8)
+            .map(spot => ({ ...spot, onParcel: intersects(chip(spot.x, spot.y), parcel), far: Math.abs(spot.x - x) + Math.abs(spot.y - y) }))
+            .sort((a, b) => Number(a.onParcel) - Number(b.onParcel) || a.far - b.far);
+          ({ x, y } = nearest);
+        }
       }
       placed.push({ x: x - half, y: y - 13, width: half * 2, height: 26 });
       pointers.push({ id: place.id, x, y, angle: Math.atan2(dy, dx) * 180 / Math.PI, text: name, detail });
     }
   }
 
-  // Pip stands beside the parcel's dot, never on it or on its name: the first spot that leaves the other dots, the route and
-  // the pointers clear, and every name its place.
+  // Pip stands beside the parcel's dot, never on it or on its name: the first spot that leaves the other dots, the route,
+  // the pointers and what the card writes over the map clear, and every name its place.
   let pipPlace: Overlay['pip'] = null;
   const parcelDot = pip && route.current && visible(route.current.place.coordinate) ? at(route.current.place.coordinate) : null;
   if (pip && parcelDot && inside(parcelDot, -2)) {

@@ -129,6 +129,31 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertTrue(links[1].url.absoluteString.contains("123456789011"))
     }
 
+    func testEachCarrierPageStandsUnderItsOwnNumber() {
+        // Two numbers: the delivering carrier's page under the first, the first carrier's under its own.
+        let handed = Parcel(
+            id: UUID(), trackingNumber: "123456789011", label: "Perfume",
+            carrier: .glsDe, createdAt: "2026-09-10T07:00:00Z", syncStatus: .ok,
+            carrierData: CarrierData(activeTrackingCarrier: .swissPost, activeTrackingNumber: "990000000000000001",
+                originalCarrier: .glsDe, originalTrackingNumber: "123456789011"), notificationsMuted: false
+        )
+        let pages = ParcelTrackingLink.byNumber(catalog.trackingLinks(for: handed, language: .en), numbers: handed.trackingNumbers)
+        XCTAssertEqual(pages.own.map { $0.map(\.carrier) }, [[.swissPost], [.glsDe]])
+        XCTAssertTrue(pages.loose.isEmpty)
+
+        // One number followed on two carriers' pages: the earlier carrier's has no number of its own.
+        let sameNumber = Parcel(
+            id: UUID(), trackingNumber: "LF123456785DE", label: "Garden cable",
+            carrier: .dhl, createdAt: "2026-09-10T07:00:00Z", syncStatus: .ok,
+            carrierData: CarrierData(activeTrackingCarrier: .swissPost, originalCarrier: .dhl, originalTrackingNumber: "LF123456785DE"),
+            notificationsMuted: false
+        )
+        let shared = ParcelTrackingLink.byNumber(catalog.trackingLinks(for: sameNumber, language: .en), numbers: sameNumber.trackingNumbers)
+        XCTAssertEqual(shared.own.map { $0.map(\.carrier) }, [[.swissPost]])
+        XCTAssertEqual(shared.loose.map(\.carrier), [.dhl])
+        XCTAssertEqual(shared.loose.map(\.role), [.history])
+    }
+
     func testDHLEcommerceDetection() {
         XCTAssertEqual(catalog.detect("33870000000000001").confidence, .low)
         XCTAssertEqual(catalog.detect("GM1234567890123456").carrier.rawValue, "dhl-ecommerce")

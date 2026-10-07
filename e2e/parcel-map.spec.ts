@@ -288,3 +288,78 @@ test('keeps the card plain for a parcel with no places yet', async ({ page }) =>
   await expect(detail.locator('.detail__engraving')).toHaveCount(0);
   await expect(detail.getByRole('button', { name: 'Open the map' })).toHaveCount(0);
 });
+
+test('keeps the card\u2019s map clear of a second carrier\u2019s mark', async ({ page, isMobile }) => {
+  // The same journey twice: handed from one carrier to another, and with one carrier. Its first name would stand where the second mark is.
+  await page.addInitScript(() => {
+    const at = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
+    const stops = [['Amsterdam', 'NL', 52.37, 4.9], ['Köln', 'DE', 50.94, 6.96], ['Basel', 'CH', 47.56, 7.59], ['Bern', 'CH', 46.95, 7.45]] as const;
+    const parcel = (id: string, label: string, handover: object) => ({
+      id, label, carrier: 'gls-de', trackingNumber: '12345678901', createdAt: at(80), syncStatus: 'idle', lastSyncedAt: at(1), ...handover,
+      events: stops.map(([name, country, latitude, longitude], index) => ({
+        id: `${id}-${index}`, parcelId: id, stage: index ? 'in_transit' : 'accepted', occurredAt: at((stops.length - index) * 12),
+        description: 'Scan', location: name, place: { name, country, latitude, longitude, precision: 'city' },
+      })),
+    });
+    localStorage.setItem('sdt.demo.parcels.v1', JSON.stringify([
+      parcel('handed', 'Ceramic lamp', { originalCarrier: 'gls-de', originalTrackingNumber: '12345678901', trackingSource: 'swiss-post', activeTrackingNumber: '993412345612345678' }),
+      parcel('plain', 'Desk lamp', {}),
+    ]));
+  });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const detail = page.locator('.detail--postcard');
+  const hero = detail.locator('.detail__hero');
+  const name = detail.locator('.detail__engraving').getByText('Amsterdam', { exact: true });
+  /** Where a part of the card stands, from the card's own corner. */
+  const within = async (part: Locator) => {
+    const [box, card] = [(await part.boundingBox())!, (await hero.boundingBox())!];
+    return { x: box.x - card.x, y: box.y - card.y, width: box.width, height: box.height };
+  };
+  const apart = (a: { x: number; y: number; width: number; height: number }, b: typeof a) =>
+    a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
+
+  /** The card has opened and its map has landed: nothing moves on the screen any more. */
+  const settled = async () => {
+    await expect(name).toBeVisible();
+    let last = '';
+    await expect.poll(async () => {
+      const now = JSON.stringify([await hero.boundingBox(), await name.boundingBox()]);
+      const still = now === last;
+      last = now;
+      return still;
+    }).toBe(true);
+  };
+
+  await page.getByRole('button', { name: /^(?:Next up: )?Desk lamp —/ }).click();
+  await settled();
+  const plain = {
+    mark: await within(detail.locator('.detail__carrier .carrier-mark')), title: await within(detail.locator('.detail__title-row')),
+    height: (await hero.boundingBox())!.height, name: await within(name),
+  };
+  await page.keyboard.press('Escape');
+  await expect(detail).toHaveCount(0);
+
+  await page.getByRole('button', { name: /^(?:Next up: )?Ceramic lamp —/ }).click();
+  const marks = detail.getByRole('button', { name: 'Change carrier from GLS Germany. Delivery with Swiss Post' }).locator('.carrier-mark');
+  await expect(marks).toHaveCount(2);
+  await settled();
+  // The first mark and the name stand where they do on any card; the second mark is under the first.
+  const [first, second] = [await within(marks.first()), await within(marks.last())];
+  expect(Math.abs(first.x - plain.mark.x) + Math.abs(first.y - plain.mark.y)).toBeLessThan(.5);
+  expect(second.x).toBeCloseTo(first.x, 0);
+  expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
+  expect(second.y + second.height).toBeLessThan((await within(detail.locator('.detail__title-row'))).y);
+  expect((await within(detail.locator('.detail__title-row'))).y).toBeCloseTo(plain.title.y, 0);
+  // One line taller, for the words that say who delivers.
+  await expect(hero.getByText('Delivery with Swiss Post')).toBeVisible();
+  expect((await hero.boundingBox())!.height - plain.height).toBeLessThan(32);
+  // On a phone the first name stood where the second mark now is: the route has moved beside the mark, with its name.
+  if (isMobile) expect(apart(plain.name, second)).toBe(false);
+  expect(apart(await within(name), second)).toBe(true);
+  const pip = hero.locator('[data-pip]');
+  await expect(pip).toBeVisible();
+  for (const dot of await hero.locator('.detail__engraving g[data-kind] circle').all()) expect(apart(await within(dot), second)).toBe(true);
+  // Each carrier's website stands under its own number, below the card.
+  await expect(detail.getByRole('link', { name: /^Open the .+ website$/ })).toHaveCount(2);
+  await expect(hero.getByRole('link')).toHaveCount(0);
+});

@@ -5,14 +5,14 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncEx
 import { easeInOut, interpolateCamera, projection, subsolarPoint, zoomCamera, type Camera } from './camera';
 import { detailRead, levelStrengths, loadDetail, noDetail, onDetailLoaded, paintDetail, spanKm, tilesInView, type DetailTile } from './detail';
 import { geography, useWorld, type Coordinate } from './geography';
-import { circleOf, layout, mapView, targetCamera, type Insets, type Overlay, type PipPlacing, type PipSpot, type Shape, type Size } from './layout';
+import { circleOf, layout, mapView, targetCamera, type Insets, type Overlay, type PipPlacing, type PipSpot, type Rect, type Shape, type Size } from './layout';
 import { InkPip } from './Pip';
 import { formatKm, type MapMode, type Route } from './route';
 import { springAt, springSettleTime, type Spring } from '../../lib/spring';
 import styles from './map.module.css';
 
 // What the map shows and where everything goes is worked out in `layout.ts`, which needs no browser.
-export { circleOf, targetCamera, type Insets, type PipPlacing };
+export { circleOf, targetCamera, type Insets, type PipPlacing, type Rect };
 type Look = 'map' | 'tint';
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -25,7 +25,7 @@ const NO_TILES: readonly DetailTile[] = [];
 export function WorldMap({
   route, mode, shape = 'rect', insets = NO_INSETS, look = 'map', labels = 'all', sites = false, context = true, interactive = false, night = false,
   time, redrawKey = '', recenter = 0, onFreeChange, className = '', style, label, languageTag = 'en', live = true, peek = false, pip = null,
-  framing, glide = false, quiet = false, detail = false,
+  framing, glide = false, quiet = false, detail = false, covered = null,
 }: {
   route: Route;
   mode: MapMode;
@@ -67,6 +67,8 @@ export function WorldMap({
   quiet?: boolean;
   /** Up close, shows rivers, lakes, built-up areas, main roads and towns. */
   detail?: boolean;
+  /** A box the card writes over the map, such as a second carrier's mark: the route, the names and Pip keep clear of it. */
+  covered?: Rect | null;
 }) {
   const ready = useWorld();
   const root = useRef<HTMLDivElement>(null);
@@ -105,8 +107,21 @@ export function WorldMap({
 
   const { top, right, bottom, left } = insets;
   const framed = framing ?? route;
-  const target = useMemo(() => ready && size ? targetCamera(framed, mode, size, { top, right, bottom, left }, shape) : null,
-    [ready, framed, mode, size, top, right, bottom, left, shape]);
+  // The same box measured again is the same box: the map is not framed again for it.
+  const coveredKey = covered ? [covered.x, covered.y, covered.width, covered.height].join() : '';
+  const written = useMemo((): Rect | undefined => {
+    if (!coveredKey) return undefined;
+    const [x, y, width, height] = coveredKey.split(',').map(Number);
+    return { x, y, width, height };
+  }, [coveredKey]);
+  const target = useMemo(() => {
+    if (!ready || !size) return null;
+    const room = { top, right, bottom, left };
+    // What the card writes over the map also moves it when a place of the journey would lose its name to it.
+    const named = (camera: Camera, box?: Rect) =>
+      layout(framed, camera, size, room, shape, labels, sites, mode, false, languageTag, null, textWidth, undefined, box).labels.length;
+    return targetCamera(framed, mode, size, room, shape, written, written && named);
+  }, [ready, framed, mode, size, top, right, bottom, left, shape, written, labels, sites, languageTag]);
 
   // Only a change of view, or recentering, brings a moved map back; a new frame or scan leaves it where it was put.
   useEffect(() => {
@@ -189,7 +204,7 @@ export function WorldMap({
 
   // Pip waits for the camera to land, like the faint names, and then keeps his spot while the map is moved under him.
   const pipNow = !pip || (interactive && moving) ? null : pipSpot ? { ...pip, held: pipSpot } : pip;
-  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, sites, mode, context, languageTag, pipNow, textWidth, towns) : null;
+  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, sites, mode, context, languageTag, pipNow, textWidth, towns, written) : null;
   const circle = shape === 'circle' && size ? circleOf(size, insets) : null;
   useEffect(() => {
     shownPip.current = overlay?.pip ?? null;

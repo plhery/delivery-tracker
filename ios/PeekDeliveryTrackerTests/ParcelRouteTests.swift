@@ -432,6 +432,95 @@ final class ParcelRouteTests: XCTestCase {
         XCTAssertTrue(frames.contains { PipBlink.eyeScale(at: $0, eye: 1) < 0.2 })
     }
 
+    func testAMapItsCardWritesOverKeepsClearOfTheWriting() throws {
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "World", withExtension: "json"))
+        let atlas = try WorldAtlas(data: Data(contentsOf: url))
+        // The parcel's page, and a second carrier's mark in its top left corner.
+        let size = CGSize(width: 358, height: 176)
+        let card = EdgeInsets(top: 40, leading: 16, bottom: 44, trailing: 16)
+        let mark = CGRect(x: 18, y: 56, width: 100, height: 18)
+        func overlay(_ route: ParcelRoute, _ camera: GlobeCamera, _ mode: ParcelRoute.Mode = .journey, covered: CGRect? = nil,
+                     pip: Bool = false) -> MapOverlay {
+            MapOverlay(route: route, camera: camera, size: size, insets: card, labels: .ends, mode: mode, context: false, atlas: atlas,
+                       locale: Locale(identifier: "en"), countryName: { $0 },
+                       pip: pip ? PipRequest(mood: .look, ceiling: 52, floor: 160) : nil, covered: covered)
+        }
+        /// How many places of the journey a camera names, around the writing when there is some, as the map counts them.
+        func counted(_ route: ParcelRoute, _ mode: ParcelRoute.Mode = .journey) -> (GlobeCamera, CGRect?) -> Int {
+            { overlay(route, $0, mode, covered: $1).labels.count }
+        }
+        func usual(_ route: ParcelRoute, _ mode: ParcelRoute.Mode = .journey) -> GlobeCamera {
+            .framing(route, mode: mode, in: size, insets: card)
+        }
+        func name(_ overlay: MapOverlay, _ text: String) -> CGRect? { overlay.labels.first { $0.text == text }?.frame }
+        let harkingen = city("Härkingen", "CH", 7.821, 47.305)
+        let london = city("London", "GB", -0.128, 51.507)
+
+        // A route that stays clear of the writing keeps its usual frame, and a name moves off it.
+        let fromLondon = ParcelRoute(places: [london, city("Reims", "FR", 4.031, 49.258), basel, harkingen])
+        XCTAssertEqual(GlobeCamera.framing(fromLondon, mode: .journey, in: size, insets: card, covered: mark, named: counted(fromLondon)),
+                       usual(fromLondon))
+        XCTAssertTrue(try XCTUnwrap(name(overlay(fromLondon, usual(fromLondon)), "London")).intersects(mark))
+        let written = overlay(fromLondon, usual(fromLondon), covered: mark)
+        XCTAssertEqual(written.labels.map(\.text), ["Härkingen", "London"])
+        XCTAssertFalse(written.labels.contains { $0.frame.intersects(mark) })
+
+        // A route that would pass under the writing is framed clear of it.
+        let fromShenzhen = ParcelRoute(places: [city("Shenzhen", "CN", 114.06, 22.54), city("Liège", "BE", 5.57, 50.63), zurich])
+        let under = { (overlay: MapOverlay) in overlay.dots.filter { mark.insetBy(dx: -10, dy: -10).contains($0.point) } }
+        XCTAssertFalse(under(overlay(fromShenzhen, usual(fromShenzhen))).isEmpty)
+        let lower = overlay(fromShenzhen, .framing(fromShenzhen, mode: .journey, in: size, insets: card, covered: mark), covered: mark, pip: true)
+        XCTAssertTrue(under(lower).isEmpty)
+        XCTAssertTrue(lower.dots.allSatisfy { $0.point.x > 16 && $0.point.x < size.width - 16 && $0.point.y > 40 && $0.point.y < size.height - 44 })
+        XCTAssertEqual(lower.labels.map(\.text), ["Zürich", "Shenzhen"])
+        XCTAssertFalse(lower.labels.contains { $0.frame.intersects(mark) })
+        XCTAssertFalse(try XCTUnwrap(lower.pip).box.intersects(mark))
+
+        // Nothing passes under the mark, but the name beside the first dot has nowhere left to go: the route is framed again.
+        let fromAmsterdam = ParcelRoute(places: [city("Amsterdam", "NL", 4.9, 52.37), city("Köln", "DE", 6.96, 50.94), basel, bern])
+        XCTAssertEqual(GlobeCamera.framing(fromAmsterdam, mode: .journey, in: size, insets: card, covered: mark), usual(fromAmsterdam))
+        XCTAssertEqual(overlay(fromAmsterdam, usual(fromAmsterdam), covered: mark).labels.map(\.text), ["Bern"])
+        let beside = GlobeCamera.framing(fromAmsterdam, mode: .journey, in: size, insets: card, covered: mark, named: counted(fromAmsterdam))
+        XCTAssertNotEqual(beside, usual(fromAmsterdam))
+        XCTAssertEqual(beside.scale, usual(fromAmsterdam).scale, accuracy: 0.000001)
+        let moved = overlay(fromAmsterdam, beside, covered: mark)
+        XCTAssertEqual(moved.labels.map(\.text), ["Bern", "Amsterdam"])
+        XCTAssertFalse(moved.labels.contains { $0.frame.intersects(mark) })
+        // A narrower card leaves the name less room beside the mark: the route moves further aside, drawn as large.
+        let narrow = CGSize(width: 288, height: 176)
+        func onNarrow(_ camera: GlobeCamera, _ covered: CGRect?) -> MapOverlay {
+            MapOverlay(route: fromAmsterdam, camera: camera, size: narrow, insets: card, labels: .ends, mode: .journey, context: false,
+                       atlas: atlas, locale: Locale(identifier: "en"), countryName: { $0 }, covered: covered)
+        }
+        let roomy = GlobeCamera.framing(fromAmsterdam, mode: .journey, in: narrow, insets: card)
+        let aside = GlobeCamera.framing(fromAmsterdam, mode: .journey, in: narrow, insets: card, covered: mark) { onNarrow($0, $1).labels.count }
+        XCTAssertEqual(aside.scale, roomy.scale, accuracy: 0.000001)
+        XCTAssertGreaterThan(aside.offset.x - roomy.offset.x, (mark.maxX - card.leading) / 2 + 1)
+        XCTAssertEqual(onNarrow(aside, mark).labels.map(\.text), ["Bern", "Amsterdam"])
+
+        // Pip stands clear of the writing, wherever it is.
+        let fromBerlin = ParcelRoute(places: [city("Berlin", "DE", 13.405, 52.52), city("Neuenstein", "DE", 9.58, 49.2), basel, harkingen])
+        let spot = try XCTUnwrap(overlay(fromBerlin, usual(fromBerlin), pip: true).pip).box.insetBy(dx: 4, dy: 4)
+        XCTAssertFalse(try XCTUnwrap(overlay(fromBerlin, usual(fromBerlin), covered: spot, pip: true).pip).box.intersects(spot))
+
+        // In a close-up, the chip of a far end moves beside the writing, off the parcel's dot.
+        let lastMile = ParcelRoute(places: [london, basel, harkingen, bern])
+        let close = GlobeCamera.framing(lastMile, mode: .now, in: size, insets: card, covered: mark, named: counted(lastMile, .now))
+        XCTAssertEqual(close, usual(lastMile, .now))
+        let chip = { (overlay: MapOverlay) -> CGRect in
+            let pointer = overlay.pointers[0]
+            return CGRect(x: pointer.center.x - pointer.width / 2, y: pointer.center.y - 13, width: pointer.width, height: 26)
+        }
+        let plain = overlay(lastMile, close, .now)
+        XCTAssertTrue(chip(plain).intersects(mark))
+        let clear = overlay(lastMile, close, .now, covered: mark)
+        XCTAssertFalse(chip(clear).intersects(mark))
+        XCTAssertEqual(clear.pointers[0].center.y, plain.pointers[0].center.y)
+        let parcel = try XCTUnwrap(clear.dots.first { $0.kind == .current }).point
+        XCTAssertFalse(chip(clear).intersects(CGRect(x: parcel.x - 10, y: parcel.y - 10, width: 20, height: 20)))
+        XCTAssertEqual(name(clear, "Bern"), name(plain, "Bern"))
+    }
+
     func testPipStandsBesideTheDotOffItsNameAndTheRoute() throws {
         let url = try XCTUnwrap(Bundle.main.url(forResource: "World", withExtension: "json"))
         let atlas = try WorldAtlas(data: Data(contentsOf: url))

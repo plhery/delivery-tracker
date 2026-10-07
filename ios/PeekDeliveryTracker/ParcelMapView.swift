@@ -22,6 +22,8 @@ struct RouteEngraving: View {
     var insets = EdgeInsets(top: 40, leading: 16, bottom: 44, trailing: 16)
     /// Where the card starts writing over the bottom of the map, which Pip stays above.
     var floor: CGFloat?
+    /// What the card writes over the map below its top row, such as a second carrier's mark.
+    var covered: CGRect?
     @EnvironmentObject private var localizer: Localizer
 
     var body: some View {
@@ -32,7 +34,7 @@ struct RouteEngraving: View {
             live: stage != .delivered && stage != .returned,
             // Pip keeps below the top row of the parcel's page, and of Next up alike, so both show the same picture.
             pip: PipMood(stage: stage).map { PipRequest(mood: $0, ceiling: 52, floor: floor) },
-            fades: true, insets: insets, language: localizer.language
+            fades: true, insets: insets, covered: covered, language: localizer.language
         )
         // The globe button beside the bell is the accessible way in.
         .accessibilityHidden(true)

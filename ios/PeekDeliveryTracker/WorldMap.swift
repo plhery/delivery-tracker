@@ -542,10 +542,32 @@ struct MapOverlay {
     /// A town is named once, however many of its sites the parcel passed through.
     private static let sameTownKilometres = 30.0
 
-    /// `towns` are the towns of the tiles in view, on a map that shows its close-ups in full.
+    /// A leg as it is drawn, sampled along its curve: a short hop bows slightly to the left of travel, a long one follows the globe.
+    static func track(from a: GeoPoint, to b: GeoPoint, kilometres: Double, _ projection: GlobeProjection)
+        -> (hop: (start: CGPoint, control: CGPoint, end: CGPoint)?, points: [CGPoint]) {
+        guard kilometres < 900 && projection.sees(a) && projection.sees(b) else {
+            return (nil, (0...120).map { a.interpolated(to: b, Double($0) / 120) }.filter(projection.sees).map(projection.project))
+        }
+        let start = projection.project(a)
+        let end = projection.project(b)
+        let distance = hypot(end.x - start.x, end.y - start.y)
+        let length = distance > 0 ? distance : 1
+        let bend = min(length * 0.18, 70)
+        let control = CGPoint(x: (start.x + end.x) / 2 + (end.y - start.y) / length * bend,
+                              y: (start.y + end.y) / 2 - (end.x - start.x) / length * bend)
+        let steps = max(8, Int((length / 3).rounded(.up)))
+        return ((start, control, end), (0...steps).map { step in
+            let t = CGFloat(step) / CGFloat(steps)
+            return CGPoint(x: (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * control.x + t * t * end.x,
+                           y: (1 - t) * (1 - t) * start.y + 2 * (1 - t) * t * control.y + t * t * end.y)
+        })
+    }
+
+    /// `towns` are the towns of the tiles in view, on a map that shows its close-ups in full. `covered` is a box the card
+    /// writes over the map, such as a second carrier's mark: the names, Pip and the chips on the edge keep clear of it.
     init(route: ParcelRoute, camera: GlobeCamera, size: CGSize, insets: EdgeInsets, labels labelSet: MapLabels,
          sites: Bool = false, mode: ParcelRoute.Mode, context: Bool, atlas: WorldAtlas, locale: Locale,
-         countryName: (String) -> String, pip request: PipRequest? = nil, towns: [DetailTile.Town]? = nil) {
+         countryName: (String) -> String, pip request: PipRequest? = nil, towns: [DetailTile.Town]? = nil, covered: CGRect? = nil) {
         let projection = GlobeProjection(camera)
         let visible = { (point: GeoPoint) in projection.sees(point) }
         let at = { (point: GeoPoint) in projection.project(point) }
@@ -561,26 +583,15 @@ struct MapOverlay {
         // A leg as it is drawn, and sampled along its curve so names and Pip can keep off it.
         let legPath = { (a: GeoPoint, b: GeoPoint, kilometres: Double) -> (path: Path, track: [CGPoint]) in
             var path = Path()
-            if kilometres < 900 && visible(a) && visible(b) {
-                // Short hops bow slightly to the left of travel: a hop, not a road.
-                let start = at(a)
-                let end = at(b)
-                let distance = hypot(end.x - start.x, end.y - start.y)
-                let length = distance > 0 ? distance : 1
-                let bend = min(length * 0.18, 70)
-                let control = CGPoint(x: (start.x + end.x) / 2 + (end.y - start.y) / length * bend,
-                                      y: (start.y + end.y) / 2 - (end.x - start.x) / length * bend)
-                path.move(to: start)
-                path.addQuadCurve(to: end, control: control)
-                let steps = max(8, Int((length / 3).rounded(.up)))
-                return (path, (0...steps).map { step in
-                    let t = CGFloat(step) / CGFloat(steps)
-                    return CGPoint(x: (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * control.x + t * t * end.x,
-                                   y: (1 - t) * (1 - t) * start.y + 2 * (1 - t) * t * control.y + t * t * end.y)
-                })
+            let drawn = Self.track(from: a, to: b, kilometres: kilometres, projection)
+            if let hop = drawn.hop {
+                // Short hops bow slightly: a hop, not a road.
+                path.move(to: hop.start)
+                path.addQuadCurve(to: hop.end, control: hop.control)
+            } else {
+                MapGeometry.addLine(&path, MapGeometry.greatCircle(a, b), projection)
             }
-            MapGeometry.addLine(&path, MapGeometry.greatCircle(a, b), projection)
-            return (path, (0...120).map { a.interpolated(to: b, Double($0) / 120) }.filter(visible).map(at))
+            return (path, drawn.points)
         }
         var tracks: [[CGPoint]] = []
         for leg in route.legs {
@@ -613,6 +624,9 @@ struct MapOverlay {
 
         // Place names, most important first, skipping any that would collide.
         var placed = dots.map { CGRect(x: $0.point.x - 6, y: $0.point.y - 6, width: 12, height: 12) }
+        // What the card writes over the map is a mark like any other, with a little air around it: names and Pip keep off it.
+        let written = covered?.insetBy(dx: -3, dy: -3)
+        if let written { placed.append(written) }
         let overlaps = { (box: CGRect, taken: [CGRect]) -> Bool in
             taken.contains { box.minX < $0.maxX && box.maxX > $0.minX && box.minY < $0.maxY && box.maxY > $0.minY }
         }
@@ -729,15 +743,30 @@ struct MapOverlay {
                 let width = Fonts.width(name, Fonts.pointerName) + Fonts.width(" " + detail, Fonts.pointerDetail) + 34
                 let half = width / 2
                 // Keep the whole chip inside the frame, whichever edge it points past.
-                let x = max(insets.leading + half + 8, min(size.width - insets.trailing - half - 8, viewCenter.x + dx * reach))
-                let y = max(insets.top + 21, min(size.height - insets.bottom - 21, viewCenter.y + dy * reach))
+                var x = max(insets.leading + half + 8, min(size.width - insets.trailing - half - 8, viewCenter.x + dx * reach))
+                var y = max(insets.top + 21, min(size.height - insets.bottom - 21, viewCenter.y + dy * reach))
+                // A chip the card would write over stands beside it or just below it instead: off the parcel's own dot first,
+                // then whichever is nearer.
+                let chip = { (x: CGFloat, y: CGFloat) in CGRect(x: x - half, y: y - 13, width: width, height: 26) }
+                if let written, overlaps(chip(x, y), [written]) {
+                    let dot = at(current.place.point)
+                    let parcel = CGRect(x: dot.x - 10, y: dot.y - 10, width: 20, height: 20)
+                    let nearest = [CGPoint(x: written.maxX + half + 4, y: y), CGPoint(x: x, y: min(size.height - insets.bottom - 21, written.maxY + 13))]
+                        .filter { $0.x <= size.width - insets.trailing - half - 8 }
+                        .map { (spot: $0, onParcel: overlaps(chip($0.x, $0.y), [parcel]) ? 1 : 0, far: abs($0.x - x) + abs($0.y - y)) }
+                        .min { ($0.onParcel, $0.far) < ($1.onParcel, $1.far) }
+                    if let nearest {
+                        x = nearest.spot.x
+                        y = nearest.spot.y
+                    }
+                }
                 placed.append(CGRect(x: x - half, y: y - 13, width: width, height: 26))
                 pointers.append(Pointer(center: CGPoint(x: x, y: y), width: width, angle: atan2(dy, dx), name: name, detail: detail))
             }
         }
 
-        // Pip stands beside the parcel's dot, never on it or on its name: the first spot that leaves the other dots, the route
-        // and the pointers clear, and every name its place.
+        // Pip stands beside the parcel's dot, never on it or on its name: the first spot that leaves the other dots, the route,
+        // the pointers and what the card writes over the map clear, and every name its place.
         if let request, let current = route.current, visible(current.place.point), inside(at(current.place.point), -2) {
             let dot = at(current.place.point)
             let ceiling = request.ceiling ?? insets.top
@@ -1042,7 +1071,58 @@ enum MapPainter {
 
 extension GlobeCamera {
     /// The camera that frames a route in the room the insets leave: the whole journey, or the parcel's surroundings.
-    static func framing(_ route: ParcelRoute, mode: ParcelRoute.Mode, in size: CGSize, insets: EdgeInsets) -> GlobeCamera {
+    /// `covered` is a box the card writes over the map, such as a second carrier's mark in its corner, and `named` tells
+    /// how many places of the journey a camera names, around the box when it is given one. A route that would pass under
+    /// the box, or that loses a name to it, is framed below it or beside it: where it keeps most names, then where it is
+    /// drawn larger. Every other route keeps its usual frame.
+    static func framing(_ route: ParcelRoute, mode: ParcelRoute.Mode, in size: CGSize, insets: EdgeInsets,
+                        covered: CGRect? = nil, named: ((GlobeCamera, CGRect?) -> Int)? = nil) -> GlobeCamera {
+        let usual = framed(route, mode: mode, in: size, insets: insets)
+        guard let covered else { return usual }
+        let under = passesUnder(route, usual, covered)
+        let names = { (camera: GlobeCamera) in named?(camera, covered) ?? 0 }
+        let kept = names(usual)
+        if !under, kept >= named?(usual, nil) ?? 0 { return usual }
+        var lower = insets
+        lower.top = max(insets.top, covered.maxY)
+        var narrower = insets
+        narrower.leading = max(insets.leading, covered.maxX)
+        let below = framed(route, mode: mode, in: size, insets: lower)
+        let beside = framed(route, mode: mode, in: size, insets: narrower)
+        var frames = [(camera: below, scale: below.scale), (camera: beside, scale: beside.scale)]
+        // Further from the box for as long as the route is drawn as large: a name may need the room between them.
+        for step in 1...6 {
+            var further = narrower
+            further.leading += CGFloat(step) * 16
+            let camera = framed(route, mode: mode, in: size, insets: further)
+            if camera.scale < beside.scale * 0.999 { break }
+            frames.append((camera, beside.scale))
+        }
+        let best = frames.enumerated()
+            .map { (camera: $1.camera, order: (names: names($1.camera), scale: $1.scale, sooner: -$0)) }
+            .max { $0.order < $1.order }
+        // Nothing under the box and no name to win back: the route stays where every card shows it.
+        guard let best, under || best.order.names > kept else { return usual }
+        return best.camera
+    }
+
+    /// Whether a place of the route, or one of its legs, would be drawn under a box of the frame.
+    private static func passesUnder(_ route: ParcelRoute, _ camera: GlobeCamera, _ box: CGRect) -> Bool {
+        let projection = GlobeProjection(camera)
+        // A dot is drawn around its place and a leg has a width: both keep a little way off.
+        let near = { (point: CGPoint) in
+            point.x > box.minX - 10 && point.x < box.maxX + 10 && point.y > box.minY - 10 && point.y < box.maxY + 10
+        }
+        let places = route.stops.map(\.place.point) + (route.destination.map { [$0.point] } ?? [])
+        var legs = route.legs.map { ($0.from.point, $0.to.point, $0.kilometres) }
+        if let current = route.current?.place.point, let destination = route.destination?.point {
+            legs.append((current, destination, route.remainingKilometres ?? 0))
+        }
+        return places.contains { projection.sees($0) && near(projection.project($0)) }
+            || legs.contains { MapOverlay.track(from: $0.0, to: $0.1, kilometres: $0.2, projection).points.contains(where: near) }
+    }
+
+    private static func framed(_ route: ParcelRoute, mode: ParcelRoute.Mode, in size: CGSize, insets: EdgeInsets) -> GlobeCamera {
         let inner = min(size.width - insets.leading - insets.trailing, size.height - insets.top - insets.bottom)
         let pad = min(40, inner * 0.12)
         let box = CGRect(x: insets.leading + pad, y: insets.top + pad,
@@ -1107,6 +1187,8 @@ struct WorldMapView: View {
     /// The route as part of the picture rather than its subject: thinner legs and smaller dots.
     var quiet = false
     var insets = EdgeInsets()
+    /// A box the card writes over the map, such as a second carrier's mark: the route, the names and Pip keep clear of it.
+    var covered: CGRect?
     /// Changes to bring a moved map back to the parcel.
     var recenter = 0
     var language: AppLanguage = .en
@@ -1146,7 +1228,7 @@ struct WorldMapView: View {
                 let overlay = MapOverlay(
                     route: route, camera: shown, size: size, insets: insets, labels: labels, sites: sites, mode: mode, context: showsContext,
                     atlas: atlas, locale: language.locale, countryName: { TrackingLocation.countryName($0, language: language) },
-                    pip: pipRequest(moving: moving), towns: close.towns
+                    pip: pipRequest(moving: moving), towns: close.towns, covered: covered
                 )
                 ZStack(alignment: .topLeading) {
                     ZStack(alignment: .topLeading) {
@@ -1184,7 +1266,13 @@ struct WorldMapView: View {
     }
 
     private func targetCamera(in size: CGSize) -> GlobeCamera {
-        .framing(route, mode: mode, in: size, insets: insets)
+        guard let covered else { return .framing(route, mode: mode, in: size, insets: insets) }
+        // What the card writes over the map also moves it when a place of the journey would lose its name to it.
+        let named = { (camera: GlobeCamera, box: CGRect?) in
+            MapOverlay(route: route, camera: camera, size: size, insets: insets, labels: labels, sites: sites, mode: mode, context: false,
+                       atlas: atlas, locale: language.locale, countryName: { $0 }, covered: box).labels.count
+        }
+        return .framing(route, mode: mode, in: size, insets: insets, covered: covered, named: named)
     }
 
     /// The tiles a camera shows, whether every one of them has come, and their towns; nothing on a map without close-ups.
@@ -1207,7 +1295,8 @@ struct WorldMapView: View {
         guard palette.card != nil, let pip, let camera else { return nil }
         let overlay = MapOverlay(
             route: route, camera: camera, size: size, insets: insets, labels: labels, sites: sites, mode: mode, context: showsContext,
-            atlas: atlas, locale: language.locale, countryName: { TrackingLocation.countryName($0, language: language) }, pip: pip
+            atlas: atlas, locale: language.locale, countryName: { TrackingLocation.countryName($0, language: language) }, pip: pip,
+            covered: covered
         )
         return overlay.pip?.spot
     }

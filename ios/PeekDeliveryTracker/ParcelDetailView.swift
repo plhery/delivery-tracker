@@ -25,6 +25,8 @@ struct ParcelDetailView: View {
     @State private var showingAlerts = false
     @State private var emailOffer = DeliveryEmailOffer.Phase.open
     @State private var atlas: WorldAtlas?
+    /// Where the delivering carrier's mark stands on the card, which the map keeps clear of.
+    @State private var deliveryMark: CGRect?
 
     @ObservedObject private var catalog = CarrierCatalog.shared
 
@@ -171,6 +173,9 @@ struct ParcelDetailView: View {
 
     private var parcel: Parcel? { store.parcels.first { $0.id == parcelID || $0.carrierData?.originalPackageID == parcelID } }
 
+    /// The card, from its top left corner: where its map is drawn from.
+    private static let cardSpace = "parcel-card"
+
     /// A scan has a place, so the card shows the route once the map data has loaded.
     private var needsMap: Bool { parcel?.trackingEvents.contains { $0.place != nil } ?? false }
 
@@ -186,6 +191,10 @@ struct ParcelDetailView: View {
     private func liveParcelPass(_ parcel: Parcel) -> some View {
         let branding = identity(parcel)
         let carrier = catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language)
+        // Handed from one carrier to another, the card carries both marks and says who delivers, as its card in the list does.
+        let handedOver = parcel.activeTrackingCarrier != parcel.displayedCarrier
+        let delivery = handedOver ? CarrierVisualIdentity.of(parcel.activeTrackingCarrier, catalog: catalog, language: localizer.language) : nil
+        let deliveryLine = handedOver ? localizer.text("parcel.deliveryCarrier", ["carrier": carrier.displayName]) : nil
         let trackingLinks = catalog.trackingLinks(for: parcel, language: localizer.language)
         let placed = parcel.trackingEvents.contains { $0.place != nil }
         let route = placed ? atlas.map { ParcelRoute(parcel: parcel, atlas: $0, language: localizer.language) } : nil
@@ -198,9 +207,25 @@ struct ParcelDetailView: View {
                 HStack {
                     Button { carrierEditor = CarrierEditorRequest() } label: {
                         CarrierFleetMark(identity: branding)
+                            .overlay(alignment: .topLeading) {
+                                if let delivery {
+                                    // Under the first mark, which stays where every card has it: an unseen copy of it holds its room.
+                                    VStack(alignment: .leading, spacing: 7) {
+                                        CarrierFleetMark(identity: branding).hidden()
+                                        CarrierFleetMark(identity: delivery)
+                                            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.cardSpace)) } action: { deliveryMark = $0 }
+                                    }
+                                    .fixedSize()
+                                }
+                            }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(localizer.text("detail.changeCarrierFrom", ["carrier": carrier.displayName]))
+                    .accessibilityLabel([
+                        localizer.text("detail.changeCarrierFrom", [
+                            "carrier": catalog.info(for: parcel.displayedCarrier, language: localizer.language).displayName,
+                        ]),
+                        deliveryLine,
+                    ].compactMap { $0 }.joined(separator: ". "))
                     Spacer(minLength: 8)
                     if placed {
                         Button(action: openMap) {
@@ -269,10 +294,14 @@ struct ParcelDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     DeliveryPostageStamp(parcel: parcel, identity: branding, width: 50, appeared: true)
                 }
-                if let sender = parcel.carrierData?.senderName?.nonEmpty {
-                    Text(localizer.text("parcel.sender", ["sender": sender]))
-                        .font(.caption).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                let sender = parcel.carrierData?.senderName?.nonEmpty
+                if sender != nil || deliveryLine != nil {
+                    VStack(alignment: .leading, spacing: 2) {
+                        if let sender { Text(localizer.text("parcel.sender", ["sender": sender])) }
+                        if let deliveryLine { Text(deliveryLine) }
+                    }
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 }
                 if parcel.carrier == .dpd, let postcode = parcel.dpdPostcode?.nonEmpty,
                    parcel.carrierData?.dpdPostcodeVerified == false {
@@ -286,7 +315,6 @@ struct ParcelDetailView: View {
                         }
                     }
                 }
-                if trackingLinks.count > 1 { trackingSources(trackingLinks, tint: branding.ink) }
                 VStack(alignment: .leading, spacing: 6) {
                     Text(localizer.parcelStatus(parcel))
                         .font(.subheadline)
@@ -299,10 +327,13 @@ struct ParcelDetailView: View {
                 ExperimentalJourneyRail(stage: parcel.currentStage, tint: branding.ink.opacity(0.45), compact: true)
             }
             .padding(18)
+            .coordinateSpace(.named(Self.cardSpace))
             .background(alignment: .top) {
-                if let atlas, let route {
+                // A map that keeps clear of the second mark waits to know where it stands, rather than moving once it does.
+                if let atlas, let route, delivery == nil || deliveryMark != nil {
                     // The title is written over the bottom of the map, so Pip stays above it.
-                    RouteEngraving(atlas: atlas, route: route, stage: parcel.currentStage, identity: branding, floor: 160)
+                    RouteEngraving(atlas: atlas, route: route, stage: parcel.currentStage, identity: branding, floor: 160,
+                                   covered: delivery == nil ? nil : deliveryMark)
                         .frame(height: 176)
                         .clipShape(UnevenRoundedRectangle(topLeadingRadius: 18, topTrailingRadius: 18))
                         .contentShape(Rectangle())
@@ -458,11 +489,13 @@ struct ParcelDetailView: View {
     }
 
     private func shipmentIdentity(_ parcel: Parcel, links: [ParcelTrackingLink], tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(parcel.trackingNumbers, id: \.number) { entry in
+        let numbers = parcel.trackingNumbers
+        let pages = ParcelTrackingLink.byNumber(links, numbers: numbers)
+        return VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(numbers.enumerated()), id: \.element.number) { index, entry in
                 HStack(alignment: .center, spacing: 8) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(parcel.trackingNumbers.count > 1
+                        Text(numbers.count > 1
                             ? catalog.info(for: entry.carrier, language: localizer.language).displayName
                             : localizer.text("detail.trackingNumber"))
                             .font(.caption2).foregroundStyle(.secondary)
@@ -479,59 +512,36 @@ struct ParcelDetailView: View {
                     }
                     .buttonStyle(.plain).foregroundStyle(.secondary)
                     .accessibilityLabel(localizer.text(copiedNumber == entry.number ? "detail.copied" : "detail.copyTracking")
-                        + (parcel.trackingNumbers.count > 1 ? " — " + catalog.info(for: entry.carrier, language: localizer.language).displayName : ""))
+                        + (numbers.count > 1 ? " — " + catalog.info(for: entry.carrier, language: localizer.language).displayName : ""))
                 }
+                carrierLinks(pages.own[index], own: true, tint: tint)
             }
-            if links.count <= 1 { trackingSources(links, tint: tint) }
+            carrierLinks(pages.loose, own: false, tint: tint)
         }
         .padding(.horizontal, 2)
     }
 
-    @ViewBuilder
-    private func trackingSources(_ links: [ParcelTrackingLink], tint: Color) -> some View {
-        if links.count > 1 {
-            HStack(alignment: .top, spacing: 8) {
-                ForEach(links) { link in
-                    Link(destination: link.url) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack(alignment: .top) {
-                                Text(link.name).font(.caption.weight(.medium))
-                                Spacer(minLength: 4)
-                                Image(systemName: "arrow.up.right").font(.caption2)
-                            }
-                            Text(localizer.text(link.role == .active ? "detail.sourceActive" : link.role == .waiting ? "detail.sourceWaiting" : "detail.sourceHistory"))
-                                .font(.caption2).foregroundStyle(.secondary)
-                        }
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(10).frame(maxWidth: .infinity, minHeight: 58, alignment: .topLeading)
-                        .background(tint.opacity(link.role == .active ? 0.07 : 0), in: RoundedRectangle(cornerRadius: 10))
-                        .overlay { RoundedRectangle(cornerRadius: 10).stroke(tint.opacity(0.18), lineWidth: 0.75) }
+    /// The carriers' own pages. Under its own number a link needs no more words; another says what it is to this parcel.
+    private func carrierLinks(_ links: [ParcelTrackingLink], own: Bool, tint: Color) -> some View {
+        ForEach(links) { link in
+            let role = own || link.role == .active ? nil
+                : localizer.text(link.role == .waiting ? "detail.sourceWaiting" : "detail.sourceHistory")
+            Link(destination: link.url) {
+                HStack(spacing: 6) {
+                    Text(localizer.text("detail.carrierWebsite", ["carrier": link.name]))
+                    Image(systemName: "arrow.up.right").font(.system(size: 10, weight: .regular))
+                    if let role {
+                        Spacer(minLength: 4)
+                        Text(role).font(.caption2).foregroundStyle(.secondary)
                     }
-                    .foregroundStyle(tint)
-                    .accessibilityLabel(localizer.text("detail.carrierWebsite", ["carrier": link.name]))
-                    .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("parcel-carrier-link") })
                 }
+                .font(.caption)
+                .padding(.vertical, 10)
+                .frame(minHeight: 44, alignment: .leading)
             }
-        } else {
-            ForEach(links) { link in
-                Link(destination: link.url) {
-                    HStack(spacing: 6) {
-                        Text(localizer.text("detail.carrierWebsite", ["carrier": link.name]))
-                        Image(systemName: "arrow.up.right").font(.system(size: 10, weight: .regular))
-                        if link.role != .active {
-                            Spacer(minLength: 4)
-                            Text(localizer.text(link.role == .waiting ? "detail.sourceWaiting" : "detail.sourceHistory"))
-                                .font(.caption2).foregroundStyle(.secondary)
-                        }
-                    }
-                    .font(.caption)
-                    .padding(.vertical, 10)
-                    .frame(minHeight: 44, alignment: .leading)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(tint)
-                .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("parcel-carrier-link") })
-            }
+            .buttonStyle(.plain)
+            .foregroundStyle(tint)
+            .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("parcel-carrier-link") })
         }
     }
 

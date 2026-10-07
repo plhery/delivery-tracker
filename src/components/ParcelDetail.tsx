@@ -2,7 +2,7 @@ import { AMAZON_HISTORY_EXPIRED } from '../lib/amazon';
 import { AutoCarrierNotice } from './AutoCarrierNotice';
 import { trackAction } from '../lib/analytics';
 import { userErrorMessage } from '../lib/userMessages';
-import { useEffect, useMemo, useState, useRef, type FormEvent, type PointerEvent } from 'react';
+import { Fragment, useEffect, useMemo, useState, useRef, type FormEvent, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
   activeTrackingCarrierId,
@@ -14,6 +14,7 @@ import {
   parcelTrackingLinks,
   parcelTrackingNumbers,
   tracksAutomatically,
+  type ParcelTrackingLink,
 } from '../lib/carriers';
 import {
   localizedDeliveryWindow,
@@ -41,7 +42,7 @@ import './ParcelDetail.css';
 import { Icon } from './Icon';
 import { ParcelStamp } from './ParcelStamp';
 import { parcelTone } from '../lib/parcelDesign';
-import { ParcelMapSheet, RouteEngraving, useParcelRoute } from './ParcelMap';
+import { ParcelMapSheet, RouteEngraving, useCoveredBox, useParcelRoute } from './ParcelMap';
 import { ProgressTrack } from './ProgressTrack';
 import { PickupPointCard } from './PickupPointCard';
 import { pickupPoint } from '../lib/pickupPoint';
@@ -106,6 +107,8 @@ export function ParcelDetail({
   const { locale, languageTag, t } = useI18n();
   const carrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
   const displayedCarrier = carrierInfo(displayedCarrierId(parcel), locale);
+  // Handed from one carrier to another, the card carries both marks and says who delivers, as its card in the list does.
+  const deliveryLabel = carrier.id !== displayedCarrier.id ? t('parcel.deliveryCarrier', { carrier: carrier.name }) : null;
   const amazonHistoryExpired = carrier.id === 'amazon-shipping' && parcel.syncError === AMAZON_HISTORY_EXPIRED;
   const automaticTracking = tracksAutomatically(carrier.id) && !amazonHistoryExpired;
   const current = currentEvent(parcel.events);
@@ -121,8 +124,7 @@ export function ParcelDetail({
   const statusLabel = t(parcelDisplayStatusKey(parcel));
   const completionDate = localizedParcelCompletionDate(parcel, languageTag, t);
   const estimate = parcelDeliveryEstimate(parcel);
-  const trackingLinks = parcelTrackingLinks(parcel, locale);
-  const trackingNumbers = parcelTrackingNumbers(parcel);
+  const { numbers: trackingNumbers, loose: looseLinks } = linksByNumber(parcelTrackingNumbers(parcel), parcelTrackingLinks(parcel, locale));
   const lastChecked = parcel.lastSyncedAt
     ? localizedRelativeTime(parcel.lastSyncedAt, t, languageTag)
     : null;
@@ -164,6 +166,8 @@ export function ParcelDetail({
   const actionsMenu = useRef<HTMLDetailsElement>(null);
   const header = useRef<HTMLElement>(null);
   const hero = useRef<HTMLElement>(null);
+  // The second mark stands over the map, which keeps clear of it.
+  const [deliveryMark, deliveryMarkBox] = useCoveredBox<HTMLSpanElement>(hero, placed && !!deliveryLabel);
   // The page opens out of its card and goes back into it: the hero is the card's counterpart.
   const [dialog, onBack] = useCardDialog<HTMLDivElement>(onDismissed, backButton, {
     origin: openingOrigin,
@@ -317,22 +321,22 @@ export function ParcelDetail({
     }
   }
 
-  const trackingSources = trackingLinks.length > 0 && (
-    <div className={`detail__carrier-links${trackingLinks.length > 1 ? ' detail__carrier-links--journey' : ''}`} aria-label={t('detail.trackingSources')}>
-      {trackingLinks.map((link) => {
-        const role = link.role === 'active' ? t('detail.sourceActive')
-          : link.role === 'waiting' ? t('detail.sourceWaiting') : t('detail.sourceHistory');
+  /** The carriers' own pages. Under its own number a link needs no more words; another says what it is to this parcel. */
+  const carrierLinks = (links: readonly ParcelTrackingLink[], own: boolean) => links.length > 0 && (
+    <div className="detail__carrier-links">
+      {links.map((link) => {
+        const role = own || link.role === 'active' ? null : t(link.role === 'waiting' ? 'detail.sourceWaiting' : 'detail.sourceHistory');
         const website = t('detail.carrierWebsite', { carrier: link.name });
         return <a
           key={`${link.role}:${link.url}`}
           className={`detail__carrier-link detail__carrier-link--${link.role}`}
-          aria-label={link.role === 'active' ? website : `${website} — ${role}`}
+          aria-label={role ? `${website} — ${role}` : undefined}
           href={link.url} onClick={() => trackAction('parcel-carrier-link')}
           target="_blank" rel="noopener noreferrer"
         >
-          <span>{trackingLinks.length > 1 ? link.name : website}</span>
+          <span>{website}</span>
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12" /></svg>
-          {(trackingLinks.length > 1 || link.role !== 'active') && <small>{role}</small>}
+          {role && <small>{role}</small>}
         </a>;
       })}
     </div>
@@ -426,16 +430,17 @@ export function ParcelDetail({
       </header>
 
       {onExitDemo && <div className="demo-banner demo-banner--detail"><span>{t('app.demo')}</span><button type="button" onClick={onExitDemo}>{t('native.exitDemo')}<Icon name="close" /></button></div>}
-      <section ref={hero} className={`detail__hero${placed ? ' detail__hero--map' : ''}`}>
-        {placed && <RouteEngraving route={route} stage={current?.stage} onOpen={openMap} />}
+      <section ref={hero} className={`detail__hero${placed ? ' detail__hero--map' : ''}${deliveryLabel ? ' detail__hero--handover' : ''}`}>
+        {placed && <RouteEngraving route={route} stage={current?.stage} onOpen={openMap} covered={deliveryMarkBox} />}
         <div className="detail__hero-meta">
           <button
             type="button"
             className="detail__carrier detail__carrier--editable"
             onClick={() => setEditingCarrier(true)}
-            aria-label={t('detail.changeCarrierFrom', { carrier: carrier.name })}
+            aria-label={[t('detail.changeCarrierFrom', { carrier: displayedCarrier.name }), deliveryLabel].filter(Boolean).join('. ')}
           >
             <CarrierMark carrier={displayedCarrier} />
+            {deliveryLabel && <span ref={deliveryMark} className="detail__delivery-mark" style={carrierBrand(carrier).style}><CarrierMark carrier={carrier} /></span>}
           </button>
           <span className="detail__hero-actions">
           {placed && <button type="button" className="detail__map-button" disabled={!route} onClick={openMap} aria-label={t('map.open')}>
@@ -522,6 +527,7 @@ export function ParcelDetail({
           </div>
         )}
         {parcel.senderName?.trim() && <p className="detail__sender">{t('parcel.sender', { sender: parcel.senderName.trim() })}</p>}
+        {deliveryLabel && <p className="detail__sender detail__delivery">{deliveryLabel}</p>}
         {parcel.carrier === 'dpd' && parcel.dpdPostcode && parcel.dpdPostcodeVerified === false && (
           <p className="detail__postcode-note">
             {t('detail.postcodeNotVerified', { carrier: carrier.name, postcode: parcel.dpdPostcode })}{' '}
@@ -532,7 +538,6 @@ export function ParcelDetail({
             )}
           </p>
         )}
-        {trackingLinks.length > 1 && trackingSources}
         <p className="detail__state">{statusLabel}</p>
         {(completionDate || estimate) && (
           <p className="detail__arrival">
@@ -555,20 +560,23 @@ export function ParcelDetail({
           </dl>
         )}
         <div className="detail__shipment">
-          {trackingNumbers.map(({ carrier: numberCarrier, number }) => <div className="detail__tracking-ticket" key={number}>
-            <span className="detail__tracking-label">{trackingNumbers.length > 1 ? carrierInfo(numberCarrier, locale).name : t('detail.trackingNumber')}</span>
-            <strong>{formatTrackingNumber(number, numberCarrier)}</strong>
-            <button
-              type="button"
-              className="detail__tracking-copy"
-              onClick={() => void copyTrackingNumber(number, numberCarrier)}
-              aria-label={trackingNumbers.length > 1 ? `${t('detail.copyTracking')} — ${carrierInfo(numberCarrier, locale).name}` : t('detail.copyTracking')}
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24"><path d={copyStatus === 'copied' && copiedNumber === number ? 'm5 12 4 4L19 6' : 'M9 9h11v12H9V9ZM5 15H3V3h12v2'} /></svg>
-              <span className="sr-only" aria-live="polite">{copyStatus === 'copied' && copiedNumber === number ? t('detail.copied') : ''}</span>
-            </button>
-          </div>)}
-          {trackingLinks.length <= 1 && trackingSources}
+          {trackingNumbers.map(({ carrier: numberCarrier, number, links }) => <Fragment key={number}>
+            <div className="detail__tracking-ticket">
+              <span className="detail__tracking-label">{trackingNumbers.length > 1 ? carrierInfo(numberCarrier, locale).name : t('detail.trackingNumber')}</span>
+              <strong>{formatTrackingNumber(number, numberCarrier)}</strong>
+              <button
+                type="button"
+                className="detail__tracking-copy"
+                onClick={() => void copyTrackingNumber(number, numberCarrier)}
+                aria-label={trackingNumbers.length > 1 ? `${t('detail.copyTracking')} — ${carrierInfo(numberCarrier, locale).name}` : t('detail.copyTracking')}
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d={copyStatus === 'copied' && copiedNumber === number ? 'm5 12 4 4L19 6' : 'M9 9h11v12H9V9ZM5 15H3V3h12v2'} /></svg>
+                <span className="sr-only" aria-live="polite">{copyStatus === 'copied' && copiedNumber === number ? t('detail.copied') : ''}</span>
+              </button>
+            </div>
+            {carrierLinks(links, true)}
+          </Fragment>)}
+          {carrierLinks(looseLinks, false)}
         </div>
         {copyStatus === 'error' && (
           <p className="detail__copy-error" role="alert">
@@ -699,6 +707,20 @@ export function ParcelDetail({
     </div>,
     document.body,
   );
+}
+
+/**
+ * Each carrier's page under its own number: the delivery page under the first number, and an earlier carrier's under
+ * the number it gave the parcel. A page with no number of its own is `loose`, and follows them.
+ */
+function linksByNumber(numbers: ReturnType<typeof parcelTrackingNumbers>, links: readonly ParcelTrackingLink[]) {
+  const rows = numbers.map((entry) => ({ ...entry, links: [] as ParcelTrackingLink[] }));
+  const loose: ParcelTrackingLink[] = [];
+  for (const link of links) {
+    const row = link.role === 'active' ? rows[0] : rows.slice(1).find((entry) => entry.carrier === link.carrier.id);
+    (row?.links ?? loose).push(link);
+  }
+  return { numbers: rows, loose };
 }
 
 function DeleteParcelDialog({

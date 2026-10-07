@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useI18n } from '../i18n';
 import { useNear } from '../lib/inView';
@@ -9,7 +9,7 @@ import { Icon } from './Icon';
 import { countryLabel, useWorld } from './map/geography';
 import { countryPlace, defaultMode, flag, formatKm, hasNearView, placeName, routeFromEvents, type MapMode, type Route } from './map/route';
 import { pipMood } from './map/Pip';
-import { WorldMap, type PipPlacing } from './map/WorldMap';
+import { WorldMap, type PipPlacing, type Rect } from './map/WorldMap';
 import './ParcelMap.css';
 
 /**
@@ -54,14 +54,47 @@ const pipOnMap = (stage: Stage | undefined): PipPlacing | null => {
 /** The parcel's dot pulses until the journey is over. */
 const travelling = (stage?: Stage) => stage !== 'delivered' && stage !== 'returned';
 
-/** The route, drawn in the card's own ink across the top of the parcel's card, with Pip beside the parcel's place. */
-export function RouteEngraving({ route, stage, onOpen }: { route: Route | null; stage?: Stage; onOpen: () => void }) {
+/**
+ * Where something the card writes over its map stands, as a box of the map, which keeps its route, its names and Pip
+ * clear of it. `frame` is the card the map is drawn across, from its top left corner; the mark gets the returned ref.
+ */
+export function useCoveredBox<Mark extends HTMLElement>(frame: RefObject<HTMLElement | null>, shown: boolean): [RefObject<Mark | null>, Rect | null] {
+  const mark = useRef<Mark>(null);
+  const [box, setBox] = useState<Rect | null>(null);
+  useLayoutEffect(() => {
+    const element = mark.current;
+    const within = frame.current;
+    if (!shown || !element || !within || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      // Offsets belong to the page's own layout, whatever the card's flight does to it on the screen.
+      let x = 0;
+      let y = 0;
+      for (let node: HTMLElement | null = element; node && node !== within; node = node.offsetParent as HTMLElement | null) {
+        x += node.offsetLeft;
+        y += node.offsetTop;
+      }
+      const { offsetWidth: width, offsetHeight: height } = element;
+      setBox(previous => !width || !height ? null
+        : previous?.x === x && previous.y === y && previous.width === width && previous.height === height ? previous : { x, y, width, height });
+    });
+    observer.observe(element);
+    observer.observe(within);
+    return () => observer.disconnect();
+  }, [frame, shown]);
+  return [mark, shown ? box : null];
+}
+
+/**
+ * The route, drawn in the card's own ink across the top of the parcel's card, with Pip beside the parcel's place.
+ * `covered` is what the card writes over the map below its top row.
+ */
+export function RouteEngraving({ route, stage, onOpen, covered }: { route: Route | null; stage?: Stage; onOpen: () => void; covered?: Rect | null }) {
   const { languageTag } = useI18n();
   const [time] = useState(() => new Date());
   // The globe button beside the bell is the accessible way in; the drawing is a large tap target.
   return <div className="detail__engraving" onClick={onOpen} aria-hidden="true" data-card-picture="">
     {route && <WorldMap route={route} mode={defaultMode(route, stage)} time={time} look="tint" labels="ends" context={false} live={travelling(stage)} peek
-      pip={pip(stage)} languageTag={languageTag} insets={{ top: 40, right: 16, bottom: 44, left: 16 }} className="detail__engraving-map" />}
+      pip={pip(stage)} languageTag={languageTag} insets={{ top: 40, right: 16, bottom: 44, left: 16 }} covered={covered} className="detail__engraving-map" />}
   </div>;
 }
 

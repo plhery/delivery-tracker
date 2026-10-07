@@ -19,6 +19,28 @@ describe('shipment details', () => {
     );
   });
 
+  it('shows a parcel handed to a second carrier with both marks, who delivers, and each website under its number', () => {
+    const handed = { carrier: 'gls-de', trackingNumber: '12345678901', originalCarrier: 'gls-de', originalTrackingNumber: '12345678901',
+      trackingSource: 'swiss-post', activeTrackingNumber: '993412345612345678' } as const;
+    const view = show(handed);
+    const change = screen.getByRole('button', { name: 'Change carrier from GLS Germany. Delivery with Swiss Post' });
+    expect([...change.querySelectorAll('.carrier-mark')].map(mark => mark.getAttribute('title'))).toEqual(['GLS Germany', 'Swiss Post']);
+    expect(change.querySelector('.detail__delivery-mark')).toHaveTextContent('Swiss Post');
+    expect(screen.getByText('Delivery with Swiss Post')).toHaveClass('detail__delivery');
+    const links = screen.getAllByRole('link', { name: /^Open the .+ website$/ });
+    // Delivery first, each link right after the ticket of its own number.
+    expect(links.map(link => link.closest('.detail__carrier-links')!.previousElementSibling!.querySelector('.detail__tracking-label')!.textContent))
+      .toEqual(['Swiss Post', 'GLS Germany']);
+    expect(links.map(link => link.getAttribute('href'))).toEqual(parcelTrackingLinks(handed, 'en').map(link => link.url));
+    expect(screen.queryByText('Earlier journey')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Tracking sources')).not.toBeInTheDocument();
+    view.unmount();
+
+    show();
+    expect(screen.getByRole('button', { name: 'Change carrier from Heppner' }).querySelectorAll('.carrier-mark')).toHaveLength(1);
+    expect(screen.queryByText(/^Delivery with/)).not.toBeInTheDocument();
+  });
+
   it('shows available facts and omits unknown or invalid measurements', () => {
     const view = show({ pickupPoint: 'Corner shop\n12 Main Street', receiverName: 'Alex', weightKg: 1.25, dimensionsText: '20 × 30 × 10 cm' });
     expect(screen.getByText('Pickup location')).toBeInTheDocument();

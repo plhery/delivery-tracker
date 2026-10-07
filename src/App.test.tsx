@@ -656,15 +656,18 @@ describe('App', () => {
     expect(card.closest('[data-carrier]')).toHaveAttribute('data-carrier', 'gls-de');
     await user.click(card);
     const detail = screen.getByRole('dialog', { name: 'Perfume / Surprise' });
-    const links = within(within(detail).getByLabelText('Tracking sources')).getAllByRole('link');
+    // The card carries both carriers' marks and says who delivers, as its card in the list does.
+    expect(within(detail).getByRole('button', { name: /^Change carrier from GLS.*\. Delivery with Swiss Post$/ })).toHaveTextContent(/GLS.*Swiss Post/);
+    expect(within(detail).getByText('Delivery with Swiss Post')).toBeVisible();
+    // Each carrier's website stands under its own tracking number, below the card.
+    const links = within(detail).getAllByRole('link', { name: /^Open the .+ website$/ });
     expect(links).toHaveLength(2);
-    expect(links[0].closest('.detail__hero')).not.toBeNull();
-    expect(links[0]).toHaveTextContent('Delivery tracking');
+    expect(links[0].closest('.detail__hero')).toBeNull();
     expect(links[0]).toHaveTextContent('Swiss Post');
     expect(links[0]).toHaveAttribute('href', expect.stringContaining(parcel.trackingNumber));
     expect(links[1]).toHaveTextContent('GLS');
-    expect(links[1]).toHaveTextContent('Earlier journey');
     expect(links[1]).toHaveAttribute('href', expect.stringContaining(parcel.originalTrackingNumber!));
+    expect(within(detail).queryByText('Earlier journey')).not.toBeInTheDocument();
     const copyButtons = within(detail).getAllByRole('button', { name: /Copy tracking number/ });
     expect(copyButtons).toHaveLength(2);
     await user.click(copyButtons[0]);
@@ -1266,12 +1269,13 @@ describe('App', () => {
     await user.click(await screen.findByRole('button', { name: /^(?:Next up: )?AliExpress parcel —/ }));
 
     const detail = screen.getByRole('dialog', { name: 'AliExpress parcel' });
-    const sources = within(detail).getByLabelText('Tracking sources');
-    expect(within(sources).getByRole('link', { name: /open the aliexpress.*website/i }))
+    expect(within(detail).getByRole('link', { name: /open the aliexpress.*website/i }))
       .toHaveAttribute('href', expect.stringContaining('global.cainiao.com'));
-    expect(within(sources).queryByText('Active source')).not.toBeInTheDocument();
-    expect(within(sources).getByRole('link', { name: /open the swiss post website.*not ready yet/i }))
+    expect(within(detail).queryByText('Active source')).not.toBeInTheDocument();
+    expect(within(detail).getByRole('link', { name: /open the swiss post website.*not ready yet/i }))
       .toHaveAttribute('href', expect.stringContaining('service.post.ch'));
+    // One number and one carrier doing the tracking: the card keeps a single mark.
+    expect(within(detail).queryByText(/^Delivery with/)).not.toBeInTheDocument();
   });
 
   it('edits a parcel title from the detail view', async () => {

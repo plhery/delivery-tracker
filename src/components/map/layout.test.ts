@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Camera } from './camera';
-import { buildRoute, type Place } from './route';
-import { layout, mapView, targetCamera } from './layout';
+import { buildRoute, type Place, type Route } from './route';
+import { layout, mapView, targetCamera, type Overlay, type Rect } from './layout';
 import { loadWorld, type Coordinate, type Part } from './world';
 
 const SIZE = { width: 400, height: 300 };
@@ -207,5 +207,113 @@ describe('layout of the opened map', () => {
     const edge: Camera = { ...view, offset: [pip.dx + 150 * unit >= 0 ? 388 : 132, 110] };
     expect(show(edge, { mood: 'look', inset: true, held }).pip).toBeNull();
     expect(show(edge, { mood: 'look', inset: true }).pip).not.toBeNull();
+  });
+});
+
+describe('layout of a map its card writes over', () => {
+  // The opened card's map, and a second carrier's mark in its top left corner.
+  const CARD = { width: 358, height: 176 };
+  const ROOM = { top: 40, right: 16, bottom: 44, left: 16 };
+  const MARK: Rect = { x: 18, y: 56, width: 100, height: 18 };
+  const width = (text: string) => text.length * 7;
+  const journey = (places: Place[], last: 'in_transit' | 'out_for_delivery' = 'in_transit') => buildRoute(places.map((place, index) => (
+    { at: `2026-09-2${index}T10:00:00Z`, description: 'Scan', stage: index === places.length - 1 ? last : 'in_transit' as const, place })));
+  const basel = city('Basel', 'CH', 7.59, 47.56);
+  const harkingen = city('Härkingen', 'CH', 7.821, 47.305);
+  const bern = city('Bern', 'CH', 7.45, 46.95);
+  const london = city('London', 'GB', -.128, 51.507);
+  const touches = (a: Rect, b: Rect) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+  const show = (route: Route, view: Camera, mode: 'journey' | 'now' = 'journey', covered?: Rect, pip = false, card = CARD) =>
+    layout(route, view, card, ROOM, 'rect', 'ends', false, mode, false, 'en', pip ? { mood: 'look', ceiling: 52 } : null, width, undefined, covered);
+  const names = (overlay: Overlay) => overlay.labels.map(label => ({ text: label.text, x: label.x, y: label.y, width: label.width, height: 22 }));
+  const named = (overlay: Overlay, text: string) => names(overlay).find(name => name.text === text);
+  /** How many places of the journey a camera names, around the writing when there is some, as the map counts them. */
+  const counted = (route: Route, mode: 'journey' | 'now' = 'journey', card = CARD) => (view: Camera, covered?: Rect) =>
+    show(route, view, mode, covered, false, card).labels.length;
+
+  it('keeps the usual frame of a route that stays clear of the writing, and moves a name off it', async () => {
+    await loadWorld();
+    const route = journey([london, city('Reims', 'FR', 4.031, 49.258), basel, harkingen]);
+    const usual = targetCamera(route, 'journey', CARD, ROOM, 'rect');
+    expect(targetCamera(route, 'journey', CARD, ROOM, 'rect', MARK, counted(route))).toEqual(usual);
+    expect(touches(named(show(route, usual), 'London')!, MARK)).toBe(true);
+    const written = show(route, usual, 'journey', MARK);
+    expect(names(written).map(name => name.text)).toEqual(['Härkingen', 'London']);
+    expect(names(written).some(name => touches(name, MARK))).toBe(false);
+  });
+
+  it('frames a route that would pass under the writing clear of it', async () => {
+    await loadWorld();
+    const route = journey([city('Shenzhen', 'CN', 114.06, 22.54), city('Liège', 'BE', 5.57, 50.63), city('Zürich', 'CH', 8.54, 47.37)]);
+    const under = (overlay: Overlay) => overlay.dots.filter(dot => touches({ x: dot.x - 10, y: dot.y - 10, width: 20, height: 20 }, MARK));
+    const usual = targetCamera(route, 'journey', CARD, ROOM, 'rect');
+    expect(under(show(route, usual))).not.toHaveLength(0);
+    const view = targetCamera(route, 'journey', CARD, ROOM, 'rect', MARK);
+    const overlay = show(route, view, 'journey', MARK, true);
+    expect(under(overlay)).toHaveLength(0);
+    expect(overlay.dots.every(dot => dot.x > ROOM.left && dot.x < CARD.width - ROOM.right && dot.y > ROOM.top && dot.y < CARD.height - ROOM.bottom)).toBe(true);
+    expect(names(overlay).map(name => name.text)).toEqual(['Zürich', 'Shenzhen']);
+    expect(names(overlay).some(name => touches(name, MARK))).toBe(false);
+    expect(overlay.pip).not.toBeNull();
+    // A round map has no corner to write in.
+    expect(targetCamera(route, 'journey', CARD, ROOM, 'circle', MARK)).toEqual(targetCamera(route, 'journey', CARD, ROOM, 'circle'));
+  });
+
+  it('frames a route again when a place would lose its name to the writing', async () => {
+    await loadWorld();
+    const route = journey([city('Amsterdam', 'NL', 4.9, 52.37), city('Köln', 'DE', 6.96, 50.94), basel, bern]);
+    const usual = targetCamera(route, 'journey', CARD, ROOM, 'rect');
+    // Nothing passes under the mark, but the name beside the first dot has nowhere left to go.
+    expect(targetCamera(route, 'journey', CARD, ROOM, 'rect', MARK)).toEqual(usual);
+    expect(names(show(route, usual, 'journey', MARK)).map(name => name.text)).toEqual(['Bern']);
+    const view = targetCamera(route, 'journey', CARD, ROOM, 'rect', MARK, counted(route));
+    expect(view).not.toEqual(usual);
+    expect(view.scale).toBeCloseTo(usual.scale, 6);
+    const overlay = show(route, view, 'journey', MARK);
+    expect(names(overlay).map(name => name.text)).toEqual(['Bern', 'Amsterdam']);
+    expect(names(overlay).some(name => touches(name, MARK))).toBe(false);
+    // A narrower card leaves the name less room beside the mark: the route moves further aside, drawn as large.
+    const narrow = { width: 288, height: 176 };
+    const roomy = targetCamera(route, 'journey', narrow, ROOM, 'rect');
+    const aside = targetCamera(route, 'journey', narrow, ROOM, 'rect', MARK, counted(route, 'journey', narrow));
+    expect(aside.scale).toBeCloseTo(roomy.scale, 6);
+    expect(aside.offset[0] - roomy.offset[0]).toBeGreaterThan((MARK.x + MARK.width - ROOM.left) / 2 + 1);
+    expect(names(show(route, aside, 'journey', MARK, false, narrow)).map(name => name.text)).toEqual(['Bern', 'Amsterdam']);
+  });
+
+  it('stands Pip clear of the writing', async () => {
+    await loadWorld();
+    const route = journey([city('Berlin', 'DE', 13.405, 52.52), city('Neuenstein', 'DE', 9.58, 49.2), basel, harkingen]);
+    const view = targetCamera(route, 'journey', CARD, ROOM, 'rect');
+    const body = (overlay: Overlay): Rect => {
+      const pip = overlay.pip!;
+      const unit = pip.width / 300;
+      return { x: pip.x + 52 * unit, y: pip.y + 92 * unit, width: 196 * unit, height: 196 * unit };
+    };
+    const usual = body(show(route, view, 'journey', undefined, true));
+    const spot: Rect = { x: usual.x + 4, y: usual.y + 4, width: usual.width - 8, height: usual.height - 8 };
+    const moved = show(route, view, 'journey', spot, true);
+    expect(moved.pip).not.toBeNull();
+    expect(touches(body(moved), spot)).toBe(false);
+  });
+
+  it('moves the chip of a far end beside the writing, off the parcel\'s dot', async () => {
+    await loadWorld();
+    const route = journey([london, basel, harkingen, bern], 'out_for_delivery');
+    const view = targetCamera(route, 'now', CARD, ROOM, 'rect', MARK, counted(route, 'now'));
+    expect(view).toEqual(targetCamera(route, 'now', CARD, ROOM, 'rect'));
+    const chip = (overlay: Overlay): Rect => {
+      const [pointer] = overlay.pointers;
+      const half = (width(`${pointer.text} ${pointer.detail}`) + 38) / 2;
+      return { x: pointer.x - half, y: pointer.y - 13, width: half * 2, height: 26 };
+    };
+    const usual = show(route, view, 'now');
+    expect(touches(chip(usual), MARK)).toBe(true);
+    const written = show(route, view, 'now', MARK);
+    expect(touches(chip(written), MARK)).toBe(false);
+    expect(written.pointers[0].y).toBe(usual.pointers[0].y);
+    const parcel = written.dots.find(dot => dot.kind === 'current')!;
+    expect(touches(chip(written), { x: parcel.x - 10, y: parcel.y - 10, width: 20, height: 20 })).toBe(false);
+    expect(named(written, 'Bern')).toEqual(named(usual, 'Bern'));
   });
 });
