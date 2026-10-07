@@ -156,8 +156,10 @@ export function initObservability(): boolean {
     // untyped exception, and its issue is titled after a minified frame ("Object.l").
     attachStacktrace: false,
     tracesSampleRate: parseSampleRate(process.env.SENTRY_TRACES_SAMPLE_RATE),
-    integrations: [
-      ...Sentry.getDefaultIntegrationsWithoutPerformance(),
+    // Sentry 11.2 drops an error captured right after an identical one. Two parcels
+    // failing alike are two events with their own tags; the fingerprint groups them.
+    integrations: (defaults) => [
+      ...defaults.filter((integration) => integration.name !== 'Dedupe'),
       Sentry.extraErrorDataIntegration({ depth: 8 }),
     ],
   });

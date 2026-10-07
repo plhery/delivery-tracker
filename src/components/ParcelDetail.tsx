@@ -728,12 +728,15 @@ function DeleteParcelDialog({
 }) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDialogElement>(null);
+  const cancel = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
     if (typeof element.showModal === 'function') element.showModal();
     else element.setAttribute('open', '');
+    // Only an open dialog's buttons take focus, so autoFocus would come too early.
+    cancel.current?.focus();
     return () => {
       if (typeof element.close === 'function' && element.open) element.close();
     };
@@ -762,7 +765,7 @@ function DeleteParcelDialog({
           className="button button--secondary"
           onClick={onCancel}
           disabled={deleting}
-          autoFocus
+          ref={cancel}
         >
           {t('common.cancel')}
         </button>

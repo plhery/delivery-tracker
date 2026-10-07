@@ -94,12 +94,13 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
       vars: { trackingNumber: 'TEST1234' }, context_line: 'throw carrierError;',
     })] },
   });
-  const options = Sentry.getClient()!.getOptions();
+  const client = Sentry.getClient()!;
+  const options = client.getOptions();
   expect(options.beforeSend).toBeUndefined();
   expect(options.dataCollection?.userInfo).toBe(true);
-  expect(options.integrations?.map((integration) => integration.name)).toEqual(expect.arrayContaining([
-    'Console', 'Http', 'NodeFetch', 'RequestData', 'ExtraErrorData',
-  ]));
+  expect(['Console', 'Http', 'NodeFetch', 'RequestData', 'ExtraErrorData']
+    .filter((name) => !client.getIntegrationByName(name))).toEqual([]);
+  expect(client.getIntegrationByName('Dedupe')).toBeUndefined();
 
   const ids = ['first', 'second'].map((attemptId) => captureOperationalError(
     new UpstreamHttpError('GLS Germany tracking', 404), {

@@ -38,6 +38,7 @@ export function ForgetDialog({ onForget, onCancel, arrived }: {
 }) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDialogElement>(null);
+  const cancel = useRef<HTMLButtonElement>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<MessageKey | null>(null);
 
@@ -46,6 +47,8 @@ export function ForgetDialog({ onForget, onCancel, arrived }: {
     if (!element) return;
     if (typeof element.showModal === 'function') element.showModal();
     else element.setAttribute('open', '');
+    // Only an open dialog's buttons take focus, so autoFocus would come too early.
+    cancel.current?.focus();
     return () => { if (typeof element.close === 'function' && element.open) element.close(); };
   }, []);
 
@@ -68,7 +71,7 @@ export function ForgetDialog({ onForget, onCancel, arrived }: {
     <p id="peekp-forget-body">{arrived ? [arrived.forgetLine, t('alerts.have.body')].filter(Boolean).join(' ') : t('link.forget.body')}</p>
     {error && <p className="sheet__error" role="alert">{t(error)}</p>}
     <div className="delete-parcel-dialog__actions">
-      <button type="button" className="button button--secondary" onClick={onCancel} disabled={working} autoFocus>{t(arrived ? 'alerts.have.keep' : 'common.cancel')}</button>
+      <button type="button" className="button button--secondary" onClick={onCancel} disabled={working} ref={cancel}>{t(arrived ? 'alerts.have.keep' : 'common.cancel')}</button>
       <button type="button" className="button button--danger" onClick={() => void forget()} disabled={working}>{t(working ? 'link.forget.working' : 'link.forget.now')}</button>
     </div>
   </dialog>;
