@@ -10011,6 +10011,17 @@
     ]
   },
   {
+    "input": "PL-12345678",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "swiss-post-cargo"
+    ],
+    "asked": [
+      "swiss-post-cargo"
+    ]
+  },
+  {
     "input": "PL0000000001",
     "carrier": "amazon-logistics",
     "confidence": "high",
