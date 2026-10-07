@@ -1078,5 +1078,16 @@
   "shareExtension.save": "Enregistrer le suivi",
   "shareExtension.saved": "Enregistré. Ouvre Peek dans les 10 minutes pour vérifier et ajouter ton colis.",
   "shareExtension.saveFailed": "Impossible d’enregistrer. Colle les informations de suivi directement dans Peek.",
-  "shareExtension.notFound": "Partage un numéro ou un lien de suivi, ou colle-le directement dans Peek."
+  "shareExtension.notFound": "Partage un numéro ou un lien de suivi, ou colle-le directement dans Peek.",
+  "guides.title": "Guides",
+  "guides.heading": "Le suivi de colis, expliqué simplement",
+  "guides.lead": "Des réponses claires sur les numéros de suivi, les statuts et la douane, et sur quoi faire quand un colis ne donne plus de nouvelles.",
+  "guides.all": "Tous les guides",
+  "guides.updated": "Mis à jour le {{date}}",
+  "guides.minutes": "{{count}} min de lecture",
+  "guides.contents": "Dans ce guide",
+  "guides.sources": "Sources",
+  "guides.more": "À lire ensuite",
+  "guides.cta.title": "Tu attends un colis ?",
+  "guides.cta.body": "Colle son numéro de suivi. Peek trouve le transporteur, affiche chaque scan sur une carte et te prévient quand il bouge. Pas besoin de compte."
 }

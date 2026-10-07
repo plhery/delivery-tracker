@@ -1078,5 +1078,16 @@
   "shareExtension.save": "Zapisz dane śledzenia",
   "shareExtension.saved": "Zapisano. Otwórz aplikację Peek w ciągu 10 minut, aby sprawdzić i dodać przesyłkę.",
   "shareExtension.saveFailed": "Nie udało się zapisać. Wklej dane śledzenia bezpośrednio w aplikacji Peek.",
-  "shareExtension.notFound": "Udostępnij numer lub link śledzenia albo wklej go bezpośrednio w aplikacji Peek."
+  "shareExtension.notFound": "Udostępnij numer lub link śledzenia albo wklej go bezpośrednio w aplikacji Peek.",
+  "guides.title": "Poradniki",
+  "guides.heading": "Śledzenie paczek bez tajemnic",
+  "guides.lead": "Proste odpowiedzi o numerach przesyłek, statusach i cle oraz o tym, co robić, gdy paczka milknie.",
+  "guides.all": "Wszystkie poradniki",
+  "guides.updated": "Zaktualizowano {{date}}",
+  "guides.minutes": "{{count}} min czytania",
+  "guides.contents": "W tym poradniku",
+  "guides.sources": "Źródła",
+  "guides.more": "Czytaj dalej",
+  "guides.cta.title": "Czekasz na paczkę?",
+  "guides.cta.body": "Wklej numer przesyłki. Peek znajdzie przewoźnika, pokaże każdy skan na mapie i da Ci znać, gdy paczka ruszy. Bez konta."
 }

@@ -1,6 +1,7 @@
 import { analyticsConfiguration } from './src/server/analytics';
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
+import { guidePathLanguage } from './src/guides/paths';
 import { APPEARANCE_BOOTSTRAP } from './src/lib/appearanceConfig';
 import { ENTRY_HINT_BOOTSTRAP } from './src/lib/entryHintConfig';
 import { LOCALE_COOKIE, pathLanguage } from './src/lib/locale';
@@ -49,10 +50,11 @@ export function proxy(request: NextRequest) {
     worker-src 'self';
   `.replace(/\s{2,}/g, ' ').trim();
 
-  // A language address such as `/de` is in its own language, whatever the browser prefers: the page is
-  // rendered as if that language had been chosen. Only the request the page reads says so. The browser's
-  // own cookie is not written, and no other address reads anything a client could not already choose.
-  const language = pathLanguage(request.nextUrl.pathname);
+  // A language address such as `/de`, and a guides address such as `/de/guides/…` or `/guides/…` (English),
+  // is in its own language, whatever the browser prefers: the page is rendered as if that language had been
+  // chosen. Only the request the page reads says so. The browser's own cookie is not written, and no other
+  // address reads anything a client could not already choose.
+  const language = pathLanguage(request.nextUrl.pathname) ?? guidePathLanguage(request.nextUrl.pathname);
   if (language) request.cookies.set(LOCALE_COOKIE, language);
 
   const requestHeaders = new Headers(request.headers);
@@ -76,7 +78,9 @@ export const config = {
         { type: 'header', key: 'purpose', value: 'prefetch' },
       ],
     },
-    // A language address is always answered from here, a prefetch too: this is where the page learns its language.
+    // A language address and the guides are always answered from here, a prefetch too: this is where the page learns its language.
     { source: '/:language(de|fr|it|es|pt|pl)' },
+    { source: '/guides/:path*' },
+    { source: '/:language(de|fr|it|es|pt|pl)/guides/:path*' },
   ],
 };

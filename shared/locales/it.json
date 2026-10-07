@@ -1078,5 +1078,16 @@
   "shareExtension.save": "Salva i dati di tracciamento",
   "shareExtension.saved": "Salvato. Apri Peek entro 10 minuti per verificare e aggiungere il pacco.",
   "shareExtension.saveFailed": "Impossibile salvare. Incolla i dati di tracciamento direttamente in Peek.",
-  "shareExtension.notFound": "Condividi un numero o un link di tracciamento, oppure incollalo direttamente in Peek."
+  "shareExtension.notFound": "Condividi un numero o un link di tracciamento, oppure incollalo direttamente in Peek.",
+  "guides.title": "Guide",
+  "guides.heading": "Il tracciamento dei pacchi, spiegato semplice",
+  "guides.lead": "Risposte chiare su numeri di tracciamento, stati e dogana, e su cosa fare quando un pacco non dà più notizie.",
+  "guides.all": "Tutte le guide",
+  "guides.updated": "Aggiornato il {{date}}",
+  "guides.minutes": "{{count}} min di lettura",
+  "guides.contents": "In questa guida",
+  "guides.sources": "Fonti",
+  "guides.more": "Continua a leggere",
+  "guides.cta.title": "Aspetti un pacco?",
+  "guides.cta.body": "Incolla il numero di tracciamento. Peek trova il corriere, mostra ogni scansione su una mappa e ti avvisa quando si muove. Non serve un account."
 }

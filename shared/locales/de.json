@@ -1078,5 +1078,16 @@
   "shareExtension.save": "Sendungsangaben speichern",
   "shareExtension.saved": "Gespeichert. Öffne Peek innerhalb von 10 Minuten, um dein Paket zu prüfen und hinzuzufügen.",
   "shareExtension.saveFailed": "Speichern fehlgeschlagen. Füge die Sendungsangaben direkt in Peek ein.",
-  "shareExtension.notFound": "Teile eine Sendungsnummer oder einen Link oder füge sie direkt in Peek ein."
+  "shareExtension.notFound": "Teile eine Sendungsnummer oder einen Link oder füge sie direkt in Peek ein.",
+  "guides.title": "Ratgeber",
+  "guides.heading": "Paketverfolgung, einfach erklärt",
+  "guides.lead": "Klare Antworten zu Sendungsnummern, Status und Zoll. Und dazu, was du tun kannst, wenn es um ein Paket still wird.",
+  "guides.all": "Alle Ratgeber",
+  "guides.updated": "Aktualisiert am {{date}}",
+  "guides.minutes": "{{count}} Min. Lesezeit",
+  "guides.contents": "In diesem Ratgeber",
+  "guides.sources": "Quellen",
+  "guides.more": "Weiterlesen",
+  "guides.cta.title": "Wartest du auf ein Paket?",
+  "guides.cta.body": "Füge die Sendungsnummer ein. Peek findet den Paketdienst, zeigt jeden Scan auf einer Karte und meldet sich, wenn sich etwas tut. Kein Konto nötig."
 }

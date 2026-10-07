@@ -2,6 +2,7 @@
 // @vitest-environment-options {"url":"https://delivery.example/"}
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import catalog from '../../shared/analytics.json';
+import { GUIDE_LINKS } from '../generated/guides';
 
 const config = { endpoint: 'https://analytics.example/api/send', hostname: 'delivery.example',
   webWebsite: '1802c52e-466b-47e6-ac7f-f5a497655b1b', iosWebsite: '2802c52e-466b-47e6-ac7f-f5a497655b1b' };
@@ -40,6 +41,21 @@ describe('safe analytics collection', () => {
     expect(sent[1].init?.headers).toHaveProperty('x-umami-cache', 'session-cache');
     a.trackScreen('parcel', 'account'); await settle();
     expect(requests.filter((r) => r.url === config.endpoint)).toHaveLength(3);
+  });
+
+  it('counts a guides page under its language and the guide, and nothing else shaped like an address', async () => {
+    const [{ id }] = GUIDE_LINKS.fr;
+    const a = await import('./analytics');
+    a.trackScreen('guides/fr');
+    a.trackScreen(`guides/fr/${id}`);
+    a.trackScreen(`guides/fr/${id}/../secret`);
+    a.trackScreen('guides/xx');
+    a.trackScreen('guides/français');
+    a.trackScreen('guides');
+    a.trackScreen('/fr/guides');
+    await a.startAnalytics(); await settle();
+    const urls = requests.filter((r) => r.url === config.endpoint).map((r) => JSON.parse(r.init!.body as string).payload.url);
+    expect(urls).toEqual(['/guides/fr', `/guides/fr/${id}`, `/guides/fr/${id}`]); // two views, then app-open on the second
   });
 
   it.each(['opt-out', 'dnt', 'gpc'])('honors %s without fetching configuration', async (kind) => {

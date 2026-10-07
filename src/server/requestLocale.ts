@@ -18,8 +18,9 @@ export function messagesFor(locale: Locale): Messages {
 
 /**
  * The language the browser will pick, so server markup is never replaced by a
- * translation. At a language address such as `/de` that is the address's
- * language: the proxy answers for the cookie there, whatever the browser sent.
+ * translation. At a language address such as `/de`, and at a guides address
+ * such as `/de/guides/…` or `/guides/…`, that is the address's language: the
+ * proxy answers for the cookie there, whatever the browser sent.
  */
 export async function requestLocale(): Promise<Locale> {
   const chosen = (await cookies()).get(LOCALE_COOKIE)?.value;

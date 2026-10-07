@@ -25,7 +25,9 @@ import robots from '../app/robots';
 import sitemap from '../app/sitemap';
 import { metadata as offlineMetadata } from '../app/~offline/page';
 import mark from './brand/mark.json';
-import { ADDRESS_LANGUAGES, SUPPORTED_LOCALES } from './lib/locale';
+import { GUIDE_LINKS } from './generated/guides';
+import { guidePath } from './guides/paths';
+import { ADDRESS_LANGUAGES, SUPPORTED_LOCALES, type Locale } from './lib/locale';
 import { messagesFor } from './server/requestLocale';
 
 const TITLE = 'Peek — Universal Parcel Tracker';
@@ -185,28 +187,49 @@ describe('public product metadata', () => {
 
   it('lists the pages meant to be found, on the canonical origin when one is configured', async () => {
     const local = alternates('https://delivery.example.test');
-    expect(await sitemap()).toEqual([
-      ...SUPPORTED_LOCALES.map((locale) => ({ url: local[locale], alternates: { languages: local } })),
-      { url: 'https://delivery.example.test/privacy.html' },
-    ]);
+    const here = await sitemap();
+    expect(here.slice(0, SUPPORTED_LOCALES.length)).toEqual(SUPPORTED_LOCALES.map((locale) => ({ url: local[locale], alternates: { languages: local } })));
+    expect(here.at(-1)).toEqual({ url: 'https://delivery.example.test/privacy.html' });
     vi.stubEnv('CANONICAL_ORIGIN', 'https://peek.example.test');
+    const origin = 'https://peek.example.test';
     const entries = await sitemap();
+    /** The guides' page, or one guide, in every language and in English for a reader of none. */
+    const guides = (id?: string) => {
+      const address = (locale: Locale) => `${origin}${guidePath(locale, id && GUIDE_LINKS[locale].find((link) => link.id === id)!.slug)}`;
+      return { ...Object.fromEntries(SUPPORTED_LOCALES.map((locale) => [locale, address(locale)])) as Record<Locale, string>, 'x-default': address('en') };
+    };
+    const ids = GUIDE_LINKS.en.map(({ id }) => id);
     expect(entries.map(({ url }) => url)).toEqual([
       'https://peek.example.test/', 'https://peek.example.test/de', 'https://peek.example.test/fr', 'https://peek.example.test/it',
-      'https://peek.example.test/es', 'https://peek.example.test/pt', 'https://peek.example.test/pl', 'https://peek.example.test/privacy.html',
+      'https://peek.example.test/es', 'https://peek.example.test/pt', 'https://peek.example.test/pl',
+      ...SUPPORTED_LOCALES.map((locale) => guides()[locale]),
+      ...ids.flatMap((id) => SUPPORTED_LOCALES.map((locale) => guides(id)[locale])),
+      'https://peek.example.test/privacy.html',
     ]);
+    const [landings, indexes, articles] = [entries.slice(0, 7), entries.slice(7, 14), entries.slice(14, -1)];
     // Each language's landing names all of them, itself included, and `/` for a reader of none.
-    for (const entry of entries.slice(0, -1)) expect(entry.alternates?.languages).toEqual(alternates('https://peek.example.test'));
+    for (const entry of landings) expect(entry.alternates?.languages).toEqual(alternates(origin));
     // No date is claimed for a page whose last change nobody recorded.
-    for (const entry of entries) expect(entry).not.toHaveProperty('lastModified');
+    for (const entry of [...landings, entries.at(-1)!]) expect(entry).not.toHaveProperty('lastModified');
+    // A guide is dated by the day its facts were last checked, and its list by its newest guide.
+    const updated = (id: string, locale: Locale) => /^updated: (\S+)$/m.exec(readFileSync(`content/guides/${id}/${locale}.md`, 'utf8'))![1];
+    SUPPORTED_LOCALES.forEach((locale, at) => {
+      expect(indexes[at].alternates?.languages).toEqual(guides());
+      expect(indexes[at].lastModified).toBe(ids.map((id) => updated(id, locale)).sort().at(-1));
+    });
+    ids.forEach((id, guideAt) => SUPPORTED_LOCALES.forEach((locale, at) => {
+      const entry = articles[guideAt * SUPPORTED_LOCALES.length + at];
+      expect(entry.alternates?.languages).toEqual(guides(id));
+      expect(entry.lastModified).toBe(updated(id, locale));
+    }));
   });
 
   it('writes a sitemap that stays well-formed whatever host a request names', async () => {
     const { headers } = await import('next/headers');
     vi.mocked(headers).mockResolvedValueOnce(new Headers({ host: 'a&b"c.example.test', 'x-forwarded-proto': 'https' }));
-    const [first] = await sitemap();
-    expect(first.url).toBe('https://a&amp;b&quot;c.example.test/');
-    expect(JSON.stringify(first.alternates)).not.toMatch(/&(?!amp;|quot;)|\\"c/);
+    const entries = await sitemap();
+    expect(entries[0].url).toBe('https://a&amp;b&quot;c.example.test/');
+    for (const entry of entries) expect(JSON.stringify(entry)).not.toMatch(/&(?!amp;|quot;)|\\"c/);
   });
 
   it('keeps the demo and the offline page out of search results, with their links followed', async () => {

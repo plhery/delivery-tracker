@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { missingGuideRewrites } from './src/guides/paths';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -19,6 +20,8 @@ const nextConfig: NextConfig = {
       './node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm',
       './node_modules/onnxruntime-common/package.json',
       './node_modules/onnxruntime-common/dist/{cjs,esm}/*.js',
+      // The guides' text, which the guides and the sitemap read when asked for.
+      './content/guides/**/*.md',
     ],
   },
   poweredByHeader: false,
@@ -33,6 +36,10 @@ const nextConfig: NextConfig = {
   async redirects() {
     // English has no address of its own beside the other languages': its landing is `/`.
     return [{ source: '/en', destination: '/', permanent: true }];
+  },
+  async rewrites() {
+    // Under the guides, an address that names none of them is the site's 404 page, written by the server.
+    return { beforeFiles: missingGuideRewrites() };
   },
   async headers() {
     return [

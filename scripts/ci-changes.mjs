@@ -39,7 +39,7 @@ export function selectSuites(files) {
       || file.startsWith('src/brand/') || file.startsWith('public/atlas/') || nativeInputs.has(file)) {
       suites.web = true;
       suites.ios = true;
-    } else if (file.startsWith('app/') || file.startsWith('src/')
+    } else if (file.startsWith('app/') || file.startsWith('src/') || file.startsWith('content/')
       || file.startsWith('public/') || file.startsWith('e2e/')
       || file.startsWith('scripts/') || webConfiguration.has(file)) {
       suites.web = true;

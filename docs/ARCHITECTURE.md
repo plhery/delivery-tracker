@@ -22,12 +22,13 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
 | Path | What |
 | --- | --- |
 | `app/` | App Router pages, route handlers, manifest, service worker, offline page |
-| `proxy.ts` | Per-request CSP nonce and security headers; redirects pages from a host the site has left; tells a language address its language |
+| `proxy.ts` | Per-request CSP nonce and security headers; redirects pages from a host the site has left; tells a language address and a guide its language |
 | `src/` | React client (`components/`, `store/`, `auth/`, `i18n.tsx`) |
 | `src/peek/` | The landing and the parcel page for visitors: the field, parcel link client, this device's parcels, keeping a parcel after sign-in; `landing/` holds the sections below the field |
 | `src/server/` | API helpers, auth, sync worker, routing, push, email, observability |
 | `universal-parcel-scraper` (npm dependency) | Every carrier: catalog, detection, adapters, universal providers ([README](https://github.com/plhery/universal-parcel-scraper/blob/main/README.md), [boundary](SCRAPER.md)) |
 | `shared/` | Translations, tracking message map, analytics catalog and postcode examples, shared by web and iOS |
+| `content/guides/` | The guides' text, one Markdown file per language ([README](../content/guides/README.md)); `src/guides/` draws them |
 | `contracts/` | OpenAPI contract (source of TypeScript and Swift types) and cross-platform fixtures |
 | `supabase/` | Append-only migrations and SQL assertions for RLS |
 | `ios/` | SwiftUI app, Share extension, widgets ([README](../ios/README.md)) |
@@ -212,6 +213,7 @@ Key server modules:
 | `/sample` | A made-up parcel on a parcel page, told by the browser: nothing is asked of the server or kept on the device. Its "Home page" link leads back to the landing |
 | `/i/<key>`, `/invite` | A friend invitation ([FRIENDS.md](FRIENDS.md)) |
 | `/demo` | The demo deliveries, kept on the device, to anyone; leaving the demo returns to `/` |
+| `/guides`, `/guides/<slug>`; `/<language>/guides`, `/<language>/guides/<slug>` | The guides, articles for readers who arrive from a search engine, and their list, in the address's language whatever the browser prefers. English has no prefix. Any other address below a language's guides is sent to the 404 page by a rewrite in [`next.config.ts`](../next.config.ts), so the server writes that page whole |
 | `/email/off#t=<token>` | The way out of the delivery email, from the link an email carries. It asks first, then switches the email off (or back on) for the account the token names, without a sign-in. The token stays after the `#` and travels only in the body of that request |
 
 Sessions belong to one origin, so every address lives on the same host. With the iPhone
@@ -232,8 +234,9 @@ address of its own, one page per language under `app/`, written in that language
 first byte: `<html lang>`, the words, the title and the link preview.
 
 - The proxy hands the page the address's language in place of the cookie the browser sent
-  ([`proxy.ts`](../proxy.ts)). No other address reads anything a client could not already
-  choose, and the browser's own cookie is not written.
+  ([`proxy.ts`](../proxy.ts)), at a language address and at a guide's. No other address
+  reads anything a client could not already choose, and the browser's own cookie is not
+  written.
 - In the browser the address's language wins over a saved choice, and a visit saves
   nothing. The language menu there saves the choice and moves the address with it, without
   a page load: to `/` for English, or to `/home` where `/` is the reader's deliveries, the
@@ -242,12 +245,15 @@ first byte: `<html lang>`, the words, the title and the link preview.
   landing there.
 
 For search engines, `/robots.txt` lets everything be fetched and `/sitemap.xml` lists the
-pages meant to be found: the landing in each language and the privacy notice. Each
+pages meant to be found: the landing, the guides' list and every guide in each language,
+and the privacy notice. A guide is dated by the day its facts were last checked. Each
 landing's HTML carries its title, description and canonical address, the address of every
 other language (`hreflang`, with `/` for a reader of none of them), and a schema.org
 description of the site and the app
-([`landingStructuredData.ts`](../src/server/landingStructuredData.ts)). `/home` names `/`
-as its canonical address. Parcel links, invitations and `/email/off` answer `noindex` in a
+([`landingStructuredData.ts`](../src/server/landingStructuredData.ts)). A guide carries
+the same, with English for a reader of none, and describes itself as a schema.org article
+([`guidePages.tsx`](../src/server/guidePages.tsx)). `/home` names `/` as its canonical
+address. Parcel links, invitations and `/email/off` answer `noindex` in a
 header; the demo, the sample and the offline page say it in the page, and let their links
 be followed. These addresses are written on `CANONICAL_ORIGIN` when it is set
 ([DEPLOYMENT.md](DEPLOYMENT.md)).
@@ -261,7 +267,8 @@ and to anyone else once the page is idle or a sign-in starts
 ([`AuthContext.tsx`](../src/auth/AuthContext.tsx)). A browser the script marked asks for
 what it will open on as its page loads, and comes alive with it. An address that opens on
 such a screen (`/demo`, `/invite`, `/p/<id>`, `/sample`) brings the code along. Every page
-loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
+loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)). A guide is drawn
+by the server alone: the only script it adds to the page's own is its usage count.
 
 ## Data lifecycle
 

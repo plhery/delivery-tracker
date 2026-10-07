@@ -1078,5 +1078,16 @@
   "shareExtension.save": "Save tracking details",
   "shareExtension.saved": "Saved. Open Peek within 10 minutes to review and add your parcel.",
   "shareExtension.saveFailed": "Couldn’t save. Paste the tracking details directly in Peek.",
-  "shareExtension.notFound": "Share a tracking number or link, or paste it directly in Peek."
+  "shareExtension.notFound": "Share a tracking number or link, or paste it directly in Peek.",
+  "guides.title": "Guides",
+  "guides.heading": "Parcel tracking, explained",
+  "guides.lead": "Plain answers about tracking numbers, statuses and customs, and what to do when a parcel goes quiet.",
+  "guides.all": "All guides",
+  "guides.updated": "Updated {{date}}",
+  "guides.minutes": "{{count}} min read",
+  "guides.contents": "In this guide",
+  "guides.sources": "Sources",
+  "guides.more": "Keep reading",
+  "guides.cta.title": "Waiting for a parcel?",
+  "guides.cta.body": "Paste its tracking number. Peek finds the carrier, shows every scan on a map and pings you when it moves. No account needed."
 }

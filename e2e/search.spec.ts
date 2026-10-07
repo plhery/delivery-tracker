@@ -44,21 +44,37 @@ test('robots.txt lets everything be fetched and names the sitemap by its whole a
   expect(lines).toEqual(['User-Agent: *', 'Allow: /', `Sitemap: ${baseURL}/sitemap.xml`]);
 });
 
-test('sitemap.xml lists the landing in every language and the privacy notice, without dates nobody recorded', async ({ request, baseURL }) => {
+test('sitemap.xml lists the landing and the guides in every language and the privacy notice, dating only the guides', async ({ request, baseURL }) => {
   const response = await request.get('/sitemap.xml');
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type']).toContain('application/xml');
   const xml = await response.text();
   const addresses = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((match) => match[1]);
-  expect(addresses).toEqual([`${baseURL}/`, ...languages.map((language) => `${baseURL}/${language}`), `${baseURL}/privacy.html`]);
-  expect(xml).not.toContain('<lastmod>');
-  // Each landing names all of them, itself included.
+  const landings = [`${baseURL}/`, ...languages.map((language) => `${baseURL}/${language}`)];
+  expect(addresses.slice(0, landings.length)).toEqual(landings);
+  expect(addresses.at(-1)).toBe(`${baseURL}/privacy.html`);
+  // Between them, the guides: their own page in every language, then each guide in every language.
+  const guides = addresses.slice(landings.length, -1);
+  expect(guides.slice(0, 7)).toEqual([`${baseURL}/guides`, ...languages.map((language) => `${baseURL}/${language}/guides`)]);
+  expect(guides.length % 7).toBe(0);
+  for (const address of guides) expect(new URL(address).pathname).toMatch(/^(?:\/(?:de|fr|it|es|pt|pl))?\/guides(?:\/[a-z0-9-]+)?$/);
   const entries = xml.split('<url>').slice(1);
-  for (const entry of entries.slice(0, -1)) {
-    expect([...entry.matchAll(/<xhtml:link rel="alternate" hreflang="([^"]*)" href="([^"]*)" \/>/g)].map(([, language, address]) => [language, address]))
-      .toEqual(everyLanguage(baseURL!));
+  const alternates = (entry: string) => [...entry.matchAll(/<xhtml:link rel="alternate" hreflang="([^"]*)" href="([^"]*)" \/>/g)].map(([, language, address]) => [language, address]);
+  // Each landing names all of them, itself included, and claims no date nobody recorded.
+  for (const entry of entries.slice(0, landings.length)) {
+    expect(alternates(entry)).toEqual(everyLanguage(baseURL!));
+    expect(entry).not.toContain('<lastmod>');
+  }
+  // Each guides page names itself in every language, and English for a reader of none, dated by the day it was checked.
+  for (const entry of entries.slice(landings.length, -1)) {
+    const named = Object.fromEntries(alternates(entry));
+    expect(Object.keys(named)).toEqual(['en', ...languages, 'x-default']);
+    expect(named['x-default']).toBe(named.en);
+    expect(Object.values(named)).toContain(/<loc>([^<]*)<\/loc>/.exec(entry)![1]);
+    expect(entry).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
   }
   expect(entries.at(-1)).not.toContain('xhtml:link');
+  expect(entries.at(-1)).not.toContain('<lastmod>');
   // Every address in it answers.
   for (const address of addresses) expect((await request.get(address)).status(), address).toBe(200);
 });
@@ -255,10 +271,19 @@ test('`/favicon.ico` answers with an icon', async ({ request }) => {
 });
 
 test('a path nothing lives at answers 404 with the page that says so', async ({ request }) => {
-  for (const address of ['/xx', '/share-target', '/home/nothing', '/robots', '/DE', '/de/more', '/deu', '/de.html']) {
+  const notFound = (title: string) => `<h1 id="feedback-title">${title}</h1>`;
+  for (const address of ['/xx', '/share-target', '/home/nothing', '/robots', '/DE', '/de/more', '/deu', '/de.html',
+    '/guides/no-such-guide', '/guides/no/such-guide', '/en/guides', '/nl/guides']) {
     const { response, html } = await firstByte(request, address);
     expect(response.status(), address).toBe(404);
-    expect(html, address).toContain('This page isn’t here.');
+    expect(html, address).toContain(notFound('This page isn’t here.'));
+    expect(robotsOf(html), address).toBe('noindex');
+  }
+  // Under a language's guides, a slug without a guide says so in that language.
+  for (const [address, title] of [['/fr/guides/no-such-guide', 'Cette page est introuvable.'], ['/pl/guides/no/such-guide', 'Nie znaleziono tej strony.']]) {
+    const { response, html } = await firstByte(request, address);
+    expect(response.status(), address).toBe(404);
+    expect(html, address).toContain(notFound(title));
     expect(robotsOf(html), address).toBe('noindex');
   }
 });

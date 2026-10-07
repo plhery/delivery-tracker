@@ -40,6 +40,8 @@ are virtual names, never real URLs.
 
 - **Navigation**: welcome, front-door, sign-in, deliveries, passport, friends, parcel,
   parcel-link, invitation, account, add-parcel, notifications.
+- **Guides** (web): a guides page counts as a screen named by its language and the guide's
+  id, never its address (`guides/fr`, `guides/fr/<id>`).
 - **Auth**: sign-in attempts and results, sign-out, demo entry/exit.
 - **Parcels**: add, rename, change carrier, archive, restore, delete, mute, refresh, copy,
   open carrier link, paste, scan, share-in.

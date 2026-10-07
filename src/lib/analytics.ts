@@ -1,4 +1,5 @@
 import catalog from '../../shared/analytics.json';
+import { SUPPORTED_LOCALES } from './locale';
 
 export type AnalyticsOutcome = 'success' | 'error' | 'started' | 'accepted';
 type Configuration = { endpoint: string; hostname: string; webWebsite: string; iosWebsite: string };
@@ -84,8 +85,11 @@ async function flush() {
   } finally { sending = false; }
 }
 
+/** A guides page counts under its language and the guide's id, never its address: `guides/fr`, `guides/fr/<id>`. */
+const GUIDE_SCREEN = new RegExp(`^guides/(?:${SUPPORTED_LOCALES.join('|')})(?:/[a-z0-9]+(?:-[a-z0-9]+)*)?$`);
+
 export function trackScreen(next: string, nextMode: Event['mode'] = mode) {
-  if (!catalog.screens.includes(next)) return;
+  if (!catalog.screens.includes(next) && !GUIDE_SCREEN.test(next)) return;
   screen = next; mode = nextMode;
   const key = `${nextMode}:${next}`;
   if (lastView === key) return;
