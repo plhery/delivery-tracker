@@ -48,18 +48,26 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Zurich",
     "tracking": {
       "mode": "automatic",
-      "adapter": "swiss-post-cargo"
+      "adapter": "swiss-post-cargo",
+      "recognitionRank": 11
     },
     "trackingUrlTemplate": "https://apv.swisspost-cargo.com/public/trackandtrace/{trackingNumber}",
     "linkRules": [
       {
         "domains": [
-          "apv.swisspost-cargo.com"
+          "apv.swisspost-cargo.com",
+          "tt.swisspost-cargo.com"
         ],
         "path": "^/public/trackandtrace/([^/?#]+)/?$"
       }
     ],
-    "detectionRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^00\\d{18}$",
+        "confidence": "low",
+        "checksum": "sscc"
+      }
+    ],
     "aliases": [
       "Hugger"
     ],

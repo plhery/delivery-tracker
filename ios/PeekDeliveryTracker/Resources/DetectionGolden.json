@@ -92,6 +92,7 @@
     "confidence": "low",
     "candidates": [
       "poczta-polska",
+      "swiss-post-cargo",
       "usps",
       "nz-post"
     ],
@@ -100,7 +101,8 @@
     ],
     "asked": [
       "poczta-polska",
-      "nz-post"
+      "nz-post",
+      "swiss-post-cargo"
     ]
   },
   {
@@ -140,6 +142,7 @@
     "confidence": "low",
     "candidates": [
       "poczta-polska",
+      "swiss-post-cargo",
       "postnord",
       "usps",
       "nz-post"
@@ -149,7 +152,8 @@
     ],
     "asked": [
       "poczta-polska",
-      "nz-post"
+      "nz-post",
+      "swiss-post-cargo"
     ]
   },
   {
@@ -180,6 +184,25 @@
     ],
     "asked": [
       "dhl-ecommerce"
+    ]
+  },
+  {
+    "input": "00312345670000000016",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "poczta-polska",
+      "swiss-post-cargo",
+      "usps",
+      "nz-post"
+    ],
+    "preferred": [
+      "poczta-polska"
+    ],
+    "asked": [
+      "poczta-polska",
+      "nz-post",
+      "swiss-post-cargo"
     ]
   },
   {
@@ -237,6 +260,7 @@
     "confidence": "low",
     "candidates": [
       "poczta-polska",
+      "swiss-post-cargo",
       "postnord",
       "usps",
       "nz-post"
@@ -246,7 +270,8 @@
     ],
     "asked": [
       "poczta-polska",
-      "nz-post"
+      "nz-post",
+      "swiss-post-cargo"
     ]
   },
   {
