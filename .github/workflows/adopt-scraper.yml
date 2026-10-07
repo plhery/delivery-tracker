@@ -43,6 +43,7 @@ env:
     ios/PeekDeliveryTracker/GeneratedAPIContract.swift
     ios/PeekDeliveryTracker/Resources/CarrierCatalog.json
     ios/PeekDeliveryTracker/Resources/DetectionGolden.json
+    ios/PeekDeliveryTracker/Resources/ChecksumVectors.json
 
 jobs:
   # Installs the release and prepares its generated files without secrets or

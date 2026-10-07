@@ -76,6 +76,8 @@ const outputs = new Map([
   ['ContractFixtures.json', `${JSON.stringify(apiFixture, null, 2)}\n`],
   // Replayed by the native detection test so the Swift port cannot drift from the shared engine.
   ['DetectionGolden.json', fs.readFileSync(fileURLToPath(import.meta.resolve('universal-parcel-scraper/data/detection-golden.json')), 'utf8')],
+  // Replayed against each Swift checksum so none can drift from its TypeScript validator.
+  ['ChecksumVectors.json', fs.readFileSync(fileURLToPath(import.meta.resolve('universal-parcel-scraper/data/checksum-vectors.json')), 'utf8')],
   // Read by BrandParityTests so the SwiftUI livery and truck cannot drift from
   // src/brand, which the web renders.
   ['Brand.json', renderBrandJson(readBrandData())],

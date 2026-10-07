@@ -1299,4 +1299,44 @@ extension CarrierCatalogTests {
         }
         XCTAssertEqual(mismatches, [], mismatches.prefix(10).joined(separator: "\n"))
     }
+
+    /// The scraper's published checksum vectors record what each TypeScript validator
+    /// answers for synthetic inputs; the Swift checksum of the same id must agree.
+    func testChecksumsMatchTheSharedVectors() throws {
+        struct Vector: Decodable {
+            let input: String
+            let passes: Bool
+
+            init(from decoder: Decoder) throws {
+                var pair = try decoder.unkeyedContainer()
+                input = try pair.decode(String.self)
+                passes = try pair.decode(Bool.self)
+                guard pair.isAtEnd else {
+                    throw DecodingError.dataCorruptedError(in: pair, debugDescription: "A vector is an input and its answer.")
+                }
+            }
+        }
+        struct File: Decodable {
+            let version: Int
+            let vectors: [String: [Vector]]
+        }
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "ChecksumVectors", withExtension: "json"))
+        let file = try JSONDecoder().decode(File.self, from: Data(contentsOf: url))
+        XCTAssertEqual(file.version, 1)
+        XCTAssertFalse(file.vectors.isEmpty)
+        var mismatches: [String] = []
+        for (id, vectors) in file.vectors.sorted(by: { $0.key < $1.key }) {
+            for vector in vectors {
+                let input = String(reflecting: vector.input)
+                guard let passes = CarrierCatalog.checksumPasses(id, vector.input) else {
+                    mismatches.append("\(id) \(input): the app does not know this checksum")
+                    break
+                }
+                if passes != vector.passes {
+                    mismatches.append("\(id) \(input): expected \(vector.passes), got \(passes)")
+                }
+            }
+        }
+        XCTAssertEqual(mismatches, [], mismatches.prefix(10).joined(separator: "\n"))
+    }
 }
