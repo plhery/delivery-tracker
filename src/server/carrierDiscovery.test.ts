@@ -27,7 +27,7 @@ it('confirms FedEx after HTTP misses and charges the allowance once', async () =
 });
 
 it('can ask a browser-only candidate without an HTTP recognizer', async () => {
-  const answer = await detectCarrier({ trackingNumber: '000000000000011' });
+  const answer = await detectCarrier({ trackingNumber: '000000000000017' });
   expect(answer.carrier).toBe('fedex');
   expect(mocks.browser).toHaveBeenCalledOnce();
 });

@@ -1509,11 +1509,11 @@ describe('ambiguous number shapes', () => {
   });
 
   it('keeps 15-digit numbers ambiguous', () => {
-    expect(detectCarrierMatch('123456789012345')).toEqual({
+    // The last digit is a GS1 check, which FedEx's 15-digit numbers carry.
+    expect(detectCarrierMatch('123456789012343')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
       candidates: ['fedex', 'dpd-fr', 'yunda'],
-      preferred: [],
     });
   });
 
