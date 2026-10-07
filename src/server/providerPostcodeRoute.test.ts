@@ -22,12 +22,14 @@ beforeEach(() => {
   vi.spyOn(metrics, 'recordProviderInput').mockImplementation(() => undefined);
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
-it('saves normalized provider input through the owner RPC and queues a fresh check without resetting the carrier', async () => {
+it.each(['ParcelsApp', '17TRACK'])('saves normalized %s input through the owner RPC and queues a fresh check without resetting the carrier', async provider => {
+  vi.mocked(SupabaseUserClient.prototype.getPackage).mockResolvedValue({ ...parcel,
+    carrier_data: { routing: { version: 1, provider_input_needed: { provider, field: 'dpdPostcode' } } } });
   expect((await patch({ carrier: 'unknown', providerPostcode: 'm5v 3l9' })).status).toBe(200);
   expect(SupabaseUserClient.prototype.setProviderPostcode).toHaveBeenCalledWith(id, 'M5V 3L9');
   expect(SupabaseUserClient.prototype.changePackageCarrier).not.toHaveBeenCalled();
   expect(SupabaseServiceClient.prototype.enqueueSyncJob).toHaveBeenCalledOnce();
-  expect(metrics.recordProviderInput).toHaveBeenCalledWith('ParcelsApp', 'supplied');
+  expect(metrics.recordProviderInput).toHaveBeenCalledWith(provider, 'supplied');
 });
 it('rejects malformed input and a combined carrier change before any mutation', async () => {
   expect((await patch({ carrier: 'unknown', providerPostcode: '<script>123' })).status).toBe(400);

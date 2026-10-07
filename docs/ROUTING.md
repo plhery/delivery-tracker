@@ -29,7 +29,7 @@ policy. These caches are transient; persisted routing remains the source of retr
 An explicit universal postcode requirement is retained separately from carrier inputs.
 The owner supplies it through the carrier editor. It is bound to the current number,
 kept private, and ignored for a different tracking number. Updating it invalidates an older
-sync and clears the provider's parcel-level backoff. Missing recipient input does not
+sync and clears universal providers' missing-input backoffs. Other failure backoffs stay in place. Missing recipient input does not
 open the shared provider circuit. Another source with progress clears the prompt.
 Clients show the earliest next-check eligibility; polling windows can delay the actual run.
 

@@ -29,6 +29,9 @@ begin
 end;
 $$;
 reset role;
+update public.packages
+set carrier_data = carrier_data || '{"routing":{"provider_input_needed":{"provider":"17TRACK","field":"dpdPostcode"},"next_check_at":"2099-01-01T00:00:00Z","failures":{"17TRACK":{"kind":"input_required"},"ParcelsApp":{"kind":"input_required"},"Ship24":{"kind":"rate_limited"},"gls-de":{"kind":"input_required"}}}}'::jsonb
+where user_id='19000000-0000-0000-0000-000000000002';
 insert into public.sync_jobs(id,user_id,package_id,kind,state,dedupe_key,locked_by,lease_until)
 select '19000000-0000-0000-0000-000000000004', user_id, id, 'package', 'running',
        'package:' || id, 'synthetic-worker', now() + interval '1 minute'
@@ -40,6 +43,16 @@ where user_id='19000000-0000-0000-0000-000000000002';
 reset role;
 do $$
 begin
+  if not exists (select 1 from public.packages
+      where user_id='19000000-0000-0000-0000-000000000002'
+        and carrier_data#>'{routing,provider_input_needed}' is null
+        and carrier_data#>'{routing,next_check_at}' is null
+        and carrier_data#>'{routing,failures,17TRACK}' is null
+        and carrier_data#>'{routing,failures,ParcelsApp}' is null
+        and carrier_data#>>'{routing,failures,Ship24,kind}'='rate_limited'
+        and carrier_data#>>'{routing,failures,gls-de,kind}'='input_required') then
+    raise exception 'Provider input did not clear the requesting providers or changed unrelated backoffs';
+  end if;
   if not exists (select 1 from public.sync_jobs
       where id='19000000-0000-0000-0000-000000000004' and state='failed'
         and dedupe_key is null and locked_by is null and lease_until is null

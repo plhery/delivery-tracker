@@ -1132,12 +1132,12 @@ describe('universal preflight and recipient input', () => {
     expect(value.recognizeBrowser).not.toHaveBeenCalled();
     expect(value.direct).not.toHaveBeenCalled();
   });
-  it('retains an explicit postcode requirement and keeps it out of global failure cooldowns', async () => {
+  it.each(['ParcelsApp', '17TRACK'])('retains %s postcode requirements and keeps them out of global failure cooldowns', async provider => {
     const value = setup();
-    value.universal.mockImplementation(async (source) => { if (source === 'ParcelsApp') throw new InputRequiredError(source, 'postcode'); throw new NotFoundError(source); });
+    value.universal.mockImplementation(async (source) => { if (source === provider) throw new InputRequiredError(source, 'postcode'); throw new NotFoundError(source); });
     const error = await value.router.fetch(parcel({ tracking_number: '1234567891' }), false).catch((error) => error);
     expect(error).toBeInstanceOf(RoutingDeferred);
-    expect(error.routing).toMatchObject({ provider_input_needed: { provider: 'ParcelsApp', field: 'dpdPostcode' }, failures: { ParcelsApp: { kind: 'input_required' } } });
+    expect(error.routing).toMatchObject({ provider_input_needed: { provider, field: 'dpdPostcode' }, failures: { [provider]: { kind: 'input_required' } } });
     expect(value.health.finishTrackingProvider.mock.calls.every((call) => call[2] === 'not_found')).toBe(true);
   });
   it('submits provider credentials only for their bound number and clears the prompt after recovery', async () => {
