@@ -2,6 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { IndeterminateError } from 'universal-parcel-scraper';
 import { detectCarrier } from './carrierDetection';
 import { SupabaseServiceClient } from './supabase';
+import { discoveryAskedCarriers } from '../lib/carriers';
 
 const mocks = vi.hoisted(() => ({ http: vi.fn(), browser: vi.fn() }));
 vi.mock('./adapterRegistry', () => ({ createAdapterRegistry: () => ({ for: (carrier: string) => ({
@@ -18,7 +19,7 @@ beforeEach(() => {
 it('confirms FedEx after HTTP misses and charges the allowance once', async () => {
   const allowance = vi.fn();
   expect(await detectCarrier({ trackingNumber: '000000000011' }, allowance)).toEqual({
-    trackingNumber: '000000000011', carrier: 'fedex', asked: ['colis-prive', 'fedex'],
+    trackingNumber: '000000000011', carrier: 'fedex', asked: discoveryAskedCarriers('000000000011'),
   });
   expect(allowance).toHaveBeenCalledOnce();
   expect(mocks.http).toHaveBeenCalledWith('colis-prive', '000000000011', expect.objectContaining({ budgetMs: 3_000, signal: expect.any(AbortSignal) }));
@@ -32,7 +33,7 @@ it('can ask a browser-only candidate without an HTTP recognizer', async () => {
 });
 
 it('keeps a successful HTTP confirmation fast', async () => {
-  mocks.http.mockResolvedValue({ known: true });
+  mocks.http.mockImplementation(async (carrier: string) => ({ known: carrier === 'colis-prive' }));
   expect(await detectCarrier({ trackingNumber: '000000000012' })).toMatchObject({ carrier: 'colis-prive' });
   expect(mocks.browser).not.toHaveBeenCalled();
 });

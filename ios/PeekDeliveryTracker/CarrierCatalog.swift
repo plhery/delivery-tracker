@@ -157,7 +157,7 @@ struct TrackingInputMatch: Equatable, Sendable {
 /// Carrier recognition in the Add sheet: a shape several carriers share is
 /// checked with them once the number is settled (the field loses focus, a
 /// paste, a scan, a shared number), never on each keystroke. It never holds
-/// the Add button: after saving, the first sync asks the same carriers again.
+/// the Add button: tracking services check the number again after saving.
 /// Mirrors `carrierCheck` in `src/lib/carrierPicker.ts`.
 struct CarrierRecognition: Equatable, Sendable {
     enum Status: Equatable, Sendable {
@@ -165,7 +165,7 @@ struct CarrierRecognition: Equatable, Sendable {
         case idle
         /// No carrier can be asked about this shape; routing looks it up after saving.
         case unasked
-        /// The carriers being asked, while they answer.
+        /// Services are checking; which carriers were asked is known only in their answer.
         case asking([CarrierID])
         /// One carrier knows the number.
         case recognized(CarrierID)
@@ -173,7 +173,7 @@ struct CarrierRecognition: Equatable, Sendable {
         case several([CarrierID])
         /// Every carrier answered and none knows it yet, which is normal for a new label.
         case notFound([CarrierID])
-        /// No carrier could answer; the first sync asks again.
+        /// Tracking services could not answer; the first sync asks again.
         case failed([CarrierID])
     }
 
@@ -181,6 +181,8 @@ struct CarrierRecognition: Equatable, Sendable {
     var settledNumber: String?
     /// The server's answer for a settled number.
     var answer: CarrierDetectionResponse?
+    /// A check that failed before a server answer; it has no known carrier attempts.
+    var failedNumber: String?
 
     /// Only a number no direct carrier claims with confidence is worth asking about. The
     /// check keeps running when a carrier is picked by hand meanwhile: its answer
@@ -193,16 +195,18 @@ struct CarrierRecognition: Equatable, Sendable {
     /// The number to ask about: the settled one, while it is still the number in
     /// the field and has no answer yet.
     func request(for number: String, applies: Bool) -> String? {
-        guard applies, !number.isEmpty, settledNumber == number, answer?.trackingNumber != number else { return nil }
+        guard applies, !number.isEmpty, settledNumber == number,
+              answer?.trackingNumber != number, failedNumber != number else { return nil }
         return number
     }
 
-    /// `asked` is the carriers the check asks, predicted before the answer arrives.
-    func status(for number: String, applies: Bool, asked: [CarrierID]) -> Status {
+    /// Carrier attempt lists come from the server's answer.
+    func status(for number: String, applies: Bool) -> Status {
         guard applies, !number.isEmpty else { return .idle }
+        if failedNumber == number { return .failed([]) }
         guard let answer, answer.trackingNumber == number else {
             guard settledNumber == number else { return .idle }
-            return .asking(asked)
+            return .asking([])
         }
         if answer.carrier != .unknown && answer.carrier != .internationalPost { return .recognized(answer.carrier) }
         if let choices = answer.recognized, choices.count > 1 { return .several(choices) }
@@ -520,6 +524,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
                 if rule.checksum == "poczta-polska" && !Self.isValidPocztaPolskaBarcode(number) { continue }
                 if rule.checksum == "correos-spain" && !Self.isValidCorreosSpainCheckLetter(number) { continue }
                 if rule.checksum == "dpd" && !Self.isValidDpdParcelNumber(number) { continue }
+                if rule.checksum == "usps" && !Self.isValidUspsPackageBarcode(number) { continue }
                 matches.append((carrier, rule.confidence == "high" ? .high : .low, rule.preferred == true))
                 break
             }
@@ -887,6 +892,22 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     static func supportsSwissPostHandoff(_ raw: String) -> Bool {
         let value = normalize(raw)
         return matches(value, pattern: "^L[A-Z]\\d{9}CH$") && isValidS10(value)
+    }
+
+    /// USPS package barcodes: only the PIC participates in MOD10; a routing ZIP precedes it.
+    static func isValidUspsPackageBarcode(_ raw: String) -> Bool {
+        let number = normalize(raw)
+        func validPic(_ pic: String) -> Bool {
+            guard matches(pic, pattern: "^9[234][0-9]{20}(?:[0-9]{4})?$") else { return false }
+            let sum = pic.compactMap(\.wholeNumberValue).reversed().enumerated()
+                .reduce(0) { $0 + $1.element * ($1.offset % 2 == 0 ? 1 : 3) }
+            return sum % 10 == 0
+        }
+        if validPic(number) { return true }
+        guard matches(number, pattern: "^420[0-9]{27}(?:[0-9]{4})?$") else { return false }
+        // A full scan can fit ZIP5/PIC26 and ZIP9/PIC22; an ambiguous split is rejected.
+        let validSplits = [String(number.dropFirst(8)), String(number.dropFirst(12))].filter(validPic)
+        return validSplits.count == 1
     }
 
     /// A number introduced by a "tracking number:" style label, as the web engine reads it.

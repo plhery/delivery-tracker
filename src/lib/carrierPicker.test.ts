@@ -113,8 +113,14 @@ describe('carrier check', () => {
   it('follows the number from settled to answered', () => {
     expect(carrierCheck({ applies: true, settled: false, asked })).toEqual({ status: 'idle' });
     expect(carrierCheck({ applies: false, settled: true, asked })).toEqual({ status: 'idle' });
-    expect(carrierCheck({ applies: true, settled: true, asked })).toEqual({ status: 'asking', asked });
+    expect(carrierCheck({ applies: true, settled: true, asked })).toEqual({ status: 'asking', asked: [] });
     expect(carrierCheck({ applies: true, settled: true, asked: [] })).toEqual({ status: 'asking', asked: [] });
+  });
+
+  it('keeps a transport failure separate from the server list of checked carriers', () => {
+    expect(carrierCheck({ applies: true, settled: true, asked, failed: true })).toEqual({ status: 'failed', asked: [] });
+    expect(carrierCheck({ applies: true, settled: true, asked,
+      answer: { trackingNumber: number, carrier: 'unknown', asked: ['ciblex'] } })).toEqual({ status: 'none', asked: ['ciblex'] });
   });
 
   it('reads the answer', () => {
@@ -175,9 +181,7 @@ describe('what a picker beside a number leads with', () => {
   });
 
   it('tags the carriers the check has asked or heard from', () => {
-    expect(carrierChoiceTags({ status: 'asking', asked: ['dpd', 'seur'] }, t)).toEqual({
-      dpd: { label: 'Asking…', tone: 'quiet' }, seur: { label: 'Asking…', tone: 'quiet' },
-    });
+    expect(carrierChoiceTags({ status: 'asking', asked: ['dpd', 'seur'] }, t)).toEqual({});
     expect(carrierChoiceTags({ status: 'found', carrier: 'dpd' }, t)).toEqual({ dpd: { label: 'Has this parcel', tone: 'found' } });
     expect(carrierChoiceTags({ status: 'several', carriers: ['dpd', 'seur'] }, t)).toEqual({
       dpd: { label: 'Knows this number', tone: 'found' }, seur: { label: 'Knows this number', tone: 'found' },

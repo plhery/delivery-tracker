@@ -3,6 +3,7 @@ import { detectCarrier } from '../../../../src/server/carrierDetection';
 import { verifyLookupRequest } from '../../../../src/server/lookupVerification';
 import { recordPublicDetection } from '../../../../src/server/metrics';
 import { claimDetection, secondsUntilUtcMidnight } from '../../../../src/server/publicParcels';
+import { lookupCountry } from '../../../../src/server/lookupCountry';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -25,7 +26,7 @@ export const POST = apiRoute(async (context) => {
       throw new HttpError(429, 'No carrier checks are left for today.', { 'Retry-After': String(secondsUntilUtcMidnight(now)) });
     }
     recordPublicDetection('asked');
-  }, context.request.signal, requireService(context)));
+  }, context.request.signal, requireService(context), lookupCountry(context.request, body.lookupCountryHint)));
 }, {
   authenticated: false,
   capability: true,

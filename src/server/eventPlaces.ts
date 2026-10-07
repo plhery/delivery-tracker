@@ -37,6 +37,11 @@ function carrierCountry(carrier: unknown): string | null {
  * so improving the gazetteer improves every parcel, old ones included.
  */
 export function withEventPlaces(row: JsonObject): JsonObject {
+  if (isRecord(row.carrier_data) && 'add_recognition_pending' in row.carrier_data) {
+    const data = { ...row.carrier_data };
+    delete data.add_recognition_pending;
+    row = { ...row, carrier_data: data };
+  }
   if (!Array.isArray(row.tracking_events) || !row.tracking_events.length) return row;
   const events = row.tracking_events.filter(isRecord);
   const carrierData = isRecord(row.carrier_data) ? row.carrier_data : {};

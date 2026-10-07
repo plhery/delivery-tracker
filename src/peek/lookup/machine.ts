@@ -171,6 +171,7 @@ export function survey(state: LookupState, device: readonly DeviceParcel[] = [])
     settled: settledForAsking,
     asked: recognizable ? discoveryAskedCarriers(normalized) as CarrierId[] : [],
     answer,
+    failed: answer?.checkFailed,
   });
 
   const shipping = amazon && answer?.carrier === 'amazon-shipping'
@@ -324,8 +325,7 @@ export function lookupStep(state: LookupState, event: LookupEvent, device: reado
  */
 export function unanswered(number: string): CarrierAnswer {
   if (isAmazonTrackingNumber(number)) return { trackingNumber: number, carrier: 'amazon-logistics', amazonShippingStatus: 'unavailable' };
-  const asked = discoveryAskedCarriers(number) as CarrierId[];
-  return { trackingNumber: number, carrier: 'unknown', ...(asked.length ? { asked, unanswered: asked } : {}) };
+  return { trackingNumber: number, carrier: 'unknown', checkFailed: true };
 }
 
 /** Seconds left on the countdown, never less than one while it runs. */

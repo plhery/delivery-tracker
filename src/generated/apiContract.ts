@@ -4728,6 +4728,7 @@ export const CARRIER_CAPABILITIES = {
 
 export interface ApiCarrierDetectionRequest {
   "trackingNumber": string;
+  "lookupCountryHint"?: string;
 }
 
 export interface ApiCarrierDetectionResponse {
@@ -4996,6 +4997,7 @@ export interface ApiCreatePackageRequest {
   "carrier"?: ApiCarrierId;
   "trackingUrl"?: string;
   "dpdPostcode"?: string;
+  "lookupCountryHint"?: string;
 }
 
 export interface ApiRenamePackageRequest {
@@ -5321,6 +5323,7 @@ export interface ApiPublicLookupRequest {
   "carrier"?: ApiCarrierId;
   "trackingUrl"?: string;
   "dpdPostcode"?: string;
+  "lookupCountryHint"?: string;
 }
 
 export interface ApiPublicLookupResponse {

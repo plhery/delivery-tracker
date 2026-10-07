@@ -13,7 +13,7 @@ import { withEventPlaces } from '../../../src/server/eventPlaces';
 import { captureOperationalError } from '../../../src/server/observability';
 import { SupabaseError } from '../../../src/server/supabase';
 import { wakeSyncWorker } from '../../../src/server/background';
-import { rememberLookupCountry } from '../../../src/server/lookupCountry';
+import { lookupCountry, rememberLookupCountry } from '../../../src/server/lookupCountry';
 import { newPackageValues } from '../../../src/server/validation';
 
 export const dynamic = 'force-dynamic';
@@ -34,7 +34,9 @@ export const GET = apiRoute(async (context) => {
 }, { serviceRequired: true });
 
 export const POST = apiRoute(async (context) => {
-  const values = newPackageValues(await readJsonObject(context.request));
+  const body = await readJsonObject(context.request);
+  const values = newPackageValues(body);
+  lookupCountry(context.request, body.lookupCountryHint);
   await claimAccountTracking(requireService(context), requireUser(context).id, 'lookup');
   await verifyAmazonShippingAddition(values.carrier, values.trackingNumber);
   const client = requireUserClient(context);
@@ -64,7 +66,7 @@ export const POST = apiRoute(async (context) => {
     throw error;
   }
 
-  await rememberLookupCountry(service, parcel, context.request);
+  await rememberLookupCountry(service, parcel, context.request, body.lookupCountryHint);
   const jobIds: string[] = [];
   try {
     const job = await service.enqueueSyncJob({
@@ -80,5 +82,5 @@ export const POST = apiRoute(async (context) => {
       sync_error: 'The first tracking check could not be queued. Try again shortly.',
     });
   }
-  return json({ package: parcel, jobIds }, 201);
+  return json({ package: withEventPlaces(parcel), jobIds }, 201);
 }, { serviceRequired: true });

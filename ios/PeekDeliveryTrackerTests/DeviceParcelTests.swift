@@ -15,8 +15,11 @@ final class DeviceParcelTests: XCTestCase {
     private final class Calls: @unchecked Sendable {
         private let lock = NSLock()
         private var log: [String] = []
+        private var countryHints: [String?] = []
         func add(_ call: String) { lock.withLock { log.append(call) } }
+        func lookupCountry(_ hint: String?) { lock.withLock { countryHints.append(hint) } }
         var all: [String] { lock.withLock { log } }
+        var lookupCountries: [String?] { lock.withLock { countryHints } }
     }
 
     private let key = String(repeating: "k", count: 43)
@@ -40,6 +43,7 @@ final class DeviceParcelTests: XCTestCase {
         DeviceParcelClient(
             lookup: { request in
                 calls.add("lookup \(request.trackingNumber) \(request.carrier?.rawValue ?? "-")")
+                calls.lookupCountry(request.lookupCountryHint)
                 guard let lookup else { throw DeviceLookupsSpent() }
                 return lookup
             },
@@ -73,6 +77,65 @@ final class DeviceParcelTests: XCTestCase {
         XCTAssertEqual(storage.parcels.first?.parcel.label, "")
         XCTAssertEqual(device.claims, [ClaimParcelLink(id: "22222222222A", key: key, label: "New sneakers")])
         XCTAssertEqual(calls.all, ["lookup TESTPARCEL123789 dhl"])
+        XCTAssertEqual(calls.lookupCountries, [nil])
+    }
+
+    func testCountryHintUsesTheDeviceRegionRatherThanItsLanguage() {
+        XCTAssertEqual(ParcelLookupCountry.hint(locale: Locale(identifier: "en_CH")), "CH")
+        XCTAssertEqual(ParcelLookupCountry.hint(locale: Locale(identifier: "fr_US")), "US")
+        XCTAssertEqual(ParcelLookupCountry.hint(locale: Locale(identifier: "de_GB")), "GB")
+        XCTAssertEqual(ParcelLookupCountry.hint(locale: Locale(identifier: "en_UK")), "GB")
+        for identifier in ["en", "en_001", "es_419", "en_EU", "en_UN", "en_ZZ", "en_AA"] {
+            XCTAssertNil(ParcelLookupCountry.hint(locale: Locale(identifier: identifier)), identifier)
+        }
+    }
+
+    func testANewGuestLookupForwardsItsCountryHint() async throws {
+        let calls = Calls()
+        let device = DeviceParcels(client: client(calls, lookup: PublicLookupResponse(
+            link: link("22222222222A"), key: key, package: package(UUID())
+        )), storage: Memory())
+
+        _ = try await device.add(CreatePackageRequest(
+            trackingNumber: "TESTPARCEL123789", carrier: .dhl, lookupCountryHint: "CH"
+        ))
+
+        XCTAssertEqual(calls.lookupCountries, ["CH"])
+        XCTAssertEqual(calls.all, ["lookup TESTPARCEL123789 dhl"])
+    }
+
+    func testChangingCarrierSendsTheDeviceCountryAndKeepsTheParcelName() async throws {
+        let previousID = UUID(), nextID = UUID()
+        let storage = Memory()
+        storage.keys = ["22222222222A": key]
+        storage.parcels = [DeviceParcel(
+            linkID: "22222222222A", label: "Moon lamp", archivedAt: nil,
+            parcel: Parcel(shared: package(previousID)), checkedAt: Date()
+        )]
+        let calls = Calls()
+        let device = DeviceParcels(client: client(calls, lookup: PublicLookupResponse(
+            link: link("22222222222B"), key: key, package: package(nextID, carrier: .dpd)
+        )), storage: storage)
+
+        let parcel = try await device.changeCarrier(id: previousID, carrier: .dpd, trackingURL: nil, dpdPostcode: nil)
+
+        XCTAssertEqual(parcel.id, nextID)
+        XCTAssertEqual(parcel.label, "Moon lamp")
+        XCTAssertEqual(parcel.carrier, .dpd)
+        XCTAssertEqual(calls.lookupCountries, [ParcelLookupCountry.hint()])
+        XCTAssertEqual(calls.all, ["lookup TESTPARCEL123789 dpd", "forget 22222222222A"])
+        XCTAssertEqual(storage.parcels.map(\.replaced), [previousID])
+        XCTAssertNil(storage.keys["22222222222A"])
+    }
+
+    func testTheCountryHintIsOptionalInDetectionAndAddRequests() throws {
+        func body<T: Encodable>(_ request: T) throws -> [String: String] {
+            try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder.deliveryTracker.encode(request)) as? [String: String])
+        }
+        XCTAssertNil(try body(CarrierDetectionRequest(trackingNumber: "SYNTHETIC"))["lookupCountryHint"])
+        XCTAssertEqual(try body(CarrierDetectionRequest(trackingNumber: "SYNTHETIC", lookupCountryHint: "CH"))["lookupCountryHint"], "CH")
+        XCTAssertEqual(try body(CreatePackageRequest(trackingNumber: "SYNTHETIC", lookupCountryHint: "US"))["lookupCountryHint"], "US")
+        XCTAssertEqual(try body(PublicLookupRequest(trackingNumber: "SYNTHETIC", lookupCountryHint: "GB"))["lookupCountryHint"], "GB")
     }
 
     func testTheSameNumberIsNotLookedUpTwice() async throws {

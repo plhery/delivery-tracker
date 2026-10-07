@@ -409,6 +409,59 @@ describe('persistent tracking routing', () => {
     const notFound = (carrier: string) => new NotFoundError(carrier);
     const knows = (...carriers: string[]) => async (carrier: string) => ({ known: carriers.includes(carrier) });
     const asked = (recognize: ReturnType<typeof vi.fn>) => recognize.mock.calls.map(([carrier]) => carrier);
+    const twoBatches = ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex', 'hermes-de'].map((carrier) => ({ carrier, needsInput: null, preferred: false }));
+
+    it('asks a second unqueried HTTP batch only for a new addition with no first-round match', async () => {
+      vi.spyOn(scraper, 'recognitionCandidates').mockImplementation((_number, options) =>
+        options?.phase === 'browser' ? [] : twoBatches.filter(({ carrier }) => !options?.skip?.(carrier)));
+      const added = setup();
+      added.recognize.mockImplementation(knows('hermes-de'));
+      added.direct.mockResolvedValue(directValue('hermes-de'));
+      const result = await added.router.fetch(parcel({ tracking_number: '00000000000001' }), false, undefined, true);
+      expect(asked(added.recognize)).toEqual(twoBatches.map(({ carrier }) => carrier));
+      expect(result.correction?.carrier).toBe('hermes-de');
+      expect(added.universal).not.toHaveBeenCalled();
+      const refresh = setup();
+      await refresh.router.fetch(parcel({ tracking_number: '00000000000001' }), false);
+      expect(asked(refresh.recognize)).toEqual(twoBatches.slice(0, 5).map(({ carrier }) => carrier));
+      expect(refresh.universal).toHaveBeenCalled();
+    });
+
+    it.each([['dpd'], ['dpd', 'seur'], ['dpd', 'relais-colis']])('does not expand a first-round match or choice: %j', async (...known) => {
+      vi.spyOn(scraper, 'recognitionCandidates').mockImplementation((_number, options) => options?.phase === 'browser' ? [] : twoBatches);
+      const { router, recognize } = setup();
+      recognize.mockImplementation(knows(...known));
+      await router.fetch(parcel({ tracking_number: '00000000000002' }), false, undefined, true);
+      expect(asked(recognize)).toEqual(twoBatches.slice(0, 5).map(({ carrier }) => carrier));
+    });
+
+    it('reserves second-round time inside the existing total HTTP budget', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+      try {
+        vi.spyOn(scraper, 'recognitionCandidates').mockImplementation((_number, options) => options?.phase === 'browser' ? [] : twoBatches);
+        const { router, recognize, direct } = setup();
+        recognize.mockImplementation(async (carrier: string) => {
+          if (carrier === 'hermes-de') return { known: true };
+          return await new Promise(() => undefined);
+        });
+        direct.mockResolvedValue(directValue('hermes-de'));
+        const request = router.fetch(parcel({ tracking_number: '00000000000003' }), false, undefined, true);
+        await vi.advanceTimersByTimeAsync(7_500);
+        await expect(request).resolves.toMatchObject({ correction: { carrier: 'hermes-de' } });
+        expect(recognize.mock.calls[0][2]).toMatchObject({ budgetMs: 7_500 });
+        expect(recognize.mock.calls[5][2]).toMatchObject({ budgetMs: 7_500 });
+        expect(performance.now()).toBeLessThanOrEqual(15_000);
+      } finally { vi.useRealTimers(); }
+    });
+
+    it('passes the saved country to query ordering without using it to settle ownership', async () => {
+      const candidates = vi.spyOn(scraper, 'recognitionCandidates').mockReturnValue(twoBatches.slice(0, 2));
+      const { router, recognize, direct } = setup();
+      recognize.mockResolvedValue({ known: false });
+      await router.fetch(parcel({ tracking_number: '00000000000004', carrier_data: { lookup_country_hint: 'FR' } }), false);
+      expect(candidates).toHaveBeenCalledWith('00000000000004', expect.objectContaining({ countryHint: 'FR' }));
+      expect(direct).not.toHaveBeenCalled();
+    });
     it('recovers an already saved compact PostLogistics number filed as unknown', async () => {
       const { router, direct, universal, recognize } = setup();
       recognize.mockImplementation(knows('postlogistics'));
@@ -451,7 +504,8 @@ describe('persistent tracking routing', () => {
       const hinted = setup();
       await hinted.router.fetch(parcel({ tracking_number: '12345678901',
         carrier_data: { routing: state({ discovered_carrier: 'gls-de' }) } }), false);
-      expect(asked(hinted.recognize).slice(0, 3)).toEqual(['gls-de', 'gls-ch', 'postlogistics']);
+      expect(asked(hinted.recognize)).toEqual(recognitionAskedCarriers('12345678901', { hint: 'gls-de' }));
+      expect(asked(hinted.recognize)[0]).toBe('gls-de');
       // Newly supported number shapes follow the same popularity order.
       const tnt = setup();
       await tnt.router.fetch(parcel({ tracking_number: '1000000000000001' }), false);
@@ -536,7 +590,7 @@ describe('persistent tracking routing', () => {
       // Both GLS networks answer from the same overview: the more common one is offered.
       recognize.mockImplementation(knows('gls-ch', 'gls-de'));
       const result = await router.fetch(parcel({ tracking_number: '12345678901' }), false);
-      expect(asked(recognize).slice(0, 3)).toEqual(['gls-ch', 'gls-de', 'postlogistics']);
+      expect(asked(recognize)).toEqual(recognitionAskedCarriers('12345678901'));
       expect(direct).not.toHaveBeenCalled();
       expect(result.result.routing).toMatchObject({ input_needed: { carrier: 'gls-ch', field: 'dpdPostcode' } });
       expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('carrier_input_needed', expect.objectContaining({ provider: 'gls-ch' }));
@@ -1032,6 +1086,17 @@ describe('routingFailure with carrier package errors', () => {
 });
 
 describe('universal preflight and recipient input', () => {
+  it('reuses a selected carrier preflight only in the same country context', async () => {
+    const { router, direct, universal, health } = setup();
+    direct.mockRejectedValue(new Error('carrier unavailable'));
+    const cached = vi.fn((source, _number, _postcode, country) => source === 'ParcelsApp' && country === 'FR' ? history() : undefined);
+    router.options.takePrefetchedUniversal = cached;
+    const result = await router.fetch(parcel({ carrier: 'dhl', carrier_data: { lookup_country_hint: 'FR' } }), false);
+    expect(cached).toHaveBeenCalledWith('ParcelsApp', 'TEST1234', null, 'FR');
+    expect(result.result.tracking_provider).toBe('ParcelsApp');
+    expect(universal).not.toHaveBeenCalled();
+    expect(health.acquireTrackingProvider).not.toHaveBeenCalled();
+  });
   it('labels prefetched provider history without waiting for blocked direct confirmation', async () => {
     const value = setup();
     value.router.options.takePrefetchedUniversal = vi.fn((source) => source === 'Ship24' ? { ...history(),

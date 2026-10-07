@@ -15,6 +15,7 @@ import { logOperationalEvent } from './observability';
 import type { SupabaseServiceClient } from './supabase';
 import { retainDetectionSupport } from './trackingSupport';
 import type { JsonObject } from './types';
+import { getRecognitionPriorities } from './recognitionRanking';
 
 /** The Add sheet waits this long for the carriers it asks; the first sync asks again after saving. */
 const RECOGNITION_BUDGET_MS = 3_000;
@@ -26,11 +27,14 @@ const MAX_ANSWERS = 500;
 let registry: AdapterRegistry | undefined;
 const answers = new Map<string, { at: number; answer: ApiCarrierDetectionResponse }>();
 
-async function recognize(trackingNumber: string, beforeAsking?: () => Promise<void>, signal?: AbortSignal, health?: SupabaseServiceClient): Promise<ApiCarrierDetectionResponse> {
-  const cached = answers.get(trackingNumber);
+async function recognize(trackingNumber: string, beforeAsking?: () => Promise<void>, signal?: AbortSignal, health?: SupabaseServiceClient, countryHint?: string | null): Promise<ApiCarrierDetectionResponse> {
+  const priorities = getRecognitionPriorities(trackingNumber);
+  const ordering = { countryHint, priorities };
+  const cacheKey = `${trackingNumber}:${countryHint ?? ''}:${JSON.stringify(priorities ?? {})}`;
+  const cached = answers.get(cacheKey);
   if (cached && Date.now() - cached.at < (cached.answer.carrier === 'unknown' ? 30_000 : ANSWER_TTL_MS)) return cached.answer;
-  const candidates = recognitionCandidates(trackingNumber).slice(0, MAX_RECOGNITIONS);
-  const browserCandidates = recognitionCandidates(trackingNumber, { phase: 'browser' }).slice(0, MAX_BROWSER_RECOGNITIONS);
+  const candidates = recognitionCandidates(trackingNumber, ordering).slice(0, MAX_RECOGNITIONS);
+  const browserCandidates = recognitionCandidates(trackingNumber, { ...ordering, phase: 'browser' }).slice(0, MAX_BROWSER_RECOGNITIONS);
   const deadline = performance.now() + 25_000;
   await beforeAsking?.();
   const errors = new Map<string, unknown>();
@@ -42,7 +46,7 @@ async function recognize(trackingNumber: string, beforeAsking?: () => Promise<vo
   }, RECOGNITION_BUDGET_MS, signal);
   const cheap = settleRecognition(outcomes);
   const preflight = !cheap.carrier && !cheap.choices.length && health
-    ? await preflightTracking(trackingNumber, health, signal) : undefined;
+    ? await preflightTracking(trackingNumber, health, signal, countryHint) : undefined;
   if (!cheap.carrier && !cheap.choices.length && !preflight?.trackingFound) {
     const due = browserCandidates.filter(({ carrier }) => !outcomes.some((outcome) => outcome.carrier === carrier && outcome.status !== 'failed'));
     outcomes.push(...await recognizeAll(due, (carrier, context) => recognizeBrowser(carrier, trackingNumber, context, errors.get(carrier)),
@@ -70,8 +74,8 @@ async function recognize(trackingNumber: string, beforeAsking?: () => Promise<vo
   }
   // A carrier that could not answer may answer on the next focus-out.
   if (unanswered.length === 0 && !preflight?.providers.some(({ outcome }) => outcome === 'unavailable' || outcome === 'deferred')) {
-    answers.delete(trackingNumber);
-    answers.set(trackingNumber, { at: Date.now(), answer });
+    answers.delete(cacheKey);
+    answers.set(cacheKey, { at: Date.now(), answer });
     if (answers.size > MAX_ANSWERS) answers.delete(answers.keys().next().value!);
   }
   return answer;
@@ -88,6 +92,7 @@ export async function detectCarrier(
   beforeAsking?: () => Promise<void>,
   signal?: AbortSignal,
   supportClient?: SupabaseServiceClient,
+  countryHint?: string | null,
 ): Promise<ApiCarrierDetectionResponse> {
   if (signal?.aborted) throw new HttpError(499, 'Carrier check cancelled');
   if (typeof body.trackingNumber !== 'string' || body.trackingNumber.length > 80) {
@@ -106,7 +111,7 @@ export async function detectCarrier(
   const detected = detectCarrierMatch(trackingNumber);
   // Shared shapes need shipment evidence; the shape alone remains a suggestion.
   const answer = detected.carrier === 'unknown' || recognitionCandidates(trackingNumber).length > 0 || recognitionCandidates(trackingNumber, { phase: 'browser' }).length > 0
-    ? await recognize(trackingNumber, beforeAsking, signal, supportClient).catch((error: unknown) => {
+    ? await recognize(trackingNumber, beforeAsking, signal, supportClient, countryHint).catch((error: unknown) => {
       if (signal?.aborted) throw new HttpError(499, 'Carrier check cancelled');
       throw error;
     })

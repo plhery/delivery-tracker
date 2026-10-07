@@ -157,6 +157,7 @@ beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
   wake = vi.spyOn(background, 'wakeSyncWorker').mockImplementation(() => undefined);
+  vi.spyOn(SupabaseServiceClient.prototype, 'updatePackage').mockResolvedValue(undefined);
   enqueue = vi.spyOn(SupabaseServiceClient.prototype, 'enqueueSyncJob').mockResolvedValue({ row: { id: 'job' }, queued: true });
 });
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
@@ -215,6 +216,23 @@ describe('looking up a parcel without an account', () => {
     vi.mocked(SupabaseServiceClient.prototype.createOneOffParcel).mockResolvedValue({ link: storedLink({ owner: true }), package: storedPackage(), created: false });
     expect((await lookup({ trackingNumber }, nextIp(), { 'cf-connecting-ip': nextIp(), 'cf-ipcountry': 'CH' })).status).toBe(201);
     expect(updateCountry).toHaveBeenCalledOnce();
+  });
+
+  it('saves the device region before the visitor country and never trusts client addition markers', async () => {
+    allow(); store();
+    const updateCountry = vi.mocked(SupabaseServiceClient.prototype.updatePackage);
+    const response = await lookup({ trackingNumber, lookupCountryHint: 'CH', add_recognition_pending: false }, nextIp(),
+      { 'cf-connecting-ip': nextIp(), 'cf-ipcountry': 'FR' });
+    expect(response.status).toBe(201);
+    expect(updateCountry).toHaveBeenCalledWith(packageId, { carrier_data: expect.objectContaining({ lookup_country_hint: 'CH', add_recognition_pending: true }) });
+    expect(await response.text()).not.toContain('add_recognition_pending');
+  });
+
+  it('rejects invalid device regions before creating a lookup or spending its allowance', async () => {
+    const claim = allow(); const create = store();
+    expect((await lookup({ trackingNumber, lookupCountryHint: 'ZZ' })).status).toBe(400);
+    expect(claim).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
   });
 
   it('answers a stored parcel the same way and counts it as reused', async () => {

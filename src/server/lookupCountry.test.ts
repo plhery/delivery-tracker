@@ -25,9 +25,24 @@ describe('lookup country hint', () => {
     const service = { updatePackage } as unknown as SupabaseServiceClient;
     const parcel: JsonObject = { id: 'parcel', carrier_data: { routing: { version: 1 } } };
     await rememberLookupCountry(service, parcel, request('FR'));
-    expect(updatePackage).toHaveBeenCalledExactlyOnceWith('parcel', { carrier_data: { routing: { version: 1 }, lookup_country_hint: 'FR' } });
+    expect(updatePackage).toHaveBeenCalledExactlyOnceWith('parcel', { carrier_data: { routing: { version: 1 }, lookup_country_hint: 'FR', add_recognition_pending: true } });
     expect(JSON.stringify(parcel)).not.toContain('198.51.100.7');
     expect(parcel.carrier_data).not.toHaveProperty('destination_country');
+  });
+
+  it('prefers a valid device region without treating it as an IP-derived destination', () => {
+    vi.stubEnv('TRUST_PROXY_HEADERS', 'true');
+    expect(lookupCountry(request('FR'), ' ch ')).toBe('CH');
+    vi.stubEnv('TRUST_PROXY_HEADERS', 'false');
+    expect(lookupCountry(request('FR'), 'DE')).toBe('DE');
+    for (const region of ['ZZ', 'XX', 'EU', 'UN', 'QO', '001', 'France', 1, {}]) expect(() => lookupCountry(request('FR'), region)).toThrow();
+  });
+
+  it('marks a new addition even when it has no country hint', async () => {
+    const updatePackage = vi.fn().mockResolvedValue(undefined);
+    const parcel: JsonObject = { id: 'parcel', carrier_data: {} };
+    await rememberLookupCountry({ updatePackage } as unknown as SupabaseServiceClient, parcel, request());
+    expect(updatePackage).toHaveBeenCalledExactlyOnceWith('parcel', { carrier_data: { add_recognition_pending: true } });
   });
 
   it('continues without a hint when the optional persistence fails', async () => {

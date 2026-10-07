@@ -18,6 +18,8 @@ import type { Recognition, TrackingContext } from 'universal-parcel-scraper/node
 import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from 'universal-parcel-scraper';
 import { BROWSER_RECOGNITION_BUDGET_MS, MAX_BROWSER_RECOGNITIONS } from './browserRecognition';
 import { providerCarrier } from './providerCarrier';
+import { normalizedLookupCountry } from './lookupCountry';
+import { getRecognitionPriorities } from './recognitionRanking';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -204,8 +206,8 @@ export class TrackingRouter {
     // of the carrier confirmed for the same number, else null.
     universal: (source: UniversalSource, number: string, timeoutMs: number, postcode: string | null, timezone: string | null, countryHint?: string | null) => Promise<CarrierResult>;
     health: ProviderHealth;
-    preflightInputNeeded?: (number: string) => { provider: string; field: 'dpdPostcode' } | undefined;
-    takePrefetchedUniversal?: (source: UniversalSource, number: string, postcode: string | null) => CarrierResult | undefined;
+    preflightInputNeeded?: (number: string, countryHint?: string | null) => { provider: string; field: 'dpdPostcode' } | undefined;
+    takePrefetchedUniversal?: (source: UniversalSource, number: string, postcode: string | null, countryHint?: string | null) => CarrierResult | undefined;
     /** A carrier's cheap check of whether it knows a number; without it, no recognition runs. */
     recognize?: (carrier: string, number: string, context?: TrackingContext) => Promise<Recognition>;
     recognizeBrowser?: (carrier: string, number: string, context?: TrackingContext, previousError?: unknown) => Promise<Recognition>;
@@ -213,18 +215,19 @@ export class TrackingRouter {
     enablePostalNinja?: boolean;
   }) {}
 
-  async fetch(parcel: JsonObject, scheduled: boolean, signal?: AbortSignal): Promise<RoutedResult> {
+  async fetch(parcel: JsonObject, scheduled: boolean, signal?: AbortSignal, addition = false): Promise<RoutedResult> {
     const now = () => this.options.now?.() ?? new Date();
     const state = routingState(parcel);
     const previousFailures = state.consecutive_failures;
     const declared = String(parcel.carrier);
     const number = String(parcel.tracking_number ?? '');
     const metadata = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
+    const countryHint = normalizedLookupCountry(metadata.lookup_country_hint);
     let localDirectFallback: { value: RoutedResult; carrier: string } | undefined;
     let localHistory: JsonObject | undefined;
     const universalNumber = metadata.original_carrier && metadata.active_tracking_carrier
       && typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : number;
-    if (!metadata.universal_input) state.provider_input_needed ??= this.options.preflightInputNeeded?.(universalNumber);
+    if (!metadata.universal_input) state.provider_input_needed ??= this.options.preflightInputNeeded?.(universalNumber, countryHint);
     if (state.preferred_number && state.preferred_number !== universalNumber) state.preferred_provider = undefined;
     // The delivery leg's own carrier when its number is the one looked up.
     const universalCarrier = universalNumber !== number && typeof metadata.active_tracking_carrier === 'string'
@@ -241,7 +244,7 @@ export class TrackingRouter {
     if (declared === 'unknown' && !state.confirmed_carrier && !metadata.original_carrier
       && !parcel.dpd_postcode && !metadata.universal_input && String(parcel.current_stage ?? 'pending') === 'pending') {
       for (const source of sources) {
-        const result = this.options.takePrefetchedUniversal?.(source, universalNumber, null);
+        const result = this.options.takePrefetchedUniversal?.(source, universalNumber, null, countryHint);
         if (result && usable(result)) { prefetchedUniversal.set(source, result); break; }
       }
     }
@@ -447,15 +450,26 @@ export class TrackingRouter {
           || Boolean(brand && carrierBrand(candidate) === brand) || attemptedDirect.has(candidate)
           || millis(state.candidate_probes?.[candidate]?.retry_at) > now().getTime()
           || millis(state.failures[candidate]?.retry_at) > now().getTime();
-      const due = recognize ? recognitionCandidates(number, { hint: state.discovered_carrier, skip }).slice(0, MAX_RECOGNITIONS) : [];
+      const ordering = { hint: state.discovered_carrier, countryHint, priorities: getRecognitionPriorities(number), skip };
+      const eligible = recognize ? recognitionCandidates(number, ordering) : [];
+      const due = eligible.slice(0, MAX_RECOGNITIONS);
+      const next = addition ? eligible.slice(MAX_RECOGNITIONS, 2 * MAX_RECOGNITIONS) : [];
+      const recognitionDeadline = performance.now() + RECOGNITION_BUDGET_MS;
       const errors = new Map<string, unknown>();
-      const outcomes = due.length ? await recognizeAll(due, async (candidate, context) => {
+      const ask = async (candidate: string, context: TrackingContext) => {
         try { return await recognize!(candidate, number, context); }
         catch (error) { errors.set(candidate, error); throw error; }
-      }, RECOGNITION_BUDGET_MS, signal) : [];
+      };
+      const outcomes = due.length ? await recognizeAll(due, ask,
+        next.length ? Math.floor(RECOGNITION_BUDGET_MS / 2) : RECOGNITION_BUDGET_MS, signal) : [];
+      const first = settleRecognition(outcomes, now());
+      const remaining = Math.floor(recognitionDeadline - performance.now());
+      if (next.length && !first.carrier && !first.choices.length && remaining > 0) {
+        outcomes.push(...await recognizeAll(next, ask, remaining, signal));
+      }
       const cheap = settleRecognition(outcomes, now());
       if (this.options.recognizeBrowser && !cheap.carrier && !cheap.choices.length) {
-        const browserDue = recognitionCandidates(number, { phase: 'browser', hint: state.discovered_carrier,
+        const browserDue = recognitionCandidates(number, { ...ordering, phase: 'browser',
           skip: (candidate) => skip(candidate) || outcomes.some((outcome) => outcome.carrier === candidate && outcome.status !== 'failed'),
         }).slice(0, MAX_BROWSER_RECOGNITIONS);
         outcomes.push(...await recognizeAll(browserDue, (candidate, context) => this.options.recognizeBrowser!(candidate, number, context, errors.get(candidate)),
@@ -532,7 +546,7 @@ export class TrackingRouter {
       const input = isRecord(metadata.universal_input) && metadata.universal_input.number === universalNumber
         && typeof metadata.universal_input.postcode === 'string' ? metadata.universal_input.postcode : null;
       const postcode = input ?? (typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null);
-      const prefetched = prefetchedUniversal.get(source) ?? this.options.takePrefetchedUniversal?.(source, universalNumber, postcode);
+      const prefetched = prefetchedUniversal.get(source) ?? this.options.takePrefetchedUniversal?.(source, universalNumber, postcode, countryHint);
       if (prefetched) {
         const result = normalizeCarrierResult(prefetched);
         if (usable(result) && !foreignHistory(result, universalCarrier, parcel.created_at)) {

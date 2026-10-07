@@ -84,7 +84,9 @@ struct DeviceParcelClient: Sendable {
                 return try decode(PublicParcelResponse.self, data)
             },
             detect: { trackingNumber in
-                let body = try JSONEncoder.deliveryTracker.encode(CarrierDetectionRequest(trackingNumber: trackingNumber))
+                let body = try JSONEncoder.deliveryTracker.encode(CarrierDetectionRequest(
+                    trackingNumber: trackingNumber, lookupCountryHint: ParcelLookupCountry.hint()
+                ))
                 let (data, response) = try await send("api/public/detect", method: "POST", body: body)
                 guard response.statusCode == 200 else { throw failure(data, response) }
                 return try decode(CarrierDetectionResponse.self, data)
@@ -177,7 +179,8 @@ final class DeviceParcels {
         }
         let response = try await client.lookup(PublicLookupRequest(
             trackingNumber: request.trackingNumber, carrier: request.carrier,
-            trackingURL: request.trackingURL, dpdPostcode: request.dpdPostcode
+            trackingURL: request.trackingURL, dpdPostcode: request.dpdPostcode,
+            lookupCountryHint: request.lookupCountryHint
         ))
         guard ParcelLinkRoute.validID(response.link.id) else { throw DeliveryAPIError.invalidResponse }
         // The service gives one parcel one link for each lookup; a second lookup of a parcel takes the first one's place.
@@ -256,7 +259,8 @@ final class DeviceParcels {
         guard let entry = entries.first(where: { $0.parcel.id == id }) else { throw DeliveryAPIError.parcelMissing }
         let added = try await add(CreatePackageRequest(
             trackingNumber: entry.parcel.trackingNumber, label: entry.label, carrier: carrier,
-            trackingURL: trackingURL, dpdPostcode: dpdPostcode
+            trackingURL: trackingURL, dpdPostcode: dpdPostcode,
+            lookupCountryHint: ParcelLookupCountry.hint()
         ))
         if added.id != id {
             try? await forget(id: id)

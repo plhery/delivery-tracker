@@ -60,10 +60,11 @@ Clients show the earliest next-check eligibility; polling windows can delay the 
      [COMPARISON.md](https://github.com/plhery/universal-parcel-scraper/blob/main/providers/COMPARISON.md)). Dedicated adapters such
      as EMS still go first.
 
-For new lookups, a trusted Cloudflare `CF-IPCountry` header is saved as a country hint.
+For new lookups, the iPhone's device region takes precedence over a trusted Cloudflare
+`CF-IPCountry` header as a country hint.
 A destination reported by a carrier takes precedence. The hint lets ParcelsApp retry an
 empty answer once with its country selector, within the same lookup budget. It does not
-choose the carrier, set the delivery destination or change scan clocks. The visitor's IP
+establish the carrier, set the delivery destination or change scan clocks. The visitor's IP
 address is not sent to providers. Reopening a shared parcel does not change its hint.
 
 **Affinity.** A provider that returns history is saved with its lookup number in
@@ -190,13 +191,21 @@ If no recent carrier is confirmed, the server checks candidates declaring
 not get a browser retry. Browser confirmation requires dated shipment activity; shells,
 undated defaults and old reused numbers cannot identify a carrier. Candidate selection
 comes from the scraper's catalog, and the Add sheets show the possible candidates.
+While checking, they show a general progress indicator; only the server's answer names
+the carriers checked. A failed request does not manufacture a queried-carrier list.
 
 - **Which and in what order.** Matching low-confidence rules that qualify, including
   those hidden by the generic postal detection: the
   carrier a universal named first, then those a `preferred` rule backs (a DPD depot
-  range), then the catalog's `recognition.rank`, a hand-set popularity order in which no
-  two carriers share a rank, so the server and both apps order them alike. At most five
-  are asked at once.
+  range), then networks based in or serving the device or visitor country, then
+  optional aggregate priorities for the number's shape and the catalog's
+  `recognition.rank`. Country and aggregate hints change query order only; the
+  answer's `asked` list identifies the carriers actually checked. At most five are asked
+  at once. Aggregate priorities contain no tracking numbers and fall back to catalog order
+  when the production evidence is too sparse.
+  `CARRIER_RECOGNITION_PRIORITIES_PATH` optionally points to a server-owned aggregate file
+  from the scraper's analyzer; it reloads periodically and contains no raw inputs. See the
+  scraper's [architecture](https://github.com/plhery/universal-parcel-scraper/blob/main/ARCHITECTURE.md).
 - **Settling.** Only an answer for a recent parcel counts; an old parcel can share a reused
   number. Only valid scan instants with explicit offsets establish activity age;
   unresolved local clocks cannot rank a match. One answer wins; with several, the one
@@ -207,7 +216,7 @@ comes from the scraper's catalog, and the Add sheets show the possible candidate
   focus, which includes opening the carrier picker, a paste, a shared number), within
   three seconds for HTTP, then up to twenty seconds for browser confirmation. At most two
   browser recognitions run per process, and identical requests share work. Complete answers
-  are cached per number for ten minutes; browser answers and their history for five minutes,
+  are cached per number and country hint for ten minutes; browser answers and their history for five minutes,
   failures for thirty seconds. Changing the number or leaving the form cancels its request;
   the final cancelled caller also stops shared browser work. The answer lists
   the carriers asked (`asked`) and those that failed or ran out of time (`unanswered`), so
@@ -217,7 +226,11 @@ comes from the scraper's catalog, and the Add sheets show the possible candidate
   parcel. Several answers ask the user to choose. Automatic detection stays a valid
   choice throughout, and the check never holds the Add button.
   When dedicated carriers cannot confirm the number, preflight also asks the fast universal
-  providers. Saving continues the full provider chain. A pasted number continues into that lookup when recognition
+  providers. Saving continues the full provider chain. Only a newly created parcel's first
+  saved check can ask a second batch of unqueried HTTP candidates when the first found
+  none. Both batches share the existing HTTP budget; detection and later refreshes ask
+  one batch. Reused universal history still takes precedence over speculative confirmation.
+  A pasted number continues into that lookup when recognition
   finds no carrier or cannot answer, so the universals can retrieve its history. A typed
   number waits for Track. Multiple carrier matches and missing inputs still require a choice.
 - **In routing.** When the filed carrier cannot track the number (no adapter of its own,

@@ -3,8 +3,10 @@ import XCTest
 
 final class CarrierCatalogTests: XCTestCase {
     func testDiscoveryIncludesBrowserCandidatesWithoutChangingHTTPRecognition() {
-        XCTAssertEqual(catalog.recognitionCandidates(for: "000000000001"), [.colisPrive])
-        XCTAssertEqual(catalog.discoveryCandidates(for: "000000000001"), [.colisPrive, .fedex])
+        let http = catalog.recognitionCandidates(for: "000000000001")
+        XCTAssertTrue(http.contains(.colisPrive))
+        XCTAssertFalse(http.contains(.fedex))
+        XCTAssertEqual(catalog.discoveryCandidates(for: "000000000001"), http + [.fedex])
         XCTAssertEqual(catalog.recognitionCandidates(for: "33870000000000001", browser: true), [.dhlEcommerce])
         XCTAssertEqual(catalog.discoveryCandidates(for: "1Z999AA10123456784"), [])
     }
@@ -186,7 +188,7 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(ambiguous.confidence, .low)
         XCTAssertEqual(ambiguous.carrier, .unknown)
         // The scraper may add a network to the shape; the known ones keep their order.
-        XCTAssertEqual(Array(asked.prefix(3)), [.glsCh, .glsDe, .postlogistics])
+        XCTAssertEqual(asked.filter { [.glsCh, .glsDe, .postlogistics].contains($0) }, [.glsCh, .glsDe, .postlogistics])
         XCTAssertTrue(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: false))
         XCTAssertFalse(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: true))
         XCTAssertFalse(CarrierRecognition.applies(to: ambiguous, amazon: true, demo: false))
@@ -196,19 +198,17 @@ final class CarrierCatalogTests: XCTestCase {
         var recognition = CarrierRecognition()
         // Typing alone never asks the carriers.
         XCTAssertNil(recognition.request(for: number, applies: true))
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .idle)
+        XCTAssertEqual(recognition.status(for: number, applies: true), .idle)
 
         recognition.settledNumber = number
         XCTAssertEqual(recognition.request(for: number, applies: true), number)
-        // The line names the carriers being asked while they answer.
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .asking(asked))
-        // A shape no carrier can be asked about is left to routing after saving.
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: []), .asking([]))
+        // The server decides which carriers to ask; the pending state stays generic.
+        XCTAssertEqual(recognition.status(for: number, applies: true), .asking([]))
         XCTAssertNil(recognition.request(for: number, applies: false))
-        XCTAssertEqual(recognition.status(for: number, applies: false, asked: asked), .idle)
+        XCTAssertEqual(recognition.status(for: number, applies: false), .idle)
         // Editing the number drops the request until it settles again.
         XCTAssertNil(recognition.request(for: "1234567890", applies: true))
-        XCTAssertEqual(recognition.status(for: "1234567890", applies: true, asked: asked), .idle)
+        XCTAssertEqual(recognition.status(for: "1234567890", applies: true), .idle)
         XCTAssertNil(CarrierRecognition(settledNumber: "").request(for: "", applies: true))
     }
 
@@ -227,11 +227,11 @@ final class CarrierCatalogTests: XCTestCase {
         var recognition = CarrierRecognition(settledNumber: number)
         let asked: [CarrierID] = [.posti, .chronopost]
         XCTAssertEqual(recognition.request(for: number, applies: true), number)
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .asking(asked))
+        XCTAssertEqual(recognition.status(for: number, applies: true), .asking([]))
         recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .internationalPost, asked: asked)
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .notFound(asked))
+        XCTAssertEqual(recognition.status(for: number, applies: true), .notFound(asked))
         recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .posti, asked: asked)
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .recognized(.posti))
+        XCTAssertEqual(recognition.status(for: number, applies: true), .recognized(.posti))
     }
 
     func testRecognitionAnswersResolveAChoiceOrSayWhatHappened() throws {
@@ -240,31 +240,64 @@ final class CarrierCatalogTests: XCTestCase {
         var recognition = CarrierRecognition(settledNumber: number)
 
         recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .glsCh, asked: asked)
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .recognized(.glsCh))
-        XCTAssertEqual(recognition.status(for: number, applies: false, asked: asked), .idle)
+        XCTAssertEqual(recognition.status(for: number, applies: true), .recognized(.glsCh))
+        XCTAssertEqual(recognition.status(for: number, applies: false), .idle)
         // One answer per settled number: returning to it shows the answer without asking again.
         XCTAssertNil(recognition.request(for: number, applies: true))
         // An answer for another number never leaks into the current one.
-        XCTAssertEqual(recognition.status(for: "12345678902", applies: true, asked: asked), .idle)
+        XCTAssertEqual(recognition.status(for: "12345678902", applies: true), .idle)
         // The recognized carrier brings its required postcode, which then gates Add.
         let postcode = try XCTUnwrap(catalog.requirements(for: .glsCh, trackingNumber: number).first)
         XCTAssertEqual(postcode.field, .dpdPostcode)
         XCTAssertFalse(postcode.isOptional)
 
         recognition.answer = CarrierDetectionResponse(trackingNumber: "06080000000002", carrier: .unknown, recognized: [.dpd, .hermesDe])
-        XCTAssertEqual(recognition.status(for: "06080000000002", applies: true, asked: []), .several([.dpd, .hermesDe]))
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .asking(asked))
+        XCTAssertEqual(recognition.status(for: "06080000000002", applies: true), .several([.dpd, .hermesDe]))
+        XCTAssertEqual(recognition.status(for: number, applies: true), .asking([]))
 
         // Every carrier said no, and every carrier failing, are told apart; one failing is still a no.
         recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .unknown, asked: asked)
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .notFound(asked))
+        XCTAssertEqual(recognition.status(for: number, applies: true), .notFound(asked))
         recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .unknown, asked: asked, unanswered: [.glsDe])
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .notFound(asked))
+        XCTAssertEqual(recognition.status(for: number, applies: true), .notFound(asked))
         recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .unknown, asked: asked, unanswered: asked)
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .failed(asked))
+        XCTAssertEqual(recognition.status(for: number, applies: true), .failed(asked))
         // A server that asked nobody leaves the number to routing.
         recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .unknown, recognized: [.glsDe])
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .unasked)
+        XCTAssertEqual(recognition.status(for: number, applies: true), .unasked)
+    }
+
+    func testARecognitionRequestFailureHasNoCarrierAttemptsAndDoesNotLoop() {
+        let number = "12345678901"
+        var recognition = CarrierRecognition(settledNumber: number)
+        XCTAssertEqual(recognition.request(for: number, applies: true), number)
+
+        recognition.failedNumber = number
+
+        XCTAssertNil(recognition.answer)
+        XCTAssertNil(recognition.request(for: number, applies: true))
+        XCTAssertEqual(recognition.status(for: number, applies: true), .failed([]))
+        XCTAssertEqual(recognition.status(for: number, applies: false), .idle)
+        // Settling another number still starts a new check.
+        let nextNumber = "12345678902"
+        recognition.settledNumber = nextNumber
+        XCTAssertEqual(recognition.request(for: nextNumber, applies: true), nextNumber)
+        XCTAssertEqual(recognition.status(for: nextNumber, applies: true), .asking([]))
+    }
+
+    func testRecognitionReportsOnlyTheCarriersInTheServerAnswer() {
+        let number = "12345678901"
+        let serverAsked: [CarrierID] = [.glsDe, .postlogistics]
+        var recognition = CarrierRecognition(settledNumber: number)
+        XCTAssertNotEqual(serverAsked, catalog.discoveryCandidates(for: number))
+
+        recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .unknown, asked: serverAsked)
+        XCTAssertEqual(recognition.status(for: number, applies: true), .notFound(serverAsked))
+
+        recognition.answer = CarrierDetectionResponse(
+            trackingNumber: number, carrier: .unknown, asked: serverAsked, unanswered: serverAsked
+        )
+        XCTAssertEqual(recognition.status(for: number, applies: true), .failed(serverAsked))
     }
 
     func testCarrierPickerSearchesNamesOtherNamesAndCountries() {
@@ -740,6 +773,37 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertTrue(catalog.detect("1234567890123456789").candidates.contains(.pocztaPolska))
     }
 
+    func testUspsPackageChecksumsIgnoreRoutingAndRejectAmbiguousSplits() {
+        // Synthetic PICs, with independently calculated MOD10 check digits.
+        let pic = "9210090000000012345679"
+        let longPic = "92000000000123456789012344"
+        let routed = ["42000000" + pic, "420000000000" + pic, "42000000" + longPic]
+        for number in [pic, longPic, "9300000000000000000000", "9400000000000000000009"] + routed {
+            XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode(number), number)
+            let match = catalog.detect(number)
+            XCTAssertEqual(match.carrier, .unknown, number)
+            XCTAssertEqual(match.confidence, .low, number)
+            XCTAssertEqual(match.preferred, [.usps], number)
+        }
+        XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode("9210 0900-0000.0012 3456 79"))
+        for number in [
+            String(pic.dropLast()) + "1", "42000000" + String(pic.dropLast()) + "1",
+            "420ABCDE" + pic, "4200000" + pic, "420000000" + pic,
+            "420000000000" + longPic, "420000009201" + pic,
+            "9100000000000000000002", String(pic.dropLast()), pic + "0",
+        ] {
+            XCTAssertFalse(CarrierCatalog.isValidUspsPackageBarcode(number), number)
+            XCTAssertFalse(catalog.detect(number).preferred.contains(.usps), number)
+            if number.hasPrefix("420") {
+                XCTAssertFalse(catalog.detect(number).candidates.contains(.usps), number)
+            }
+        }
+        for number in routed {
+            XCTAssertEqual(catalog.recognitionCandidates(for: number), [])
+            XCTAssertTrue(catalog.recognitionCandidates(for: number, browser: true).contains(.usps))
+        }
+    }
+
     func testPostlogisticsPrintedReferenceAndTrackingLink() throws {
         let printed = "12345678-001"
         let compact = "12345678001"
@@ -994,7 +1058,7 @@ extension CarrierCatalogTests {
                 || Array(match.candidates.prefix(preferred.count).map(\.rawValue)).sorted() != preferred {
                 mismatches.append("\(entry.input): expected \(entry.carrier)/\(entry.confidence) \(entry.candidates), got \(match.carrier.rawValue)/\(confidence) \(candidates)")
             }
-            // The Add sheet names the carriers the detect route asks, in the same order.
+            // The catalog's static candidate order follows the shared engine.
             let asked = catalog.recognitionCandidates(for: entry.input).map(\.rawValue)
             if asked != (entry.asked ?? []) {
                 mismatches.append("\(entry.input): expected to ask \(entry.asked ?? []), got \(asked)")

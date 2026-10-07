@@ -19,7 +19,7 @@ import type { CarrierId, ParcelWithEvents, TrackingEvent } from '../types';
 export type ParcelLink = ApiParcelLink;
 /** The two ends of a masked tracking number. */
 export type ParcelNumberHint = ApiParcelNumberHint;
-export type CarrierAnswer = ApiCarrierDetectionResponse;
+export type CarrierAnswer = ApiCarrierDetectionResponse & { checkFailed?: true };
 export type ParcelClaimResult = ApiClaimParcelResult;
 /** Whether the server sends browser notifications, and the key a browser subscribes with. */
 export type ParcelAlerts = ApiParcelAlerts;

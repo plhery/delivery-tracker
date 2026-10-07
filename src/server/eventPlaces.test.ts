@@ -4,6 +4,12 @@ import * as places from 'universal-parcel-scraper/places';
 vi.mock('universal-parcel-scraper/places', { spy: true });
 import { withEventPlaces } from './eventPlaces';
 
+it('keeps addition-only query context out of client package data', () => {
+  const row = { carrier_data: { add_recognition_pending: true, lookup_country_hint: 'CH' } };
+  expect(withEventPlaces(row)).toEqual({ carrier_data: { lookup_country_hint: 'CH' } });
+  expect(row.carrier_data.add_recognition_pending).toBe(true);
+});
+
 const event = (id: string, location: string | null, occurredAt: string) => ({
   id, package_id: 'parcel', stage: 'in_transit', description: 'Scan', location, occurred_at: occurredAt,
 });

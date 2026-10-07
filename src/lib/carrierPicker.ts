@@ -165,7 +165,7 @@ export function usedCarrierIds(
 
 /**
  * The Add sheet's carrier check. It starts when the number settles (a paste,
- * leaving the field) and asks the carriers `recognitionAskedCarriers` names.
+ * leaving the field). The server names the carriers it actually asks.
  */
 export type CarrierCheck =
   /** Nothing to report: the number is not settled, or needs no check. */
@@ -181,17 +181,19 @@ export type CarrierCheck =
   /** No carrier could answer; the first sync asks again. */
   | { status: 'failed'; asked: readonly CarrierId[] };
 
-export function carrierCheck({ applies, settled, asked, answer }: {
+export function carrierCheck({ applies, settled, answer, failed = false }: {
   applies: boolean;
   settled: boolean;
-  /** The carriers the check asks, predicted before the answer arrives. */
+  /** Shape candidates supplied by callers; actual attempts come from the answer. */
   asked: readonly CarrierId[];
   answer?: ApiCarrierDetectionResponse;
+  failed?: boolean;
 }): CarrierCheck {
   if (!applies || !settled) return { status: 'idle' };
   if (answer?.carrier && answer.carrier !== 'unknown' && answer.carrier !== 'intl-post') return { status: 'found', carrier: answer.carrier };
   if (answer?.recognized && answer.recognized.length > 1) return { status: 'several', carriers: answer.recognized };
-  if (!answer) return { status: 'asking', asked };
+  if (failed) return { status: 'failed', asked: answer?.asked ?? [] };
+  if (!answer) return { status: 'asking', asked: [] };
   const answered = answer.asked ?? [];
   if (answer.providers?.length) {
     if (answer.trackingFound || answer.providers.some(({ outcome }) => outcome === 'input_required' || outcome === 'no_history')) return { status: 'none', asked: answered };
@@ -265,9 +267,7 @@ export interface CarrierChoiceTag {
 /** What the carrier check says about each carrier it asked, for the picker's rows. */
 export function carrierChoiceTags(check: CarrierCheck, t: Translate): Partial<Record<CarrierId, CarrierChoiceTag>> {
   const tags: Partial<Record<CarrierId, CarrierChoiceTag>> = {};
-  if (check.status === 'asking') {
-    for (const id of check.asked) tags[id] = { label: t('picker.tag.asking'), tone: 'quiet' };
-  } else if (check.status === 'found') {
+  if (check.status === 'found') {
     tags[check.carrier] = { label: t('picker.tag.found'), tone: 'found' };
   } else if (check.status === 'several') {
     for (const id of check.carriers) tags[id] = { label: t('picker.tag.knows'), tone: 'found' };

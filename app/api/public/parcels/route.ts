@@ -2,7 +2,7 @@ import { verifyAmazonShippingAddition } from '../../../../src/server/amazonShipp
 import { verifyLookupRequest } from '../../../../src/server/lookupVerification';
 import { apiRoute, clientIp, json, readJsonObject, requireService } from '../../../../src/server/api';
 import { wakeSyncWorker } from '../../../../src/server/background';
-import { rememberLookupCountry } from '../../../../src/server/lookupCountry';
+import { lookupCountry, rememberLookupCountry } from '../../../../src/server/lookupCountry';
 import { recordPublicLookup } from '../../../../src/server/metrics';
 import {
   claimLookup,
@@ -27,7 +27,9 @@ export const POST = apiRoute(async (context) => {
   const service = requireService(context);
   const verificationRequest = context.request.clone();
   // The name stays on the device: only the number, the carrier and its inputs are read.
-  const values = newPackageValues({ ...await readJsonObject(context.request), label: '' });
+  const body = await readJsonObject(context.request);
+  const values = newPackageValues({ ...body, label: '' });
+  lookupCountry(context.request, body.lookupCountryHint);
   await verifyLookupRequest(verificationRequest, service);
 
   const now = new Date();
@@ -47,7 +49,7 @@ export const POST = apiRoute(async (context) => {
 
   const key = newOwnerKey();
   const created = await service.createOneOffParcel(values, ownerKeyHash(key)!);
-  if (created.created) await rememberLookupCountry(service, created.package, context.request);
+  if (created.created) await rememberLookupCountry(service, created.package, context.request, body.lookupCountryHint);
   recordPublicLookup(created.created ? 'created' : 'reused');
   try {
     await service.enqueueSyncJob({ packageId: String(created.package.id) });

@@ -92,6 +92,7 @@ export function AddParcelSheet({
   const [recognitionNumber, setRecognitionNumber] = useState(() =>
     normalizeTrackingNumber(parseTrackingInput(initialTrackingInput).trackingNumber));
   const [recognition, setRecognition] = useState<ApiCarrierDetectionResponse>();
+  const [recognitionFailure, setRecognitionFailure] = useState<string>();
   const [lookupAttempt, setLookupAttempt] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -171,6 +172,7 @@ export function AddParcelSheet({
     settled: recognitionNumber === normalizedNumber,
     asked: askedCarriers,
     answer: currentRecognition,
+    failed: recognitionFailure === normalizedNumber,
   });
   const recognizing = check.status === 'asking';
   // In automatic mode the answer selects the carrier; for a picked one it stays a hint.
@@ -200,13 +202,14 @@ export function AddParcelSheet({
     // A tap on Add also blurs the field; the short wait lets that save go
     // first instead of asking the carriers the first sync asks anyway.
     const timer = setTimeout(() => {
+      setRecognition(undefined);
+      setRecognitionFailure(undefined);
       void lookupCarrier(normalizedNumber, apiAuth, controller.signal).then((result) => {
         if (!controller.signal.aborted) setRecognition(result);
       }).catch(() => {
         // No answer keeps the number a suggestion; the first sync asks again.
-        const asked = discoveryAskedCarriers(normalizedNumber) as CarrierId[];
         if (!controller.signal.aborted) {
-          setRecognition({ trackingNumber: normalizedNumber, carrier: 'unknown', ...(asked.length ? { asked, unanswered: asked } : {}) });
+          setRecognitionFailure(normalizedNumber);
         }
       });
     }, 200);
@@ -262,7 +265,7 @@ export function AddParcelSheet({
     : check.status === 'found' ? t('add.recognized', { carrier: carrierInfo(check.carrier, locale).name })
       : check.status === 'several' ? t('picker.auto.several', { carriers: carrierNames(check.carriers) })
         : check.status === 'none' ? t('picker.auto.none', { carriers: carrierNames(check.asked) })
-          : check.status === 'failed' ? t('picker.auto.failed', { carriers: carrierNames(check.asked) })
+          : check.status === 'failed' ? check.asked.length ? t('picker.auto.failed', { carriers: carrierNames(check.asked) }) : t('add.line.failed')
             : numberCarrier ? t('picker.auto.detected', { carrier: carrierInfo(numberCarrier, locale).name })
               : t('picker.auto.later'));
 

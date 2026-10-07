@@ -576,6 +576,34 @@ function fakeClient(packages: JsonObject[] = []) {
 }
 
 describe('TrackingSyncService', () => {
+  it('consumes new-add query context before fetching and never repeats it on refresh', async () => {
+    const candidates = ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex', 'hermes-de'].map((carrier) => ({ carrier, needsInput: null, preferred: false }));
+    vi.spyOn(scraper, 'recognitionCandidates').mockReturnValue(candidates);
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit', last_update: '2026-09-10T11:00:00Z' }),
+      fetchUniversal: vi.fn().mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit', last_update: '2026-09-10T11:00:00Z' }),
+      recognize: vi.fn().mockResolvedValue({ known: false }) };
+    const parcel: JsonObject = { id: 'new-add', carrier: 'unknown', tracking_number: '00000000000001', current_stage: 'pending',
+      carrier_data: { add_recognition_pending: true, lookup_country_hint: 'CH' } };
+    let now = new Date('2026-09-10T12:00:00Z');
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
+    await service.syncPackage(parcel);
+    expect(adapter.recognize).toHaveBeenCalledTimes(6);
+    const first = client.updatePackage.mock.calls[0][1];
+    expect(first).toMatchObject({ sync_status: 'syncing', carrier_data: { lookup_country_hint: 'CH' } });
+    expect(first.carrier_data).not.toHaveProperty('add_recognition_pending');
+    expect(client.updatePackage.mock.invocationCallOrder[0]).toBeLessThan(adapter.recognize.mock.invocationCallOrder[0]);
+    const saved = client.updatePackage.mock.calls.at(-1)![1];
+    expect(saved.carrier_data).not.toHaveProperty('add_recognition_pending');
+    now = new Date('2026-09-10T14:00:00Z');
+    adapter.recognize.mockClear();
+    await service.syncPackage({ ...parcel, ...saved });
+    expect(adapter.recognize).toHaveBeenCalledTimes(5);
+  });
+
   it.each(['ParcelsApp', 'Ship24'] as const)('carries the country hint through %s lookup and later direct recovery', async (provider) => {
     vi.spyOn(scraper, 'universalPlan').mockReturnValue({
       sources: [provider], carrier: null, tier: () => 'unknown', rank: () => 0,

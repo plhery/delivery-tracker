@@ -5,6 +5,7 @@ import { hostAdapterEnvironment } from './adapterRegistry';
 import type { ProviderHealth } from './trackingRouting';
 import type { ApiCarrierId } from '../generated/apiContract';
 import { providerCarrier } from './providerCarrier';
+import { normalizedLookupCountry } from './lookupCountry';
 
 export type PreflightOutcome = { provider: UniversalSource; outcome: 'history' | 'no_history' | 'input_required' | 'unavailable' | 'deferred' };
 const BUDGET_MS = 8_000;
@@ -35,7 +36,11 @@ function withinSignal<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   });
 }
 
-async function lookup(number: string, health: ProviderHealth, signal: AbortSignal): Promise<PreflightAnswer> {
+function lookupKey(number: string, countryHint?: string | null): string {
+  return `${number}:${normalizedLookupCountry(countryHint) ?? ''}`;
+}
+
+async function lookup(number: string, health: ProviderHealth, signal: AbortSignal, countryHint: string | null): Promise<PreflightAnswer> {
   const controller = new AbortController();
   const bounded = AbortSignal.any([signal, controller.signal, AbortSignal.timeout(BUDGET_MS)]);
   const deadline = performance.now() + BUDGET_MS;
@@ -59,12 +64,12 @@ async function lookup(number: string, health: ProviderHealth, signal: AbortSigna
     try {
       bounded.throwIfAborted();
       tracker ??= new UniversalTracker({ providers: ['Ship24', 'ParcelsApp'], environment: hostAdapterEnvironment() });
-      const result = normalizeCarrierResult(await withinSignal(tracker.fetchSource(provider, number, Math.max(1, Math.floor(deadline - performance.now())), null, null, bounded), bounded));
+      const result = normalizeCarrierResult(await withinSignal(tracker.fetchSource(provider, number, Math.max(1, Math.floor(deadline - performance.now())), null, null, bounded, countryHint), bounded));
       bounded.throwIfAborted();
       if (!result.events?.length && (!result.status || ['unknown', 'pending'].includes(result.status))) {
         kind = 'not_found'; return { provider, outcome: 'no_history' };
       }
-      remember(state.histories, `${provider}:${number}`, { at: Date.now(), result: structuredClone(result) });
+      remember(state.histories, `${provider}:${lookupKey(number, countryHint)}`, { at: Date.now(), result: structuredClone(result) });
       identities.add(providerCarrier(result, number));
       return { provider, outcome: 'history' };
     } catch (error) {
@@ -88,25 +93,27 @@ async function lookup(number: string, health: ProviderHealth, signal: AbortSigna
 }
 
 /** Bounded anonymous checks, shared by concurrent Add requests and reused by the first sync. */
-export async function preflightTracking(number: string, health: ProviderHealth, signal?: AbortSignal): Promise<PreflightAnswer> {
+export async function preflightTracking(number: string, health: ProviderHealth, signal?: AbortSignal, countryHint?: string | null): Promise<PreflightAnswer> {
   signal?.throwIfAborted();
-  const cached = state.answers.get(number);
+  const country = normalizedLookupCountry(countryHint);
+  const cacheKey = lookupKey(number, country);
+  const cached = state.answers.get(cacheKey);
   if (cached && Date.now() - cached.at < (cached.answer.trackingFound ? TTL_MS : 30_000)) return structuredClone(cached.answer);
-  let active = state.pending.get(number);
+  let active = state.pending.get(cacheKey);
   if (!active) {
     if (state.pending.size >= 20) return { providers: [] };
     const controller = new AbortController();
-    const promise = lookup(number, health, controller.signal).then((answer) => {
-      remember(state.answers, number, { at: Date.now(), answer }); return answer;
-    }).finally(() => { if (state.pending.get(number)?.controller === controller) state.pending.delete(number); });
-    active = { controller, promise, users: 0 }; state.pending.set(number, active);
+    const promise = lookup(number, health, controller.signal, country).then((answer) => {
+      remember(state.answers, cacheKey, { at: Date.now(), answer }); return answer;
+    }).finally(() => { if (state.pending.get(cacheKey)?.controller === controller) state.pending.delete(cacheKey); });
+    active = { controller, promise, users: 0 }; state.pending.set(cacheKey, active);
   }
   const job = active; job.users++;
   return new Promise((resolve, reject) => {
     let finished = false;
     const finish = (answer?: PreflightAnswer, error?: unknown) => {
       if (finished) return; finished = true; signal?.removeEventListener('abort', abort);
-      if (--job.users === 0 && state.pending.get(number) === job) job.controller.abort();
+      if (--job.users === 0 && state.pending.get(cacheKey) === job) job.controller.abort();
       if (error !== undefined) reject(error); else resolve(structuredClone(answer!));
     };
     const abort = () => finish(undefined, signal?.reason ?? new Error('Preflight cancelled'));
@@ -117,15 +124,15 @@ export async function preflightTracking(number: string, health: ProviderHealth, 
 }
 
 /** Consume only anonymous, number-bound history; recipient credentials bypass this cache. */
-export function takePreflightHistory(source: UniversalSource, number: string, postcode: string | null): CarrierResult | undefined {
+export function takePreflightHistory(source: UniversalSource, number: string, postcode: string | null, countryHint?: string | null): CarrierResult | undefined {
   if (postcode) return undefined;
-  const key = `${source}:${number}`; const entry = state.histories.get(key);
+  const key = `${source}:${lookupKey(number, countryHint)}`; const entry = state.histories.get(key);
   if (!entry || Date.now() - entry.at >= TTL_MS) return undefined;
   state.histories.delete(key); return structuredClone(entry.result);
 }
 
-export function preflightInputNeeded(number: string) {
-  const entry = state.answers.get(number);
+export function preflightInputNeeded(number: string, countryHint?: string | null) {
+  const entry = state.answers.get(lookupKey(number, countryHint));
   if (!entry || Date.now() - entry.at >= TTL_MS || entry.answer.trackingFound) return undefined;
   const input = entry.answer.providers.find(({ outcome }) => outcome === 'input_required');
   return input ? { provider: input.provider, field: 'dpdPostcode' as const } : undefined;

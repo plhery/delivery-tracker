@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { InputRequiredError, NotFoundError, RateLimitedError } from 'universal-parcel-scraper';
 import { UniversalTracker } from 'universal-parcel-scraper/node';
 import type { ProviderHealth } from './trackingRouting';
-import { preflightTracking, takePreflightHistory } from './trackingPreflight';
+import { preflightInputNeeded, preflightTracking, takePreflightHistory } from './trackingPreflight';
 vi.mock('./adapterRegistry', () => ({ hostAdapterEnvironment: () => ({}) }));
 const health = () => ({
   acquireTrackingProvider: vi.fn<ProviderHealth['acquireTrackingProvider']>(async () => ({ token: 'synthetic-lease', retry_at: '' })),
@@ -70,4 +70,33 @@ it('keeps conflicting provider identities unresolved', async () => {
   const answer = await preflightTracking('1234500212', health());
   expect(answer.trackingFound).toBe(true);
   expect(answer.carrier).toBeUndefined();
+});
+
+it('shares only the same normalized country context and consumes its history once', async () => {
+  const lookup = vi.spyOn(UniversalTracker.prototype, 'fetchSource').mockImplementation(async (_source, _number, _timeout, _postcode, _zone, _signal, country) => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    return { ...history, destination_country: country ?? undefined };
+  });
+  await Promise.all([
+    preflightTracking('1234500301', health(), undefined, ' fr '),
+    preflightTracking('1234500301', health(), undefined, 'FR'),
+    preflightTracking('1234500301', health(), undefined, 'CH'),
+  ]);
+  expect(lookup).toHaveBeenCalledTimes(4);
+  expect(lookup.mock.calls.map((call) => call[6])).toEqual(['FR', 'FR', 'CH', 'CH']);
+  expect(takePreflightHistory('ParcelsApp', '1234500301', null)).toBeUndefined();
+  expect(takePreflightHistory('ParcelsApp', '1234500301', null, 'FR')).toMatchObject({ destination_country: 'FR' });
+  expect(takePreflightHistory('ParcelsApp', '1234500301', null, 'FR')).toBeUndefined();
+  expect(takePreflightHistory('ParcelsApp', '1234500301', null, 'CH')).toMatchObject({ destination_country: 'CH' });
+});
+
+it('keeps provider postcode prompts bound to the country context', async () => {
+  vi.spyOn(UniversalTracker.prototype, 'fetchSource').mockImplementation(async (_source, _number, _timeout, _postcode, _zone, _signal, country) => {
+    if (country === 'CH') throw new InputRequiredError('ParcelsApp', 'postcode');
+    throw new NotFoundError('ParcelsApp');
+  });
+  await preflightTracking('1234500302', health(), undefined, 'CH');
+  await preflightTracking('1234500302', health(), undefined, 'FR');
+  expect(preflightInputNeeded('1234500302', 'CH')).toEqual({ provider: 'Ship24', field: 'dpdPostcode' });
+  expect(preflightInputNeeded('1234500302', 'FR')).toBeUndefined();
 });

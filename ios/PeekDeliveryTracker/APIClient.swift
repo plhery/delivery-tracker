@@ -1,6 +1,20 @@
 import Foundation
 import UIKit
 
+/// The device's country preference helps order carrier queries; it does not select a carrier.
+enum ParcelLookupCountry {
+    private static let countries = Set(Locale.Region.isoRegions
+        .filter { $0.identifier.utf8.count == 2 && $0.subRegions.isEmpty }
+        .map(\.identifier))
+
+    static func hint(locale: Locale = .current) -> String? {
+        guard let country = locale.region?.identifier,
+              country.utf8.allSatisfy({ (65...90).contains($0) }),
+              countries.contains(country) else { return nil }
+        return country
+    }
+}
+
 enum DeliveryAPIError: LocalizedError {
     case authenticationExpired
     case duplicateTracking(UUID)
@@ -121,7 +135,7 @@ final class DeliveryAPIClient {
 
     func detectCarrier(trackingNumber: String) async throws -> CarrierDetectionResponse {
         try await request("/api/carriers/detect", method: "POST",
-                          body: CarrierDetectionRequest(trackingNumber: trackingNumber))
+                          body: CarrierDetectionRequest(trackingNumber: trackingNumber, lookupCountryHint: ParcelLookupCountry.hint()))
     }
 
     func add(_ input: CreatePackageRequest) async throws -> CreatePackageResponse {

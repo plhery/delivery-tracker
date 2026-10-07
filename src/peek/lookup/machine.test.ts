@@ -61,7 +61,7 @@ describe('asking the carriers', () => {
     const waiting = run([pasted(number)]);
     expect(waiting.job).toBeNull();
     expect(survey(waiting)).toMatchObject({ ask: number, carrier: 'intl-post', certain: false,
-      check: { status: 'asking', asked: [...asked] }, need: 'wait' });
+      check: { status: 'asking', asked: [] }, need: 'wait' });
     const found = run([{ type: 'answer', answer: { trackingNumber: number, carrier, asked: [...asked] } }], [], waiting);
     expect(found.job).toEqual({ type: 'lookup', carrier, input: { trackingNumber: number, carrier } });
   });
@@ -82,7 +82,7 @@ describe('asking the carriers', () => {
     expect(survey(run([{ type: 'blur' }], [], typing)).ask).toBe(SHARED);
     expect(survey(run([track], [], typing))).toMatchObject({ ask: SHARED, need: 'wait' });
     const paste = run([pasted(SHARED)]);
-    expect(survey(paste)).toMatchObject({ ask: SHARED, check: { status: 'asking', asked: expect.arrayContaining(['dpd']) } });
+    expect(survey(paste)).toMatchObject({ ask: SHARED, check: { status: 'asking', asked: [] } });
     // A number of no known shape has nobody to ask.
     expect(survey(run([pasted(SHAPELESS)])).ask).toBeNull();
   });
@@ -107,8 +107,9 @@ describe('asking the carriers', () => {
   it.each(['unknown', 'failed'] as const)('looks up a pasted Express-shaped number after %s recognition', (outcome) => {
     const waiting = run([pasted(`DHL Express tracking: ${EXPRESS}`)]);
     expect(waiting).toMatchObject({ job: null, intent: 'paste' });
-    const answer = unanswered(EXPRESS);
-    if (outcome === 'unknown') delete answer.unanswered;
+    const answer = outcome === 'unknown'
+      ? { trackingNumber: EXPRESS, carrier: 'unknown' as const, asked: ['dhl-express' as const] }
+      : unanswered(EXPRESS);
     const found = run([{ type: 'answer', answer }], [], waiting);
     expect(found.job).toEqual({ type: 'lookup', carrier: 'unknown', input: { trackingNumber: EXPRESS } });
   });

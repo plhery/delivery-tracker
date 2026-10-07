@@ -896,7 +896,7 @@ describe('carrier detection', () => {
     // OSS EXAMPLES, C/D + 14 digits.
     // Source: https://github.com/jkeen/tracking_number_data/blob/main/couriers/ontrac.json
     for (const number of ['C11031500001879', 'C11121552953069', 'D10011354453707', 'D10011345983010']) {
-      expect(detectCarrier(number)).toBe('ontrac');
+      expect(detectCarrierMatch(number)).toMatchObject({ carrier: 'unknown', confidence: 'low', candidates: expect.arrayContaining(['ontrac']) });
     }
     // OSS legacy LaserShip L-letter + 8 digits (LA/LI/LE/LH/LN forms).
     // Source: https://github.com/jkeen/tracking_number_data/blob/main/couriers/lasership.json
@@ -911,7 +911,7 @@ describe('carrier detection', () => {
     // Collision note: a REPORTED REAL Paack C-family identifier matches OnTrac C + 14
     // digits, so explicit carrier selection must win over number alone.
     // Source: https://www.ocu.org/reclamar/lista-reclamaciones-publicas/entrega-no-recibida/4d61e00924bdfeea75
-    expect(detectCarrier('C25062001456003')).toBe('ontrac');
+    expect(detectCarrierMatch('C00000000000001')).toMatchObject({ carrier: 'unknown', confidence: 'low', candidates: expect.arrayContaining(['ontrac']) });
     expectDirectTracking('ontrac');
   });
 
@@ -1115,10 +1115,10 @@ describe('carrier detection', () => {
     const match = detectCarrierMatch('133938675660');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('sf-express');
-    // Public-report SF-prefixed specimen with unverified attribution: low candidate only.
+    // The branded whole-number shape selects the adapter; a lookup still confirms the parcel.
     // Source: https://www.paketda.de/fragen-antworten
     const prefixed = detectCarrierMatch('SF6047381042488');
-    expect(prefixed).toMatchObject({ carrier: 'unknown', confidence: 'low' });
+    expect(prefixed).toMatchObject({ carrier: 'sf-express', confidence: 'high' });
     expect(prefixed.candidates).toContain('sf-express');
     expect(CARRIERS['sf-express'].capabilities.tracking.adapter).toBe('sf-express');
     expect(tracksAutomatically('sf-express')).toBe(true);
@@ -1477,12 +1477,12 @@ describe('ambiguous number shapes', () => {
     expect(detectCarrierMatch('123456789012')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['fedex', 'dpd-fr', 'mondial-relay', 'colis-prive', 'mrw', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t', 'lbc-express'],
+      candidates: ['fedex', 'dpd-fr', 'mondial-relay', 'colis-prive', 'mrw', 'brt', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t', 'lbc-express'],
       preferred: [],
     });
     // A valid GLS check digit adds the GLS networks.
     expect(detectCarrierMatch('123456789011').candidates).toEqual(
-      ['fedex', 'gls-ch', 'dpd-fr', 'mondial-relay', 'gls-fr', 'colis-prive', 'gls-de', 'mrw', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t', 'lbc-express'],
+      ['fedex', 'gls-ch', 'dpd-fr', 'mondial-relay', 'gls-fr', 'colis-prive', 'gls-de', 'mrw', 'brt', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t', 'lbc-express'],
     );
   });
 

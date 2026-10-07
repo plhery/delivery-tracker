@@ -347,7 +347,8 @@ final class ParcelStore: ObservableObject {
             label: label.trimmingCharacters(in: .whitespacesAndNewlines),
             carrier: carrier,
             trackingURL: trackingURL?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty,
-            dpdPostcode: dpdPostcode?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
+            dpdPostcode: dpdPostcode?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty,
+            lookupCountryHint: ParcelLookupCountry.hint()
         )
         let parcel: Parcel
         if isDemo {

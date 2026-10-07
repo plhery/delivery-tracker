@@ -724,17 +724,29 @@ export class TrackingSyncService {
     );
     await audit.start();
 
+    const addition = isRecord(parcel.carrier_data) && parcel.carrier_data.add_recognition_pending === true;
+    let consumeAddition = addition;
+
     const persist = async (
       values: JsonObject,
       newEvents: JsonObject[] = [],
       deleteDescriptions: string[] = [],
     ) => {
       context.signal?.throwIfAborted();
+      if (consumeAddition) {
+        const data = { ...(isRecord(values.carrier_data) ? values.carrier_data : isRecord(parcel.carrier_data) ? parcel.carrier_data : {}) };
+        delete data.add_recognition_pending;
+        values.carrier_data = data;
+      }
       const applied = context.lease
         ? await this.client.applyTrackingSync(parcel, values, newEvents, deleteDescriptions, context.lease)
         : await this.client.applyTrackingSync(parcel, values, newEvents, deleteDescriptions);
       if (!applied) {
         throw new SupersededTrackingSync('Tracking configuration changed during the check');
+      }
+      if (consumeAddition) {
+        parcel.carrier_data = values.carrier_data;
+        consumeAddition = false;
       }
     };
     const superseded = async (): Promise<SyncOutcome> => {
@@ -801,7 +813,7 @@ export class TrackingSyncService {
             ...(this.adapter.recognize ? { recognize: (carrier: string, number: string, context?: TrackingContext) => this.adapter.recognize!(carrier, number, context) } : {}),
             ...(this.adapter.recognizeBrowser ? { recognizeBrowser: (carrier: string, number: string, context?: TrackingContext, previousError?: unknown) => this.adapter.recognizeBrowser!(carrier, number, context, previousError) } : {}),
             enablePostalNinja: process.env.TRACKING_ENABLE_POSTAL_NINJA === 'true',
-          }).fetch(parcel, context.trigger === 'scheduled', context.signal)
+          }).fetch(parcel, context.trigger === 'scheduled', context.signal, addition)
           : await this.fetchResult(parcel, carrierId));
       } catch (error) {
         if (carrierId === 'amazon-shipping' && error instanceof CarrierError && error.reason === 'history_expired') {

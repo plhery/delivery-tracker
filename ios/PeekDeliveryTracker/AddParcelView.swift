@@ -159,6 +159,8 @@ struct AddParcelView: View {
             }
             .task(id: recognitionRequest) {
                 guard let number = recognitionRequest else { return }
+                recognition.failedNumber = nil
+                recognition.answer = nil
                 do {
                     let result = try await store.detectCarrier(trackingNumber: number)
                     guard !Task.isCancelled else { return }
@@ -166,12 +168,7 @@ struct AddParcelView: View {
                     recognition.answer = result
                 } catch {
                     guard !Task.isCancelled else { return }
-                    // No answer keeps the number a suggestion; the first sync asks again.
-                    let asked = catalog.discoveryCandidates(for: number)
-                    recognition.answer = CarrierDetectionResponse(
-                        trackingNumber: number, carrier: .unknown,
-                        asked: asked.isEmpty ? nil : asked, unanswered: asked.isEmpty ? nil : asked
-                    )
+                    recognition.failedNumber = number
                 }
             }
         }
@@ -607,10 +604,7 @@ struct AddParcelView: View {
     }
 
     private var recognitionStatus: CarrierRecognition.Status {
-        recognition.status(
-            for: normalizedNumber, applies: recognizable,
-            asked: recognizable ? catalog.discoveryCandidates(for: normalizedNumber) : []
-        )
+        recognition.status(for: normalizedNumber, applies: recognizable)
     }
 
     private var checking: Bool {
@@ -660,7 +654,9 @@ struct AddParcelView: View {
             return localizer.text("add.recognized", ["carrier": catalog.info(for: carrier, language: localizer.language).displayName])
         case .several(let carriers): return localizer.text("picker.auto.several", ["carriers": carrierNames(carriers)])
         case .notFound(let carriers): return localizer.text("picker.auto.none", ["carriers": carrierNames(carriers)])
-        case .failed(let carriers): return localizer.text("picker.auto.failed", ["carriers": carrierNames(carriers)])
+        case .failed(let carriers):
+            return carriers.isEmpty ? localizer.text("add.line.failed")
+                : localizer.text("picker.auto.failed", ["carriers": carrierNames(carriers)])
         case .idle, .unasked:
             if let numberCarrier {
                 return localizer.text("picker.auto.detected", ["carrier": catalog.info(for: numberCarrier, language: localizer.language).displayName])
@@ -685,8 +681,6 @@ struct AddParcelView: View {
 
     private var pickerTags: [CarrierID: CarrierPickerView.Tag] {
         switch recognitionStatus {
-        case .asking(let carriers):
-            return Dictionary(uniqueKeysWithValues: carriers.map { ($0, .init(label: localizer.text("picker.tag.asking"), found: false)) })
         case .recognized(let carrier):
             return [carrier: .init(label: localizer.text("picker.tag.found"), found: true)]
         case .several(let carriers):

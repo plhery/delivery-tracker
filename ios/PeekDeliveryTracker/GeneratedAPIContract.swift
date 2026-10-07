@@ -4,6 +4,7 @@ import Foundation
 
 struct CarrierDetectionRequest: Codable, Equatable, Hashable, Sendable {
     var trackingNumber: String
+    var lookupCountryHint: String? = nil
 }
 
 struct CarrierDetectionResponse: Codable, Equatable, Hashable, Sendable {
@@ -417,6 +418,7 @@ struct CreatePackageRequest: Codable, Equatable, Hashable, Sendable {
     var carrier: CarrierID? = nil
     var trackingURL: String? = nil
     var dpdPostcode: String? = nil
+    var lookupCountryHint: String? = nil
 
     private enum CodingKeys: String, CodingKey {
         case trackingNumber
@@ -424,6 +426,7 @@ struct CreatePackageRequest: Codable, Equatable, Hashable, Sendable {
         case carrier
         case trackingURL = "trackingUrl"
         case dpdPostcode
+        case lookupCountryHint
     }
 }
 
@@ -920,12 +923,14 @@ struct PublicLookupRequest: Codable, Equatable, Hashable, Sendable {
     var carrier: CarrierID? = nil
     var trackingURL: String? = nil
     var dpdPostcode: String? = nil
+    var lookupCountryHint: String? = nil
 
     private enum CodingKeys: String, CodingKey {
         case trackingNumber
         case carrier
         case trackingURL = "trackingUrl"
         case dpdPostcode
+        case lookupCountryHint
     }
 }
 

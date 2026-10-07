@@ -411,7 +411,8 @@ describe('FrontDoor', () => {
     await user.click(await screen.findByRole('button', { name: 'Change' }));
     expect(mocks.detect).toHaveBeenCalledOnce();
     const picker = await screen.findByRole('dialog', { name: 'Carrier' });
-    expect(within(picker).getAllByText('Asking…').length).toBeGreaterThan(0);
+    expect(within(picker).getByText('Checking tracking services…')).toBeInTheDocument();
+    expect(within(picker).queryByText('Asking…')).not.toBeInTheDocument();
     await user.type(within(picker).getByRole('combobox', { name: 'Search carriers' }), 'SEUR');
     await user.click(within(picker).getByRole('option', { name: /SEUR/ }));
     expect(document.querySelector('.door-line')).toHaveTextContent('SEUR Chosen by you');

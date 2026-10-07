@@ -49,6 +49,51 @@ const pinned = ['dpd', 'seur', 'brt', 'relais-colis', 'ciblex'];
 
 // Answers are cached per number for a few minutes, so every test uses its own numbers.
 
+it('uses the device region to order queries, partitions its cache and preserves same-brand settlement', async () => {
+  const number = '00000000051';
+  recognize.mockImplementation(knows('gls-ch', 'gls-de'));
+  const detect = (country: string) => POST(new NextRequest('https://delivery.example/api/carriers/detect', {
+    method: 'POST', headers: { 'content-type': 'application/json', Authorization: 'Bearer detection-test',
+      'cf-connecting-ip': '198.51.100.93', 'cf-ipcountry': 'FR' },
+    body: JSON.stringify({ trackingNumber: number, lookupCountryHint: country }),
+  }), { params: Promise.resolve({}) });
+  const german = await (await detect('DE')).json();
+  expect(german.carrier).toBe('gls-ch');
+  expect(german.asked).toEqual(recognitionAskedCarriers(number, { countryHint: 'DE' }));
+  expect(german.asked[0]).toBe('gls-de');
+  const count = recognize.mock.calls.length;
+  const swiss = await (await detect('CH')).json();
+  expect(swiss.asked[0]).toBe('gls-ch');
+  expect(recognize.mock.calls.length).toBeGreaterThan(count);
+  const answered = recognize.mock.calls.length;
+  await detect('CH');
+  expect(recognize).toHaveBeenCalledTimes(answered);
+});
+
+it('uses a trusted visitor country for recognition and universal preflight without expanding detection', async () => {
+  const number = '00000000000052';
+  const response = await POST(new NextRequest('https://delivery.example/api/carriers/detect', {
+    method: 'POST', headers: { 'content-type': 'application/json', Authorization: 'Bearer detection-test',
+      'cf-connecting-ip': '198.51.100.94', 'cf-ipcountry': 'FR' },
+    body: JSON.stringify({ trackingNumber: number, add_recognition_pending: true }),
+  }), { params: Promise.resolve({}) });
+  expect(response.status).toBe(200);
+  const answer = await response.json();
+  expect(answer.asked).toEqual(recognitionAskedCarriers(number, { countryHint: 'FR' }));
+  expect(asked()).toHaveLength(5);
+  expect(preflightTracking).toHaveBeenCalledWith(number, expect.any(SupabaseServiceClient), expect.any(AbortSignal), 'FR');
+});
+
+it('refuses an invalid device region before spending recognition resources', async () => {
+  const response = await POST(new NextRequest('https://delivery.example/api/carriers/detect', {
+    method: 'POST', headers: { 'content-type': 'application/json', Authorization: 'Bearer detection-test' },
+    body: JSON.stringify({ trackingNumber: '00000000053', lookupCountryHint: '001' }),
+  }), { params: Promise.resolve({}) });
+  expect(response.status).toBe(400);
+  expect(recognize).not.toHaveBeenCalled();
+  expect(SupabaseServiceClient.prototype.claimAccountTracking).not.toHaveBeenCalled();
+});
+
 it('returns the one carrier that knows an ambiguous number', async () => {
   recognize.mockImplementation(knows('dpd'));
   const response = await request('0608 0000 0000 02');
@@ -294,7 +339,7 @@ it('uses universal preflight for a number with no direct candidates and reports 
   vi.mocked(preflightTracking).mockResolvedValue({ trackingFound: true, providers: [{ provider: 'Ship24', outcome: 'history' }] });
   const response = await request('TESTPREFLIGHT0001');
   expect(await response.json()).toEqual({ trackingNumber: 'TESTPREFLIGHT0001', carrier: 'unknown', trackingFound: true, providers: [{ provider: 'Ship24', outcome: 'history' }] });
-  expect(preflightTracking).toHaveBeenCalledWith('TESTPREFLIGHT0001', expect.any(SupabaseServiceClient), expect.any(AbortSignal));
+  expect(preflightTracking).toHaveBeenCalledWith('TESTPREFLIGHT0001', expect.any(SupabaseServiceClient), expect.any(AbortSignal), null);
   expect(recognize).not.toHaveBeenCalled();
 });
 

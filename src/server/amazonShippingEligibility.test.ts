@@ -60,6 +60,7 @@ describe('Amazon public tracking eligibility', () => {
   it('rechecks and persists a confirmed Shipping parcel', async () => {
     const fetch = vi.mocked(scraper.amazonShippingEligibility).mockResolvedValue('available');
     const create = vi.spyOn(SupabaseUserClient.prototype, 'createPackage').mockResolvedValue({ id: packageId, carrier: 'amazon-shipping' });
+    vi.spyOn(SupabaseServiceClient.prototype, 'updatePackage').mockResolvedValue(undefined);
     vi.spyOn(SupabaseServiceClient.prototype, 'enqueueSyncJob').mockResolvedValue({ row: { id: 'job' }, queued: true });
     const response = await add(request({ trackingNumber: 'FR0000000001', carrier: 'amazon-shipping' }, '/api/packages'), context);
     expect(response.status).toBe(201);
