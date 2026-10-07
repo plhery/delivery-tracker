@@ -813,13 +813,17 @@ final class CarrierCatalogTests: XCTestCase {
         let compact = "12345678001"
         XCTAssertEqual(catalog.parse(printed).carrier, .postlogistics)
         XCTAssertEqual(catalog.detect(compact).carrier, .unknown)
+        // A link from the former PostLogistics site still names the carrier.
         XCTAssertEqual(catalog.parse("https://tracking.postlogistics.ch/public/trackandtrace/\(printed)").carrier,
             .postlogistics)
         XCTAssertEqual(CarrierCatalog.format(compact, carrier: .postlogistics), printed)
         let parcel = Parcel(id: UUID(), trackingNumber: compact, label: "Example", carrier: .postlogistics,
             createdAt: "2026-09-10T12:00:00Z", syncStatus: .ok, notificationsMuted: false)
+        // The published link, so a catalog update does not block app validation; it carries the printed reference.
+        let template = try XCTUnwrap(catalog.info(for: .postlogistics).trackingURLTemplate)
+        XCTAssertTrue(template.contains("{trackingNumber}"), template)
         XCTAssertEqual(try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .en).first).url.absoluteString,
-            "https://tracking.postlogistics.ch/public/trackandtrace/\(printed)")
+            template.replacingOccurrences(of: "{trackingNumber}", with: printed))
     }
 
     func testHermesCheckDigitAndDepotPreferenceMatchTheWebEngine() {
