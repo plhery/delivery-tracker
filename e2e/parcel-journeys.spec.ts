@@ -127,8 +127,12 @@ test('accepts a Swiss postcode for GLS Germany and leaves unknown carriers to de
   await sheet.getByLabel('Tracking number or link').fill('https://gls-group.eu/DE/de/paketverfolgung?match=123456789018');
   await expect(sheet.getByText('GLS Germany', { exact: true })).toBeVisible();
   const add = sheet.getByRole('button', { name: 'Add parcel' });
+  // The required field starts from the postcode the demo's DPD parcel was given.
+  const postcode = sheet.getByLabel(/^Delivery postcode/);
+  await expect(postcode).toHaveValue('8000');
+  await postcode.fill('');
   await expect(add).toBeDisabled();
-  await sheet.getByLabel(/^Delivery postcode/).fill('8000');
+  await postcode.fill('8000');
   await expect(add).toBeEnabled();
   await add.click();
   await expect(sheet).toBeHidden();
