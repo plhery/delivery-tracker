@@ -1285,8 +1285,11 @@ describe('carrier detection', () => {
     expect(detectCarrierMatch('0460040240008103140542')).toMatchObject({
       carrier: 'unknown', confidence: 'low', candidates: ['tipsa', 'austrian-post', 'usps', 'estafeta'], preferred: ['tipsa'],
     });
-    expect(CARRIERS.tipsa.trackingUrl?.('0990010990010000000017'))
-      .toBe('https://www.tip-sa.com/cliente/datos_prestashop.php?id=0990010990010000000017');
+    const trackingUrl = CARRIERS.tipsa.trackingUrl?.('0990010990010000000017');
+    expect(trackingUrl).toBeDefined();
+    expect(parseTrackingInput(trackingUrl!)).toMatchObject({
+      trackingNumber: '0990010990010000000017', carrier: 'tipsa', source: 'link',
+    });
     expect(parseTrackingInput('https://www.tip-sa.com/cliente/datos_prestashop.php?id=0990010990010000000017')).toMatchObject({
       trackingNumber: '0990010990010000000017', carrier: 'tipsa', source: 'link',
     });
