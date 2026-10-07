@@ -4127,7 +4127,8 @@ export const CARRIER_CAPABILITIES = {
           "help": "Optional. DPD uses it to unlock verified scans and the delivery window.",
           "validator": "germanyPostcode"
         }
-      ]
+      ],
+      "recognitionRank": 65
     },
     "trackingUrlTemplate": "https://tracking.dpd.de/status/en_US/parcel/{trackingNumber}",
     "linkRules": [
