@@ -11,6 +11,7 @@ import type { UniversalSource } from 'universal-parcel-scraper';
 import { isCarrierFeedName, isKnownCarrierName } from 'universal-parcel-scraper/app';
 import { brandCarrierIds, carrierBrand, carrierIdFromName } from 'universal-parcel-scraper/app';
 import { errorType, reportRoutingEvent } from './observability';
+import { recordProviderInput } from './metrics';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from 'universal-parcel-scraper';
 import { captureDirectLocalHistory, directHistoryNumber, directLocalHistory, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
 import { latestResultTime } from 'universal-parcel-scraper/app';
@@ -227,7 +228,13 @@ export class TrackingRouter {
     let localHistory: JsonObject | undefined;
     const universalNumber = metadata.original_carrier && metadata.active_tracking_carrier
       && typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : number;
-    if (!metadata.universal_input) state.provider_input_needed ??= this.options.preflightInputNeeded?.(universalNumber, countryHint);
+    // The owner's answer to a provider's postcode request, for this number only.
+    const providerInput = isRecord(metadata.universal_input) && metadata.universal_input.number === universalNumber
+      && typeof metadata.universal_input.postcode === 'string' ? metadata.universal_input.postcode : null;
+    if (!metadata.universal_input && !state.provider_input_needed) {
+      state.provider_input_needed = this.options.preflightInputNeeded?.(universalNumber, countryHint);
+      if (state.provider_input_needed) recordProviderInput(state.provider_input_needed.provider, 'asked');
+    }
     if (state.preferred_number && state.preferred_number !== universalNumber) state.preferred_provider = undefined;
     // The delivery leg's own carrier when its number is the one looked up.
     const universalCarrier = universalNumber !== number && typeof metadata.active_tracking_carrier === 'string'
@@ -268,7 +275,11 @@ export class TrackingRouter {
       const userError = trackingFailureCode(error);
       const failure = { count, kind, ...(userError ? { user_error: userError } : {}), retry_at: iso(now().getTime() + Math.max(retryAfterMs, Math.min(daily ? DAY : 6 * HOUR, base * 2 ** (count - 1)))) };
       state.failures[provider] = failure;
-      if (universalSource && kind === 'input_required') state.provider_input_needed = { provider, field: 'dpdPostcode' };
+      if (universalSource && kind === 'input_required') {
+        // Counted when a parcel starts asking; a supplied postcode that is refused counts as still_required.
+        if (!state.provider_input_needed && !providerInput) recordProviderInput(provider, 'asked');
+        state.provider_input_needed = { provider, field: 'dpdPostcode' };
+      }
       // Called before another provider is attempted, including recovered failures.
       report(kind === 'input_required' ? 'carrier_input_required' : 'provider_failed', provider, kind, error);
       return failure;
@@ -543,9 +554,7 @@ export class TrackingRouter {
       const remaining = Math.floor(universalDeadline - performance.now());
       if (attemptedUniversal.has(source) || remaining <= 5_000 || millis(state.failures[source]?.retry_at) > now().getTime()) return null;
       attemptedUniversal.add(source);
-      const input = isRecord(metadata.universal_input) && metadata.universal_input.number === universalNumber
-        && typeof metadata.universal_input.postcode === 'string' ? metadata.universal_input.postcode : null;
-      const postcode = input ?? (typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null);
+      const postcode = providerInput ?? (typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null);
       const prefetched = prefetchedUniversal.get(source) ?? this.options.takePrefetchedUniversal?.(source, universalNumber, postcode, countryHint);
       if (prefetched) {
         const result = normalizeCarrierResult(prefetched);
@@ -594,6 +603,13 @@ export class TrackingRouter {
         }
         return null;
       } finally {
+        if (providerInput) {
+          // Every provider receives the postcode, but only the one that asked uses it.
+          const step = kind === null ? 'history' : kind === 'input_required' ? 'still_required'
+            : kind === 'not_found' || kind === 'no_history' ? 'no_history' : 'failed';
+          recordProviderInput(source, step);
+          report('provider_input_lookup', source, step);
+        }
         // An answer about this number keeps the provider's circuit closed, like not-found.
         try { await this.options.health.finishTrackingProvider(source, lease.token, kind === 'no_history' || kind === 'input_required' ? 'not_found' : kind, retryAfterMs, performance.now() - before); }
         catch { report('health_store_unavailable', source, 'transport'); }

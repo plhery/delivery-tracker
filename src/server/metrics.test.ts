@@ -135,6 +135,16 @@ describe('prometheus carrier metrics', () => {
     expect(series.every((line) => /^delivery_email_total\{outcome="[a-z]+",reason="[a-z_]+"\} \d+$/.test(line))).toBe(true);
   });
 
+  it('counts provider postcode requests by provider and step', async () => {
+    metrics.recordProviderInput('ParcelsApp', 'asked');
+    metrics.recordProviderInput('ParcelsApp', 'supplied');
+    metrics.recordProviderInput('ParcelsApp', 'history');
+    const text = await scraped();
+    expect(text).toContain('provider_input_total{provider="ParcelsApp",step="asked"} 1');
+    expect(text).toContain('provider_input_total{provider="ParcelsApp",step="supplied"} 1');
+    expect(text).toContain('provider_input_total{provider="ParcelsApp",step="history"} 1');
+  });
+
   it('serves yesterday\'s lookups and detections per client as gauges', async () => {
     metrics.recordPublicLookupUsage({ buckets: 40, p50: 2, p90: 9, max: 15, detection: { buckets: 31, p50: 3, p90: 12, max: 60 } });
     let text = await metrics.metricsText();

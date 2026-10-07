@@ -13,8 +13,10 @@ import {
 } from '../../../../../src/server/api';
 import { wakeSyncWorker } from '../../../../../src/server/background';
 import { withEventPlaces } from '../../../../../src/server/eventPlaces';
+import { recordProviderInput } from '../../../../../src/server/metrics';
 import { logOperationalEvent } from '../../../../../src/server/observability';
 import { SupabaseError } from '../../../../../src/server/supabase';
+import { isRecord } from '../../../../../src/server/types';
 import { packageCarrierValues } from '../../../../../src/server/validation';
 
 interface PackageParameters extends RouteParameters {
@@ -63,6 +65,11 @@ export const PATCH = apiRoute<PackageParameters>(async (context) => {
     values.dpdPostcode,
   )) throw new HttpError(404, 'Package not found');
 
+  if (providerPostcode) {
+    const routing = isRecord(original.carrier_data) && isRecord(original.carrier_data.routing) ? original.carrier_data.routing : {};
+    const asked = isRecord(routing.provider_input_needed) ? routing.provider_input_needed.provider : undefined;
+    recordProviderInput(typeof asked === 'string' ? asked : 'unknown', 'supplied');
+  }
   logOperationalEvent(providerPostcode ? 'package_provider_input_changed' : 'package_carrier_changed', {
     package_id: packageId,
     previous_carrier: String(original.carrier ?? 'unknown'),

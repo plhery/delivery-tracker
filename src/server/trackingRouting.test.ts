@@ -4,6 +4,7 @@ import { freshnessWindow, RoutingDeferred, routingState, TrackingRouter, type Ro
 import type { JsonObject } from './types';
 import type { CarrierResult } from 'universal-parcel-scraper';
 import * as monitoring from './observability';
+import * as metrics from './metrics';
 import { universalCarrierHints } from 'universal-parcel-scraper/app';
 import { IndeterminateError, InputRequiredError, NotFoundError } from 'universal-parcel-scraper';
 import * as scraper from 'universal-parcel-scraper';
@@ -1150,5 +1151,26 @@ describe('universal preflight and recipient input', () => {
     const foreign = setup();
     await foreign.router.fetch(parcel({ tracking_number: '1234567891', carrier_data: { universal_input: { number: '1234567880', postcode: '8000' } } }), false);
     expect(foreign.universal).toHaveBeenCalledWith('Ship24', '1234567891', expect.any(Number), null, null);
+  });
+  it('counts a postcode request once per prompt and what each lookup with the owner\'s postcode found', async () => {
+    const recorded = vi.spyOn(metrics, 'recordProviderInput').mockImplementation(() => undefined);
+    const gated = setup();
+    gated.universal.mockImplementation(async (source) => { if (source === 'ParcelsApp') throw new InputRequiredError(source, 'postcode'); throw new NotFoundError(source); });
+    await gated.router.fetch(parcel({ tracking_number: '1234567891' }), false).catch(() => undefined);
+    await gated.router.fetch(parcel({ tracking_number: '1234567891', carrier_data: {
+      routing: state({ provider_input_needed: { provider: 'ParcelsApp', field: 'dpdPostcode' } }) } }), false).catch(() => undefined);
+    expect(recorded.mock.calls).toEqual([['ParcelsApp', 'asked']]);
+    recorded.mockClear();
+    const supplied = parcel({ tracking_number: '1234567891', carrier_data: { universal_input: { number: '1234567891', postcode: '8000' } } });
+    await gated.router.fetch(supplied, false).catch(() => undefined);
+    expect(recorded).toHaveBeenCalledWith('ParcelsApp', 'still_required');
+    expect(recorded).toHaveBeenCalledWith('Ship24', 'no_history');
+    expect(recorded).not.toHaveBeenCalledWith(expect.anything(), 'asked');
+    recorded.mockClear();
+    const unlocked = setup();
+    unlocked.universal.mockImplementation(async (source) => { if (source === 'ParcelsApp') return history(); throw new NotFoundError(source); });
+    await unlocked.router.fetch(supplied, false);
+    expect(recorded).toHaveBeenCalledWith('ParcelsApp', 'history');
+    expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('provider_input_lookup', expect.objectContaining({ provider: 'ParcelsApp', category: 'history' }));
   });
 });

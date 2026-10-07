@@ -1,7 +1,9 @@
 import 'server-only';
 
+import * as Sentry from '@sentry/node';
 import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics, type LabelValues } from '@prometheus-io/client';
 import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from 'universal-parcel-scraper/node';
+import { initObservability } from './observability';
 
 /**
  * Prometheus sink for carrier telemetry. Labels are deliberately
@@ -23,7 +25,7 @@ import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from '
  */
 
 /** Bump when the series or their labels change, so a hot-reloaded copy does not reuse an older shape. */
-const RUNTIME_VERSION = 7;
+const RUNTIME_VERSION = 8;
 
 interface PrometheusRuntime {
   version: number;
@@ -45,6 +47,7 @@ interface PrometheusRuntime {
   parcelAlertRemovedTotal: Counter<'reason'>;
   parcelAlertSentTotal: Counter<'outcome'>;
   deliveryEmailTotal: Counter<'outcome' | 'reason'>;
+  providerInputTotal: Counter<'provider' | 'step'>;
   publicLookupClients: Gauge;
   publicLookupsPerClient: Gauge<'stat'>;
   publicDetectionClients: Gauge;
@@ -170,6 +173,12 @@ function createRuntime(): PrometheusRuntime {
       name: 'delivery_email_total',
       help: 'Delivery emails by outcome (sent, failed, skipped) and reason (none when sent).',
       labelNames: ['outcome', 'reason'] as const,
+      registers: [registry],
+    }),
+    providerInputTotal: new Counter({
+      name: 'provider_input_total',
+      help: 'Postcodes a universal provider asks owners for: asked, supplied, then each lookup made with one (history, still_required, no_history, failed).',
+      labelNames: ['provider', 'step'] as const,
       registers: [registry],
     }),
     publicLookupClients: new Gauge({
@@ -352,6 +361,21 @@ export function recordDeliveryEmail(
   if (total > 0) afterFirstScrape(`delivery_email_total${JSON.stringify({ outcome, reason })}`,
     () => runtime.deliveryEmailTotal.inc({ outcome, reason }, 0),
     () => runtime.deliveryEmailTotal.inc({ outcome, reason }, total));
+}
+
+export type ProviderInputStep = 'asked' | 'supplied' | 'history' | 'still_required' | 'no_history' | 'failed';
+
+/**
+ * Whether relaying a provider's postcode request pays off: how often a parcel
+ * starts asking its owner, how often the owner answers, and what each lookup
+ * made with that postcode returned. Also a Sentry metric, so the few monthly
+ * cases stay countable across deploys.
+ */
+export function recordProviderInput(provider: string, step: ProviderInputStep): void {
+  count(runtime.providerInputTotal, 'provider_input_total', { provider, step });
+  try {
+    if (initObservability()) Sentry.metrics.count('tracking.provider_input', 1, { attributes: { provider, step } });
+  } catch { /* Telemetry must never change a tracking result. */ }
 }
 
 interface UsageStats { buckets: number; p50: number; p90: number; max: number }

@@ -271,7 +271,8 @@ so every cause is visible.
 - **Incidents**: carrier and provider outages open once, with a recovery event, from
   thresholds computed in Postgres. See [ops/sentry](../ops/sentry/README.md).
 - **Input requirements**: requests for a postcode or other tracking input stay in logs
-  and breadcrumbs without opening Sentry issues.
+  and breadcrumbs without opening Sentry issues. Each lookup made with a postcode the
+  owner supplied for a provider logs `provider_input_lookup` with its result.
 - **Database outages**: when the database does not answer (`database_code:unreachable`), or
   its gateway answers 502, 503 or 504, the sync worker's claims, the scheduler and the
   friendship notifications keep it in the logs. The sync worker reports it once its claims
@@ -309,7 +310,8 @@ by one phase when counting attempts; summing phases double-counts.
 **Sentry metrics**, which work with tracing off:
 - `tracking.scrape.duration` (ms) and `tracking.scrape.attempts`, tagged `carrier`,
   `phase`, `outcome`, `error_type`;
-- `tracking.scrape.fallbacks`, with `from_phase` and `to_phase`.
+- `tracking.scrape.fallbacks`, with `from_phase` and `to_phase`;
+- `tracking.provider_input`, tagged `provider` and `step`, as `provider_input_total` below.
 
 Import [the Scraper Health dashboard](../ops/sentry/scraper-health-dashboard.json) and set
 your project ID.
@@ -342,6 +344,7 @@ container.
 | `parcel_alert_set_total` (outcome) | Requests to turn on an alert for a link: `added`, `updated`, `full` (ten already), `finished` (journey over), `stopped`, `unavailable` |
 | `parcel_alert_sent_total` (outcome) | Batches of new scans per alert: `sent`, `skipped` (not in its preset, backfilled, or the owner's own browser), `failed`, `expired` (the push service says the subscription is gone) |
 | `parcel_alert_removed_total` (reason) | Alerts ended: `asked`, `delivered` (journey over), `expired`, `failed` (three failed sends in a row) |
+| `provider_input_total` (provider, step) | Whether relaying a provider's postcode request pays off: a parcel starts asking its owner (`asked`), the owner gives one (`supplied`), then each lookup made with it: `history`, `still_required`, `no_history` or `failed`. Every provider receives the postcode; only the one that asked uses it |
 | `delivery_email_total` (outcome, reason) | Delivery emails: `sent`; `failed` and tried again later (`smtp`, `content`, `account`, `parcel`, `interrupted`); `skipped` for good (`no_address`, `relay_address`, `parcel_gone`, `account_cap`, `service_cap`) |
 | `public_lookup_clients` | Clients that made a lookup yesterday (UTC) |
 | `public_lookups_per_client` (stat) | Yesterday's lookups per client: `p50`, `p90`, `max` |
