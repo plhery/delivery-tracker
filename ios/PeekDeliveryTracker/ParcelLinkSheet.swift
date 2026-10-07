@@ -328,6 +328,11 @@ private struct SharedParcelCard: View {
     @State private var showingMap = false
     /// How far the box of a parcel that arrived has opened: it is seen closed first, so the opening is seen.
     @State private var open = 0.0
+    /// Where the delivering carrier's mark stands on the card, which the map keeps clear of.
+    @State private var deliveryMark: CGRect?
+
+    /// The card, from its top left corner: where its map is drawn from.
+    private static let cardSpace = "shared-parcel-card"
 
     private var identity: CarrierVisualIdentity {
         CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
@@ -345,9 +350,15 @@ private struct SharedParcelCard: View {
     var body: some View {
         let identity = identity
         let route = placed ? atlas.map { ParcelRoute(parcel: parcel, atlas: $0, language: localizer.language) } : nil
+        // Handed from one carrier to another, the card carries both marks and says who delivers, as the parcel's own card does.
+        let handedOver = parcel.activeTrackingCarrier != parcel.displayedCarrier
+        let delivery = handedOver ? CarrierVisualIdentity.of(parcel.activeTrackingCarrier, catalog: catalog, language: localizer.language) : nil
+        let deliveryLine = handedOver ? localizer.text("parcel.deliveryCarrier", [
+            "carrier": catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName,
+        ]) : nil
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 4) {
-                CarrierFleetMark(identity: identity).layoutPriority(1)
+            HStack(alignment: .firstMark, spacing: 4) {
+                marks(identity, delivery: delivery).layoutPriority(1)
                 Spacer(minLength: 8)
                 LinkRefreshButton(parcel: parcel, refreshing: refreshing, tint: identity.ink, action: onRefresh)
                 if placed {
@@ -396,9 +407,13 @@ private struct SharedParcelCard: View {
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(identity.ink)
                     }
-                    if let sender = parcel.carrierData?.senderName?.nonEmpty {
-                        Text(localizer.text("parcel.sender", ["sender": sender]))
-                            .font(.caption).foregroundStyle(.secondary)
+                    let sender = parcel.carrierData?.senderName?.nonEmpty
+                    if sender != nil || deliveryLine != nil {
+                        VStack(alignment: arrived ? .center : .leading, spacing: 2) {
+                            if let sender { Text(localizer.text("parcel.sender", ["sender": sender])) }
+                            if let deliveryLine { Text(deliveryLine) }
+                        }
+                        .font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 .multilineTextAlignment(arrived ? .center : .leading)
@@ -412,10 +427,13 @@ private struct SharedParcelCard: View {
             ExperimentalJourneyRail(stage: parcel.currentStage, tint: identity.ink.opacity(0.45), compact: true)
         }
         .padding(18)
+        .coordinateSpace(.named(Self.cardSpace))
         .background(alignment: .top) {
-            if let atlas, let route {
+            // A map that keeps clear of the second mark waits to know where it stands, rather than moving once it does.
+            if let atlas, let route, delivery == nil || deliveryMark != nil {
                 // The status is written over the bottom of the map, so Pip stays above it.
-                RouteEngraving(atlas: atlas, route: route, stage: parcel.currentStage, identity: identity, floor: 160)
+                RouteEngraving(atlas: atlas, route: route, stage: parcel.currentStage, identity: identity, floor: 160,
+                               covered: delivery == nil ? nil : deliveryMark)
                     .frame(height: 176)
                     .clipShape(UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous))
                     .contentShape(Rectangle())
@@ -449,6 +467,39 @@ private struct SharedParcelCard: View {
     }
 
     private var detail: String? { localizer.sharedParcelDetail(parcel) }
+
+    /// The carrier's mark, and the delivering carrier's under it when the parcel was handed from one to the other. Over the
+    /// route the second mark takes no room, and the map keeps clear of it; on a card without one it takes its own.
+    @ViewBuilder
+    private func marks(_ identity: CarrierVisualIdentity, delivery: CarrierVisualIdentity?) -> some View {
+        if let delivery, !placed {
+            VStack(alignment: .leading, spacing: 7) {
+                CarrierFleetMark(identity: identity).alignmentGuide(.firstMark) { $0[VerticalAlignment.center] }
+                CarrierFleetMark(identity: delivery)
+            }
+        } else {
+            CarrierFleetMark(identity: identity)
+                .overlay(alignment: .topLeading) {
+                    if let delivery {
+                        // Under the first mark, which stays where every card has it: an unseen copy of it holds its room.
+                        VStack(alignment: .leading, spacing: 7) {
+                            CarrierFleetMark(identity: identity).hidden()
+                            CarrierFleetMark(identity: delivery)
+                                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.cardSpace)) } action: { deliveryMark = $0 }
+                        }
+                        .fixedSize()
+                    }
+                }
+        }
+    }
+}
+
+private extension VerticalAlignment {
+    /// The middle of the card's first carrier mark, which the buttons beside it line up with.
+    enum FirstMark: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat { context[VerticalAlignment.center] }
+    }
+    static let firstMark = VerticalAlignment(FirstMark.self)
 }
 
 extension Localizer {
@@ -661,7 +712,8 @@ private struct GiftNote: View {
     }
 }
 
-/// The tracking number as the link shows it: whole, to copy and look up, or with its middle hidden.
+/// The tracking number as the link shows it: whole, to copy and look up, or with its middle hidden. Each carrier's own
+/// page stands under its number.
 private struct SharedParcelNumber: View {
     let parcel: Parcel
     let hint: ParcelNumberHint?
@@ -678,8 +730,9 @@ private struct SharedParcelNumber: View {
                 .accessibilityElement(children: .combine)
         } else if !parcel.trackingNumber.isEmpty {
             let numbers = parcel.trackingNumbers
+            let pages = ParcelTrackingLink.byNumber(catalog.trackingLinks(for: parcel, language: localizer.language), numbers: numbers)
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(numbers, id: \.number) { entry in
+                ForEach(Array(numbers.enumerated()), id: \.element.number) { index, entry in
                     HStack(alignment: .center, spacing: 8) {
                         row(title: numbers.count > 1
                                 ? catalog.info(for: entry.carrier, language: localizer.language).displayName
@@ -696,22 +749,34 @@ private struct SharedParcelNumber: View {
                         .accessibilityLabel(localizer.text(copiedNumber == entry.number ? "detail.copied" : "detail.copyTracking")
                             + (numbers.count > 1 ? " — " + catalog.info(for: entry.carrier, language: localizer.language).displayName : ""))
                     }
+                    carrierLinks(pages.own[index], own: true)
                 }
-                ForEach(catalog.trackingLinks(for: parcel, language: localizer.language)) { link in
-                    Link(destination: link.url) {
-                        HStack(spacing: 6) {
-                            Text(localizer.text("detail.carrierWebsite", ["carrier": link.name]))
-                            Image(systemName: "arrow.up.right").font(.system(size: 10, weight: .regular))
-                                .accessibilityHidden(true)
-                        }
-                        .font(.caption)
-                        .frame(minHeight: 44, alignment: .leading)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(tint)
-                    .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("parcel-carrier-link") })
-                }
+                carrierLinks(pages.loose, own: false)
             }
+        }
+    }
+
+    /// The carriers' own pages. Under its own number a link needs no more words; another says what it is to this parcel.
+    private func carrierLinks(_ links: [ParcelTrackingLink], own: Bool) -> some View {
+        ForEach(links) { link in
+            let role = own || link.role == .active ? nil
+                : localizer.text(link.role == .waiting ? "detail.sourceWaiting" : "detail.sourceHistory")
+            Link(destination: link.url) {
+                HStack(spacing: 6) {
+                    Text(localizer.text("detail.carrierWebsite", ["carrier": link.name]))
+                    Image(systemName: "arrow.up.right").font(.system(size: 10, weight: .regular))
+                        .accessibilityHidden(true)
+                    if let role {
+                        Spacer(minLength: 4)
+                        Text(role).font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+                .font(.caption)
+                .frame(minHeight: 44, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(tint)
+            .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("parcel-carrier-link") })
         }
     }
 

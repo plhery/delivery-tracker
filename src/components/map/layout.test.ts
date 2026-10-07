@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Camera } from './camera';
 import { buildRoute, type Place, type Route } from './route';
-import { layout, mapView, targetCamera, type Overlay, type Rect } from './layout';
+import { layout, mapView, shownOf, targetCamera, type Overlay, type Rect } from './layout';
 import { loadWorld, type Coordinate, type Part } from './world';
 
 const SIZE = { width: 400, height: 300 };
@@ -295,6 +295,34 @@ describe('layout of a map its card writes over', () => {
     const moved = show(route, view, 'journey', spot, true);
     expect(moved.pip).not.toBeNull();
     expect(touches(body(moved), spot)).toBe(false);
+  });
+
+  it('never stands Pip on the writing, even where every other spot crosses something', async () => {
+    await loadWorld();
+    // A shared parcel's card, its map across the top, and a parcel just under the second mark.
+    const card = { width: 358, height: 236 };
+    const room = { top: 48, right: 18, bottom: 56, left: 18 };
+    const mark: Rect = { x: 20, y: 50, width: 100, height: 18 };
+    const route = journey([city('Shenzhen', 'CN', 114.06, 22.54), city('Hong Kong', 'HK', 114.17, 22.32), city('Leipzig', 'DE', 12.37, 51.34),
+      city('Zürich', 'CH', 8.54, 47.37)]);
+    const standing = { mood: 'look', ceiling: 48 } as const;
+    const draw = (view: Camera, covered?: Rect) =>
+      layout(route, view, card, room, 'rect', 'ends', false, 'journey', false, 'en', standing, width, undefined, covered);
+    const shown = (view: Camera, covered?: Rect) => shownOf(draw(view, covered));
+    // In the usual frame he would have had to stand on the mark: he has no spot there now.
+    const usual = targetCamera(route, 'journey', card, room, 'rect');
+    expect(draw(usual).pip).not.toBeNull();
+    expect(draw(usual, mark).pip).toBeNull();
+    expect(names(draw(usual, mark)).map(name => name.text)).toEqual(['Zürich', 'Shenzhen']);
+    // The route is framed again so that he has one, and every place keeps its name.
+    const view = targetCamera(route, 'journey', card, room, 'rect', mark, shown);
+    expect(view).not.toEqual(usual);
+    const overlay = draw(view, mark);
+    const pip = overlay.pip!;
+    const unit = pip.width / 300;
+    expect(touches({ x: pip.x + 52 * unit, y: pip.y + 92 * unit, width: 196 * unit, height: 196 * unit }, mark)).toBe(false);
+    expect(names(overlay).map(name => name.text)).toEqual(['Zürich', 'Shenzhen']);
+    expect(names(overlay).some(name => touches(name, mark))).toBe(false);
   });
 
   it('moves the chip of a far end beside the writing, off the parcel\'s dot', async () => {

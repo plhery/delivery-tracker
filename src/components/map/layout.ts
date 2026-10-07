@@ -40,18 +40,19 @@ export function circleOf(size: Size, insets: Insets) {
 
 /**
  * The camera that frames a route in the room the insets leave. `covered` is a box the card writes over the map, such as
- * a second carrier's mark in its corner, and `named` tells how many places of the journey a camera names, around the
- * box when it is given one. A route that would pass under the box, or that loses a name to it, is framed below it or
- * beside it: where it keeps most names, then where it is drawn larger. Every other route keeps its usual frame.
+ * a second carrier's mark in its corner, and `shown` tells how much of the journey a camera shows (see `shownOf`), around
+ * the box when it is given one. A route that would pass under the box, or that loses a name or Pip's spot to it, is
+ * framed below it or beside it: where it shows most, then where it is drawn larger. Every other route keeps its usual
+ * frame.
  */
 export function targetCamera(route: Route, mode: MapMode, size: Size, insets: Insets, shape: Shape, covered?: Rect,
-  named?: (camera: Camera, covered?: Rect) => number): Camera {
+  shown?: (camera: Camera, covered?: Rect) => number): Camera {
   const usual = framedCamera(route, mode, size, insets, shape);
   if (!covered || shape === 'circle') return usual;
   const under = passesUnder(route, usual, covered);
-  const names = (camera: Camera) => named?.(camera, covered) ?? 0;
+  const names = (camera: Camera) => shown?.(camera, covered) ?? 0;
   const kept = names(usual);
-  if (!under && kept >= (named?.(usual) ?? 0)) return usual;
+  if (!under && kept >= (shown?.(usual) ?? 0)) return usual;
   const left = Math.max(insets.left, covered.x + covered.width);
   const beside = framedCamera(route, mode, size, { ...insets, left }, shape);
   const below = framedCamera(route, mode, size, { ...insets, top: Math.max(insets.top, covered.y + covered.height) }, shape);
@@ -64,9 +65,12 @@ export function targetCamera(route: Route, mode: MapMode, size: Size, insets: In
   }
   const [best] = frames.map((frame, index) => ({ ...frame, index, names: names(frame.camera) }))
     .sort((a, b) => b.names - a.names || b.scale - a.scale || a.index - b.index);
-  // Nothing under the box and no name to win back: the route stays where every card shows it.
+  // Nothing under the box and nothing to win back: the route stays where every card shows it.
   return under || best.names > kept ? best.camera : usual;
 }
+
+/** How much of the journey a map shows: a point for each place it names, and half of one for Pip when he has a spot. */
+export const shownOf = (overlay: Overlay) => overlay.labels.length + (overlay.pip ? .5 : 0);
 
 function framedCamera(route: Route, mode: MapMode, size: Size, insets: Insets, shape: Shape): Camera {
   let box: Box;
@@ -475,7 +479,8 @@ export function layout(route: Route, camera: Camera, size: Size, insets: Insets,
       const framed = shape === 'circle'
         ? [[box.x, box.y], [box.x + box.width, box.y], [box.x, box.y + box.height], [box.x + box.width, box.y + box.height]].every(([cornerX, cornerY]) => inside([cornerX, cornerY], 4))
         : box.x >= west && box.x + box.width <= east && box.y >= ceiling && box.y + box.height <= floor;
-      if (!framed) continue;
+      // What the card writes over the map bounds him as the frame does: he never hides it, whatever the other spots cost.
+      if (!framed || (written && intersects(box, written))) continue;
       const place = { ...spot, x: left, y: top, mood: pip.mood };
       if (pip.held) {
         best = { cost: 0, place, box };

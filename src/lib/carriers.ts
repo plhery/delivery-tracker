@@ -6,6 +6,7 @@ import {
   type CarrierInputRequirement as ScraperInputRequirement,
   recognitionCandidates,
 } from 'universal-parcel-scraper';
+import type { ParcelTrackingLink, parcelTrackingNumbers } from 'universal-parcel-scraper/app';
 
 export type {
   CarrierCapabilities,
@@ -36,6 +37,20 @@ export function discoveryAskedCarriers(number: string): string[] {
     ...recognitionCandidates(number).slice(0, 5),
     ...recognitionCandidates(number, { phase: 'browser' }).slice(0, 2),
   ].map(({ carrier }) => carrier))];
+}
+
+/**
+ * Each carrier's page under its own number: the delivery page under the first number, and an earlier carrier's under
+ * the number it gave the parcel. A page with no number of its own is `loose`, and follows them.
+ */
+export function trackingLinksByNumber(numbers: ReturnType<typeof parcelTrackingNumbers>, links: readonly ParcelTrackingLink[]) {
+  const rows = numbers.map((entry) => ({ ...entry, links: [] as ParcelTrackingLink[] }));
+  const loose: ParcelTrackingLink[] = [];
+  for (const link of links) {
+    const row = link.role === 'active' ? rows[0] : rows.slice(1).find((entry) => entry.carrier === link.carrier.id);
+    (row?.links ?? loose).push(link);
+  }
+  return { numbers: rows, loose };
 }
 
 /**

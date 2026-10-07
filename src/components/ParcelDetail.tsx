@@ -13,6 +13,7 @@ import {
   formatTrackingNumber,
   parcelTrackingLinks,
   parcelTrackingNumbers,
+  trackingLinksByNumber,
   tracksAutomatically,
   type ParcelTrackingLink,
 } from '../lib/carriers';
@@ -124,7 +125,7 @@ export function ParcelDetail({
   const statusLabel = t(parcelDisplayStatusKey(parcel));
   const completionDate = localizedParcelCompletionDate(parcel, languageTag, t);
   const estimate = parcelDeliveryEstimate(parcel);
-  const { numbers: trackingNumbers, loose: looseLinks } = linksByNumber(parcelTrackingNumbers(parcel), parcelTrackingLinks(parcel, locale));
+  const { numbers: trackingNumbers, loose: looseLinks } = trackingLinksByNumber(parcelTrackingNumbers(parcel), parcelTrackingLinks(parcel, locale));
   const lastChecked = parcel.lastSyncedAt
     ? localizedRelativeTime(parcel.lastSyncedAt, t, languageTag)
     : null;
@@ -707,20 +708,6 @@ export function ParcelDetail({
     </div>,
     document.body,
   );
-}
-
-/**
- * Each carrier's page under its own number: the delivery page under the first number, and an earlier carrier's under
- * the number it gave the parcel. A page with no number of its own is `loose`, and follows them.
- */
-function linksByNumber(numbers: ReturnType<typeof parcelTrackingNumbers>, links: readonly ParcelTrackingLink[]) {
-  const rows = numbers.map((entry) => ({ ...entry, links: [] as ParcelTrackingLink[] }));
-  const loose: ParcelTrackingLink[] = [];
-  for (const link of links) {
-    const row = link.role === 'active' ? rows[0] : rows.slice(1).find((entry) => entry.carrier === link.carrier.id);
-    (row?.links ?? loose).push(link);
-  }
-  return { numbers: rows, loose };
 }
 
 function DeleteParcelDialog({

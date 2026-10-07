@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { createPortal } from 'react-dom';
 import { Icon, ParcelIllustration } from '../components/Icon';
 import { ParcelMapSheet, useParcelRoute } from '../components/ParcelMap';
+import type { Rect } from '../components/map/WorldMap';
 // The journal and the pickup card keep their styles with the deliveries' detail.
 import '../components/ParcelDetail.css';
 import { PeekLockup } from '../components/PeekMark';
@@ -245,9 +246,11 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const openMap = () => { if (route) { trackAction('parcel-map-open'); setMapOpen(true); } };
 
   const activeCarrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
+  // Handed from one carrier to another, the card carries both marks and says who delivers, as a parcel's own card does.
+  const handedOver = !present && carrierKnown && activeCarrier.id !== displayed.id;
   const notes = present ? [] : !carrierKnown ? [t('link.unknown.body', { number: number ?? t('common.parcel') })] : [
     previousEstimateLine(previousEstimate, parcel, wording),
-    activeCarrier.id !== displayed.id ? t('parcel.deliveryCarrier', { carrier: activeCarrier.name }) : null,
+    handedOver ? t('parcel.deliveryCarrier', { carrier: activeCarrier.name }) : null,
     !checking && (parcelIsUnannounced(parcel) || stage === 'registered') ? t('link.notScanned', { carrier: displayed.name }) : null,
   ].filter((note): note is string => !!note);
 
@@ -411,7 +414,8 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const landingPath = signedIn ? LANDING_PATH : '/';
   const toLanding = () => { if (signedIn) openLanding(); else leave(); };
   const invitation = sample && <SampleInvitation carrier={displayed} onTrack={onHome} onSignIn={visitor ? signInToKeep : undefined} />;
-  const map = (shape: 'card' | 'tile') => <RouteMap route={route} parcel={parcel} stage={stage} shape={shape} pip={figure === 'map' || figure === 'none'} onOpen={openMap} />;
+  const map = (shape: 'card' | 'tile', covered?: Rect | null) =>
+    <RouteMap route={route} parcel={parcel} stage={stage} shape={shape} pip={figure === 'map' || figure === 'none'} covered={covered} onOpen={openMap} />;
 
   return <Shell
     onHome={onHome}
@@ -432,10 +436,10 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
       <div className="peekp-column">
         {followed && <AlreadyFollowed name={followed.label || t('common.parcel')} onOpen={() => { trackAction('parcel-link-open-existing'); openDeliveries?.(followed.id); }} />}
         {sample ? <SampleNote landingPath={landingPath} onLanding={toLanding} /> : !owner && !present && <SharedWithYou visitor={!signedIn} until={worksUntil} />}
-        <LinkCard parcel={parcel} stage={stage} carrier={carrierKnown ? displayed : null} headline={headline} name={name} detail={detail}
-          notes={notes} flag={flag} figure={figure} number={number} links={links} settled={entrance === 'reveal' && !checking}
+        <LinkCard parcel={parcel} stage={stage} carrier={carrierKnown ? displayed : null} delivery={handedOver ? activeCarrier : null}
+          headline={headline} name={name} detail={detail} notes={notes} flag={flag} figure={figure} number={number} settled={entrance === 'reveal' && !checking}
           gift={wrapped ? 'wrapped' : opened ? 'opened' : link.gift ? 'own' : undefined}
-          map={figure === 'map' ? map('card') : undefined}
+          map={figure === 'map' ? (covered) => map('card', covered) : undefined}
           bell={bell} />
         <p className="sr-only" role="status">{checked}</p>
         {wrapped && <GiftSurprise />}

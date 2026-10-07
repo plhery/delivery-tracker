@@ -1,11 +1,13 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AutoCarrierNotice } from '../../components/AutoCarrierNotice';
 import { CarrierMark } from '../../components/CarrierMark';
 import { Icon, PARCEL, ParcelIllustration } from '../../components/Icon';
+import type { Rect } from '../../components/map/WorldMap';
+import { useCoveredBox } from '../../components/ParcelMap';
 import { ProgressTrack } from '../../components/ProgressTrack';
 import { useI18n } from '../../i18n';
-import type { CarrierInfo, ParcelTrackingLink } from '../../lib/carriers';
-import { trackAction } from '../../lib/analytics';
+import { carrierBrand } from '../../lib/carrierBrand';
+import type { CarrierInfo } from '../../lib/carriers';
 import type { ParcelWithEvents, Stage } from '../../types';
 import { PIP_TRANSITION_NAME } from '../route';
 import { Glyph } from './glyphs';
@@ -78,11 +80,13 @@ const FLAG_ICONS: Record<ParcelAttention, ReactNode> = {
  * the open box in the middle (`hero`), or not at all when the map beside the
  * card has him.
  */
-export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes, flag, figure, number, map, bell, links, settled, gift }: {
+export function LinkCard({ parcel, stage, carrier, delivery, headline, name, detail, notes, flag, figure, number, map, bell, settled, gift }: {
   parcel: ParcelWithEvents;
   stage: Stage | null;
   /** Null while no carrier is known. */
   carrier: CarrierInfo | null;
+  /** The carrier that delivers a parcel handed over by the first: its mark stands under the first one. */
+  delivery: CarrierInfo | null;
   headline: string;
   name: string | null;
   detail: string | null;
@@ -91,11 +95,10 @@ export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes
   figure: 'map' | 'kraft' | 'hero' | 'none';
   /** What the label on Pip's side says: the number, masked for a viewer. */
   number: string | null;
-  map?: ReactNode;
+  /** The map across the top of the card, told what the card writes over it. */
+  map?: (covered: Rect | null) => ReactNode;
   /** A wrapped gift's way into the alerts, in the card's corner. */
   bell?: ReactNode;
-  /** The carriers of a journey handed from one to another, each with its own page. */
-  links: readonly ParcelTrackingLink[];
   /** The reveal's settle beat: the newest step fills and the sparks twinkle. */
   settled: boolean;
   /**
@@ -108,10 +111,18 @@ export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes
   const { t } = useI18n();
   const delivered = stage === 'delivered';
   const present = gift === 'wrapped' || gift === 'opened';
-  return <section className={`peekp-card peekp-card--${figure}${carrier ? '' : ' peekp-card--neutral'}${present ? ` peekp-card--gift peekp-card--${gift}` : ''}`} aria-label={headline} data-settled={settled || undefined}>
-    {figure === 'map' && map}
+  const card = useRef<HTMLElement>(null);
+  const handedOver = carrier && delivery;
+  // The second mark stands over the map, which keeps clear of it.
+  const [deliveryMark, deliveryMarkBox] = useCoveredBox<HTMLSpanElement>(card, figure === 'map' && !!handedOver);
+  return <section ref={card} className={`peekp-card peekp-card--${figure}${carrier ? '' : ' peekp-card--neutral'}${present ? ` peekp-card--gift peekp-card--${gift}` : ''}`} aria-label={headline} data-settled={settled || undefined}>
+    {figure === 'map' && map?.(deliveryMarkBox)}
     <div className="peekp-card__top">
-      {carrier ? <CarrierMark carrier={carrier} />
+      {handedOver ? <span className="peekp-card__marks">
+        <CarrierMark carrier={carrier} />
+        <span ref={deliveryMark} className="peekp-card__delivery" style={carrierBrand(delivery).style}><CarrierMark carrier={delivery} /></span>
+      </span>
+        : carrier ? <CarrierMark carrier={carrier} />
         : <span className="peekp-card__nocarrier"><Icon name="detect" />{t('link.unknown.carrier')}</span>}
       {bell}
     </div>
@@ -129,14 +140,5 @@ export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes
     </div>
     {flag && <p className="peekp-card__flag">{FLAG_ICONS[flag]}<span>{t(flagKey(flag))}</span></p>}
     {gift !== 'opened' && <div className="peekp-card__progress"><ProgressTrack stage={stage} /></div>}
-    {links.length > 1 && <div className="peekp-card__journey" role="group" aria-label={t('detail.trackingSources')}>
-      {links.map((link) => {
-        const role = t(link.role === 'active' ? 'detail.sourceActive' : link.role === 'waiting' ? 'detail.sourceWaiting' : 'detail.sourceHistory');
-        return <a key={`${link.role}:${link.url}`} href={link.url} target="_blank" rel="noopener noreferrer" data-role={link.role}
-          aria-label={`${t('detail.carrierWebsite', { carrier: link.name })} — ${role}`} onClick={() => trackAction('parcel-carrier-link')}>
-          <span>{link.name}</span><Icon name="arrow" /><small>{role}</small>
-        </a>;
-      })}
-    </div>}
   </section>;
 }

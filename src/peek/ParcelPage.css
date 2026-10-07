@@ -32,6 +32,11 @@
 .peekp-card__top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; }
 .peekp-card__top .carrier-mark { min-width: 0; }
 .peekp-card__top .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; overflow: visible; }
+/* Handed from one carrier to another, the card carries both marks: the delivering carrier's under the first, in its own
+   colours. The first mark stays where it is on any other card. */
+.peekp-card__top:has(.peekp-card__marks) { align-items: flex-start; }
+.peekp-card__marks { display: grid; justify-items: start; gap: 7px; min-width: 0; padding-top: 9px; }
+.peekp-card__delivery { display: flex; min-width: 0; --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark)); }
 .peekp-card__nocarrier { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: var(--ink-soft); font-size: 12px; font-weight: 650; }
 .peekp-card__nocarrier svg { width: 18px; height: 18px; flex: 0 0 auto; }
 .peekp-card__body { position: relative; display: flex; align-items: center; gap: 16px; margin-top: 14px; }
@@ -46,11 +51,6 @@
 .peekp-card .progress-track { gap: 4px; }
 .peekp-card .progress-track__dot { background: color-mix(in srgb, var(--tone) 13%, transparent); }
 .peekp-card .progress-track__dot--filled { background: color-mix(in srgb, var(--tone) 55%, var(--tone-surface)); }
-.peekp-card__journey { position: relative; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.peekp-card__journey a { display: grid; grid-template-columns: minmax(0, 1fr) 14px; flex: 1 1 140px; gap: 4px 8px; min-height: 56px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--tone) 18%, transparent); border-radius: 12px; color: var(--tone); font-size: 13px; text-decoration: none; }
-.peekp-card__journey a[data-role=active] { background: color-mix(in srgb, var(--tone) 7%, transparent); }
-.peekp-card__journey svg { width: 13px; height: 13px; }
-.peekp-card__journey small { grid-column: 1 / -1; color: var(--ink-soft); font-size: 11px; }
 
 /* Pip, the kraft parcel: in the card's corner, or in its middle when the parcel has arrived. */
 .peekp-pip { position: relative; flex-shrink: 0; width: 116px; margin: -14px -8px -18px 0; }
@@ -189,6 +189,11 @@
 .peekp-number__error { margin: 4px 0 0; color: var(--orange-text); font-size: 12px; }
 .peekp-number__link { display: flex; align-items: center; gap: 7px; width: fit-content; min-height: 36px; padding: 4px 0; color: var(--tone); font-size: 12px; text-decoration: none; }
 .peekp-number__link svg { width: 13px; height: 13px; }
+/* A page with no number of its own says what it is, at the end of its line. */
+.peekp-number__link:has(small) { width: auto; }
+.peekp-number__link small { margin-left: auto; color: var(--ink-soft); font-size: 10px; }
+/* A second number, with its own carrier's page, stands a little apart from the first. */
+.peekp-number__link + .peekp-number__row { margin-top: 10px; }
 .peekp-facts { display: grid; gap: 10px; margin: 2px 6px 0; font-size: 13px; }
 .peekp-facts p { margin: 0; color: var(--ink-soft); font-size: 12px; overflow-wrap: anywhere; }
 .peekp-facts dl { display: grid; gap: 10px; margin: 0; }

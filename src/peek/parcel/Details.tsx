@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { Icon } from '../../components/Icon';
 import { trackingFailureMessage, useI18n, type MessageKey } from '../../i18n';
 import { AMAZON_HISTORY_EXPIRED } from '../../lib/amazon';
@@ -10,6 +10,7 @@ import {
   formatTrackingNumber,
   parcelTrackingLinks,
   parcelTrackingNumbers,
+  trackingLinksByNumber,
   tracksAutomatically,
   type CarrierInfo,
   type ParcelTrackingLink,
@@ -42,13 +43,16 @@ export function carrierLinks(view: ParcelLinkView, locale: string): ParcelTracki
   }
 }
 
-/** The tracking number with a way to copy it, and the carrier's own page. A viewer sees the number's two ends. */
+/**
+ * The tracking number with a way to copy it, and the carrier's own page under it: each carrier's under its own number
+ * when the parcel was handed from one to another. A viewer sees the number's two ends.
+ */
 export function NumberSection({ view, links }: { view: ParcelLinkView; links: readonly ParcelTrackingLink[] }) {
   const { t, locale } = useI18n();
   const { parcel, numberHint } = view;
   const [copied, setCopied] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
-  const numbers = parcel.trackingNumber ? parcelTrackingNumbers(parcel) : [];
+  const { numbers, loose } = trackingLinksByNumber(parcel.trackingNumber ? parcelTrackingNumbers(parcel) : [], links);
 
   useEffect(() => {
     if (!copied) return;
@@ -64,23 +68,34 @@ export function NumberSection({ view, links }: { view: ParcelLinkView; links: re
     setCopied(number);
   }
 
+  /** The carriers' own pages. Under its own number a link needs no more words; another says what it is to this parcel. */
+  const pages = (shown: readonly ParcelTrackingLink[], own: boolean) => shown.map((link) => {
+    const role = own || link.role === 'active' ? null : t(link.role === 'waiting' ? 'detail.sourceWaiting' : 'detail.sourceHistory');
+    const website = t('detail.carrierWebsite', { carrier: link.name });
+    return <a key={`${link.role}:${link.url}`} className="peekp-number__link" href={link.url} target="_blank" rel="noopener noreferrer"
+      aria-label={role ? `${website} — ${role}` : undefined} onClick={() => trackAction('parcel-carrier-link')}>
+      <span>{website}</span><Icon name="arrow" />{role && <small>{role}</small>}
+    </a>;
+  });
+
   if (!numbers.length && !numberHint && !links.length) return null;
   return <section className="peekp-number">
-    {numbers.map(({ carrier, number }) => <div className="peekp-number__row" key={number}>
-      <div><span>{numbers.length > 1 ? carrierInfo(carrier, locale).name : t('detail.trackingNumber')}</span><strong>{formatTrackingNumber(number, carrier)}</strong></div>
-      <button type="button" onClick={() => void copy(number, carrier)}
-        aria-label={numbers.length > 1 ? `${t('detail.copyTracking')} — ${carrierInfo(carrier, locale).name}` : t('detail.copyTracking')}>
-        <Icon name={copied === number ? 'check' : 'copy'} />
-        <span className="sr-only" aria-live="polite">{copied === number ? t('detail.copied') : ''}</span>
-      </button>
-    </div>)}
+    {numbers.map(({ carrier, number, links: own }) => <Fragment key={number}>
+      <div className="peekp-number__row">
+        <div><span>{numbers.length > 1 ? carrierInfo(carrier, locale).name : t('detail.trackingNumber')}</span><strong>{formatTrackingNumber(number, carrier)}</strong></div>
+        <button type="button" onClick={() => void copy(number, carrier)}
+          aria-label={numbers.length > 1 ? `${t('detail.copyTracking')} — ${carrierInfo(carrier, locale).name}` : t('detail.copyTracking')}>
+          <Icon name={copied === number ? 'check' : 'copy'} />
+          <span className="sr-only" aria-live="polite">{copied === number ? t('detail.copied') : ''}</span>
+        </button>
+      </div>
+      {pages(own, true)}
+    </Fragment>)}
     {!numbers.length && numberHint && <div className="peekp-number__row">
       <div><span>{t('detail.trackingNumber')}</span><strong>{maskedNumber(numberHint)}</strong></div>
     </div>}
+    {pages(loose, false)}
     {failed && <p className="peekp-number__error" role="alert">{t('detail.copyUnavailable')}</p>}
-    {links.length === 1 && <a className="peekp-number__link" href={links[0].url} target="_blank" rel="noopener noreferrer" onClick={() => trackAction('parcel-carrier-link')}>
-      <span>{t('detail.carrierWebsite', { carrier: links[0].name })}</span><Icon name="arrow" />
-    </a>}
   </section>;
 }
 

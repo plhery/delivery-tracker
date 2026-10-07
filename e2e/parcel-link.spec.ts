@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { allowCopying, copied, fits, track } from './peek';
 
 // The demo build keeps lookups in the browser; every number here is fictional.
@@ -204,6 +204,82 @@ test('shows still frames under reduced motion', async ({ page }) => {
   await check.click();
   await expect(status(page)).toHaveText('Delivered');
   expect(await running()).toBe(0);
+});
+
+test('shows a parcel handed from one carrier to another with both marks, its map clear of the second', async ({ page, isMobile }) => {
+  // Two shared links to the same journey: handed from GLS Germany to Swiss Post, and with GLS Germany alone.
+  await page.addInitScript(() => {
+    const at = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
+    const stops = [['Amsterdam', 'NL', 52.37, 4.9], ['Köln', 'DE', 50.94, 6.96], ['Basel', 'CH', 47.56, 7.59], ['Bern', 'CH', 46.95, 7.45]] as const;
+    const link = (id: string, handover: object) => ({
+      key: null, createdAt: at(80), openedAt: at(1), showNumber: true,
+      parcel: {
+        id, label: '', carrier: 'gls-de', trackingNumber: '12345678901', createdAt: at(80), syncStatus: 'idle', lastSyncedAt: at(.05), ...handover,
+        events: stops.map(([name, country, latitude, longitude], index) => ({
+          id: `${id}-${index}`, parcelId: id, stage: index ? 'in_transit' : 'accepted', occurredAt: at((stops.length - index) * 12),
+          description: 'Scan', location: name, place: { name, country, latitude, longitude, precision: 'city' },
+        })),
+      },
+    });
+    localStorage.setItem('sdt.peek.demo.v1', JSON.stringify({
+      HandEurope22: link('handed', { originalCarrier: 'gls-de', originalTrackingNumber: '12345678901', trackingSource: 'swiss-post', activeTrackingNumber: '993412345612345678' }),
+      MonoEurope22: link('plain', {}),
+    }));
+  });
+  const card = page.locator('.peekp-card');
+  const marks = card.locator('.peekp-card__top .carrier-mark');
+  // A phone's card holds the map; a wide screen sets it beside the card.
+  const name = page.locator('.peekp-map').getByText('Amsterdam', { exact: true });
+  /** Where a part of the card stands, from the card's own corner. */
+  const within = async (part: Locator) => {
+    const [box, frame] = [(await part.boundingBox())!, (await card.boundingBox())!];
+    return { x: box.x - frame.x, y: box.y - frame.y, width: box.width, height: box.height };
+  };
+  const apart = (a: { x: number; y: number; width: number; height: number }, b: typeof a) =>
+    a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
+  /** The page has opened and its map has landed: nothing moves on the screen any more. */
+  const settled = async () => {
+    await expect(name).toBeVisible();
+    let last = '';
+    await expect.poll(async () => {
+      const now = JSON.stringify([await card.boundingBox(), await name.boundingBox()]);
+      const still = now === last;
+      last = now;
+      return still;
+    }).toBe(true);
+  };
+
+  await page.goto('/p/MonoEurope22');
+  await settled();
+  await expect(marks).toHaveCount(1);
+  const plain = { mark: await within(marks.first()), name: await within(name) };
+  await expect(card.getByText(/^Delivery with/)).toHaveCount(0);
+
+  await page.goto('/p/HandEurope22');
+  await settled();
+  await expect(marks).toHaveCount(2);
+  // The first mark stands where it does on any card; the delivering carrier's is under it.
+  const [first, second] = [await within(marks.first()), await within(marks.last())];
+  expect(Math.abs(first.x - plain.mark.x) + Math.abs(first.y - plain.mark.y)).toBeLessThan(.5);
+  expect(second.x).toBeCloseTo(first.x, 0);
+  expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
+  await expect(card.getByText('Delivery with Swiss Post')).toBeVisible();
+  // The route's names and dots keep off the second mark.
+  await expect(card.locator('.peekp-map')).toHaveCount(isMobile ? 1 : 0);
+  if (isMobile) {
+    // The first name stood where the second mark now is: the route has moved aside, with its name.
+    expect(apart(plain.name, second)).toBe(false);
+    expect(apart(await within(name), second)).toBe(true);
+    for (const dot of await card.locator('.peekp-map g[data-kind] circle').all()) expect(apart(await within(dot), second)).toBe(true);
+  }
+  // Each carrier's website stands under its own number, below the card.
+  await expect(card.getByRole('link')).toHaveCount(0);
+  const section = page.locator('.peekp-number');
+  for (const carrier of ['Swiss Post', 'GLS Germany']) {
+    const website = section.getByRole('link', { name: new RegExp(`^Open the ${carrier}.* website$`) });
+    await expect(website).toHaveCount(1);
+    await expect(website.locator('xpath=preceding-sibling::*[1]').getByRole('button')).toHaveAccessibleName(`Copy tracking number — ${carrier}`);
+  }
 });
 
 test('keeps the parcel after “Create an account”: the demo takes it with its name and history, then offers the device’s other parcels', async ({ page }) => {

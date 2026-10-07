@@ -348,7 +348,8 @@ extension ParcelLinkStore {
     /// `delivered` (the fixture once it has arrived: no route, so its box opens),
     /// `route` (a demo parcel with a route, which may be kept), `gift` (the gift fixture, on its
     /// way), `giftDelivered` (the same gift, delivered, with the words its link carried),
-    /// `stopped` or `gone`.
+    /// `handover` (a parcel AliExpress handed to Swiss Post, on its way from Shenzhen to Zürich), `handoverPlain` (the same
+    /// parcel, its scans without a place), `stopped` or `gone`.
     /// `-sdt.debug.parcelLink.signedIn YES` shows it as a signed-in person sees it.
     static func debugPreview(defaults: UserDefaults = .standard) -> ParcelLinkStore? {
         guard let variant = defaults.string(forKey: "sdt.debug.parcelLink") else { return nil }
@@ -395,6 +396,22 @@ extension ParcelLinkStore {
                 carrierData: PublicPackageCarrierData(senderName: parcel.carrierData?.senderName, destinationCountry: parcel.carrierData?.destinationCountry),
                 notificationsMuted: false, trackingEvents: parcel.trackingEvents
             )
+        }
+        if variant.hasPrefix("handover"), let package = response?.package {
+            let now = Date()
+            let stops = [("Shenzhen", "CN", 22.54, 114.06), ("Hong Kong", "HK", 22.32, 114.17), ("Leipzig", "DE", 51.34, 12.37), ("Zürich", "CH", 47.37, 8.54)]
+            response?.link.numberShown = true
+            response?.package.trackingNumber = "LP00123456789012"
+            response?.package.numberHint = nil
+            response?.package.carrier = .aliexpress
+            response?.package.carrierData = PublicPackageCarrierData(
+                activeTrackingCarrier: .swissPost, activeTrackingNumber: "RB123456789CN", originalCarrier: .aliexpress, originalTrackingNumber: "LP00123456789012")
+            response?.package.trackingEvents = stops.enumerated().reversed().map { index, stop in
+                TrackingEvent(id: UUID(), packageID: package.id, stage: index == 0 ? .accepted : .inTransit, description: "Scan", location: stop.0,
+                              occurredAt: DateParser.isoString(now.addingTimeInterval(-Double(stops.count - index) * 43_200)),
+                              place: variant == "handover" ? EventPlace(latitude: stop.2, longitude: stop.3, precision: .city, country: stop.1, name: stop.0) : nil)
+            }
+            response?.package.lastSyncedAt = DateParser.isoString(now.addingTimeInterval(-120))
         }
         let shown = variant == "gone" ? nil : response
         let store = ParcelLinkStore(defaults: defaults, read: { _ in

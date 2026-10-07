@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { pipMood } from '../../components/map/Pip';
 import { defaultMode, formatKm, type Route } from '../../components/map/route';
-import { WorldMap } from '../../components/map/WorldMap';
+import { WorldMap, type Rect } from '../../components/map/WorldMap';
 import { useI18n } from '../../i18n';
 import { formatJourneyDuration } from '../../lib/passport';
 import { isFinal } from '../../lib/stages';
@@ -25,13 +25,15 @@ function journeyDuration(parcel: ParcelWithEvents, languageTag: string): string 
  * the card on a wide screen. The drawing is decorative; the button over it
  * opens the whole map.
  */
-export function RouteMap({ route, parcel, stage, shape, pip, onOpen }: {
+export function RouteMap({ route, parcel, stage, shape, pip, covered, onOpen }: {
   route: Route | null;
   parcel: ParcelWithEvents;
   stage: Stage | null;
   shape: 'card' | 'tile';
   /** Pip stands on the map unless the card already shows him. */
   pip: boolean;
+  /** What the card writes over the map below its top row, such as a second carrier's mark. */
+  covered?: Rect | null;
   onOpen: () => void;
 }) {
   const { t, languageTag } = useI18n();
@@ -43,7 +45,7 @@ export function RouteMap({ route, parcel, stage, shape, pip, onOpen }: {
   return <div className={`peekp-map peekp-map--${shape}`} data-card-picture={shape === 'card' ? '' : undefined}>
     <div className="peekp-map__drawing" aria-hidden="true">
       {route && <WorldMap route={route} mode={defaultMode(route, current)} time={time} look="tint" labels="ends" context={false}
-        live={!finished} peek pip={mood && { mood, ceiling: INSETS[shape].top }} languageTag={languageTag} insets={INSETS[shape]} className="peekp-map__canvas" />}
+        live={!finished} peek pip={mood && { mood, ceiling: INSETS[shape].top }} languageTag={languageTag} insets={INSETS[shape]} covered={covered} className="peekp-map__canvas" />}
     </div>
     <button type="button" className="peekp-map__open" disabled={!route} onClick={onOpen} aria-label={t('map.open')} />
     {shape === 'tile' && route && route.stops.length > 0 && <p className="peekp-map__facts">

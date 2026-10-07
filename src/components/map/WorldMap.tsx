@@ -5,7 +5,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncEx
 import { easeInOut, interpolateCamera, projection, subsolarPoint, zoomCamera, type Camera } from './camera';
 import { detailRead, levelStrengths, loadDetail, noDetail, onDetailLoaded, paintDetail, spanKm, tilesInView, type DetailTile } from './detail';
 import { geography, useWorld, type Coordinate } from './geography';
-import { circleOf, layout, mapView, targetCamera, type Insets, type Overlay, type PipPlacing, type PipSpot, type Rect, type Shape, type Size } from './layout';
+import { circleOf, layout, mapView, shownOf, targetCamera, type Insets, type Overlay, type PipPlacing, type PipSpot, type Rect, type Shape, type Size } from './layout';
 import { InkPip } from './Pip';
 import { formatKm, type MapMode, type Route } from './route';
 import { springAt, springSettleTime, type Spring } from '../../lib/spring';
@@ -114,14 +114,18 @@ export function WorldMap({
     const [x, y, width, height] = coveredKey.split(',').map(Number);
     return { x, y, width, height };
   }, [coveredKey]);
+  // Pip's spot is looked for afresh in each frame: only where he may stand matters to it.
+  const [pipMood, pipCeiling, pipFloor, pipInset] = [pip?.mood, pip?.ceiling, pip?.floor, pip?.inset];
   const target = useMemo(() => {
     if (!ready || !size) return null;
     const room = { top, right, bottom, left };
-    // What the card writes over the map also moves it when a place of the journey would lose its name to it.
-    const named = (camera: Camera, box?: Rect) =>
-      layout(framed, camera, size, room, shape, labels, sites, mode, false, languageTag, null, textWidth, undefined, box).labels.length;
-    return targetCamera(framed, mode, size, room, shape, written, written && named);
-  }, [ready, framed, mode, size, top, right, bottom, left, shape, written, labels, sites, languageTag]);
+    // What the card writes over the map also moves it when a place of the journey would lose its name to it, or Pip
+    // his spot beside the parcel.
+    const standing = pipMood ? { mood: pipMood, ceiling: pipCeiling, floor: pipFloor, inset: pipInset } : null;
+    const shown = (camera: Camera, box?: Rect) =>
+      shownOf(layout(framed, camera, size, room, shape, labels, sites, mode, false, languageTag, standing, textWidth, undefined, box));
+    return targetCamera(framed, mode, size, room, shape, written, written && shown);
+  }, [ready, framed, mode, size, top, right, bottom, left, shape, written, labels, sites, languageTag, pipMood, pipCeiling, pipFloor, pipInset]);
 
   // Only a change of view, or recentering, brings a moved map back; a new frame or scan leaves it where it was put.
   useEffect(() => {

@@ -335,13 +335,25 @@ describe('ParcelPage stages and troubles', () => {
       carrier: 'swiss-post', trackingNumber: 'TESTDELIVERYLEG01', originalCarrier: 'aliexpress', originalTrackingNumber: 'TESTORIGINLEG0001',
       trackingSource: 'swiss-post', activeTrackingNumber: 'TESTDELIVERYLEG01',
     }));
+    // The card carries both marks, the delivering carrier's under the first, and says who delivers.
+    expect([...card().querySelectorAll('.peekp-card__top .carrier-mark')].map((mark) => mark.getAttribute('title'))).toEqual(['AliExpress / Cainiao', 'Swiss Post']);
+    expect(card().querySelector('.peekp-card__delivery')).toHaveTextContent('Swiss Post');
     expect(within(card()).getByText('Delivery with Swiss Post')).toBeVisible();
-    const sources = within(card()).getByRole('group', { name: 'Tracking sources' });
-    expect(within(sources).getAllByRole('link').map((link) => link.getAttribute('aria-label'))).toEqual([
-      'Open the Swiss Post website — Delivery tracking', 'Open the AliExpress / Cainiao website — Earlier journey',
+    // Each carrier's website stands under its own number, below the card, with no more words.
+    expect(within(card()).queryByRole('link')).not.toBeInTheDocument();
+    const links = screen.getAllByRole('link', { name: /^Open the .+ website$/ });
+    expect(links.map((link) => link.previousElementSibling!.querySelector('button')!.getAttribute('aria-label'))).toEqual([
+      'Copy tracking number — Swiss Post', 'Copy tracking number — AliExpress / Cainiao',
     ]);
-    expect(screen.getByRole('button', { name: 'Copy tracking number — Swiss Post' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Copy tracking number — AliExpress / Cainiao' })).toBeVisible();
+    expect(links.map((link) => link.textContent)).toEqual(['Open the Swiss Post website', 'Open the AliExpress / Cainiao website']);
+  });
+
+  it('keeps a single mark for a parcel one carrier carries', async () => {
+    await shown(view(journey));
+    expect(card().querySelectorAll('.carrier-mark')).toHaveLength(1);
+    expect(card().querySelector('.peekp-card__delivery')).toBeNull();
+    expect(within(card()).queryByText(/^Delivery with/)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^Open the .+ website$/ }).previousElementSibling).toHaveClass('peekp-number__row');
   });
 
   it('tells the estimate the carrier gave before it changed it', async () => {

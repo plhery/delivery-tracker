@@ -446,8 +446,8 @@ final class ParcelRouteTests: XCTestCase {
                        pip: pip ? PipRequest(mood: .look, ceiling: 52, floor: 160) : nil, covered: covered)
         }
         /// How many places of the journey a camera names, around the writing when there is some, as the map counts them.
-        func counted(_ route: ParcelRoute, _ mode: ParcelRoute.Mode = .journey) -> (GlobeCamera, CGRect?) -> Int {
-            { overlay(route, $0, mode, covered: $1).labels.count }
+        func counted(_ route: ParcelRoute, _ mode: ParcelRoute.Mode = .journey) -> (GlobeCamera, CGRect?) -> Double {
+            { overlay(route, $0, mode, covered: $1).shown }
         }
         func usual(_ route: ParcelRoute, _ mode: ParcelRoute.Mode = .journey) -> GlobeCamera {
             .framing(route, mode: mode, in: size, insets: card)
@@ -458,7 +458,7 @@ final class ParcelRouteTests: XCTestCase {
 
         // A route that stays clear of the writing keeps its usual frame, and a name moves off it.
         let fromLondon = ParcelRoute(places: [london, city("Reims", "FR", 4.031, 49.258), basel, harkingen])
-        XCTAssertEqual(GlobeCamera.framing(fromLondon, mode: .journey, in: size, insets: card, covered: mark, named: counted(fromLondon)),
+        XCTAssertEqual(GlobeCamera.framing(fromLondon, mode: .journey, in: size, insets: card, covered: mark, shown: counted(fromLondon)),
                        usual(fromLondon))
         XCTAssertTrue(try XCTUnwrap(name(overlay(fromLondon, usual(fromLondon)), "London")).intersects(mark))
         let written = overlay(fromLondon, usual(fromLondon), covered: mark)
@@ -480,7 +480,7 @@ final class ParcelRouteTests: XCTestCase {
         let fromAmsterdam = ParcelRoute(places: [city("Amsterdam", "NL", 4.9, 52.37), city("Köln", "DE", 6.96, 50.94), basel, bern])
         XCTAssertEqual(GlobeCamera.framing(fromAmsterdam, mode: .journey, in: size, insets: card, covered: mark), usual(fromAmsterdam))
         XCTAssertEqual(overlay(fromAmsterdam, usual(fromAmsterdam), covered: mark).labels.map(\.text), ["Bern"])
-        let beside = GlobeCamera.framing(fromAmsterdam, mode: .journey, in: size, insets: card, covered: mark, named: counted(fromAmsterdam))
+        let beside = GlobeCamera.framing(fromAmsterdam, mode: .journey, in: size, insets: card, covered: mark, shown: counted(fromAmsterdam))
         XCTAssertNotEqual(beside, usual(fromAmsterdam))
         XCTAssertEqual(beside.scale, usual(fromAmsterdam).scale, accuracy: 0.000001)
         let moved = overlay(fromAmsterdam, beside, covered: mark)
@@ -493,7 +493,7 @@ final class ParcelRouteTests: XCTestCase {
                        atlas: atlas, locale: Locale(identifier: "en"), countryName: { $0 }, covered: covered)
         }
         let roomy = GlobeCamera.framing(fromAmsterdam, mode: .journey, in: narrow, insets: card)
-        let aside = GlobeCamera.framing(fromAmsterdam, mode: .journey, in: narrow, insets: card, covered: mark) { onNarrow($0, $1).labels.count }
+        let aside = GlobeCamera.framing(fromAmsterdam, mode: .journey, in: narrow, insets: card, covered: mark) { onNarrow($0, $1).shown }
         XCTAssertEqual(aside.scale, roomy.scale, accuracy: 0.000001)
         XCTAssertGreaterThan(aside.offset.x - roomy.offset.x, (mark.maxX - card.leading) / 2 + 1)
         XCTAssertEqual(onNarrow(aside, mark).labels.map(\.text), ["Bern", "Amsterdam"])
@@ -503,9 +503,29 @@ final class ParcelRouteTests: XCTestCase {
         let spot = try XCTUnwrap(overlay(fromBerlin, usual(fromBerlin), pip: true).pip).box.insetBy(dx: 4, dy: 4)
         XCTAssertFalse(try XCTUnwrap(overlay(fromBerlin, usual(fromBerlin), covered: spot, pip: true).pip).box.intersects(spot))
 
+        // A shared parcel's card, and a parcel just under its second mark: Pip never stands on the mark, so the route is framed
+        // again for him to have a spot, every place keeping its name.
+        let shared = CGSize(width: 358, height: 236)
+        let sharedCard = EdgeInsets(top: 48, leading: 18, bottom: 56, trailing: 18)
+        let sharedMark = CGRect(x: 20, y: 50, width: 100, height: 18)
+        let toZurich = ParcelRoute(places: [city("Shenzhen", "CN", 114.06, 22.54), city("Hong Kong", "HK", 114.17, 22.32),
+                                            city("Leipzig", "DE", 12.37, 51.34), zurich])
+        func onShared(_ camera: GlobeCamera, _ covered: CGRect?) -> MapOverlay {
+            MapOverlay(route: toZurich, camera: camera, size: shared, insets: sharedCard, labels: .ends, mode: .journey, context: false,
+                       atlas: atlas, locale: Locale(identifier: "en"), countryName: { $0 }, pip: PipRequest(mood: .look, ceiling: 48), covered: covered)
+        }
+        let sharedUsual = GlobeCamera.framing(toZurich, mode: .journey, in: shared, insets: sharedCard)
+        XCTAssertNotNil(onShared(sharedUsual, nil).pip)
+        XCTAssertFalse(onShared(sharedUsual, sharedMark).pip?.box.intersects(sharedMark) ?? false)
+        let roomForPip = GlobeCamera.framing(toZurich, mode: .journey, in: shared, insets: sharedCard, covered: sharedMark) { onShared($0, $1).shown }
+        let framedForPip = onShared(roomForPip, sharedMark)
+        XCTAssertFalse(try XCTUnwrap(framedForPip.pip).box.intersects(sharedMark))
+        XCTAssertEqual(framedForPip.labels.map(\.text), ["Zürich", "Shenzhen"])
+        XCTAssertFalse(framedForPip.labels.contains { $0.frame.intersects(sharedMark) })
+
         // In a close-up, the chip of a far end moves beside the writing, off the parcel's dot.
         let lastMile = ParcelRoute(places: [london, basel, harkingen, bern])
-        let close = GlobeCamera.framing(lastMile, mode: .now, in: size, insets: card, covered: mark, named: counted(lastMile, .now))
+        let close = GlobeCamera.framing(lastMile, mode: .now, in: size, insets: card, covered: mark, shown: counted(lastMile, .now))
         XCTAssertEqual(close, usual(lastMile, .now))
         let chip = { (overlay: MapOverlay) -> CGRect in
             let pointer = overlay.pointers[0]
