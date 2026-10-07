@@ -515,16 +515,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             for rule in definition.detectionRules {
                 guard Self.matches(number, pattern: rule.pattern) else { continue }
                 if let rawPattern = rule.rawPattern, !Self.matches(printed, pattern: rawPattern) { continue }
-                if rule.checksum == "mondial-relay" && !Self.isValidMondialRelayBarcode(number) { continue }
-                if rule.checksum == "s10" && !Self.isValidS10(number) { continue }
-                if rule.checksum == "hermes" && !Self.isValidHermesParcelNumber(number) { continue }
-                if rule.checksum == "gls" && !Self.isValidGlsParcelNumber(number) { continue }
-                if rule.checksum == "dhl-express" && !Self.isValidDhlExpressWaybill(number) { continue }
-                if rule.checksum == "tnt" && !Self.isValidTntConsignmentNumber(number) { continue }
-                if rule.checksum == "poczta-polska" && !Self.isValidPocztaPolskaBarcode(number) { continue }
-                if rule.checksum == "correos-spain" && !Self.isValidCorreosSpainCheckLetter(number) { continue }
-                if rule.checksum == "dpd" && !Self.isValidDpdParcelNumber(number) { continue }
-                if rule.checksum == "usps" && !Self.isValidUspsPackageBarcode(number) { continue }
+                if let checksum = rule.checksum, !Self.checksumPasses(checksum, number) { continue }
                 matches.append((carrier, rule.confidence == "high" ? .high : .low, rule.preferred == true))
                 break
             }
@@ -801,14 +792,46 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         return value
     }
 
+    /// The rule's check, as the shared engine runs it. An id this build does not know passes,
+    /// as if the rule had no checksum.
+    private static func checksumPasses(_ checksum: String, _ number: String) -> Bool {
+        switch checksum {
+        case "mondial-relay": isValidMondialRelayBarcode(number)
+        case "s10": isValidS10(number)
+        case "hermes": isValidHermesParcelNumber(number)
+        case "gls": isValidGlsParcelNumber(number)
+        case "dhl-express": isValidDhlExpressWaybill(number)
+        case "tnt": isValidTntConsignmentNumber(number)
+        case "poczta-polska": isValidPocztaPolskaBarcode(number)
+        case "correos-spain": isValidCorreosSpainCheckLetter(number)
+        case "dpd": isValidDpdParcelNumber(number)
+        case "usps": isValidUspsPackageBarcode(number)
+        case "sscc": isValidSscc(number)
+        case "ups": isValidUpsTrackingNumber(number)
+        case "colissimo": isValidColissimoParcelNumber(number)
+        case "ukrposhta": isValidUkrposhtaBarcode(number)
+        case "evri": isValidEvriParcelNumber(number)
+        case "mod7": hasMod7CheckDigit(number)
+        case "gs1": hasGs1CheckDigit(number)
+        case "ontrac": isValidOnTracTrackingNumber(number)
+        case "luhn": hasLuhnCheckDigit(number)
+        case "fedex": isValidFedExTrackingNumber(number)
+        case "sf-express": isValidSfExpressWaybill(number)
+        default: true
+        }
+    }
+
+    /// Mod 11 with weights 2 to 7 repeating from the right; a result of 10 or 11 becomes 0.
+    private static func mod11CheckDigit(_ digits: ArraySlice<Int>) -> Int {
+        let sum = digits.reversed().enumerated().reduce(0) { $0 + $1.element * (2 + $1.offset % 6) }
+        let remainder = 11 - sum % 11
+        return remainder >= 10 ? 0 : remainder
+    }
+
     static func isValidMondialRelayBarcode(_ value: String) -> Bool {
         guard matches(value, pattern: "^[0-9]{26}$") else { return false }
         let digits = value.compactMap(\.wholeNumberValue)
-        func check(_ range: Range<Int>) -> Int {
-            let sum = digits[range].reversed().enumerated().reduce(0) { $0 + $1.element * (2 + $1.offset % 6) }
-            let remainder = 11 - sum % 11
-            return remainder >= 10 ? 0 : remainder
-        }
+        func check(_ range: Range<Int>) -> Int { mod11CheckDigit(digits[range]) }
         let sequence = digits[10] * 10 + digits[11]
         let count = digits[12] * 10 + digits[13]
         return sequence > 0 && sequence <= count && check(0..<14) == digits[14] && check(15..<25) == digits[25]
@@ -828,6 +851,104 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         let digits = value.compactMap(\.wholeNumberValue)
         let sum = digits[0..<11].reversed().enumerated().reduce(1) { $0 + $1.element * ($1.offset % 2 == 0 ? 3 : 1) }
         return (10 - sum % 10) % 10 == digits[11]
+    }
+
+    /// Ukrposhta's 13-digit domestic barcode ends in the mod 11 check of its first twelve digits.
+    static func isValidUkrposhtaBarcode(_ value: String) -> Bool {
+        guard matches(value, pattern: "^[0-9]{13}$") else { return false }
+        let digits = value.compactMap(\.wholeNumberValue)
+        return mod11CheckDigit(digits[0..<12]) == digits[12]
+    }
+
+    /// The number before the last digit, divided by seven, leaves the last digit: Yamato's
+    /// 12-digit numbers, and Blue Dart and Aramex 11-digit waybills alike.
+    static func hasMod7CheckDigit(_ value: String) -> Bool {
+        guard matches(value, pattern: "^[0-9]{2,15}$"),
+              let serial = Int(value.dropLast()), let check = value.last?.wholeNumberValue else { return false }
+        return serial % 7 == check
+    }
+
+    /// GS1 mod 10: counted from the check digit, the digits before it weigh 3, 1, 3, …
+    static func hasGs1CheckDigit(_ value: String) -> Bool {
+        guard matches(value, pattern: "^[0-9]{2,}$") else { return false }
+        let digits = value.compactMap(\.wholeNumberValue)
+        let sum = digits.dropLast().reversed().enumerated().reduce(0) { $0 + $1.element * ($1.offset % 2 == 0 ? 3 : 1) }
+        return (10 - sum % 10) % 10 == digits[digits.count - 1]
+    }
+
+    /// Luhn over every digit, the last one being the check: Purolator's 12-digit PINs.
+    static func hasLuhnCheckDigit(_ value: String) -> Bool {
+        guard matches(value, pattern: "^[0-9]{2,}$") else { return false }
+        let sum = value.compactMap(\.wholeNumberValue).reversed().enumerated().reduce(0) { total, item in
+            let doubled = item.element * (item.offset % 2 == 0 ? 1 : 2)
+            return total + (doubled > 9 ? doubled - 9 : doubled)
+        }
+        return sum % 10 == 0
+    }
+
+    /// FedEx 12-digit numbers: the first eleven digits weigh 3, 1, 7, … from the left, and the
+    /// sum mod 11 mod 10 is the last digit.
+    static func isValidFedExTrackingNumber(_ value: String) -> Bool {
+        guard matches(value, pattern: "^[0-9]{12}$") else { return false }
+        let digits = value.compactMap(\.wholeNumberValue)
+        let weights = [3, 1, 7]
+        let sum = digits[0..<11].enumerated().reduce(0) { $0 + $1.element * weights[$1.offset % 3] }
+        return sum % 11 % 10 == digits[11]
+    }
+
+    /// A digit keeps its value; a letter counts as its ASCII code minus 63, mod 10 (A = 2, …, Z = 7).
+    private static func upsCharacterValue(_ character: Character) -> Int {
+        character.wholeNumberValue ?? (Int(character.asciiValue ?? 63) - 63) % 10
+    }
+
+    /// Weights 1, 2, 1, … from the left, plain products, and ten's complement.
+    private static func upsCheckDigit(_ payload: Substring) -> Int {
+        let sum = payload.enumerated().reduce(0) { $0 + upsCharacterValue($1.element) * ($1.offset % 2 == 0 ? 1 : 2) }
+        return (10 - sum % 10) % 10
+    }
+
+    /// UPS `1Z` numbers: fifteen characters and a check digit over those fifteen.
+    static func isValidUpsTrackingNumber(_ value: String) -> Bool {
+        guard matches(value, pattern: "^1Z[0-9A-Z]{15}[0-9]$") else { return false }
+        return upsCheckDigit(value.dropFirst(2).prefix(15)) == value.last?.wholeNumberValue
+    }
+
+    /// OnTrac's `C` or `D` and fourteen digits: the letter counts as 4 or 5 in the UPS check.
+    static func isValidOnTracTrackingNumber(_ value: String) -> Bool {
+        guard matches(value, pattern: "^[CD][0-9]{14}$") else { return false }
+        return upsCheckDigit(value.prefix(14)) == value.last?.wholeNumberValue
+    }
+
+    /// Evri 16-character parcel numbers: the first fifteen characters, valued as UPS values
+    /// letters, weigh 2, 1, 2, … from the left; the sum mod 10 is the last digit.
+    static func isValidEvriParcelNumber(_ value: String) -> Bool {
+        guard matches(value, pattern: "^[HT][0-9A-Z]{5}[0-9]{10}$") else { return false }
+        let sum = value.prefix(15).enumerated().reduce(0) { $0 + upsCharacterValue($1.element) * ($1.offset % 2 == 0 ? 2 : 1) }
+        return sum % 10 == value.last?.wholeNumberValue
+    }
+
+    /// Colissimo's two-character product code, ten digits and their GS1 key.
+    static func isValidColissimoParcelNumber(_ value: String) -> Bool {
+        matches(value, pattern: "^[0-9A-Z]{2}[0-9]{11}$") && hasGs1CheckDigit(String(value.dropFirst(2)))
+    }
+
+    /// SF Express waybills: after the three-digit area code, the serial weighs 1, 3, 5, … from the
+    /// right; each product adds its tens and units, and the last digit tops the sum up to a
+    /// multiple of ten.
+    static func isValidSfExpressWaybill(_ value: String) -> Bool {
+        guard matches(value, pattern: "^(?:[0-9]{12}|SF[0-9]{13})$") else { return false }
+        let digits = (value.hasPrefix("SF") ? value.dropFirst(2) : Substring(value)).compactMap(\.wholeNumberValue)
+        let sum = digits[3..<(digits.count - 1)].reversed().enumerated().reduce(0) { total, item in
+            let product = item.element * (2 * item.offset + 1)
+            return total + product / 10 + product % 10
+        }
+        return (10 - sum % 10) % 10 == digits[digits.count - 1]
+    }
+
+    /// An SSCC behind its GS1 application identifier `00`. Shippers issue SSCCs, so a valid
+    /// one names no carrier.
+    static func isValidSscc(_ value: String) -> Bool {
+        matches(value, pattern: "^00[0-9]{18}$") && hasGs1CheckDigit(value)
     }
 
     static func isValidDhlExpressWaybill(_ value: String) -> Bool {
@@ -898,7 +1019,8 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     static func isValidUspsPackageBarcode(_ raw: String) -> Bool {
         let number = normalize(raw)
         func validPic(_ pic: String) -> Bool {
-            guard matches(pic, pattern: "^9[234][0-9]{20}(?:[0-9]{4})?$") else { return false }
+            // Retail 95 and legacy 91 are read only at 22 digits, so a ZIP+4 add-on never splits ambiguously.
+            guard matches(pic, pattern: "^(?:9[1-5][0-9]{20}|9[2-4][0-9]{24})$") else { return false }
             let sum = pic.compactMap(\.wholeNumberValue).reversed().enumerated()
                 .reduce(0) { $0 + $1.element * ($1.offset % 2 == 0 ? 1 : 3) }
             return sum % 10 == 0

@@ -3,10 +3,10 @@ import XCTest
 
 final class CarrierCatalogTests: XCTestCase {
     func testDiscoveryIncludesBrowserCandidatesWithoutChangingHTTPRecognition() {
-        let http = catalog.recognitionCandidates(for: "000000000001")
+        let http = catalog.recognitionCandidates(for: "000000000011")
         XCTAssertTrue(http.contains(.colisPrive))
         XCTAssertFalse(http.contains(.fedex))
-        XCTAssertEqual(catalog.discoveryCandidates(for: "000000000001"), http + [.fedex])
+        XCTAssertEqual(catalog.discoveryCandidates(for: "000000000011"), http + [.fedex])
         XCTAssertEqual(catalog.recognitionCandidates(for: "33870000000000001", browser: true), [.dhlEcommerce])
         XCTAssertEqual(catalog.discoveryCandidates(for: "1Z999AA10123456784"), [])
     }
@@ -768,7 +768,7 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(catalog.detect("123456785").preferred, [.tnt])
         XCTAssertFalse(catalog.detect("123456789").candidates.contains(.tnt))
         XCTAssertTrue(catalog.detect("1234567890123456").candidates.contains(.tnt))
-        XCTAssertEqual(catalog.detect("12345678901234567890").preferred, [.pocztaPolska])
+        XCTAssertEqual(catalog.detect("00159007731234567899").preferred, [.pocztaPolska])
         XCTAssertFalse(catalog.detect("12345678901234567891").candidates.contains(.pocztaPolska))
         XCTAssertTrue(catalog.detect("1234567890123456789").candidates.contains(.pocztaPolska))
     }
@@ -786,11 +786,15 @@ final class CarrierCatalogTests: XCTestCase {
             XCTAssertEqual(match.preferred, [.usps], number)
         }
         XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode("9210 0900-0000.0012 3456 79"))
+        // Retail labels use channel 95; 91 is the legacy construct.
+        for number in ["9500000000000000000008", "9100000000000000000002", "420123459102" + pic] {
+            XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode(number), number)
+        }
         for number in [
             String(pic.dropLast()) + "1", "42000000" + String(pic.dropLast()) + "1",
             "420ABCDE" + pic, "4200000" + pic, "420000000" + pic,
             "420000000000" + longPic, "420000009201" + pic,
-            "9100000000000000000002", String(pic.dropLast()), pic + "0",
+            "9600000000000000000007", String(pic.dropLast()), pic + "0",
         ] {
             XCTAssertFalse(CarrierCatalog.isValidUspsPackageBarcode(number), number)
             XCTAssertFalse(catalog.detect(number).preferred.contains(.usps), number)
