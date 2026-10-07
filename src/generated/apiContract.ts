@@ -360,7 +360,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://tracking.postlogistics.ch/public/trackandtrace/{trackingNumber}",
+    "trackingUrlTemplate": "https://apv.swisspost-cargo.com/public/trackandtrace/{trackingNumber}",
     "countries": [
       "CH"
     ]
