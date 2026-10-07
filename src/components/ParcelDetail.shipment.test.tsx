@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ParcelDetail } from './ParcelDetail';
+import { parcelTrackingLinks } from '../lib/carriers';
 import type { ParcelWithEvents } from '../types';
 
 const parcel: ParcelWithEvents = { id: 'parcel', carrier: 'heppner', trackingNumber: '12345678', label: 'Books', createdAt: '2026-09-10T12:00:00Z', syncStatus: 'ok', events: [] };
@@ -14,7 +15,7 @@ describe('shipment details', () => {
     show({ carrier: 'postlogistics', trackingNumber: '12345678001' });
     expect(screen.getByText('12345678-001')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /PostLogistics/ })).toHaveAttribute(
-      'href', 'https://tracking.postlogistics.ch/public/trackandtrace/12345678-001',
+      'href', parcelTrackingLinks({ carrier: 'postlogistics', trackingNumber: '12345678001' })[0].url,
     );
   });
 

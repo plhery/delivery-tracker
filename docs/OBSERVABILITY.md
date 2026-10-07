@@ -344,7 +344,7 @@ container.
 | `parcel_alert_set_total` (outcome) | Requests to turn on an alert for a link: `added`, `updated`, `full` (ten already), `finished` (journey over), `stopped`, `unavailable` |
 | `parcel_alert_sent_total` (outcome) | Batches of new scans per alert: `sent`, `skipped` (not in its preset, backfilled, or the owner's own browser), `failed`, `expired` (the push service says the subscription is gone) |
 | `parcel_alert_removed_total` (reason) | Alerts ended: `asked`, `delivered` (journey over), `expired`, `failed` (three failed sends in a row) |
-| `provider_input_total` (provider, step) | Whether relaying a provider's postcode request pays off: a parcel starts asking its owner (`asked`), the owner gives one (`supplied`), then each lookup made with it: `history`, `still_required`, `no_history` or `failed`. Every provider receives the postcode; only the one that asked uses it |
+| `provider_input_total` (provider, step) | Whether relaying a provider's postcode request pays off: a parcel starts asking its owner (`asked`), the owner gives one (`supplied`), then each lookup made with it: `history`, `still_required`, `no_history` or `failed`. Every provider receives the postcode; supported sources can submit it |
 | `delivery_email_total` (outcome, reason) | Delivery emails: `sent`; `failed` and tried again later (`smtp`, `content`, `account`, `parcel`, `interrupted`); `skipped` for good (`no_address`, `relay_address`, `parcel_gone`, `account_cap`, `service_cap`) |
 | `public_lookup_clients` | Clients that made a lookup yesterday (UTC) |
 | `public_lookups_per_client` (stat) | Yesterday's lookups per client: `p50`, `p90`, `max` |

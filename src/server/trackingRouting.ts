@@ -604,7 +604,7 @@ export class TrackingRouter {
         return null;
       } finally {
         if (providerInput) {
-          // Every provider receives the postcode, but only the one that asked uses it.
+          // Every provider receives the postcode; supported sources can submit it.
           const step = kind === null ? 'history' : kind === 'input_required' ? 'still_required'
             : kind === 'not_found' || kind === 'no_history' ? 'no_history' : 'failed';
           recordProviderInput(source, step);
