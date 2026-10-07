@@ -170,7 +170,8 @@ export const CARRIER_CAPABILITIES = {
     "tracking": {
       "mode": "automatic",
       "adapter": "aliexpress",
-      "upstreamName": "AliExpress"
+      "upstreamName": "AliExpress",
+      "recognitionRank": 14
     },
     "trackingUrlTemplate": "https://global.cainiao.com/detail.htm?mailNoList={trackingNumber}",
     "linkRules": [
@@ -190,6 +191,10 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^CNG\\d{14}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^LP\\d{14}$",
         "confidence": "low"
       }
     ],
@@ -966,6 +971,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^(?:\\d{10}|\\d{14})$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^VD\\d{10}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://www.relaiscolis.com/colis/suivre?tracking_number={trackingNumber}",
@@ -1083,7 +1092,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Paris",
     "tracking": {
       "mode": "automatic",
-      "adapter": "gls-fr"
+      "adapter": "gls-fr",
+      "recognitionRank": 61
     },
     "trackingUrlTemplate": "https://moncolis.gls-france.com/fr/{trackingNumber}",
     "linkRules": [
@@ -1706,7 +1716,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "royal-mail"
+      "adapter": "royal-mail",
+      "browserRecognitionRank": 90
     },
     "linkRules": [
       {
@@ -1723,6 +1734,14 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^(?!(?:EA|EB|EC|ED|EE|CP|GI))[A-Z]{2}\\d{9}GB$",
         "confidence": "high",
         "checksum": "s10"
+      },
+      {
+        "pattern": "^32\\d{11}[A-F0-9]{8}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^(?=[A-F0-9]*[A-F])(?=[A-F0-9]*\\d)[A-F0-9]{16}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://www.royalmail.com/portal/rm/track?trackNumber={trackingNumber}",
@@ -1862,6 +1881,11 @@ export const CARRIER_CAPABILITIES = {
     },
     "linkRules": [],
     "detectionRules": [
+      {
+        "pattern": "^(?:3232\\d{14}|(?:3232|3299)\\d{20})$",
+        "confidence": "low",
+        "preferred": true
+      },
       {
         "pattern": "^\\d{18}$",
         "confidence": "low"
@@ -2198,7 +2222,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "poste-italiane"
+      "adapter": "poste-italiane",
+      "recognitionRank": 46
     },
     "linkRules": [
       {
@@ -2220,6 +2245,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^2IMA\\d{10}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^(?:\\d{6}[A-Z]\\d{6}|3C\\d{4}[A-Z]\\d{6}|\\d{3}[A-Z]\\d{8}[A-Z])$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://www.poste.it/cerca/index.html#/risultati-spedizioni/{trackingNumber}",
@@ -2256,6 +2285,10 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{14}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{12}$",
         "confidence": "low"
       }
     ],
@@ -2373,7 +2406,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "usps"
+      "adapter": "usps",
+      "browserRecognitionRank": 65
     },
     "linkRules": [
       {
@@ -2388,12 +2422,24 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
+        "pattern": "^9[234]\\d{20}(?:\\d{4})?$",
+        "confidence": "low",
+        "checksum": "usps",
+        "preferred": true
+      },
+      {
         "pattern": "^\\d{20}$",
         "confidence": "low"
       },
       {
         "pattern": "^\\d{22}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^420(?:\\d{5}9[234]\\d{20}(?:\\d{4})?|\\d{9}9[234]\\d{20})$",
+        "confidence": "low",
+        "checksum": "usps",
+        "preferred": true
       }
     ],
     "trackingUrlTemplate": "https://tools.usps.com/go/TrackConfirmAction?tLabels={trackingNumber}",
@@ -2448,7 +2494,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "purolator"
+      "adapter": "purolator",
+      "recognitionRank": 12
     },
     "linkRules": [
       {
@@ -2516,7 +2563,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "ontrac"
+      "adapter": "ontrac",
+      "recognitionRank": 21
     },
     "linkRules": [
       {
@@ -2531,7 +2579,7 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^[CD]\\d{14}$",
-        "confidence": "high"
+        "confidence": "low"
       },
       {
         "pattern": "^L[AIEHNX]\\d{8}$",
@@ -2904,7 +2952,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "four-px"
+      "adapter": "four-px",
+      "recognitionRank": 13
     },
     "linkRules": [
       {
@@ -2919,6 +2968,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^4PX\\d{13}CN$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^LP\\d{13}CN$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://track.4px.com/#/result/0/{trackingNumber}",
@@ -2963,7 +3016,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Asia/Kolkata",
     "tracking": {
       "mode": "automatic",
-      "adapter": "delhivery"
+      "adapter": "delhivery",
+      "recognitionRank": 16
     },
     "linkRules": [],
     "detectionRules": [
@@ -3108,7 +3162,7 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^SF\\d{13}$",
-        "confidence": "low"
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://htm.sf-express.com/tw/en/dynamic_function/waybill/#search/bill-number/{trackingNumber}",
@@ -4238,6 +4292,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^CRIN\\d{14}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^INTLCMD\\d{9}$",
+        "confidence": "high"
       }
     ]
   },
