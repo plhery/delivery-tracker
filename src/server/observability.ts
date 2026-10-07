@@ -306,7 +306,7 @@ export function reportRoutingEvent(code: string, context: {
       scope.setFingerprint(['delivery-tracker', 'tracking-routing', code,
         context.provider, context.category ?? 'none']);
       const alert = ['carrier_mismatch_confirmed',
-        'direct_support_opportunity', 'carrier_input_required',
+        'direct_support_opportunity',
         'health_store_unavailable', 'carrier_coverage_discovered'].includes(code);
       scope.setLevel(alert ? 'warning' : 'info');
       // Recoveries stay in logs and breadcrumbs: a Sentry issue per recovery is noise.

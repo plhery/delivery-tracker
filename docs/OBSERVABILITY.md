@@ -270,6 +270,8 @@ so every cause is visible.
   alerts. Avoid "more than 0 times in 5 minutes" rules: they fire on every failed check.
 - **Incidents**: carrier and provider outages open once, with a recovery event, from
   thresholds computed in Postgres. See [ops/sentry](../ops/sentry/README.md).
+- **Input requirements**: requests for a postcode or other tracking input stay in logs
+  and breadcrumbs without opening Sentry issues.
 - **Database outages**: when the database does not answer (`database_code:unreachable`), or
   its gateway answers 502, 503 or 504, the sync worker's claims, the scheduler and the
   friendship notifications keep it in the logs. The sync worker reports it once its claims
