@@ -264,6 +264,9 @@ A parcel often changes carrier at the border. The origin history is always kept.
   fresh progress. A partner whose only input is optional (DPD's postcode) is asked without
   it, and only with a reference of its own number shape, never the origin's postal number. Failed confirmations wait 55 min unless the origin history or the partner
   changes.
+- Until then the parcel is followed on the origin. The clients already show the partner the origin
+  names (`delivery_carrier`) as who delivers, and its number (`delivery_tracking_number`) after
+  the followed one.
 - Compatibility: AliExpress `L…CH` numbers keep a Swiss Post confirmation probe, and
   selected Swiss postal routes keep their Cainiao fallback.
 

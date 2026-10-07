@@ -1066,6 +1066,8 @@ enum EventPlacePrecision: String, Codable, CaseIterable, Hashable, Sendable, Ide
 struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var activeTrackingCarrier: CarrierID? = nil
     var activeTrackingNumber: String? = nil
+    var deliveryCarrier: CarrierID? = nil
+    var deliveryTrackingNumber: String? = nil
     var originalPackageID: UUID? = nil
     var originalCarrier: CarrierID? = nil
     var originalTrackingNumber: String? = nil
@@ -1089,6 +1091,8 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case activeTrackingCarrier
         case activeTrackingNumber
+        case deliveryCarrier
+        case deliveryTrackingNumber
         case originalPackageID = "originalPackageId"
         case originalCarrier
         case originalTrackingNumber

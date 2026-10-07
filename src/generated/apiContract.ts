@@ -4998,6 +4998,8 @@ export interface ApiPackageRow {
   "carrier_data"?: {
   "active_tracking_carrier"?: ApiCarrierId | null;
   "active_tracking_number"?: string | null;
+  "delivery_carrier"?: ApiCarrierId | null;
+  "delivery_tracking_number"?: string | null;
   "original_package_id"?: string | null;
   "original_carrier"?: ApiCarrierId | null;
   "original_tracking_number"?: string | null;

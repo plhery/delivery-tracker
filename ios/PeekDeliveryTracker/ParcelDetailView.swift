@@ -191,10 +191,12 @@ struct ParcelDetailView: View {
     private func liveParcelPass(_ parcel: Parcel) -> some View {
         let branding = identity(parcel)
         let carrier = catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language)
-        // Handed from one carrier to another, the card carries both marks and says who delivers, as its card in the list does.
-        let handedOver = parcel.activeTrackingCarrier != parcel.displayedCarrier
-        let delivery = handedOver ? CarrierVisualIdentity.of(parcel.activeTrackingCarrier, catalog: catalog, language: localizer.language) : nil
-        let deliveryLine = handedOver ? localizer.text("parcel.deliveryCarrier", ["carrier": carrier.displayName]) : nil
+        // Handed from one carrier to another, or about to be, the card carries both marks and says who delivers, as its card in the list does.
+        let delivering = parcel.deliveringCarrier
+        let delivery = delivering.map { CarrierVisualIdentity.of($0, catalog: catalog, language: localizer.language) }
+        let deliveryLine = delivering.map {
+            localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: $0, language: localizer.language).displayName])
+        }
         let trackingLinks = catalog.trackingLinks(for: parcel, language: localizer.language)
         let placed = parcel.trackingEvents.contains { $0.place != nil }
         let route = placed ? atlas.map { ParcelRoute(parcel: parcel, atlas: $0, language: localizer.language) } : nil

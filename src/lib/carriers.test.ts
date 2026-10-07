@@ -6,6 +6,7 @@ import {
   displayedCarrierId,
   carrierTrackingHintKey,
   carrierRequirements,
+  deliveringCarrierId,
   detectCarrier,
   detectCarrierMatch,
   formatTrackingNumber,
@@ -2065,6 +2066,32 @@ describe('parcelTrackingNumbers', () => {
     expect(parcelTrackingNumbers({ carrier: 'dhl', trackingNumber: 'LF123456785DE',
       originalCarrier: 'dhl', originalTrackingNumber: 'LF123456785DE', trackingSource: 'swiss-post',
     })).toEqual([{ carrier: 'swiss-post', number: 'LF123456785DE' }]);
+  });
+  it('keeps the followed number first and adds the one the delivering carrier it names gave', () => {
+    const named = { carrier: 'chronopost', trackingNumber: 'XY123456789FR', deliveryCarrier: 'dpd-de', deliveryTrackingNumber: '01234567890123' } as const;
+    expect(parcelTrackingNumbers(named)).toEqual([{ carrier: 'chronopost', number: 'XY123456789FR' }, { carrier: 'dpd-de', number: '01234567890123' }]);
+    const links = parcelTrackingLinks(named, 'en');
+    expect(links.map(({ carrier, role }) => [carrier.id, role])).toEqual([['chronopost', 'active'], ['dpd-de', 'waiting']]);
+    expect(links[1].url).toBe(parcelTrackingLinks({ carrier: 'dpd-de', trackingNumber: '01234567890123' }, 'en')[0].url);
+    // Named without a number of its own, or with the followed one: no second number.
+    expect(parcelTrackingNumbers({ ...named, deliveryTrackingNumber: undefined })).toHaveLength(1);
+    expect(parcelTrackingLinks({ ...named, deliveryTrackingNumber: 'XY123456789FR' }, 'en')).toHaveLength(1);
+  });
+});
+
+describe('deliveringCarrierId', () => {
+  const followed = { carrier: 'chronopost', trackingNumber: 'XY123456789FR' } as const;
+  it('names the carrier a parcel was handed to, else the one its carrier names', () => {
+    expect(deliveringCarrierId(followed)).toBeNull();
+    expect(deliveringCarrierId({ ...followed, deliveryCarrier: 'dpd-de' })).toBe('dpd-de');
+    expect(deliveringCarrierId({ ...followed, originalCarrier: 'chronopost', trackingSource: 'dpd-de' })).toBe('dpd-de');
+  });
+  it('ignores a named carrier that is the one shown, unknown, or already handed over to', () => {
+    expect(deliveringCarrierId({ ...followed, deliveryCarrier: 'chronopost' })).toBeNull();
+    expect(deliveringCarrierId({ ...followed, deliveryCarrier: 'nobody' as never })).toBeNull();
+    const handed = { ...followed, originalCarrier: 'chronopost', trackingSource: 'dpd-de', deliveryCarrier: 'gls-de' } as const;
+    expect(deliveringCarrierId(handed)).toBe('dpd-de');
+    expect(parcelTrackingNumbers({ ...handed, deliveryTrackingNumber: '12345678901' })).toEqual(parcelTrackingNumbers(handed));
   });
 });
 

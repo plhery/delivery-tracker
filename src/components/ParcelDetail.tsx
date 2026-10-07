@@ -10,6 +10,7 @@ import {
   carrierInfo,
   carrierRequirements,
   carrierTrackingHintKey,
+  deliveringCarrierId,
   formatTrackingNumber,
   parcelTrackingLinks,
   parcelTrackingNumbers,
@@ -108,8 +109,10 @@ export function ParcelDetail({
   const { locale, languageTag, t } = useI18n();
   const carrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
   const displayedCarrier = carrierInfo(displayedCarrierId(parcel), locale);
-  // Handed from one carrier to another, the card carries both marks and says who delivers, as its card in the list does.
-  const deliveryLabel = carrier.id !== displayedCarrier.id ? t('parcel.deliveryCarrier', { carrier: carrier.name }) : null;
+  // Handed from one carrier to another, or about to be, the card carries both marks and says who delivers, as its card in the list does.
+  const deliveryId = deliveringCarrierId(parcel);
+  const delivery = deliveryId ? carrierInfo(deliveryId, locale) : null;
+  const deliveryLabel = delivery ? t('parcel.deliveryCarrier', { carrier: delivery.name }) : null;
   const amazonHistoryExpired = carrier.id === 'amazon-shipping' && parcel.syncError === AMAZON_HISTORY_EXPIRED;
   const automaticTracking = tracksAutomatically(carrier.id) && !amazonHistoryExpired;
   const current = currentEvent(parcel.events);
@@ -441,7 +444,7 @@ export function ParcelDetail({
             aria-label={[t('detail.changeCarrierFrom', { carrier: displayedCarrier.name }), deliveryLabel].filter(Boolean).join('. ')}
           >
             <CarrierMark carrier={displayedCarrier} />
-            {deliveryLabel && <span ref={deliveryMark} className="detail__delivery-mark" style={carrierBrand(carrier).style}><CarrierMark carrier={carrier} /></span>}
+            {delivery && <span ref={deliveryMark} className="detail__delivery-mark" style={carrierBrand(delivery).style}><CarrierMark carrier={delivery} /></span>}
           </button>
           <span className="detail__hero-actions">
           {placed && <button type="button" className="detail__map-button" disabled={!route} onClick={openMap} aria-label={t('map.open')}>

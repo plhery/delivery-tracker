@@ -176,13 +176,30 @@ extension Parcel {
     var isReturned: Bool { currentStage == .returned }
     var isActive: Bool { !isArchived && !(currentStage?.isFinal ?? false) }
 
+    /// Distinct numbers, the followed one first, and then the named delivering carrier's own.
     var trackingNumbers: [(carrier: CarrierID, number: String)] {
         let delivery = (carrier: activeTrackingCarrier, number: carrierData?.activeTrackingNumber?.nonEmpty ?? trackingNumber)
         let original = (carrier: carrierData?.originalCarrier ?? carrier, number: carrierData?.originalTrackingNumber?.nonEmpty ?? trackingNumber)
-        return delivery.number == original.number ? [delivery] : [delivery, original]
+        let numbers = delivery.number == original.number ? [delivery] : [delivery, original]
+        guard let named = namedDelivery, let number = named.number else { return numbers }
+        return numbers + [(carrier: named.carrier, number: number)]
     }
 
     var displayedCarrier: CarrierID { carrierData?.originalCarrier ?? activeTrackingCarrier }
+
+    /// The carrier the followed one names as delivering, while the parcel is not followed there yet, and the number it
+    /// gave. Once it is followed, the parcel has been handed over and `trackingSource` says so.
+    var namedDelivery: (carrier: CarrierID, number: String?)? {
+        guard let carrier = carrierData?.deliveryCarrier, carrierData?.originalCarrier == nil, carrier != displayedCarrier,
+              CarrierCatalog.shared.definitions[carrier] != nil else { return nil }
+        let number = carrierData?.deliveryTrackingNumber?.nonEmpty
+        return (carrier, number == trackingNumber ? nil : number)
+    }
+
+    /// Who delivers when it isn't the carrier shown: the one the parcel was handed to, else the one its carrier names.
+    var deliveringCarrier: CarrierID? {
+        activeTrackingCarrier != displayedCarrier ? activeTrackingCarrier : namedDelivery?.carrier
+    }
 
     var amazonShippingHistoryExpired: Bool {
         carrier == .amazonShipping && syncError == "amazon_shipping_history_expired"

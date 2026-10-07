@@ -154,6 +154,43 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(shared.loose.map(\.role), [.history])
     }
 
+    func testTheNamedDeliveringCarrierFollowsTheFollowedNumber() {
+        // The followed carrier names who delivers before the parcel is followed there: its number comes second.
+        var named = Parcel(
+            id: UUID(), trackingNumber: "XY123456789FR", label: "Lamp",
+            carrier: .chronopost, createdAt: "2026-09-10T07:00:00Z", syncStatus: .ok,
+            carrierData: CarrierData(deliveryCarrier: .dpdDe, deliveryTrackingNumber: "01234567890123"), notificationsMuted: false
+        )
+        XCTAssertEqual(named.displayedCarrier, .chronopost)
+        XCTAssertEqual(named.deliveringCarrier, .dpdDe)
+        XCTAssertEqual(named.trackingNumbers.map(\.number), ["XY123456789FR", "01234567890123"])
+        let links = catalog.trackingLinks(for: named, language: .en)
+        XCTAssertEqual(links.map(\.carrier), [.chronopost, .dpdDe])
+        XCTAssertEqual(links.map(\.role), [.active, .waiting])
+        XCTAssertTrue(links[1].url.absoluteString.contains("01234567890123"))
+        let pages = ParcelTrackingLink.byNumber(links, numbers: named.trackingNumbers)
+        XCTAssertEqual(pages.own.map { $0.map(\.carrier) }, [[.chronopost], [.dpdDe]])
+        XCTAssertTrue(pages.loose.isEmpty)
+
+        // Named without a number of its own: who delivers, and no second number.
+        named.carrierData?.deliveryTrackingNumber = nil
+        XCTAssertEqual(named.deliveringCarrier, .dpdDe)
+        XCTAssertEqual(named.trackingNumbers.count, 1)
+        XCTAssertEqual(catalog.trackingLinks(for: named, language: .en).count, 1)
+
+        // The carrier shown, or one the catalog doesn't know, delivers nothing new.
+        named.carrierData?.deliveryCarrier = .chronopost
+        XCTAssertNil(named.deliveringCarrier)
+        named.carrierData?.deliveryCarrier = CarrierID(rawValue: "nobody")
+        XCTAssertNil(named.deliveringCarrier)
+
+        // Once handed over, the carrier followed there delivers.
+        named.carrierData = CarrierData(activeTrackingCarrier: .dpdDe, activeTrackingNumber: "01234567890123",
+            deliveryCarrier: .glsDe, originalCarrier: .chronopost, originalTrackingNumber: "XY123456789FR")
+        XCTAssertEqual(named.deliveringCarrier, .dpdDe)
+        XCTAssertEqual(named.trackingNumbers.map(\.number), ["01234567890123", "XY123456789FR"])
+    }
+
     func testDHLEcommerceDetection() {
         XCTAssertEqual(catalog.detect("33870000000000001").confidence, .low)
         XCTAssertEqual(catalog.detect("GM1234567890123456").carrier.rawValue, "dhl-ecommerce")

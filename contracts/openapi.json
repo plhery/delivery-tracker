@@ -7497,6 +7497,24 @@
                 ],
                 "description": "Verified delivery-leg tracking number when the carrier changes."
               },
+              "delivery_carrier": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/CarrierId"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The carrier the followed one names as delivering, before that carrier is followed."
+              },
+              "delivery_tracking_number": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The number the named delivering carrier gave the parcel."
+              },
               "original_package_id": {
                 "type": [
                   "string",

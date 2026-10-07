@@ -1120,8 +1120,8 @@ private struct ExperimentalNextDeliveryPass: View {
             .padding(.bottom, 15)
 
             AutomaticCarrierNotice(parcel: parcel)
-            if parcel.activeTrackingCarrier != parcel.displayedCarrier {
-                Text(localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName]))
+            if let delivering = parcel.deliveringCarrier {
+                Text(localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: delivering, language: localizer.language).displayName]))
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1237,8 +1237,8 @@ private struct ExperimentalParcelPassCard: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(DeliveryListSpace.name)).midY } action: { onName?($0) }
                 AutomaticCarrierNotice(parcel: parcel)
-                if parcel.activeTrackingCarrier != parcel.displayedCarrier {
-                    Text(localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName]))
+                if let delivering = parcel.deliveringCarrier {
+                    Text(localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: delivering, language: localizer.language).displayName]))
                         .font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }

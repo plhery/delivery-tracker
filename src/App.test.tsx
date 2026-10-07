@@ -679,6 +679,21 @@ describe('App', () => {
     expect(copyButtons[0]).not.toHaveTextContent('Copied');
   });
 
+  it('says who will deliver on the card of a parcel its carrier hands on, before that carrier is followed', async () => {
+    const parcel: ParcelWithEvents = {
+      id: 'named-parcel', trackingNumber: 'XY123456789FR', label: 'Lamp', carrier: 'chronopost',
+      deliveryCarrier: 'dpd-de', deliveryTrackingNumber: '01234567890123',
+      createdAt: new Date().toISOString(), syncStatus: 'ok', events: [],
+    };
+    renderApp({
+      mode: 'api', list: vi.fn().mockResolvedValue([parcel]), add: vi.fn(),
+      rename: vi.fn(), remove: vi.fn(), refresh: vi.fn().mockResolvedValue([parcel]),
+    });
+    const card = await screen.findByRole('button', { name: /Lamp/ });
+    expect(card.closest('[data-carrier]')).toHaveAttribute('data-carrier', 'chronopost');
+    expect(within(card).getByText('Delivery with DPD Germany')).toBeVisible();
+  });
+
   it('adds a parcel through the bottom sheet', async () => {
     const user = userEvent.setup();
     renderApp();

@@ -41,6 +41,21 @@ describe('shipment details', () => {
     expect(screen.queryByText(/^Delivery with/)).not.toBeInTheDocument();
   });
 
+  it('says who will deliver before that carrier is followed, under the followed number', () => {
+    const named = { carrier: 'chronopost', trackingNumber: 'XY123456789FR', deliveryCarrier: 'dpd-de', deliveryTrackingNumber: '01234567890123' } as const;
+    show(named);
+    const change = screen.getByRole('button', { name: 'Change carrier from Chronopost. Delivery with DPD Germany' });
+    expect([...change.querySelectorAll('.carrier-mark')].map(mark => mark.getAttribute('title'))).toEqual(['Chronopost', 'DPD Germany']);
+    expect(screen.getByText('Delivery with DPD Germany')).toHaveClass('detail__delivery');
+    // The followed number stays on top; the delivering carrier's follows, each with its own website.
+    expect([...document.querySelectorAll('.detail__tracking-label')].map(label => label.textContent)).toEqual(['Chronopost', 'DPD Germany']);
+    const links = screen.getAllByRole('link', { name: /^Open the .+ website$/ });
+    expect(links.map(link => link.closest('.detail__carrier-links')!.previousElementSibling!.querySelector('.detail__tracking-label')!.textContent))
+      .toEqual(['Chronopost', 'DPD Germany']);
+    expect(links.map(link => link.getAttribute('href'))).toEqual(parcelTrackingLinks(named, 'en').map(link => link.url));
+    expect(screen.queryByText('Not ready yet')).not.toBeInTheDocument();
+  });
+
   it('shows available facts and omits unknown or invalid measurements', () => {
     const view = show({ pickupPoint: 'Corner shop\n12 Main Street', receiverName: 'Alex', weightKg: 1.25, dimensionsText: '20 × 30 × 10 cm' });
     expect(screen.getByText('Pickup location')).toBeInTheDocument();

@@ -685,7 +685,22 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         return Self.emptyMatch
     }
 
+    /// The followed carrier's pages first, and then the named delivering carrier's, for its own number.
     func trackingLinks(for parcel: Parcel, language: AppLanguage) -> [ParcelTrackingLink] {
+        let links = followedTrackingLinks(for: parcel, language: language)
+        guard let named = parcel.namedDelivery, let number = named.number else { return links }
+        var delivery = parcel
+        delivery.carrier = named.carrier
+        delivery.trackingNumber = number
+        delivery.trackingURL = nil
+        delivery.carrierData = nil
+        // The parcel is not followed there yet.
+        return links + followedTrackingLinks(for: delivery, language: language).filter { $0.carrier == named.carrier }.map {
+            ParcelTrackingLink(carrier: $0.carrier, name: $0.name, url: $0.url, role: .waiting)
+        }
+    }
+
+    private func followedTrackingLinks(for parcel: Parcel, language: AppLanguage) -> [ParcelTrackingLink] {
         if requiresAmazonAccount(parcel.carrier, trackingNumber: parcel.trackingNumber) {
             return [ParcelTrackingLink(carrier: .amazonLogistics,
                 name: info(for: .amazonLogistics, language: language).displayName,
