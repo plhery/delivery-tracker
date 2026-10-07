@@ -241,15 +241,6 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .field__inline-action svg { width: 16px; height: 16px; }
 .field__help { color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
 .field__suggestion { justify-self: start; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: none; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
-.sheet__carrier-card { display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--blue-soft); color: var(--blue); border-radius: 18px; animation: page-arrive .25s; }
-.sheet__carrier-card--warning { background: var(--orange-soft); color: var(--orange-text); }
-.sheet__carrier-mark { flex: 0 0 36px; width: 36px; height: 42px; border: 1px dashed currentColor; border-radius: 3px; display: grid; place-items: center; transform: rotate(-3deg); opacity: .8; }
-.sheet__carrier-mark::after { content: '↗'; font-size: 22px; }
-.sheet__carrier-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.sheet__carrier-copy small { font-size: 10px; font-weight: 500; }
-.sheet__carrier-copy strong { font-size: 14px; font-weight: 600; }
-.sheet__carrier-copy > span { font-size: 12px; margin-top: 6px; }
-.sheet__carrier-card > button { font-size: 11px; background: transparent; font-weight: 600; min-height: 44px; padding: 6px; max-width: 100px; }
 .sheet__actions, .delete-parcel-dialog__actions { display: flex; gap: 10px; padding-top: 4px; }
 .sheet__actions > *, .delete-parcel-dialog__actions > * { flex: 1; }
 .sheet__error, .auth-flow__error, .error-banner { padding: 13px 16px; border-radius: 14px; background: var(--orange-soft); color: var(--orange-text); font-size: 13px; margin: 0; overflow-wrap: anywhere; }

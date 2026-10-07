@@ -239,6 +239,7 @@ describe('App', () => {
     // The picker hands focus back to the carrier field.
     expect(carrier).toHaveFocus();
     expect(carrier).toHaveAccessibleName('Carrier DPD');
+    expect(carrier).toHaveAccessibleDescription(/check DPD for updates automatically/);
     await user.tab();
     expect(within(sheet).getByLabelText(/postcode/i)).toHaveFocus();
     await user.tab({ shift: true });

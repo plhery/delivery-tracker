@@ -150,22 +150,16 @@ export function ChangeCarrierSheet({
               className="field__input carrier-field"
               aria-haspopup="dialog"
               aria-labelledby={`${fieldId}-label ${fieldId}-value`}
+              aria-describedby={`${fieldId}-hint`}
               onClick={() => setPickerOpen(true)}
             >
               <CarrierTruck carrier={carrier} />
               <span className="carrier-field__name" id={`${fieldId}-value`}>{carrier.name}</span>
               <Icon name="chevron" />
             </button>
-          </div>
-          <div className="sheet__carrier-card">
-            <span className="sheet__carrier-mark" aria-hidden="true" />
-            <span className="sheet__carrier-copy">
-              <small>{t('add.carrier')}</small>
-              <strong>{carrier.name}</strong>
-              <span>
-                {t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })}
-              </span>
-            </span>
+            <small className="field__help" id={`${fieldId}-hint`}>
+              {t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })}
+            </small>
           </div>
           {requirements.map((requirement) => (
             <label className="field" key={requirement.field}>
