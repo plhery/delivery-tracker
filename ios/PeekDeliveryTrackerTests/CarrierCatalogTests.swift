@@ -863,6 +863,52 @@ final class CarrierCatalogTests: XCTestCase {
         )
     }
 
+    func testAnUnknownChecksumOnAHighRuleNeverSelectsTheCarrier() throws {
+        let dynamic = try CarrierCatalog(data: Self.unknownChecksumCatalogData)
+        let futureExpress = CarrierID(rawValue: "future-express")
+        XCTAssertNil(CarrierCatalog.checksumPasses("future-check", "FX12345678"))
+
+        // The shape still suggests the carrier; the user or the carriers confirm it.
+        XCTAssertEqual(dynamic.detect("FX12345678"), CarrierMatch(carrier: .unknown, confidence: .low, candidates: [futureExpress]))
+        let input = dynamic.parse("FX12345678")
+        XCTAssertEqual(input.carrier, .unknown)
+        XCTAssertEqual(input.confidence, .low)
+        XCTAssertEqual(input.candidates, [futureExpress])
+        XCTAssertTrue(CarrierRecognition.applies(to: input, amazon: false, demo: false))
+        XCTAssertEqual(dynamic.recognitionCandidates(for: "FX12345678"), [futureExpress])
+
+        // A check this build knows still selects a carrier and rejects a mistyped number.
+        XCTAssertEqual(CarrierCatalog.checksumPasses("s10", "RA123456785CH"), true)
+        XCTAssertEqual(CarrierCatalog.checksumPasses("s10", "RA123456789CH"), false)
+        XCTAssertEqual(dynamic.detect("RA123456785CH").carrier, .internationalPost)
+        XCTAssertEqual(dynamic.detect("RA123456785CH").confidence, .high)
+        XCTAssertFalse(dynamic.detect("RA123456789CH").candidates.contains(.internationalPost))
+    }
+
+    func testAnUnknownChecksumOnAPreferredRuleNeverListsTheCarrierFirst() throws {
+        let dynamic = try CarrierCatalog(data: Self.unknownChecksumCatalogData)
+        let checked = CarrierID(rawValue: "check-post")
+        let future = CarrierID(rawValue: "future-post")
+        let plain = CarrierID(rawValue: "plain-post")
+
+        // Only the check this build runs puts its carrier first; the other is asked by rank.
+        let valid = dynamic.detect("1234567891")
+        XCTAssertEqual(valid.confidence, .low)
+        XCTAssertEqual(valid.preferred, [checked])
+        XCTAssertEqual(valid.candidates, [checked, future, plain])
+        XCTAssertEqual(dynamic.recognitionCandidates(for: "1234567891"), [checked, plain, future])
+
+        // A mistyped number fails the known check; the unknown one cannot tell, so its carrier stays suggested.
+        let mistyped = dynamic.detect("1234567890")
+        XCTAssertEqual(mistyped.preferred, [])
+        XCTAssertEqual(mistyped.candidates, [future, plain])
+        XCTAssertEqual(dynamic.recognitionCandidates(for: "1234567890"), [plain, future])
+
+        // A postal number recovers the rules S10 vouches for, not one behind another check.
+        XCTAssertEqual(dynamic.detect("RA123456785CH").carrier, .internationalPost)
+        XCTAssertEqual(dynamic.recognitionCandidates(for: "RA123456785CH"), [plain])
+    }
+
     @MainActor
     func testRefreshesCachesAndConditionallyRevalidatesTheRemoteCatalog() async throws {
         let cacheURL = FileManager.default.temporaryDirectory
@@ -1010,6 +1056,53 @@ final class CarrierCatalogTests: XCTestCase {
       }
     }
     """.utf8)
+
+    /// A catalog from a newer release whose rules name a check this build does not have.
+    private static let unknownChecksumCatalogData = Data(#"""
+    {
+      "x-carriers": {
+        "future-express": {
+          "displayName": "Future Express", "color": "#123456", "selectable": true, "timezone": "UTC",
+          "tracking": { "mode": "automatic", "adapter": "future-express", "recognitionRank": 4 },
+          "linkRules": [],
+          "detectionRules": [{ "pattern": "^FX\\d{8}$", "confidence": "high", "checksum": "future-check" }]
+        },
+        "check-post": {
+          "displayName": "Check Post", "color": "#123456", "selectable": true, "timezone": "UTC",
+          "tracking": { "mode": "automatic", "adapter": "check-post", "recognitionRank": 3 },
+          "linkRules": [],
+          "detectionRules": [{ "pattern": "^\\d{10}$", "confidence": "low", "checksum": "mod7", "preferred": true }]
+        },
+        "plain-post": {
+          "displayName": "Plain Post", "color": "#123456", "selectable": true, "timezone": "UTC",
+          "tracking": { "mode": "automatic", "adapter": "plain-post", "recognitionRank": 2 },
+          "linkRules": [],
+          "detectionRules": [{ "pattern": "^(?:\\d{10}|[A-Z]{2}\\d{9}[A-Z]{2})$", "confidence": "low" }]
+        },
+        "future-post": {
+          "displayName": "Future Post", "color": "#123456", "selectable": true, "timezone": "UTC",
+          "tracking": { "mode": "automatic", "adapter": "future-post", "recognitionRank": 1 },
+          "linkRules": [],
+          "detectionRules": [{
+            "pattern": "^(?:\\d{10}|[A-Z]{2}\\d{9}[A-Z]{2})$", "confidence": "low",
+            "checksum": "future-check", "preferred": true
+          }]
+        },
+        "intl-post": {
+          "displayName": "Postal carrier", "color": "#123456", "selectable": false, "timezone": "UTC",
+          "tracking": { "mode": "automatic", "adapter": "universal" },
+          "linkRules": [],
+          "detectionRules": [{ "pattern": "^[A-Z]{2}\\d{9}[A-Z]{2}$", "confidence": "high", "checksum": "s10" }]
+        },
+        "unknown": {
+          "displayName": "Carrier", "color": "#8e8e93", "selectable": false, "timezone": "UTC",
+          "tracking": { "mode": "link-only", "adapter": null },
+          "linkRules": [],
+          "detectionRules": []
+        }
+      }
+    }
+    """#.utf8)
 
     private static func response(
         for request: URLRequest,

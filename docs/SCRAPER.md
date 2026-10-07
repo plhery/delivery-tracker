@@ -114,7 +114,8 @@ and the database six or more, so a wider rule there needs a migration first. A c
 stage also needs the `Stage` enum in `contracts/openapi.json` edited by hand.
 
 A checksum a detection rule names must also exist in `ios/PeekDeliveryTracker/CarrierCatalog.swift`.
-The iPhone app passes every number through a checksum it does not know, so its replay of the
-scraper's detection answers fails after the adoption. Add the checksum there before the
-release that names it. The same file holds the iPhone's copy of the shape a number may
-have and of the labels that introduce one in a message; change them with the scraper's.
+The iPhone app keeps a rule whose checksum it does not know only as a low-confidence candidate
+that is never preferred, so its replay of the scraper's detection answers fails after the
+adoption. Add the checksum there before the release that names it. The same file holds the
+iPhone's copy of the shape a number may have and of the labels that introduce one in a message;
+change them with the scraper's.

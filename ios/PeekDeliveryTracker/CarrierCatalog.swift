@@ -394,7 +394,9 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             let number = Self.normalize(raw)
             let printed = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
             // The generic postal match already checked S10. Recover low rules
-            // it hid; each carrier still has to confirm the whole identity.
+            // it hid; each carrier still has to confirm the whole identity. A rule
+            // gated by another check, known to this build or not, stays out, as in
+            // the shared engine: S10 does not vouch for it.
             let postalMatches = definitions.compactMap { carrier, definition -> (CarrierID, Bool)? in
                 guard let rule = definition.detectionRules.first(where: { rule in
                     rule.confidence == "low" && (rule.checksum == nil || rule.checksum == "s10")
@@ -515,8 +517,20 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             for rule in definition.detectionRules {
                 guard Self.matches(number, pattern: rule.pattern) else { continue }
                 if let rawPattern = rule.rawPattern, !Self.matches(printed, pattern: rawPattern) { continue }
-                if let checksum = rule.checksum, !Self.checksumPasses(checksum, number) { continue }
-                matches.append((carrier, rule.confidence == "high" ? .high : .low, rule.preferred == true))
+                var confidence: CarrierMatch.Confidence = rule.confidence == "high" ? .high : .low
+                var preferred = rule.preferred == true
+                if let checksum = rule.checksum {
+                    switch Self.checksumPasses(checksum, number) {
+                    case true?: break
+                    case false?: continue
+                    case nil:
+                        // A check this build cannot run proves nothing about a mistyped number:
+                        // the shape still suggests the carrier, but never selects it or lists it first.
+                        confidence = .low
+                        preferred = false
+                    }
+                }
+                matches.append((carrier, confidence, preferred))
                 break
             }
         }
@@ -792,9 +806,10 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         return value
     }
 
-    /// The rule's check, as the shared engine runs it. An id this build does not know passes,
-    /// as if the rule had no checksum.
-    private static func checksumPasses(_ checksum: String, _ number: String) -> Bool {
+    /// The rule's check, as the shared engine runs it; nil for an id this build does not know,
+    /// which a newer downloaded catalog can name. Detection then keeps the rule's carrier as a
+    /// low-confidence candidate that is never preferred.
+    static func checksumPasses(_ checksum: String, _ number: String) -> Bool? {
         switch checksum {
         case "mondial-relay": isValidMondialRelayBarcode(number)
         case "s10": isValidS10(number)
@@ -817,7 +832,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         case "luhn": hasLuhnCheckDigit(number)
         case "fedex": isValidFedExTrackingNumber(number)
         case "sf-express": isValidSfExpressWaybill(number)
-        default: true
+        default: nil
         }
     }
 
