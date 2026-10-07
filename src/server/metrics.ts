@@ -22,10 +22,11 @@ import { initObservability } from './observability';
  * link reads, kept parcels, forgotten ones, shares and alerts by outcome only:
  * never by number, link, client or push endpoint. The delivery emails are
  * counted by how they ended and why: never by account, address or parcel.
+ * A checksum rejection is counted by carrier and detection rule id only.
  */
 
 /** Bump when the series or their labels change, so a hot-reloaded copy does not reuse an older shape. */
-const RUNTIME_VERSION = 8;
+const RUNTIME_VERSION = 9;
 
 interface PrometheusRuntime {
   version: number;
@@ -48,6 +49,7 @@ interface PrometheusRuntime {
   parcelAlertSentTotal: Counter<'outcome'>;
   deliveryEmailTotal: Counter<'outcome' | 'reason'>;
   providerInputTotal: Counter<'provider' | 'step'>;
+  checksumRejectionTotal: Counter<'carrier' | 'rule'>;
   publicLookupClients: Gauge;
   publicLookupsPerClient: Gauge<'stat'>;
   publicDetectionClients: Gauge;
@@ -179,6 +181,12 @@ function createRuntime(): PrometheusRuntime {
       name: 'provider_input_total',
       help: 'Postcodes a universal provider asks owners for: asked, supplied, then each lookup made with one (history, still_required, no_history, failed).',
       labelNames: ['provider', 'step'] as const,
+      registers: [registry],
+    }),
+    checksumRejectionTotal: new Counter({
+      name: 'carrier_checksum_rejection_total',
+      help: 'Parcels confirmed by a carrier that detection had left out because a detection rule\'s check digit failed, by carrier and rule id.',
+      labelNames: ['carrier', 'rule'] as const,
       registers: [registry],
     }),
     publicLookupClients: new Gauge({
@@ -375,6 +383,22 @@ export function recordProviderInput(provider: string, step: ProviderInputStep): 
   count(runtime.providerInputTotal, 'provider_input_total', { provider, step });
   try {
     if (initObservability()) Sentry.metrics.count('tracking.provider_input', 1, { attributes: { provider, step } });
+  } catch { /* Telemetry must never change a tracking result. */ }
+}
+
+/**
+ * A carrier confirmed a parcel whose number one of its detection rules fits
+ * but whose check digit that rule rejected, so detection did not suggest the
+ * carrier. A rule that keeps counting has a check that real numbers fail.
+ * Also a Sentry metric, so the rare cases stay countable across deploys, in a
+ * trace of its own so it links to no parcel's events.
+ */
+export function recordChecksumRejection(carrier: string, rule: string): void {
+  count(runtime.checksumRejectionTotal, 'carrier_checksum_rejection_total', { carrier, rule });
+  try {
+    if (initObservability()) {
+      Sentry.startNewTrace(() => Sentry.metrics.count('tracking.checksum_rejection', 1, { attributes: { carrier, rule } }));
+    }
   } catch { /* Telemetry must never change a tracking result. */ }
 }
 

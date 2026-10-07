@@ -311,7 +311,9 @@ by one phase when counting attempts; summing phases double-counts.
 - `tracking.scrape.duration` (ms) and `tracking.scrape.attempts`, tagged `carrier`,
   `phase`, `outcome`, `error_type`;
 - `tracking.scrape.fallbacks`, with `from_phase` and `to_phase`;
-- `tracking.provider_input`, tagged `provider` and `step`, as `provider_input_total` below.
+- `tracking.provider_input`, tagged `provider` and `step`, as `provider_input_total` below;
+- `tracking.checksum_rejection`, tagged `carrier` and `rule`, as
+  `carrier_checksum_rejection_total` below, each in a trace of its own.
 
 Import [the Scraper Health dashboard](../ops/sentry/scraper-health-dashboard.json) and set
 your project ID.
@@ -335,6 +337,7 @@ container.
 | `carrier_status_mapping_total` (carrier, stage_source) | Share of events mapped explicitly, by wording, or not at all |
 | `carrier_detection_total` (result) | Detection confidence served to clients |
 | `carrier_refresh_total` (carrier, served_by, outcome) | Who served each refresh: `adapter`, `other_adapter`, `provider` or `none` |
+| `carrier_checksum_rejection_total` (carrier, rule) | Parcels a carrier's own lookup first confirmed although detection had left that carrier out on a failed check digit. `rule` is the failing rule's id in the scraper's `carrier.json` |
 | `public_lookup_total` (outcome) | Lookups without an account: `created`, `reused` (the number was already stored), `limited_burst`, `limited_daily` (the client's day is used up), `limited_network` (its IPv6 /48's day), `limited_global` |
 | `public_detection_total` (outcome) | Detections without an account that needed a carrier's answer: `asked`, or refused first as `limited_burst`, `limited_daily` or `limited_global` |
 | `public_parcel_read_total` (outcome) | Reads of a parcel link: `ok`, `not_found` or `stopped` (its sharing was stopped) |
@@ -370,6 +373,9 @@ Useful questions:
   `public_lookup_total{outcome="limited_daily"}` rises with it. The gauges are set by the
   maintenance pass after each scheduled sync. `public_detections_per_client` and
   `PUBLIC_DETECTIONS_PER_DAY` read the same way.
+
+- **Is a check digit wrong for real numbers?** A `carrier_checksum_rejection_total` rule that
+  keeps counting. Review that checksum in the scraper; the series holds no number to test it with.
 
 - **Are delivery emails going out?** `delivery_email_total{outcome="failed",reason="smtp"}`
   rising means the mail server refuses them: the log lines say how. A reason ending in

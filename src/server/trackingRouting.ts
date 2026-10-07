@@ -4,14 +4,14 @@ import { trackingFailureCode } from './trackingFailure';
 import { DateTime } from 'luxon';
 import { appInputField, detectCarrierMatch } from '../lib/carriers';
 import { AUTOMATIC_CARRIER_IDS, carrierAdapter, carrierTimezone, requiredRequirements } from './carriers';
-import { inferStage, normalizeCarrierResult, resultStage, STAGES, type CarrierResult } from 'universal-parcel-scraper';
+import { checksumRejections, inferStage, normalizeCarrierResult, resultStage, STAGES, type CarrierResult } from 'universal-parcel-scraper';
 import { isRecord, type JsonObject } from './types';
 import { priorityUniversalSource, universalPlan, universalSourceBudget } from 'universal-parcel-scraper';
 import type { UniversalSource } from 'universal-parcel-scraper';
 import { isCarrierFeedName, isKnownCarrierName } from 'universal-parcel-scraper/app';
 import { brandCarrierIds, carrierBrand, carrierIdFromName } from 'universal-parcel-scraper/app';
 import { errorType, reportRoutingEvent } from './observability';
-import { recordProviderInput } from './metrics';
+import { recordChecksumRejection, recordProviderInput } from './metrics';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from 'universal-parcel-scraper';
 import { captureDirectLocalHistory, directHistoryNumber, directLocalHistory, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
 import { latestResultTime } from 'universal-parcel-scraper/app';
@@ -392,6 +392,15 @@ export class TrackingRouter {
         if (carrier !== declared && state.confirmed_carrier !== carrier) {
           report(probe ? 'candidate_probe_confirmed'
             : detectionNames(number, carrier) ? 'detected_carrier_confirmed' : 'carrier_mismatch_confirmed', carrier);
+        }
+        // The carrier's own answer for this very number, the first time: count
+        // the rules whose failed check digit kept it out of detection's
+        // suggestions. The carrier and rule ids are recorded, never the number.
+        if (value.sourceCarrierId === carrier && !metadata.original_carrier
+          && (state.confirmed_carrier !== carrier || state.confirmed_number !== number)) {
+          for (const rejection of checksumRejections(number)) {
+            if (rejection.carrier === carrier) recordChecksumRejection(carrier, rejection.rule);
+          }
         }
         state.confirmed_carrier = carrier;
         state.confirmed_number = number;

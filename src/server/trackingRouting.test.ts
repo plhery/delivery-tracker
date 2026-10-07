@@ -324,6 +324,39 @@ describe('persistent tracking routing', () => {
     expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('carrier_mismatch_confirmed', expect.objectContaining({ carrier: 'unknown', provider: 'fedex' }));
     expect(monitoring.reportRoutingEvent).not.toHaveBeenCalledWith('detected_carrier_confirmed', expect.anything());
   });
+  it.each([
+    // FedEx's 12-digit check fails, and Yamato's mod 7 passes, for the first number; the reverse for the second.
+    ['fedex', '123456789013', [['fedex', 'fedex-1']]],
+    ['yamato', '123456789012', [['yamato', 'yamato-1']]],
+    ['fedex', '123456789012', []],
+    ['yamato', '123456789013', []],
+  ])('counts the rules whose check digit hid %s when its own lookup first confirms %s', async (carrier, number, expected) => {
+    const recorded = vi.spyOn(metrics, 'recordChecksumRejection').mockImplementation(() => undefined);
+    const { router, direct } = setup();
+    direct.mockImplementation(async (_parcel, asked) => directValue(asked));
+    const result = await router.fetch(parcel({ carrier, tracking_number: number }), false);
+    expect(recorded.mock.calls).toEqual(expected);
+    expect(JSON.stringify(recorded.mock.calls)).not.toContain(number);
+    // Later checks of the confirmed carrier count nothing more.
+    recorded.mockClear();
+    await router.fetch(parcel({ carrier, tracking_number: number, carrier_data: { routing: result.result.routing } }), false);
+    expect(recorded).not.toHaveBeenCalled();
+  });
+  it('counts a hidden carrier that a provider names and its own lookup confirms, but not another carrier\'s answer', async () => {
+    const recorded = vi.spyOn(metrics, 'recordChecksumRejection').mockImplementation(() => undefined);
+    const named = setup();
+    named.universal.mockResolvedValue({ ...history(), discovered_carrier: 'fedex' });
+    named.direct.mockImplementation(async (_parcel, asked) => directValue(asked));
+    const result = await named.router.fetch(parcel({ tracking_number: '123456789013' }), false);
+    expect(result.correction?.carrier).toBe('fedex');
+    expect(recorded.mock.calls).toEqual([['fedex', 'fedex-1']]);
+    recorded.mockClear();
+    // The answer of the carrier a handoff passed the parcel to confirms nothing about this number.
+    const handoff = setup();
+    handoff.direct.mockResolvedValue(directValue('ups'));
+    await handoff.router.fetch(parcel({ carrier: 'fedex', tracking_number: '123456789013' }), false);
+    expect(recorded).not.toHaveBeenCalled();
+  });
   it('confirms a newly returned universal hint in the same sync and then uses only direct', async () => {
     const { router, direct, universal } = setup();
     universal.mockResolvedValue({ ...history(), discovered_carrier: 'ups' });

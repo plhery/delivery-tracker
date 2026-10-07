@@ -1,5 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 
+const sentry = vi.hoisted(() => ({ count: vi.fn(), newTraces: 0, initialized: false }));
+vi.mock('@sentry/node', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@sentry/node')>(),
+  metrics: { count: sentry.count },
+  startNewTrace: (callback: () => unknown) => { sentry.newTraces++; return callback(); },
+}));
+vi.mock('./observability', async (importOriginal) => ({
+  ...await importOriginal<typeof import('./observability')>(),
+  initObservability: () => sentry.initialized,
+}));
+
 const metrics = await import('./metrics');
 /** Prometheus sees a new series at 0 first; the next scrape carries its count. */
 const scraped = async (source = metrics) => { await source.metricsText(); return source.metricsText(); };
@@ -143,6 +154,21 @@ describe('prometheus carrier metrics', () => {
     expect(text).toContain('provider_input_total{provider="ParcelsApp",step="asked"} 1');
     expect(text).toContain('provider_input_total{provider="ParcelsApp",step="supplied"} 1');
     expect(text).toContain('provider_input_total{provider="ParcelsApp",step="history"} 1');
+  });
+
+  it('counts checksum rejections by carrier and detection rule only', async () => {
+    metrics.recordChecksumRejection('yamato', 'yamato-1');
+    metrics.recordChecksumRejection('yamato', 'yamato-1');
+    metrics.recordChecksumRejection('fedex', 'fedex-1');
+    const text = await scraped();
+    expect(text).toContain('carrier_checksum_rejection_total{carrier="yamato",rule="yamato-1"} 2');
+    expect(text).toContain('carrier_checksum_rejection_total{carrier="fedex",rule="fedex-1"} 1');
+    // Sentry gets the same two ids, in a trace of its own.
+    sentry.initialized = true;
+    metrics.recordChecksumRejection('fedex', 'fedex-1');
+    sentry.initialized = false;
+    expect(sentry.count.mock.calls).toEqual([['tracking.checksum_rejection', 1, { attributes: { carrier: 'fedex', rule: 'fedex-1' } }]]);
+    expect(sentry.newTraces).toBe(1);
   });
 
   it('serves yesterday\'s lookups and detections per client as gauges', async () => {
