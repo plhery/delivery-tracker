@@ -34,6 +34,42 @@ const overflowing = (page: Page) => page.evaluate(() => {
   }).map((element) => `${element.tagName.toLowerCase()}.${element.className}`);
 });
 
+test('the landing’s foot lists the guides out of sight, opens the list in place, and leads to a guide', async ({ page, request }) => {
+  // A search engine reads every guide's address on the landing, before any script runs.
+  const html = await (await request.get('/', { headers: { 'accept-language': 'en' } })).text();
+  const listed = [...html.matchAll(/<li><a href="(\/guides\/[^"]+)"/g)].map(([, href]) => href);
+  const guides = (await sitemap(request)).filter(({ url }) => /^\/guides\/./.test(pathOf(url))).map(({ url }) => pathOf(url));
+  expect(listed).toEqual(guides);
+  // So does it at a language's own address, in that language.
+  const french = await (await request.get('/fr', { headers: { 'accept-language': 'en' } })).text();
+  expect([...french.matchAll(/<li><a href="(\/fr\/guides\/[^"]+)"/g)]).toHaveLength(guides.length);
+
+  await page.goto('/');
+  const foot = page.locator('.landing-footer');
+  const list = page.getByRole('dialog', { name: 'Guides' });
+  await expect(list).toBeHidden();
+  await foot.getByRole('link', { name: 'Guides' }).click();
+  await expect(list).toBeVisible();
+  expect(path(page)).toBe('/');
+  await expect(list.getByRole('listitem')).toHaveCount(listed.length);
+  await page.keyboard.press('Escape');
+  await expect(list).toBeHidden();
+
+  await foot.getByRole('link', { name: 'Guides' }).click();
+  const first = list.getByRole('listitem').first().getByRole('link');
+  const title = (await first.textContent())!;
+  await first.click();
+  await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
+  expect(path(page)).toBe(listed[0]);
+  await expect(page).toHaveTitle(`${title} — Peek`);
+  await expect(page.locator('.guide__picture > svg')).toBeVisible();
+  expect(await overflowing(page)).toEqual([]);
+
+  // The guide leads back to the tracker.
+  await page.getByRole('banner').getByRole('link', { name: 'Track your parcel' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+});
+
 test('a guide is written in the language of its address, whatever the browser sent, and names its translations', async ({ page, request }) => {
   const pages = await sitemap(request);
   const guide = pages.find(({ url }) => /\/fr\/guides\/./.test(url))!;

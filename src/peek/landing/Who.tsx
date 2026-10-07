@@ -6,6 +6,7 @@ import { trackAction } from '../../lib/analytics';
 import { LANDING_PATH, landingAtRoot } from '../../lib/experience';
 import { usePeekSession } from '../session';
 import { LandingIcon, XLogo } from './glyphs';
+import { GuidesLink } from './Guides';
 import { AUTHOR_URL, OTHER_SITES, SOURCE_URL } from './links';
 import './Who.css';
 
@@ -34,7 +35,7 @@ export function Who() {
   </section>;
 }
 
-/** The foot of the page: the name, the privacy notice, the code, the language, and what else its author makes. */
+/** The foot of the page: the name, the guides, the privacy notice, the code, the language, and what else its author makes. */
 export function LandingFooter() {
   const { t, locale } = useI18n();
   const { account } = usePeekSession();
@@ -42,6 +43,7 @@ export function LandingFooter() {
   const englishAddress = () => account === 'visitor' && landingAtRoot() ? '/' : LANDING_PATH;
   return <footer className="landing-footer">
     <span className="landing-footer__name"><PeekMark size={18} />{t('app.title')} · {t('app.tagline')}</span>
+    <GuidesLink />
     <a href="/privacy.html" onClick={() => trackAction('privacy-open')}>{t('auth.privacyLink')}</a>
     <a href={SOURCE_URL} target="_blank" rel="noopener noreferrer"><LandingIcon name="github" />GitHub</a>
     <LanguageControl englishAddress={englishAddress} />

@@ -1,7 +1,8 @@
 # Guides
 
 Articles that answer what people ask a search engine about parcels. They live at
-`/guides/<slug>` in English and `/<language>/guides/<slug>` in the other six languages.
+`/guides/<slug>` in English and `/<language>/guides/<slug>` in the other six languages,
+and the landing's footer links them.
 
 - [`index.json`](index.json) lists the guides' ids in the order the site shows them.
 - Each id is a folder with one file per language: `en.md`, `de.md`, `fr.md`, `it.md`,

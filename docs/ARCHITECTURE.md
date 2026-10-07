@@ -213,7 +213,7 @@ Key server modules:
 | `/sample` | A made-up parcel on a parcel page, told by the browser: nothing is asked of the server or kept on the device. Its "Home page" link leads back to the landing |
 | `/i/<key>`, `/invite` | A friend invitation ([FRIENDS.md](FRIENDS.md)) |
 | `/demo` | The demo deliveries, kept on the device, to anyone; leaving the demo returns to `/` |
-| `/guides`, `/guides/<slug>`; `/<language>/guides`, `/<language>/guides/<slug>` | The guides, articles for readers who arrive from a search engine, and their list, in the address's language whatever the browser prefers. English has no prefix. Any other address below a language's guides is sent to the 404 page by a rewrite in [`next.config.ts`](../next.config.ts), so the server writes that page whole |
+| `/guides`, `/guides/<slug>`; `/<language>/guides`, `/<language>/guides/<slug>` | The guides, articles for readers who arrive from a search engine, and their list, in the address's language whatever the browser prefers. English has no prefix. Any other address below a language's guides is sent to the 404 page by a rewrite in [`next.config.ts`](../next.config.ts), so the server writes that page whole. The landing's foot lists them |
 | `/email/off#t=<token>` | The way out of the delivery email, from the link an email carries. It asks first, then switches the email off (or back on) for the account the token names, without a sign-in. The token stays after the `#` and travels only in the body of that request |
 
 Sessions belong to one origin, so every address lives on the same host. With the iPhone
