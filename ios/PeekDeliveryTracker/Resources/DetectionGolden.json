@@ -48,6 +48,26 @@
     ]
   },
   {
+    "input": "0000100000104002537106",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "tipsa",
+      "austrian-post",
+      "ctt-express",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "tipsa"
+    ],
+    "asked": [
+      "tipsa",
+      "austrian-post",
+      "ctt-express"
+    ]
+  },
+  {
     "input": "000123450000000027",
     "carrier": "unknown",
     "confidence": "low",
@@ -790,6 +810,24 @@
     ]
   },
   {
+    "input": "0280400280406520139001",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "tipsa",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "tipsa"
+    ],
+    "asked": [
+      "tipsa",
+      "austrian-post"
+    ]
+  },
+  {
     "input": "0301006785462006320995",
     "carrier": "unknown",
     "confidence": "low",
@@ -857,6 +895,24 @@
     ]
   },
   {
+    "input": "0410230410230001262324",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "tipsa",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "tipsa"
+    ],
+    "asked": [
+      "tipsa",
+      "austrian-post"
+    ]
+  },
+  {
     "input": "041441760228964",
     "carrier": "unknown",
     "confidence": "low",
@@ -908,6 +964,60 @@
   },
   {
     "input": "0460040240008103140542",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "tipsa",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "tipsa"
+    ],
+    "asked": [
+      "tipsa",
+      "austrian-post"
+    ]
+  },
+  {
+    "input": "0460040460048104747942",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "tipsa",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "tipsa"
+    ],
+    "asked": [
+      "tipsa",
+      "austrian-post"
+    ]
+  },
+  {
+    "input": "0460040460048104754422",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "tipsa",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "tipsa"
+    ],
+    "asked": [
+      "tipsa",
+      "austrian-post"
+    ]
+  },
+  {
+    "input": "0460040460048104791791",
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
