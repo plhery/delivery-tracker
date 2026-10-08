@@ -24,6 +24,7 @@ import {
   providerEventId,
   resultHasUpdate,
   resultStage,
+  stageToSave,
   TrackingSyncService,
   type TrackingAdapter,
 } from './trackingSync';
@@ -805,6 +806,40 @@ describe('TrackingSyncService', () => {
     await expect(service.syncPackage({ ...parcel, ...saved })).resolves.toMatchObject({ waiting: 1, errors: 0 });
     expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ sync_status: 'waiting', sync_error: null,
       carrier_data: { routing: { consecutive_failures: 1 } } });
+  });
+
+  it('keeps a moving parcel\'s stage when the newest scan is a delivery notice', async () => {
+    // A notice filed as an announcement (synthetic wording and times): the
+    // summary and the forecast are news, a step back to Announced is not.
+    const notice = 'Your parcel will be delivered on Tuesday between 10:00 and 11:00';
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit', current_stage: 'registered',
+      last_status_text: notice, last_update: '2026-09-10T08:00:00Z', expected_delivery: '2026-09-15',
+      events: [
+        { time: '2026-09-10T08:00:00Z', description: notice, stage: 'registered' },
+        { time: '2026-09-09T18:00:00Z', description: 'Arrived at the delivery depot', stage: 'in_transit' },
+      ] }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
+    const parcel = { id: 'notice', carrier: 'dpd', tracking_number: 'TEST1234', current_stage: 'out_for_delivery' };
+    await service.syncPackage(parcel);
+    expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ current_stage: 'out_for_delivery',
+      last_status_text: notice, expected_delivery: '2026-09-15' });
+    expect(client.completeSyncAttempt).toHaveBeenLastCalledWith(expect.any(String),
+      expect.objectContaining({ anomaly_codes: ['early_stage_regression'] }), expect.any(Array));
+    // A problem still moves the stage, and a parcel that has not moved yet takes its announcement.
+    adapter.fetch.mockResolvedValue({ status: 'exception', current_stage: 'exception', last_status_text: 'Parcel damaged',
+      last_update: '2026-09-10T09:00:00Z', events: [{ time: '2026-09-10T09:00:00Z', description: 'Parcel damaged', stage: 'exception' }] });
+    await service.syncPackage({ ...parcel, current_stage: 'in_transit' });
+    expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ current_stage: 'exception' });
+    adapter.fetch.mockResolvedValue({ status: 'pending', current_stage: 'registered', last_status_text: 'Label created',
+      last_update: '2026-09-10T10:00:00Z', events: [{ time: '2026-09-10T10:00:00Z', description: 'Label created', stage: 'registered' }] });
+    await service.syncPackage({ ...parcel, current_stage: 'pending' });
+    expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ current_stage: 'registered' });
+    expect(client.completeSyncAttempt).toHaveBeenLastCalledWith(expect.any(String),
+      expect.objectContaining({ anomaly_codes: [] }), expect.any(Array));
   });
 
   it('does not regress a newer saved summary when a fallback returns older history', async () => {
@@ -2517,6 +2552,21 @@ describe('tracking anomaly detection', () => {
       { status: 'in_transit', events: [] }, [{ occurred_at }], 'spring-gds', 'in_transit', now);
     expect(ahead('2026-06-10T09:15:00Z')).toContain('future_event_timestamp');
     expect(ahead('2026-06-10T07:35:00Z')).not.toContain('future_event_timestamp');
+  });
+
+  it('never lets an earlier stage up to accepted replace a later one', () => {
+    for (const previous of ['in_transit', 'customs', 'out_for_delivery', 'failed_attempt', 'ready_for_pickup']) {
+      for (const selected of ['pending', 'registered', 'accepted']) expect(stageToSave(previous, selected)).toBe(previous);
+      expect(stageToSave(previous, 'exception')).toBe('exception');
+      expect(stageToSave(previous, 'returned')).toBe('returned');
+    }
+    expect(stageToSave('accepted', 'registered')).toBe('accepted');
+    expect(stageToSave('registered', 'pending')).toBe('registered');
+    expect(stageToSave('registered', 'accepted')).toBe('accepted');
+    expect(stageToSave('out_for_delivery', 'in_transit')).toBe('in_transit');
+    // After a problem or a return, a new label starts over.
+    expect(stageToSave('exception', 'registered')).toBe('registered');
+    expect(stageToSave('returned', 'registered')).toBe('registered');
   });
 
   it('accepts a problem reported after delivery without calling it a regression', () => {

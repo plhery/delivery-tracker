@@ -85,6 +85,7 @@ earlier attempt, since the parcel joined the account, ended `updated` on another
 | `observed_without_timestamp` | A synthetic observation was needed to change stage (recorded, not alerted) |
 | `terminal_stage_regression` | A delivered/returned parcel moved stage (`exception` excepted) |
 | `delivered_status_conflict` | The provider says delivered but the chosen stage doesn't |
+| `early_stage_regression` | A scan only announcing or accepting the parcel came after a later stage, which was kept (recorded, not alerted) |
 | `progress_disappeared` | The carrier's own adapter or the provider its saved summary came from answers without progress; for a carrier without an adapter, exhausted providers return only thin answers and the routing failure threshold is reached. The saved state is kept and the check ends as an error. |
 | `fallback_without_progress` | A different fallback provider answers without progress for a carrier with its own adapter, or a thin answer for a carrier without one stays below the routing failure threshold. The saved state is kept and the check ends as waiting (recorded, not alerted). |
 

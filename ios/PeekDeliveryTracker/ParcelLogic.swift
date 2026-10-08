@@ -291,11 +291,29 @@ private final class LatestEventCache: @unchecked Sendable {
         if let entry = lock.withLock({ entries[parcel.id] }), entry.events == events {
             return entry.latest
         }
-        // Status checks need only the latest carrier event, not a sorted history.
-        let latest = events.lazy.filter { $0.stage != .pending }.min(by: Parcel.eventPrecedes)
-            ?? events.min(by: Parcel.eventPrecedes)
+        let carrier = events.filter { $0.stage != .pending }.sorted(by: Parcel.eventPrecedes)
+        let latest = Self.current(newestFirst: carrier) ?? events.min(by: Parcel.eventPrecedes)
         lock.withLock { entries[parcel.id] = (events, latest) }
         return latest
+    }
+
+    /// Carrier stages before the parcel moves, in order.
+    private static let early: [TrackingStage] = [.registered, .accepted]
+    /// Stages of a parcel on its way, short of a final one.
+    private static let moving: Set<TrackingStage> = [.inTransit, .customs, .outForDelivery, .failedAttempt, .readyForPickup]
+
+    /// An announcement or acceptance after the parcel has moved on is a notice
+    /// or a reworded scan, not a step back: the scan before it still says where
+    /// the parcel is. After a problem, a return or a delivery, a new label starts over.
+    private static func current(newestFirst carrier: [TrackingEvent]) -> TrackingEvent? {
+        guard var current = carrier.first else { return nil }
+        for event in carrier.dropFirst() {
+            guard let rank = early.firstIndex(of: current.stage) else { break }
+            if moving.contains(event.stage) { return event }
+            guard let earlier = early.firstIndex(of: event.stage) else { break }
+            if earlier > rank { current = event }
+        }
+        return current
     }
 }
 

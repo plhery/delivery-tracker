@@ -488,6 +488,23 @@ export function collectStatusObservations(
   return [...observations.values()];
 }
 
+/** Stages before the carrier moves the parcel, in order. */
+const EARLY_STAGES = ['pending', 'registered', 'accepted'];
+/** Stages a carrier reports once it moves the parcel, short of a final one. */
+const MOVING_STAGES = new Set(['in_transit', 'customs', 'out_for_delivery', 'failed_attempt', 'ready_for_pickup']);
+
+/**
+ * The stage to save over the previous one. An earlier stage than the saved
+ * one, up to accepted, is a notice or a reworded scan rather than a step back,
+ * so the saved stage stays. Delivered and returned have their own rule, and
+ * after an exception a new label can start over.
+ */
+export function stageToSave(previousStage: string, selectedStage: string): string {
+  const selected = EARLY_STAGES.indexOf(selectedStage);
+  const previous = MOVING_STAGES.has(previousStage) ? EARLY_STAGES.length : EARLY_STAGES.indexOf(previousStage);
+  return selected >= 0 && previous > selected ? previousStage : selectedStage;
+}
+
 export function detectSyncAnomalies(
   parcel: JsonObject,
   result: CarrierResult,
@@ -1095,7 +1112,11 @@ export class TrackingSyncService {
         values.last_status_text = result.last_status_text || null;
         values.expected_delivery = result.expected_delivery ? String(result.expected_delivery) : null;
         values.carrier_data = carrierData;
-        if (selectedStage && (hasUpdate || !swissPostReady)) values.current_stage = selectedStage;
+        if (selectedStage && (hasUpdate || !swissPostReady)) {
+          // A carrier the router swapped to may rightly know less than a mistaken one did.
+          values.current_stage = fetched.correction ? selectedStage : stageToSave(previousStage, selectedStage);
+          if (values.current_stage !== selectedStage) anomalies = [...anomalies, 'early_stage_regression'];
+        }
       }
       if (preserveSummary && postalHistory) {
         values.carrier_data = {

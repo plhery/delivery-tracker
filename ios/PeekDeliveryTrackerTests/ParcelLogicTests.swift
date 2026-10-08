@@ -770,6 +770,20 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(parcel.currentEvent?.stage, .inTransit)
     }
 
+    func testAnnouncementDoesNotStepAMovingParcelBack() {
+        let id = UUID()
+        let transit = event(id, .inTransit, "2026-08-08T10:00:00Z")
+        let accepted = event(id, .accepted, "2026-08-09T10:00:00Z")
+        let notice = event(id, .registered, "2026-08-10T10:00:00Z")
+        XCTAssertEqual(makeParcel(id: id, events: [notice, accepted, transit]).currentEvent?.id, transit.id)
+        XCTAssertEqual(makeParcel(id: id, events: [notice, accepted]).currentEvent?.id, accepted.id)
+        XCTAssertEqual(makeParcel(id: id, events: [notice]).currentEvent?.id, notice.id)
+        for stage in [TrackingStage.exception, .returned, .delivered] {
+            let before = event(id, stage, "2026-08-09T12:00:00Z")
+            XCTAssertEqual(makeParcel(id: id, events: [transit, before, notice]).currentEvent?.id, notice.id)
+        }
+    }
+
     func testEventOrderingUsesInstantsAndStableTieBreakers() {
         let id = UUID()
         let accepted = event(id, .accepted, "2026-08-08T10:00:00Z")

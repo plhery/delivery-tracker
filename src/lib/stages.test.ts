@@ -117,6 +117,30 @@ describe('currentStage / progressIndex', () => {
     expect(progressIndex([carrierUpdate, trackingAdded])).toBe(3);
   });
 
+  it('does not let a newer announcement or acceptance step a moving parcel back', () => {
+    const transit = makeEvent({ id: 'transit', stage: 'in_transit', occurredAt: '2026-06-02T08:00:00.000Z' });
+    const accepted = makeEvent({ id: 'accepted', stage: 'accepted', occurredAt: '2026-06-03T08:00:00.000Z' });
+    const notice = makeEvent({ id: 'notice', stage: 'registered', occurredAt: '2026-06-04T08:00:00.000Z' });
+    const added = makeEvent({ id: 'added', stage: 'pending', occurredAt: '2026-06-05T08:00:00.000Z' });
+    expect(currentEvent([transit, accepted, notice, added])).toBe(transit);
+    expect(currentStage([notice, makeEvent({ ...transit, stage: 'out_for_delivery' })])).toBe('out_for_delivery');
+    expect(currentEvent([makeEvent({ id: 'label', stage: 'registered', occurredAt: '2026-06-01T08:00:00.000Z' }), accepted, notice]))
+      .toBe(accepted);
+    expect(currentEvent([notice])).toBe(notice);
+  });
+
+  it('lets a new label start over after a problem, a return or a delivery', () => {
+    const label = makeEvent({ id: 'label', stage: 'registered', occurredAt: '2026-06-04T08:00:00.000Z' });
+    for (const stage of ['exception', 'returned', 'delivered'] as const) {
+      const before = makeEvent({ id: 'before', stage, occurredAt: '2026-06-03T08:00:00.000Z' });
+      const transit = makeEvent({ id: 'transit', stage: 'in_transit', occurredAt: '2026-06-02T08:00:00.000Z' });
+      expect(currentEvent([transit, before, label])).toBe(label);
+    }
+    // A newer movement or problem is the current state, as before.
+    const problem = makeEvent({ id: 'problem', stage: 'exception', occurredAt: '2026-06-05T08:00:00.000Z' });
+    expect(currentEvent([label, problem])).toBe(problem);
+  });
+
   it('keeps progress at in-transit level while at customs', () => {
     const events = [
       makeEvent({ id: 'a', stage: 'customs', occurredAt: '2026-06-03T08:00:00.000Z' }),

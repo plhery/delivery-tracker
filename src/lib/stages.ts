@@ -75,16 +75,32 @@ export function latestEvent(events: TrackingEvent[]): TrackingEvent | null {
   return sortEventsDesc(events)[0] ?? null;
 }
 
+/** Carrier stages before the parcel moves, in order. */
+const EARLY_STAGES: readonly Stage[] = ['registered', 'accepted'];
+/** Stages of a parcel on its way, short of a final one. */
+const MOVING_STAGES: ReadonlySet<Stage> = new Set<Stage>(['in_transit', 'customs', 'out_for_delivery', 'failed_attempt', 'ready_for_pickup']);
+
 /**
  * The event that represents the parcel's current delivery state.
  *
  * A pending event only records that tracking was added to this app. Carrier
  * history can predate that action, so pending must not override a real update
- * merely because it has a newer timestamp.
+ * merely because it has a newer timestamp. An announcement or acceptance after
+ * the parcel has moved on is a notice or a reworded scan, not a step back: the
+ * scan before it still says where the parcel is. After a problem, a return or
+ * a delivery, a new label starts over.
  */
 export function currentEvent(events: TrackingEvent[]): TrackingEvent | null {
-  return latestEvent(events.filter((event) => event.stage !== 'pending'))
-    ?? latestEvent(events);
+  const carrier = sortEventsDesc(events.filter((event) => event.stage !== 'pending'));
+  let current = carrier[0];
+  if (!current) return latestEvent(events);
+  for (const event of carrier.slice(1)) {
+    if (!EARLY_STAGES.includes(current.stage)) break;
+    if (MOVING_STAGES.has(event.stage)) return event;
+    if (!EARLY_STAGES.includes(event.stage)) break;
+    if (EARLY_STAGES.indexOf(event.stage) > EARLY_STAGES.indexOf(current.stage)) current = event;
+  }
+  return current;
 }
 
 export function currentStage(events: TrackingEvent[]): Stage | null {
