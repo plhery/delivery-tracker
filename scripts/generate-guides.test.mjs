@@ -42,12 +42,12 @@ test('a guide missing in one language is refused', () => {
   refuses(({ file }) => rmSync(file('pl')), /pl\.md is missing/);
 });
 
-test('a translation that lost its steps or half its text is refused', () => {
-  refuses(({ edit }) => edit('fr', /:::steps[\s\S]*?:::\n/, ''), /differ from the English guide/);
+test('a translation whose drawings differ from the English guide’s, or that lost most of its text, is refused', () => {
+  refuses(({ edit }) => edit('fr', /^:::sources$/m, ':::steps\n- Une | Deux\n:::\n\n:::sources'), /differ from the English guide/);
   refuses(({ file }) => {
     const [head, body] = readFileSync(file('de'), 'utf8').split(/\n---\n/);
-    const blocks = body.trim().split(/\n\n/);
-    writeFileSync(file('de'), `${head}\n---\n\n${blocks[0]}\n\n${blocks.at(-1)}\n`);
+    const [lead] = body.trim().split(/\n\n/);
+    writeFileSync(file('de'), `${head}\n---\n\n${lead}\n\n:::sources\n- [Quelle](https://source.example/)\n:::\n`);
   }, /differ from the English guide|a part is missing/);
 });
 
@@ -71,7 +71,7 @@ test('a folder the list does not name, and an id that is no slug, are refused', 
 });
 
 test('French titles are listed as French guides are set, the narrow space written as its escape', () => {
-  const directory = copy(({ edit }) => edit('fr', /^title: (.+)$/m, 'title: $1 ?'));
+  const directory = copy(({ edit }) => edit('fr', /^title: .+$/m, 'title: Où est mon colis ?'));
   try {
     const written = guidesModule(readGuides(directory));
     assert.match(written, /\\u202f\?"/);

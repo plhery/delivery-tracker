@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import de from '../../shared/locales/de.json';
@@ -96,7 +97,7 @@ describe('what a guides page tells a search engine', () => {
     expect(crumbs.itemListElement.map((item: { item: string }) => item.item)).toEqual(['https://peek.example/', 'https://peek.example/guides', `https://peek.example/guides/${first.slug}`]);
     // Nothing in the data can close its element.
     expect(/<script type="application\/ld\+json">(.*?)<\/script>/.exec(html)![1]).not.toMatch(/[<>&]/);
-    expect(html).toContain(`<h1>${first.title.replaceAll('&', '&amp;').replaceAll('\'', '&#x27;')}</h1>`);
+    expect(html).toContain(renderToStaticMarkup(createElement('h1', null, first.title)));
     // It reads on with other guides, never with itself.
     const next = [...html.matchAll(/class="guide-card" href="([^"]+)"/g)].map(([, href]) => href);
     expect(next).toHaveLength(Math.min(3, ids.length - 1));
