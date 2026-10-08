@@ -30,7 +30,7 @@ import {
 import type { DeliveryEmailService } from './email/deliveryEmails';
 import { PushDispatchError, type CompositePushNotificationService } from './push';
 import { STORED_EVENT_IDENTITIES, type SupabaseServiceClient } from './supabase';
-import { sameInstantIdentities, sharedScans, withIdentities, withoutCopyDrift } from './eventIdentity';
+import { restatedIdentities, sameInstantIdentities, sharedScans, withIdentities, withoutCopyDrift } from './eventIdentity';
 import {
   TrackingSyncAudit,
   type SyncAnomalyCode,
@@ -1075,12 +1075,15 @@ export class TrackingSyncService {
       // A reworded scan (DPD with and without the postcode) updates its stored row in place,
       // and a scan both a carrier and a universal provider reported is stored once.
       // A handoff's batch also carries the earlier carrier's scans, under that carrier's policy.
+      // A scan meets the row an earlier take-over left under an old identity before any policy.
       const stored = storedEventIdentities(parcel);
-      const reworded = sameInstantIdentities(events, stored, sourceCarrierId);
-      if (fetched.earlierResult && fetched.earlierCarrierId && fetched.earlierCarrierId !== sourceCarrierId) {
+      const reworded = restatedIdentities(events, stored);
+      const policyCarriers = fetched.earlierResult && fetched.earlierCarrierId && fetched.earlierCarrierId !== sourceCarrierId
+        ? [sourceCarrierId, fetched.earlierCarrierId] : [sourceCarrierId];
+      for (const policyCarrier of policyCarriers) {
         const taken = new Set(reworded.values());
-        for (const [id, saved] of sameInstantIdentities(events, stored, fetched.earlierCarrierId)) {
-          if (!taken.has(saved)) reworded.set(id, saved);
+        for (const [id, saved] of sameInstantIdentities(events, stored, policyCarrier)) {
+          if (!reworded.has(id) && !taken.has(saved)) reworded.set(id, saved);
         }
       }
       const shared = sharedScans(events, stored, reworded);

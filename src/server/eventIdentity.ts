@@ -19,6 +19,11 @@
  *   A policy that names the zone its source once read every wall clock in
  *   lets a scan whose wall clock now carries its own offset take over the row
  *   stored under the old label (India Post's scans abroad).
+ * - A row taken over keeps its old identity while its strings follow the
+ *   scan. When a later check meets the scan again, a policy that matched the
+ *   old strings (AliExpress's town in brackets) no longer matches, so a scan
+ *   whose source, time, place and wording equal a stored row's takes over
+ *   that row whatever its identity (`restatedIdentities`).
  * - A universal provider copies a carrier's scans while the carrier's own
  *   lookup is down, sometimes only to the minute, sometimes in a zone it
  *   misread (Ship24 keeps GOFO's Pacific offset on Eastern clocks), sometimes
@@ -164,6 +169,39 @@ function relabelled(zone: string, scan: JsonObject, row: JsonObject): boolean {
   const shown = ownWallClock(zone, scan);
   const saved = ownWallClock(zone, row);
   return (shown !== null && shown === zoneWallClock(zone, row)) || (saved !== null && saved === zoneWallClock(zone, scan));
+}
+
+function stringsOf(row: JsonObject): string {
+  return JSON.stringify([timeOf(row), String(row.location ?? '').trim(), String(row.description ?? '').trim()]);
+}
+
+/**
+ * Maps the computed identity of each new scan to the stored row an earlier
+ * take-over left under another identity: the same source, the same instant,
+ * and the time, place and wording the scan's identity hashes. Only a scan
+ * whose own identity is not stored is considered, against rows no event of
+ * the batch carries, never an observation, and the match must be unique.
+ */
+export function restatedIdentities(
+  events: readonly JsonObject[],
+  stored: readonly JsonObject[],
+): Map<string, string> {
+  const restated = new Map<string, string>();
+  const storedIds = new Set(stored.map(identity));
+  const claimed = new Set(events.map(identity));
+  const rows = stored.filter((row) => (
+    sourceOf(identity(row)) !== '' && !claimed.has(identity(row)) && !observedOnly(row) && timeOf(row) !== ''
+  ));
+  for (const event of events) {
+    const id = identity(event);
+    const source = sourceOf(id);
+    if (source === '' || source === 'app' || storedIds.has(id) || observedOnly(event) || timeOf(event) === '') continue;
+    const matching = rows.filter((row) => (
+      sourceOf(identity(row)) === source && instantOf(row) === instantOf(event) && stringsOf(row) === stringsOf(event)
+    ));
+    if (matching.length === 1) restated.set(id, identity(matching[0]!));
+  }
+  return restated;
 }
 
 const UNIVERSAL = 'unknown';

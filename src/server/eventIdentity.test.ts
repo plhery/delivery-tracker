@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { sameInstantIdentities, sharedScans, withIdentities, withoutCopyDrift } from './eventIdentity';
+import { restatedIdentities, sameInstantIdentities, sharedScans, withIdentities, withoutCopyDrift } from './eventIdentity';
 
 // India Post's policy names the zone it once read every clock in from the next scraper release;
 // until the app takes that version, its tests add the zone themselves.
@@ -277,6 +277,41 @@ describe('scans a source once read on one zone\'s clock', () => {
 
   it('leaves the same-instant match first', () => {
     expect([...sameInstantIdentities([abroad], [labelled, own], 'india-post')]).toEqual([['india-post:abroad', 'india-post:own']]);
+  });
+});
+
+describe('rows an earlier take-over left under an old identity', () => {
+  const at = '2026-09-27T02:03:08+08:00';
+  const instant = '2026-09-26T18:03:08+00:00';
+  // AliExpress first stored the town in brackets; its policy moved it to the place, in place.
+  const scan = { provider_event_id: 'aliexpress:current', occurred_at: '2026-09-26T18:03:08.000Z', stage: 'in_transit',
+    description: 'Processing at sorting center', location: 'Example Town', raw_data: { time: at } };
+  const saved = { provider_event_id: 'aliexpress:bracketed', occurred_at: instant, stage: 'in_transit',
+    description: 'Processing at sorting center', location: 'Example Town', time: at };
+
+  it('lets a scan take over the row whose time, place and wording it carries', () => {
+    expect(pairs(restatedIdentities([scan], [saved]))).toEqual([['aliexpress:current', 'aliexpress:bracketed']]);
+    expect(pairs(restatedIdentities([scan], [{ ...saved, description: ' Processing at sorting center ', location: 'Example Town ' }])))
+      .toEqual([['aliexpress:current', 'aliexpress:bracketed']]);
+  });
+
+  it('needs the same source, instant, time, place and wording', () => {
+    for (const row of [
+      { ...saved, provider_event_id: 'swiss-post:bracketed' },
+      { ...saved, provider_event_id: 'app:pending' },
+      { ...saved, occurred_at: '2026-09-26T18:03:09+00:00' },
+      { ...saved, time: '2026-09-26T18:03:08Z' },
+      { ...saved, time: undefined },
+      { ...saved, location: 'Other Town' },
+      { ...saved, description: 'Departed from sorting center' },
+      { ...saved, observed_without_provider_timestamp: true },
+    ]) expect(restatedIdentities([scan], [row]).size).toBe(0);
+  });
+
+  it('leaves a scan stored under its own identity, a row the batch carries, and two alike rows alone', () => {
+    expect(restatedIdentities([scan], [saved, { ...saved, provider_event_id: 'aliexpress:current' }]).size).toBe(0);
+    expect(restatedIdentities([scan, { ...scan, provider_event_id: 'aliexpress:bracketed' }], [saved]).size).toBe(0);
+    expect(restatedIdentities([scan], [saved, { ...saved, provider_event_id: 'aliexpress:copy' }]).size).toBe(0);
   });
 });
 

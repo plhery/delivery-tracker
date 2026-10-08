@@ -2765,6 +2765,24 @@ it('fills in a UPS scan location without creating another notification event', a
     location: 'Example City, France' });
 });
 
+it('rewrites a scan in place when a take-over left its row under an older identity', async () => {
+  const store = eventStore();
+  const at = '2026-07-11T18:05:00Z';
+  const sorted = { time: at, stage: 'in_transit', description: 'Sorted', location: 'Example City' };
+  const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit', last_update: at,
+    last_status_text: 'Sorted', events: [sorted] }) };
+  const service = new TrackingSyncService(store.client as unknown as SupabaseServiceClient, adapter, null,
+    () => new Date('2026-07-12T12:00:00Z'));
+  store.rows.set('dhl:taken-over', { id: 'row-0', package_id: 'restated-parcel', provider_event_id: 'dhl:taken-over',
+    occurred_at: at, stage: 'in_transit', description: 'Sorted', location: 'Example City', raw_data: { time: at } });
+  const load = () => ({ id: 'restated-parcel', user_id: 'owner', carrier: 'dhl', tracking_number: 'TEST1234',
+    current_stage: 'in_transit', [STORED_EVENT_IDENTITIES]: store.identities() });
+  await expect(service.syncPackage(load())).resolves.toMatchObject({ updated: 0, unchanged: 1 });
+  await service.syncPackage(load());
+  expect([...store.rows.values()].map(({ id, provider_event_id }) => ({ id, provider_event_id })))
+    .toEqual([{ id: 'row-0', provider_event_id: 'dhl:taken-over' }]);
+});
+
 it('tells a check that stored a scan from one that rewrote the scans it had', async () => {
   const store = eventStore();
   const scan = (time: string, description: string, location = '') => ({ time, stage: 'in_transit', description, location });
