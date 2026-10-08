@@ -1,7 +1,9 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { CHECK_FINISH_MS, SyncJobWorker, type BackgroundState } from './background';
-import { SupabaseServiceClient } from './supabase';
-import { TrackingSyncService, type SyncSummary } from './trackingSync';
+import { LOST_SYNC_JOB_ERROR, SupabaseServiceClient } from './supabase';
+import { emptySyncSummary, TrackingSyncService, type SyncSummary } from './trackingSync';
 import * as monitoring from './observability';
 import { TrackingSyncAudit, WorkerShutdown } from './trackingAudit';
 
@@ -117,6 +119,7 @@ it('ends an aborted check as interrupted, with its log line, before handing its 
 it('stops a scheduled run between checks at shutdown and hands its job back', async () => {
   const { client, claim, release, finish, service, worker } = setup();
   claim.mockResolvedValueOnce({ id: 'job', kind: 'scheduled' });
+  vi.spyOn(client, 'takeLostScheduledRuns').mockResolvedValue([]);
   vi.spyOn(client, 'setSyncJobCheckIn').mockResolvedValue();
   let stopping: AbortSignal | undefined;
   let signal: AbortSignal | undefined;
@@ -140,6 +143,52 @@ it('stops a scheduled run between checks at shutdown and hands its job back', as
   expect(signal?.aborted).toBe(false);
   expect(release).toHaveBeenCalledExactlyOnceWith('job', worker.workerId);
   expect(finish).not.toHaveBeenCalled();
+});
+it('closes the check-in of a scheduled run lost with its worker as an error, before opening its own', async () => {
+  const { client, claim, service, worker } = setup();
+  claim.mockResolvedValueOnce({ id: 'job', kind: 'scheduled' });
+  const lostCheckIn = { checkInId: 'lost-id', monitorSlug: 'delivery-tracker-sync-daytime', startedAt: Date.now() - 300_000 };
+  const take = vi.spyOn(client, 'takeLostScheduledRuns').mockResolvedValue([{ id: 'lost-job', attempts: 3, checkIn: lostCheckIn }]);
+  const opened = { checkInId: 'new-id', monitorSlug: 'delivery-tracker-sync-daytime', startedAt: Date.now() };
+  const begin = vi.spyOn(monitoring, 'beginScheduledSyncCheckIn').mockReturnValue(opened);
+  const end = vi.spyOn(monitoring, 'finishScheduledSyncCheckIn').mockImplementation(() => undefined);
+  const logged = vi.spyOn(monitoring, 'logOperationalEvent').mockImplementation(() => undefined);
+  vi.spyOn(client, 'setSyncJobCheckIn').mockResolvedValue();
+  vi.spyOn(service, 'sync').mockResolvedValue(emptySyncSummary());
+  vi.spyOn(client, 'archiveDeliveredBefore').mockResolvedValue(0);
+  vi.spyOn(client, 'maintainSyncAudit').mockResolvedValue({ abandoned: 0, purged: 0 });
+  vi.spyOn(client, 'forgetExpiredParcelLinks').mockResolvedValue({ links: 0, packages: 0, stopped: 0, alerts: 0 });
+  vi.spyOn(client, 'publicLookupUsageSummary').mockResolvedValue({ buckets: 0, p50: 0, p90: 0, max: 0, detection: { buckets: 0, p50: 0, p90: 0, max: 0 } });
+  worker.start();
+  await vi.advanceTimersByTimeAsync(1);
+  worker.stop();
+  // Two hours back covers the hourly runs overnight.
+  expect(take).toHaveBeenCalledExactlyOnceWith(new Date(Date.now() - 2 * 60 * 60_000 - 1));
+  expect(end.mock.calls).toEqual([[lostCheckIn, 'error'], [opened, 'ok']]);
+  expect(end.mock.invocationCallOrder[0]).toBeLessThan(begin.mock.invocationCallOrder[0]!);
+  expect(logged).toHaveBeenCalledWith('sync_job_failed', {
+    job_id: 'lost-job', kind: 'scheduled', error_type: 'WorkerLeaseExpired', attempts: 3,
+  }, 'error');
+});
+it('runs on when lost runs cannot be read, and leaves them alone when resuming a run', async () => {
+  const { client, claim, finish, service, worker } = setup();
+  const saved = { checkInId: 'saved-id', monitorSlug: 'delivery-tracker-sync-daytime', startedAt: Date.now() - 60_000 };
+  claim.mockResolvedValueOnce({ id: 'job', kind: 'scheduled' }).mockResolvedValueOnce({ id: 'job-2', kind: 'scheduled', check_in: saved });
+  const failure = new Error('database down');
+  const take = vi.spyOn(client, 'takeLostScheduledRuns').mockRejectedValue(failure);
+  const report = vi.spyOn(monitoring, 'captureOperationalError').mockReturnValue(null);
+  vi.spyOn(monitoring, 'beginScheduledSyncCheckIn').mockReturnValue(null);
+  vi.spyOn(service, 'sync').mockResolvedValue(emptySyncSummary());
+  vi.spyOn(client, 'archiveDeliveredBefore').mockResolvedValue(0);
+  vi.spyOn(client, 'maintainSyncAudit').mockResolvedValue({ abandoned: 0, purged: 0 });
+  vi.spyOn(client, 'forgetExpiredParcelLinks').mockResolvedValue({ links: 0, packages: 0, stopped: 0, alerts: 0 });
+  vi.spyOn(client, 'publicLookupUsageSummary').mockResolvedValue({ buckets: 0, p50: 0, p90: 0, max: 0, detection: { buckets: 0, p50: 0, p90: 0, max: 0 } });
+  worker.start();
+  await vi.advanceTimersByTimeAsync(1);
+  worker.stop();
+  expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'sync-worker', operation: 'close_lost_runs' });
+  expect(finish.mock.calls.map(([job]) => job)).toEqual(['job', 'job-2']);
+  expect(take).toHaveBeenCalledOnce();
 });
 it('hands back a job whose claim completes after shutdown starts', async () => {
   const { claim, release, service, worker } = setup();
@@ -171,4 +220,28 @@ it('finishes the persisted Sentry check-in when a replacement resumes the job', 
   expect(end).toHaveBeenCalledWith(checkIn, 'ok');
   expect(finish).toHaveBeenCalledOnce();
   worker.stop();
+});
+
+it('takes each lost scheduled run once, by clearing the check-in it hands back', async () => {
+  const client = new SupabaseServiceClient('https://database.example', 'service-key');
+  const checkIn = { checkInId: 'check-in', monitorSlug: 'delivery-tracker-sync-overnight', startedAt: 1 };
+  const request = vi.spyOn(client, 'request').mockResolvedValue([
+    { id: 'lost', attempts: 3, check_in: checkIn },
+    { id: 'malformed', attempts: 3, check_in: { checkInId: 'check-in' } },
+  ]);
+  await expect(client.takeLostScheduledRuns(new Date('2026-10-08T10:00:00Z'))).resolves.toEqual([{ id: 'lost', attempts: 3, checkIn }]);
+  const [path, options] = request.mock.calls[0]!;
+  const params = new URL(path, 'https://database.example').searchParams;
+  expect(Object.fromEntries(params)).toEqual({
+    kind: 'eq.scheduled', state: 'eq.failed', last_error: `eq.${LOST_SYNC_JOB_ERROR}`,
+    completed_at: 'gte.2026-10-08T10:00:00.000Z', check_in: 'not.is.null', select: 'id,attempts,check_in',
+  });
+  expect(options).toEqual({ method: 'PATCH', body: { check_in: null }, prefer: 'return=representation', timeoutMs: 3_000 });
+});
+it('finds lost runs by the error the job claim gives them', () => {
+  const directory = join(process.cwd(), 'supabase/migrations');
+  const latest = readdirSync(directory).sort().map(name => readFileSync(join(directory, name), 'utf8'))
+    .filter(sql => sql.includes('function public.claim_sync_job')).at(-1)!;
+  const claim = latest.slice(latest.indexOf('function public.claim_sync_job'));
+  expect(claim).toContain(`last_error = '${LOST_SYNC_JOB_ERROR}'`);
 });

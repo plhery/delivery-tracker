@@ -32,6 +32,8 @@ const MAX_WORKER_BACKOFF_MS = 60_000;
 // the handoff waits at most 4 s for it to stop before returning its job to the queue.
 export const CHECK_FINISH_MS = 10_000;
 const ABORT_SETTLE_MS = 4_000;
+// Runs come every hour overnight: the next one still closes a lost run's check-in.
+const LOST_RUN_WINDOW_MS = 2 * 60 * 60_000;
 
 export interface BackgroundState {
   lastScheduledSync: number | null;
@@ -286,6 +288,7 @@ export class SyncJobWorker {
         const saved = job.check_in as Partial<ScheduledCheckIn> | null | undefined;
         const validSaved = saved && typeof saved.checkInId === 'string' && typeof saved.monitorSlug === 'string'
           && typeof saved.startedAt === 'number';
+        if (!validSaved) await this.closeLostScheduledRuns();
         scheduledCheckIn = validSaved ? saved as ScheduledCheckIn : beginScheduledSyncCheckIn();
         if (scheduledCheckIn && !validSaved) await this.service.client.setSyncJobCheckIn(jobId, this.workerId, scheduledCheckIn);
         signal.throwIfAborted();
@@ -403,6 +406,29 @@ export class SyncJobWorker {
       this.#ownedJob = null;
     }
     return true;
+  }
+
+  /**
+   * A scheduled run whose worker stopped three times is failed by the next claim, which
+   * cannot close its Sentry check-in. The next run closes it as an error before opening
+   * its own, so the monitor alerts instead of timing it out behind the newer check-in.
+   */
+  private async closeLostScheduledRuns(): Promise<void> {
+    try {
+      const lost = await this.service.client.takeLostScheduledRuns(new Date(Date.now() - LOST_RUN_WINDOW_MS));
+      for (const run of lost) {
+        finishScheduledSyncCheckIn(run.checkIn, 'error');
+        logOperationalEvent('sync_job_failed', {
+          job_id: run.id,
+          kind: 'scheduled',
+          error_type: 'WorkerLeaseExpired',
+          attempts: run.attempts,
+        }, 'error');
+      }
+    } catch (error) {
+      // The run goes on: a check-in left open still times out in Sentry.
+      captureOperationalError(error, { component: 'sync-worker', operation: 'close_lost_runs' });
+    }
   }
 
   /**

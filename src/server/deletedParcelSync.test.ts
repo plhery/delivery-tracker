@@ -26,6 +26,7 @@ function claimed(job: JsonObject) {
   vi.useFakeTimers();
   const client = new SupabaseServiceClient('https://database.test', 'test');
   vi.spyOn(client, 'claimSyncJob').mockResolvedValueOnce(job).mockResolvedValue(null);
+  vi.spyOn(client, 'takeLostScheduledRuns').mockResolvedValue([]);
   const read = vi.spyOn(client, 'getPackage').mockResolvedValue({ id: 'parcel' });
   const finish = vi.spyOn(client, 'finishSyncJob').mockResolvedValue();
   const withdrawn = vi.spyOn(client, 'syncJobWithdrawn').mockResolvedValue(true);

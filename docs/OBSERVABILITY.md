@@ -299,7 +299,9 @@ Key JSON events:
   them. Alert when they repeat for two minutes (`failing_for_ms` of 120000 or more).
   `sync_claim_recovered` follows with the first claim that works again and says how long
   the streak lasted;
-- `sync_job_failed`, `sync_job_finish_failed` (by `job_id`). Alert on these;
+- `sync_job_failed`, `sync_job_finish_failed` (by `job_id`). Alert on these. A scheduled
+  run whose worker died three times is logged as failed by the next run, with
+  `error_type` `WorkerLeaseExpired`;
 - `sync_job_handoff` (by `job_id`): at shutdown, whether the job went back to the queue;
 - `sync_job_dropped` (by `job_id`): a package job had nothing left to finish, with the
   `reason`: `parcel_deleted` before its check, or `job_withdrawn` when a deletion or a
@@ -353,8 +355,9 @@ project-side scrubbing still apply. Automatic lookups wrap each provider failure
   15 minutes of margin, 10 minutes of maximum runtime), which overwrite edits made in Sentry:
   change them in `beginScheduledSyncCheckIn`. Runs never overlap, so a stuck run holds the
   queue: Sentry reports it as timed out after 10 minutes, and as missed once the next run is
-  late. A run whose worker died three times is failed by the next claim, and its check-in
-  times out silently behind the next run's; each reclaim before that was reported.
+  late. A run whose worker died three times is failed by the next claim; the next run closes
+  its check-in as `error` before opening its own, so the monitor alerts. Each reclaim
+  before that was reported.
 - **Alerts**: notify on new issues and regressions in `production`, and keep the Cron
   alerts. Avoid "more than 0 times in 5 minutes" rules: they fire on every failed check.
 - **Incidents**: carrier and provider outages open once, from thresholds computed in

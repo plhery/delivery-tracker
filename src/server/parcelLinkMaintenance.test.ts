@@ -13,6 +13,7 @@ function scheduledRun() {
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
   const client = new SupabaseServiceClient('https://database.test', 'test');
   vi.spyOn(client, 'claimSyncJob').mockResolvedValueOnce({ id: 'job', kind: 'scheduled' }).mockResolvedValue(null);
+  vi.spyOn(client, 'takeLostScheduledRuns').mockResolvedValue([]);
   const finish = vi.spyOn(client, 'finishSyncJob').mockResolvedValue();
   vi.spyOn(client, 'archiveDeliveredBefore').mockResolvedValue(0);
   vi.spyOn(client, 'maintainSyncAudit').mockResolvedValue({ abandoned: 0, purged: 0 });

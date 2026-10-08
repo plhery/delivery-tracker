@@ -67,6 +67,15 @@ export class SyncJobLeaseLost extends Error {
   }
 }
 
+/** What `claim_sync_job` writes on a job it fails because its worker stopped three times. */
+export const LOST_SYNC_JOB_ERROR = 'The sync worker stopped before completing this job.';
+
+export interface LostScheduledRun {
+  id: string;
+  attempts: number;
+  checkIn: { checkInId: string; monitorSlug: string; startedAt: number };
+}
+
 function query(
   entries: ReadonlyArray<readonly [string, string]> | Record<string, string>,
 ): string {
@@ -1219,6 +1228,33 @@ export class SupabaseServiceClient extends SupabaseClient {
         p_result: options.result ?? null, p_error: options.error?.slice(0, 500) ?? null },
     });
     if (finished !== true) throw new SyncJobLeaseLost();
+  }
+
+  /**
+   * The scheduled runs failed since `since` because their worker stopped three times,
+   * with the Sentry check-in each left open. Taking one clears its check-in, so each is
+   * handed out once, whichever worker asks.
+   */
+  async takeLostScheduledRuns(since: Date): Promise<LostScheduledRun[]> {
+    const params = query([
+      ['kind', 'eq.scheduled'],
+      ['state', 'eq.failed'],
+      ['last_error', `eq.${LOST_SYNC_JOB_ERROR}`],
+      ['completed_at', `gte.${since.toISOString()}`],
+      ['check_in', 'not.is.null'],
+      ['select', 'id,attempts,check_in'],
+    ]);
+    const taken = rows(await this.request(`/rest/v1/sync_jobs?${params}`, {
+      method: 'PATCH', body: { check_in: null }, prefer: 'return=representation', timeoutMs: 3_000,
+    }));
+    return taken.flatMap((job) => {
+      const checkIn = isRecord(job.check_in) ? job.check_in : {};
+      return typeof job.id === 'string' && typeof checkIn.checkInId === 'string'
+        && typeof checkIn.monitorSlug === 'string' && typeof checkIn.startedAt === 'number'
+        ? [{ id: job.id, attempts: Number(job.attempts ?? 0),
+          checkIn: { checkInId: checkIn.checkInId, monitorSlug: checkIn.monitorSlug, startedAt: checkIn.startedAt } }]
+        : [];
+    });
   }
 
   /**
