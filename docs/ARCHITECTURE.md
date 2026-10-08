@@ -267,8 +267,10 @@ and to anyone else once the page is idle or a sign-in starts
 ([`AuthContext.tsx`](../src/auth/AuthContext.tsx)). A browser the script marked asks for
 what it will open on as its page loads, and comes alive with it. An address that opens on
 such a screen (`/demo`, `/invite`, `/p/<id>`, `/sample`) brings the code along. Every page
-loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)). A guide is drawn
-by the server alone: the only script it adds to the page's own is its usage count.
+of the app loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)). A
+guide is drawn by the server alone, with the site's base styles and its own
+[`guides.css`](../src/guides/guides.css): the only script it adds to the page's own is its
+usage count.
 
 ## Data lifecycle
 
