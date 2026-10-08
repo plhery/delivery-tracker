@@ -1686,6 +1686,28 @@
     ]
   },
   {
+    "input": "106-40-21653-2",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
     "input": "1071247368",
     "carrier": "unknown",
     "confidence": "low",
@@ -1780,6 +1802,28 @@
     "candidates": [
       "dpd-fr",
       "yunda"
+    ]
+  },
+  {
+    "input": "117-24-63493-5",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
     ]
   },
   {
@@ -2096,6 +2140,28 @@
     "asked": [
       "brt",
       "colis-prive"
+    ]
+  },
+  {
+    "input": "131-12-38385-2",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
     ]
   },
   {
@@ -3267,6 +3333,7 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -3820,6 +3887,29 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
+    "input": "302-50-84809-5",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -4286,6 +4376,7 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -4407,6 +4498,7 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -4428,6 +4520,7 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -4470,6 +4563,94 @@
     ]
   },
   {
+    "input": "372-67-41345-5",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
+    "input": "372-67-45246-0",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
+    "input": "372-67-46206-1",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
+    "input": "372-67-53094-1",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
     "input": "37390065090",
     "carrier": "unknown",
     "confidence": "low",
@@ -4479,6 +4660,7 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -4926,6 +5108,7 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -5116,6 +5299,47 @@
     ]
   },
   {
+    "input": "474-60-00017-0",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
+    "input": "474-60-00017-3",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
     "input": "4744000791",
     "carrier": "unknown",
     "confidence": "low",
@@ -5279,6 +5503,28 @@
       "relais-colis",
       "tipsa",
       "dhl-ecommerce-es"
+    ]
+  },
+  {
+    "input": "501-46-75268-1",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
     ]
   },
   {
@@ -5503,6 +5749,7 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -5586,6 +5833,7 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -5689,6 +5937,28 @@
       "seur",
       "brt",
       "relais-colis"
+    ]
+  },
+  {
+    "input": "540-19-15318-2",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
     ]
   },
   {
@@ -6199,6 +6469,28 @@
     ]
   },
   {
+    "input": "675-60-24127-6",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
     "input": "681436581661",
     "carrier": "unknown",
     "confidence": "low",
@@ -6598,6 +6890,7 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -6619,6 +6912,7 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -7073,6 +7367,29 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
+      "aramex",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
+    "input": "908-81-15623-6",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],
@@ -7809,6 +8126,7 @@
       "gls-fr",
       "gls-de",
       "blue-dart",
+      "japan-post",
       "aramex",
       "dhl-ecommerce-pl"
     ],

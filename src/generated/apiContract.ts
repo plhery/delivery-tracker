@@ -3179,6 +3179,11 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{12}$",
         "confidence": "low",
         "checksum": "mod7"
+      },
+      {
+        "pattern": "^\\d{11}$",
+        "confidence": "low",
+        "checksum": "mod7"
       }
     ],
     "trackingUrlTemplate": "https://trackings.post.japanpost.jp/services/srv/search/direct?reqCodeNo1={trackingNumber}&locale=en",
