@@ -514,6 +514,33 @@ describe('status observation collection', () => {
     ]);
     expect(client.recordTrackingStatusObservations.mock.invocationCallOrder[0])
       .toBeGreaterThan(client.insertEvents.mock.invocationCallOrder[0]);
+    // No carrier map knows the wording.
+    expect(client.closeTrackingStatusObservations).not.toHaveBeenCalled();
+  });
+
+  it('closes the wording a carrier map leaves unmapped on purpose once it is recorded', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValue({
+      status: 'in_transit', current_stage: 'in_transit', current_stage_source: 'carrier_map',
+      events: [
+        { time: '2026-01-01T12:00:00Z', description: 'Parcel handed to DPD', provider_code: 'PARCEL_HANDED' },
+        { time: '2026-01-01T11:00:00Z', description: 'Synthetic carrier message', provider_code: 'ZZZ' },
+      ],
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    await expect(service.syncPackage({ id: 'observed', carrier: 'dpd', tracking_number: 'TEST1234' }))
+      .resolves.toMatchObject({ updated: 1, errors: 0 });
+    const [recorded] = client.recordTrackingStatusObservations.mock.calls[0]!;
+    const handed = (recorded as Array<{ observation_key: string; provider_code: string }>)
+      .find((observation) => observation.provider_code === 'PARCEL_HANDED');
+    expect(recorded).toHaveLength(2);
+    expect(client.closeTrackingStatusObservations).toHaveBeenCalledExactlyOnceWith(deployedVersion(), {
+      resolution: 'ignored',
+      note: "DPD's map leaves it unmapped on purpose: it moves the parcel in transit without a milestone of its own.",
+      keys: [handed?.observation_key],
+    });
+    expect(client.closeTrackingStatusObservations.mock.invocationCallOrder[0])
+      .toBeGreaterThan(client.recordTrackingStatusObservations.mock.invocationCallOrder[0]);
   });
 
   it('persists aggregator observations even when the scraper has already assigned stages', async () => {
@@ -608,6 +635,7 @@ function fakeClient(packages: JsonObject[] = []) {
     recordTrackingHealth: vi.fn().mockResolvedValue([]),
     ackTrackingHealth: vi.fn().mockResolvedValue(undefined),
     recordTrackingStatusObservations: vi.fn().mockResolvedValue(undefined),
+    closeTrackingStatusObservations: vi.fn().mockResolvedValue(1),
   };
   return {
     ...client,

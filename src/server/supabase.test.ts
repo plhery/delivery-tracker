@@ -452,6 +452,43 @@ describe('tracking audit PostgREST client', () => {
     ]);
   });
 
+  it('reads the open status observations and closes the ones still open, a hundred keys at a time', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const request = vi.spyOn(client, 'request')
+      .mockResolvedValueOnce([{ observation_key: 'a'.repeat(64), carrier: 'dpd' }])
+      .mockResolvedValueOnce(Array.from({ length: 99 }, () => ({})))
+      .mockResolvedValueOnce([{}]);
+    vi.useFakeTimers({ now: new Date('2026-01-01T12:00:00Z') });
+    try {
+      await expect(client.listOpenTrackingStatusObservations(1000)).resolves.toEqual([
+        { observation_key: 'a'.repeat(64), carrier: 'dpd' },
+      ]);
+      const keys = Array.from({ length: 101 }, (_, index) => index.toString(16).padStart(64, '0'));
+      // Anything but a digest is no key of the app's.
+      await expect(client.closeTrackingStatusObservations('v1', {
+        resolution: 'ignored', note: 'Synthetic gap.', keys: [...keys, 'x', `${'b'.repeat(63)})`],
+      })).resolves.toBe(100);
+    } finally {
+      vi.useRealTimers();
+    }
+
+    expect(request.mock.calls[0]).toEqual([
+      '/rest/v1/tracking_status_observations?select=observation_key%2Ccarrier%2Cprovider_code%2Cdescription_normalized'
+        + '%2Cchosen_stage%2Clast_seen_version&reviewed_at=is.null&order=last_seen.desc&limit=1000',
+    ]);
+    const closings = request.mock.calls.slice(1).map(([path, options]) => {
+      const params = new URL(`https://database.example${path}`).searchParams;
+      return [params.get('observation_key')!.slice(4, -1).split(',').length, params.get('reviewed_at'), options];
+    });
+    const body = {
+      reviewed_at: '2026-01-01T12:00:00.000Z', resolution: 'ignored', reviewed_version: 'v1', review_note: 'Synthetic gap.',
+    };
+    expect(closings).toEqual([
+      [100, 'is.null', { method: 'PATCH', body, prefer: 'return=representation' }],
+      [1, 'is.null', { method: 'PATCH', body, prefer: 'return=representation' }],
+    ]);
+  });
+
   it('returns audit maintenance counts', async () => {
     const client = new SupabaseServiceClient('https://database.example', 'service-key');
     vi.spyOn(client, 'request').mockResolvedValue([{ abandoned: 2, purged: 7 }]);

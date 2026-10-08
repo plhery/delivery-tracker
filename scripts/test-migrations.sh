@@ -227,6 +227,8 @@ psql "$database_url" -X -v ON_ERROR_STOP=1 \
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/on_screen_deliveries.sql"
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
+  -f "$repo_root/supabase/tests/scraper_status_gaps.sql"
+psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/applied_migrations.sql"
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/unchanged_tracking_checks.sql"

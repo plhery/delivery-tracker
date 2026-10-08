@@ -44,7 +44,7 @@ import { upuHistory } from './upuHistory';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
 import { eventTimestamp, latestResultTime, resultTimezone } from 'universal-parcel-scraper/app';
 import { trackingSupportEvidence } from './trackingSupport';
-import { deployedVersion } from './reviewQueues';
+import { deployedVersion, statusMapClosings } from './reviewQueues';
 import { carrierLookupKey, recognitionKey, SharedLookups, universalLookupKey, type ParcelLookups } from './sharedLookups';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
@@ -790,7 +790,8 @@ export class TrackingSyncService {
   // refresh: a failed write is logged each time and reported to Sentry once.
   // The events keep their computed identities, whose prefix names the carrier
   // that worded them; a reused identity only locates the sample row. Wording
-  // the scraper mapped is sent too, so its open observation closes.
+  // the scraper mapped is sent too, so its open observation closes, and
+  // wording its carrier map leaves unmapped on purpose closes as recorded.
   private async recordStatusObservations(
     events: JsonObject[],
     carrierId: string,
@@ -808,8 +809,12 @@ export class TrackingSyncService {
     });
     const mapped = collectMappedStatusKeys([...events, ...localEvents], carrierId);
     if (observations.length === 0 && mapped.length === 0) return;
+    const version = deployedVersion();
     try {
-      await this.client.recordTrackingStatusObservations(observations, mapped, deployedVersion());
+      await this.client.recordTrackingStatusObservations(observations, mapped, version);
+      for (const closing of statusMapClosings(observations)) {
+        await this.client.closeTrackingStatusObservations(version, closing);
+      }
     } catch (error) {
       if (context.signal?.aborted) return;
       logOperationalEvent('tracking_status_observation_write_failed', {

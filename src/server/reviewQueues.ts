@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { statusMapAnswer } from 'universal-parcel-scraper/app';
 import manifest from '../../package.json';
 import { captureOperationalError, databaseUnavailable, errorType, logOperationalEvent } from './observability';
 import type { SupabaseServiceClient } from './supabase';
@@ -14,6 +15,8 @@ const REPLAY_START_DELAY_MS = 60_000;
 const REPLAY_RETRY_MS = 5 * 60_000;
 /** The most recently seen open cases one replay reads. */
 export const MAX_REPLAYED_CASES = 500;
+/** The most recently seen open status observations one replay reads. */
+export const MAX_REPLAYED_OBSERVATIONS = 1000;
 
 /**
  * The tracking code this server runs: the scraper release the app pins and,
@@ -35,16 +38,72 @@ export function replaySupportCase(trackingNumber: string, configuredCarrier: str
   return `Replay found no gap: detection names ${String(context.detection_carrier)} with ${String(context.detection_confidence)} confidence.`;
 }
 
-export interface ReviewReplaySummary extends JsonObject {
-  cases_replayed: number;
-  cases_fixed: number;
+/** Open status observations to close with one resolution and note. */
+export interface StatusObservationClosing {
+  resolution: 'mapped' | 'ignored';
+  note: string;
+  keys: string[];
 }
 
 /**
- * Replays the open support cases once for this version, across servers and
+ * How the scraper this server runs closes an observed wording: as mapped when
+ * its carrier's status map gives it a stage, as ignored with the map's note
+ * when the map leaves it without one on purpose. Null while no map knows it.
+ */
+export function statusMapClosing(observation: JsonObject): Omit<StatusObservationClosing, 'keys'> | null {
+  const answer = statusMapAnswer({
+    carrier: String(observation.carrier ?? ''),
+    providerCode: typeof observation.provider_code === 'string' ? observation.provider_code : null,
+    description: String(observation.description_normalized ?? ''),
+  });
+  if (answer.kind === 'intentional_gap') return { resolution: 'ignored', note: answer.note.slice(0, 500) };
+  if (answer.kind !== 'mapped') return null;
+  // A different stage from the sightings' says their stored scans may need a repair.
+  const seen = typeof observation.chosen_stage === 'string' ? observation.chosen_stage : '';
+  return {
+    resolution: 'mapped',
+    note: seen && seen !== answer.stage
+      ? `The carrier status map gives it ${answer.stage}; it was last seen as ${seen}.`
+      : `The carrier status map gives it ${answer.stage}.`,
+  };
+}
+
+/** The closings for these observations, one per resolution and note; `mapped` false keeps only the gaps. */
+export function statusMapClosings(
+  observations: readonly JsonObject[],
+  options: { mapped?: boolean; version?: string } = {},
+): StatusObservationClosing[] {
+  const closings = new Map<string, StatusObservationClosing>();
+  for (const observation of observations) {
+    const key = String(observation.observation_key ?? '');
+    const closing = statusMapClosing(observation);
+    if (!key || !closing) continue;
+    if (closing.resolution === 'mapped') {
+      // Wording this version saw unmapped is covered by its map only sometimes.
+      if (!options.mapped || (options.version && observation.last_seen_version === options.version)) continue;
+    }
+    const group = `${closing.resolution}\n${closing.note}`;
+    const keys = closings.get(group)?.keys;
+    if (keys) keys.push(key);
+    else closings.set(group, { ...closing, keys: [key] });
+  }
+  return [...closings.values()];
+}
+
+export interface ReviewReplaySummary extends JsonObject {
+  cases_replayed: number;
+  cases_fixed: number;
+  observations_replayed: number;
+  observations_mapped: number;
+  observations_ignored: number;
+}
+
+/**
+ * Replays the review queues once for this version, across servers and
  * restarts. 'running' while another server holds the replay, 'done' once one
- * finished it. Status observations need no replay: each sync closes the
- * wording its scraper maps (trackingSync.ts).
+ * finished it. Each sync closes the wording its scraper maps or leaves
+ * unmapped on purpose as it sees it (trackingSync.ts); the replay closes the
+ * rest, such as the wording of finished parcels, which no sync sees again.
  */
 export async function replayReviewQueues(
   client: SupabaseServiceClient,
@@ -59,7 +118,15 @@ export async function replayReviewQueues(
     return note ? [{ id: String(supportCase.id), configured_carrier: configuredCarrier, note }] : [];
   });
   const fixed = resolved.length ? await client.fixReplayedTrackingSupportCases(version, resolved) : 0;
-  const summary = { cases_replayed: cases.length, cases_fixed: fixed };
+  const observations = await client.listOpenTrackingStatusObservations(MAX_REPLAYED_OBSERVATIONS);
+  const closed = { mapped: 0, ignored: 0 };
+  for (const closing of statusMapClosings(observations, { mapped: true, version })) {
+    closed[closing.resolution] += await client.closeTrackingStatusObservations(version, closing);
+  }
+  const summary = {
+    cases_replayed: cases.length, cases_fixed: fixed, observations_replayed: observations.length,
+    observations_mapped: closed.mapped, observations_ignored: closed.ignored,
+  };
   await client.finishTrackingReviewRun(version, summary);
   return summary;
 }

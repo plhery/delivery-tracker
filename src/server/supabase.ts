@@ -6,6 +6,8 @@ import { EMAIL_STAGES, type DeliveredTime, type EmailStage } from './email/types
 import { isRecord, type JsonObject } from './types';
 
 const REQUEST_TIMEOUT_MS = 20_000;
+/** Keeps a closing's filter list well inside a request line. */
+const STATUS_OBSERVATION_KEYS_PER_REQUEST = 100;
 const PACKAGE_COLUMNS = [
   'id',
   'tracking_number',
@@ -1040,6 +1042,47 @@ export class SupabaseServiceClient extends SupabaseClient {
       method: 'POST',
       body: { p_observations: observations, p_mapped_keys: mappedKeys, p_version: version },
     });
+  }
+
+  /** The open status observations, the most recently seen first. */
+  async listOpenTrackingStatusObservations(limit: number): Promise<JsonObject[]> {
+    const params = query({
+      select: 'observation_key,carrier,provider_code,description_normalized,chosen_stage,last_seen_version',
+      reviewed_at: 'is.null',
+      order: 'last_seen.desc',
+      limit: String(limit),
+    });
+    return rows(await this.request(`/rest/v1/tracking_status_observations?${params}`));
+  }
+
+  /**
+   * Closes the open observations among the keys with one resolution and note,
+   * as this server version; answers how many it closed. A row reviewed or
+   * closed meanwhile is left alone.
+   */
+  async closeTrackingStatusObservations(
+    version: string,
+    closing: { resolution: 'mapped' | 'ignored'; note: string; keys: readonly string[] },
+  ): Promise<number> {
+    // Observation keys are SHA-256 digests, which a filter list carries as they are.
+    const keys = closing.keys.filter((key) => /^[0-9a-f]{64}$/.test(key));
+    let closed = 0;
+    for (let start = 0; start < keys.length; start += STATUS_OBSERVATION_KEYS_PER_REQUEST) {
+      const params = query([
+        ['observation_key', `in.(${keys.slice(start, start + STATUS_OBSERVATION_KEYS_PER_REQUEST).join(',')})`],
+        ['reviewed_at', 'is.null'],
+        ['select', 'observation_key'],
+      ]);
+      closed += rows(await this.request(`/rest/v1/tracking_status_observations?${params}`, {
+        method: 'PATCH',
+        body: {
+          reviewed_at: new Date().toISOString(), resolution: closing.resolution,
+          reviewed_version: version.slice(0, 100) || null, review_note: closing.note.slice(0, 500),
+        },
+        prefer: 'return=representation',
+      })).length;
+    }
+    return closed;
   }
 
   /** Whether this server is to replay the review queues for its version, another one is, or one did. */

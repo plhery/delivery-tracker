@@ -157,11 +157,24 @@ the server version of the latest sighting.
 Each refresh also sends the keys of the wording its carrier maps did resolve, with its
 version. An open row with one of those keys closes as `mapped`, with `reviewed_version`
 and `review_note`. If a server that names its version sees that wording unmapped again,
-the row reopens: the map covers it only sometimes. Wording no refresh sees again, such as
-that of finished parcels, stays open until reviewed by hand.
+the row reopens: the map covers it only sometimes.
 
-Wording a carrier map leaves unmapped on purpose belongs in
-`tracking_status_intentionally_unmapped`. Adding or editing a row there closes the open
+The scraper's carrier maps also declare the wording they leave unmapped on purpose, each
+with a note, and `statusMapAnswer` from `universal-parcel-scraper/app` says, for one
+carrier, code and wording, whether the map stages it, leaves it unmapped on purpose, or
+does not know it. A refresh closes the rows it records that a map leaves unmapped on
+purpose as `ignored`, with the map's note and its version.
+
+Each server version also asks the scraper it runs about the 1,000 most recently seen open
+rows, once, a minute after it starts, with the support case replay above. A row the map
+stages closes as `mapped`, its note naming the stage, and the stage it was last seen with
+when that differs: the stored scans of finished parcels may then need a repair. A row the
+map leaves unmapped on purpose closes as `ignored` with the map's note. Both record the
+version. A row that version itself saw unmapped stays open, since its map covers it only
+sometimes. Wording no map knows stays open until reviewed by hand.
+
+Wording a carrier map leaves unmapped on purpose without the scraper declaring it belongs
+in `tracking_status_intentionally_unmapped`. Adding or editing a row there closes the open
 observations it covers as `ignored`, with its note, and later sightings close as they are
 recorded. A row without a provider code covers only wording that came without one; a row
 without a description covers every wording of its code:
@@ -200,9 +213,11 @@ where reviewed_at is null and carrier = 'CARRIER_ID'
 order by count desc, last_seen desc;
 ```
 
-For each row, in the scraper: map the code or wording in the carrier's `status.ts` (or add
-a generic classifier rule), add a fixture and run the carrier's tests. Once the app uses
-that release, mark it:
+For each row, in the scraper: map the code or wording in the carrier's `status.ts`, or
+declare it in that carrier's `statusMap` when it is left unmapped on purpose, add a fixture
+and run the carrier's tests. Once the app runs that release, its replay closes the row. A
+row no carrier map answers for, such as one a generic classifier rule now covers, is
+marked by hand:
 
 ```sql
 update public.tracking_status_observations
@@ -271,9 +286,11 @@ Key JSON events:
   yet), `input_required` or `invalid_input`;
 - `tracking_sync_audit_write_failed`, `tracking_sync_audit_maintenance_failed`,
   `tracking_status_observation_write_failed`;
-- `review_queues_replayed`: the support backlog replay of a `version`, with
-  `cases_replayed` and `cases_fixed`. `review_queue_replay_failed` (error, with
-  `error_type`) when it could not run; it is retried every five minutes;
+- `review_queues_replayed`: the review queue replay of a `version`, with
+  `cases_replayed` and `cases_fixed` for the support backlog, and
+  `observations_replayed`, `observations_mapped` and `observations_ignored` for the
+  unmapped wording. `review_queue_replay_failed` (error, with `error_type`) when it could
+  not run; it is retried every five minutes;
 - `sync_claim_failed`: the sync worker could not claim a job, with its `failure_count` and
   `failing_for_ms`, how long claims have been failing. A database restart leaves a few of
   them. Alert when they repeat for two minutes (`failing_for_ms` of 120000 or more).
