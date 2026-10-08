@@ -1339,4 +1339,16 @@ extension CarrierCatalogTests {
         }
         XCTAssertEqual(mismatches, [], mismatches.prefix(10).joined(separator: "\n"))
     }
+
+    /// The shared engine's patterns and separators are JavaScript's.
+    func testPatternsAndSeparatorsReadAsInTheSharedEngine() {
+        XCTAssertEqual(CarrierCatalog.normalize("\u{FEFF}ab 12.3-4\u{3000}5\u{0B}"), "AB12345")
+        XCTAssertEqual(CarrierCatalog.normalize("AB\u{85}12"), "AB\u{85}12")
+        XCTAssertTrue(CarrierCatalog.hasMod7CheckDigit("000000000011"))
+        XCTAssertFalse(CarrierCatalog.hasMod7CheckDigit("000000000011\n"))
+        XCTAssertTrue(CarrierCatalog.isValidSscc("00000000000000000017"))
+        XCTAssertFalse(CarrierCatalog.isValidSscc("00000000000000000017\n"))
+        // S10 normalizes its own input, separators and the final line break included.
+        XCTAssertTrue(CarrierCatalog.isValidS10("\u{FEFF}RR 473 124 829 CH\n"))
+    }
 }

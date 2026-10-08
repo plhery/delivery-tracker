@@ -839,9 +839,14 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         return components.url
     }
 
+    /// JavaScript's `\s`, which the shared engine strips. ICU's `\s` misses U+FEFF, which copied
+    /// text can carry, and adds U+0085.
+    private static let separatorPattern =
+        "[\\t\\n\\x{0B}\\f\\r\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{2028}\\x{2029}\\x{202F}\\x{205F}\\x{3000}\\x{FEFF}.-]"
+
     static func normalize(_ raw: String) -> String {
         let value = raw.uppercased()
-        guard let separators = expression("[\\s.-]") else { return value }
+        guard let separators = expression(separatorPattern) else { return value }
         return separators.stringByReplacingMatches(
             in: value,
             range: NSRange(value.startIndex..., in: value),
@@ -1148,9 +1153,33 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         let key = ((caseInsensitive ? "i:" : "s:") + pattern) as NSString
         if let cached = expressions.object(forKey: key) { return cached }
         let options: NSRegularExpression.Options = caseInsensitive ? .caseInsensitive : []
-        guard let compiled = try? NSRegularExpression(pattern: pattern, options: options) else { return nil }
+        guard let compiled = try? NSRegularExpression(pattern: endOfInput(pattern), options: options) else { return nil }
         expressions.setObject(compiled, forKey: key)
         return compiled
+    }
+
+    /// The shared patterns are JavaScript's, where `$` is the end of the input. ICU's `$` also
+    /// matches before a final line break, so it becomes `\z` outside character classes.
+    private static func endOfInput(_ pattern: String) -> String {
+        var result = ""
+        var escaped = false
+        var inClass = false
+        for character in pattern {
+            if escaped {
+                escaped = false
+            } else if character == "\\" {
+                escaped = true
+            } else if character == "[" {
+                inClass = true
+            } else if character == "]" {
+                inClass = false
+            } else if character == "$", !inClass {
+                result += "\\z"
+                continue
+            }
+            result.append(character)
+        }
+        return result
     }
 
     private static func matches(_ value: String, pattern: String) -> Bool {
