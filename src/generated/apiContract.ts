@@ -2492,6 +2492,11 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
+        "pattern": "^(?!9[23]61)(?:91\\d{2}9\\d{17}|92\\d{3}9\\d{16}|93\\d{3}[0-8]\\d{16}|9[45]\\d{20})$",
+        "confidence": "high",
+        "checksum": "usps"
+      },
+      {
         "pattern": "^9[1-5]\\d{20}(?:\\d{4})?$",
         "confidence": "low",
         "checksum": "usps",
