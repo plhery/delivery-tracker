@@ -1,5 +1,5 @@
 import { trackAction } from '../lib/analytics';
-import { AuthClient, type AuthChangeEvent, type GoTrueClient, type Session, type User } from '@supabase/auth-js';
+import type { AuthChangeEvent, GoTrueClient, Session, User } from '@supabase/auth-js';
 import {
   createContext,
   useCallback,
@@ -13,9 +13,10 @@ import {
 } from 'react';
 import { useI18n } from '../i18n';
 import { abortable } from '../lib/apiClient';
+import { whenIdle } from '../lib/idle';
 import { rememberRequestedParcel } from '../lib/requestedParcel';
 import { browserStorage, clearApiCache } from '../store/apiRepo';
-import { SessionStorage } from './sessionStorage';
+import { holdsSignIn, SessionStorage } from './sessionStorage';
 
 export interface AuthConfig {
   url: string;
@@ -48,8 +49,18 @@ const AuthContext = createContext<AuthState | null>(null);
 /** The web app only signs in; the auth client alone avoids shipping the unused database, storage and realtime clients. */
 type SupabaseAuth = { auth: GoTrueClient };
 
-function configuredClient(config: AuthConfig | null, storage: SessionStorage | null): SupabaseAuth | null {
-  if (!config?.url || !config.publishableKey) return null;
+let sdk: Promise<typeof import('@supabase/auth-js')> | undefined;
+
+/** The auth SDK, which a visitor's page comes alive without. A failed fetch is forgotten, so the next ask tries again. */
+function authSdk() {
+  return sdk ??= import('@supabase/auth-js').catch((error: unknown) => {
+    sdk = undefined;
+    throw error;
+  });
+}
+
+async function configuredClient(config: AuthConfig, storage: SessionStorage | null): Promise<SupabaseAuth> {
+  const { AuthClient } = await authSdk();
   return {
     auth: new AuthClient({
       url: new URL('/auth/v1', config.url).href,
@@ -73,6 +84,9 @@ function signInRedirect(): boolean {
     || /(access_token|error)=/.test(window.location.hash));
 }
 
+// A browser that holds a sign-in, or returns from one, needs the SDK to refresh or exchange it: it asks with the page's own code.
+if (typeof window !== 'undefined' && (signInRedirect() || holdsSignIn())) void authSdk().catch(() => undefined);
+
 /** The saved sign-in, read without the network; the SDK verifies and refreshes it separately. */
 function savedSession(storage: SessionStorage | null): Session | null {
   if (!storage) return null;
@@ -87,8 +101,8 @@ function savedSession(storage: SessionStorage | null): Session | null {
   }
 }
 
-function sessionState(client: SupabaseAuth | null, session: Session | null) {
-  if (!client) {
+function sessionState(configured: boolean, session: Session | null) {
+  if (!configured) {
     return {
       status: 'unconfigured' as const,
       user: null,
@@ -120,10 +134,21 @@ export function AuthProvider({
   const storage = useMemo(() => config?.url && !suppliedClient
     ? new SessionStorage(`sb-${new URL(config.url).hostname.split('.')[0]}-auth-token`) : null,
   [config, suppliedClient]);
-  const client = useMemo(
-    () => suppliedClient ?? configuredClient(config, storage),
-    [config, suppliedClient, storage],
-  );
+  const configured = Boolean(suppliedClient || (config?.url && config.publishableKey));
+  // The client, once its SDK is here. Whatever needs it sooner asks for it, and waits.
+  const [client, setClient] = useState<SupabaseAuth | null>(suppliedClient ?? null);
+  const clientRequest = useRef<Promise<SupabaseAuth> | null>(null);
+  const requestClient = useCallback((): Promise<SupabaseAuth> => {
+    if (suppliedClient) return Promise.resolve(suppliedClient);
+    if (!config?.url || !config.publishableKey) return Promise.reject(new Error('Authentication is not configured'));
+    return clientRequest.current ??= configuredClient(config, storage).then((created) => {
+      setClient(created);
+      return created;
+    }, (error: unknown) => {
+      clientRequest.current = null;
+      throw error;
+    });
+  }, [config, suppliedClient, storage]);
   const [initialController] = useState(() => new AbortController());
   const identity = useRef({ userId: null as string | null, controller: initialController });
   const logout = useRef<Promise<void> | null>(null);
@@ -133,12 +158,12 @@ export function AuthProvider({
   // complete only after a code entered here or a sign-in redirect.
   const signingIn = useRef(signInRedirect());
   const [state, setState] = useState<Pick<AuthState, 'status' | 'user' | 'accessToken' | 'signal'>>(
-    () => ({ ...(client ? { status: 'loading' as const, user: null, accessToken: null }
-      : sessionState(null, null)), signal: initialController.signal }),
+    () => ({ ...(configured ? { status: 'loading' as const, user: null, accessToken: null }
+      : sessionState(false, null)), signal: initialController.signal }),
   );
   const acceptSession = useCallback((session: Session | null) => {
     if (storage?.blocked) session = null;
-    const next = sessionState(client, session);
+    const next = sessionState(configured, session);
     const userId = next.user?.id ?? null;
     if (identity.current.userId !== userId || identity.current.controller.signal.aborted) {
       identity.current.controller.abort();
@@ -146,16 +171,30 @@ export function AuthProvider({
       identity.current = { userId, controller: new AbortController() };
     }
     setState({ ...next, signal: identity.current.controller.signal });
-  }, [client, storage]);
+  }, [configured, storage]);
 
   // Returning users open straight into their account. Waiting for the SDK would
   // hold the first screen on a token refresh, or on its retries while offline.
+  // A browser that holds no sign-in is a visitor's from the start.
   // Sign-in redirects exchange a new session and must not show the previous one.
   useLayoutEffect(() => {
-    if (!client || signInRedirect()) return;
-    const session = savedSession(storage);
-    if (session) acceptSession(session);
-  }, [client, storage, acceptSession]);
+    if (!storage || signInRedirect()) return;
+    acceptSession(savedSession(storage));
+  }, [storage, acceptSession]);
+
+  // A saved sign-in or a sign-in redirect needs the client at once. A visitor's page fetches it once idle, so that a
+  // sign-in started here, or in another tab, finds it ready. Without it the page stays with what it saved.
+  useEffect(() => {
+    if (client || !configured) return;
+    const fetchClient = () => {
+      requestClient().catch(() => { if (!logout.current) acceptSession(savedSession(storage)); });
+    };
+    if (signInRedirect() || savedSession(storage)) {
+      fetchClient();
+      return;
+    }
+    return whenIdle(fetchClient);
+  }, [client, configured, requestClient, acceptSession, storage]);
 
   useEffect(() => {
     if (!client) return;
@@ -189,16 +228,16 @@ export function AuthProvider({
 
   const sendCode = useCallback(async (email: string) => {
     trackAction('sign-in-code-send', 'started');
-    if (!client) throw new Error('Authentication is not configured');
+    const { auth } = client ?? await requestClient();
     await logout.current;
     storage?.allowSignIn();
-    const { error } = await client.auth.signInWithOtp({
+    const { error } = await auth.signInWithOtp({
       email,
       options: { shouldCreateUser: true, data: { locale } },
     });
     if (error) { trackAction('sign-in-code-send', 'error'); throw error; }
     trackAction('sign-in-code-send', 'success');
-  }, [client, storage, locale]);
+  }, [client, requestClient, storage, locale]);
 
   // The sign-in email template reads the account language from user metadata.
   useEffect(() => {
@@ -217,30 +256,30 @@ export function AuthProvider({
   const signInWithProvider = useCallback(async (provider: 'google' | 'apple') => {
     const event = provider === 'apple' ? 'sign-in-apple' : 'sign-in-google';
     trackAction(event, 'started');
-    if (!client) throw new Error('Authentication is not configured');
+    const { auth } = client ?? await requestClient();
     await logout.current;
     storage?.allowSignIn();
     // The provider returns to the origin alone: a parcel the address asks for is noted for the way back.
     rememberRequestedParcel();
     const redirectTo = typeof window === 'undefined' ? undefined : window.location.origin;
-    const { error } = await client.auth.signInWithOAuth({
+    const { error } = await auth.signInWithOAuth({
       provider,
       ...(redirectTo ? { options: { redirectTo } } : {}),
     });
     if (error) { trackAction(event, 'error'); throw error; }
     trackAction(event, 'success');
-  }, [client, storage]);
+  }, [client, requestClient, storage]);
 
   const signInWithGoogle = useCallback(() => signInWithProvider('google'), [signInWithProvider]);
   const signInWithApple = useCallback(() => signInWithProvider('apple'), [signInWithProvider]);
 
   const verifyCode = useCallback(async (email: string, code: string) => {
     trackAction('sign-in-code-verify', 'started');
-    if (!client) throw new Error('Authentication is not configured');
+    const { auth } = client ?? await requestClient();
     await logout.current;
     storage?.allowSignIn();
     signingIn.current = true;
-    const { data, error } = await client.auth.verifyOtp({
+    const { data, error } = await auth.verifyOtp({
       email,
       token: code,
       type: 'email',
@@ -249,10 +288,10 @@ export function AuthProvider({
     trackAction('sign-in-code-verify', 'success');
     if (!data.session) throw new Error('The sign-in code did not create a session');
     acceptSession(data.session);
-  }, [client, acceptSession, storage]);
+  }, [client, requestClient, acceptSession, storage]);
 
   const signOut = useCallback(async () => {
-    if (!client) return;
+    if (!configured) return;
     if (logout.current) return logout.current;
     const token = state.accessToken;
     trackAction('sign-out');
@@ -261,28 +300,30 @@ export function AuthProvider({
     const operation = (async () => {
       // Purging first prevents the SDK from refreshing expired credentials during logout.
       // Revoke the captured session separately; local logout also works without a network.
-      await client.auth.signOut({ scope: 'local' });
-      if (storage && token) await client.auth.admin.signOut(token, 'local');
+      const { auth } = client ?? await requestClient();
+      await auth.signOut({ scope: 'local' });
+      if (storage && token) await auth.admin.signOut(token, 'local');
     })().catch(() => undefined);
     logout.current = operation;
     try { await operation; } finally { logout.current = null; }
-  }, [client, acceptSession, storage, state.accessToken]);
+  }, [configured, client, requestClient, acceptSession, storage, state.accessToken]);
 
   // Token refreshes replace the user object; consumers stay bound to the account.
   const userId = state.user?.id ?? null;
   const getAccessToken = useCallback(async (refresh = false) => {
     state.signal.throwIfAborted();
-    if (!client || !userId) return null;
+    if (!configured || !userId) return null;
+    const { auth } = client ?? await requestClient();
     const { data, error } = refresh
-      ? await client.auth.refreshSession()
-      : await client.auth.getSession();
+      ? await auth.refreshSession()
+      : await auth.getSession();
     state.signal.throwIfAborted();
     if (error) throw error;
     if (data.session && data.session.user.id !== userId) {
       throw new DOMException('The signed-in account changed', 'AbortError');
     }
     return data.session?.access_token ?? null;
-  }, [client, userId, state.signal]);
+  }, [configured, client, requestClient, userId, state.signal]);
 
   const value = useMemo(
     () => ({

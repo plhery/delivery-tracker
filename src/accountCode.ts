@@ -1,16 +1,6 @@
+import { holdsSignIn } from './auth/sessionStorage';
 import { ENTRY_HINT_ATTRIBUTE } from './lib/entryHintConfig';
 import { laterCode } from './lib/laterCode';
-
-/** A sign-in saved in this browser, as the entry hint reads it. */
-function holdsSignIn(): boolean {
-  try {
-    for (let index = 0; index < localStorage.length; index++) {
-      const key = localStorage.key(index);
-      if (key && /^sb-.+-auth-token$/.test(key) && localStorage.getItem(key) && localStorage.getItem(`${key}.signed-out`) !== 'true') return true;
-    }
-  } catch { /* Without storage there is no sign-in to restore. */ }
-  return false;
-}
 
 /**
  * The screens behind the front door: the deliveries, signing in, an

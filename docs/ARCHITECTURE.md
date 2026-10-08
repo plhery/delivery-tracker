@@ -239,10 +239,12 @@ The landing comes without the code of the screens behind it. The account's scree
 deliveries, signing in, an invitation, the demo) are fetched when one of them is about to
 show ([`accountCode.ts`](../src/accountCode.ts)); the parcel page and the list of the
 device's parcels once the landing is live ([`parcelCode.ts`](../src/peek/parcelCode.ts)).
-A browser the script marked asks for what it will open on as its page loads, and comes
-alive with it. An address that opens on such a screen (`/demo`, `/invite`, `/p/<id>`,
-`/sample`) brings the code along. Every page loads all the stylesheets, in one order
-([`cascade.ts`](../src/cascade.ts)).
+The sign-in SDK comes with the page to a browser that holds a sign-in or returns from one,
+and to anyone else once the page is idle or a sign-in starts
+([`AuthContext.tsx`](../src/auth/AuthContext.tsx)). A browser the script marked asks for
+what it will open on as its page loads, and comes alive with it. An address that opens on
+such a screen (`/demo`, `/invite`, `/p/<id>`, `/sample`) brings the code along. Every page
+loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
 
 ## Data lifecycle
 
