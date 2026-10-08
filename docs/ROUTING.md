@@ -47,7 +47,7 @@ Clients show the earliest next-check eligibility; polling windows can delay the 
      gets its own order, listed in [COVERAGE.md](https://github.com/plhery/universal-parcel-scraper/blob/main/providers/COVERAGE.md):
      providers by the tier its results give them (full history, partial history, nothing
      conclusive, answered without history), HTTP providers (ParcelsApp, Ship24) before the
-     browser-service ones (Postal Ninja, 17TRACK) within a tier, then the default order. A
+     browser-service 17TRACK within a tier, then the default order. A
      full history outranks a cheaper partial one because a parcel keeps the provider that
      answers first. A provider that never had history and answered with another carrier's
      parcel or refused the number format is not asked, unless no other would remain.
@@ -56,8 +56,8 @@ Clients show the earliest next-check eligibility; polling windows can delay the 
      default.
    - UPU is only for checksum-valid postal S10 numbers, always last, never remembered as
      the preferred source and never used for shadow checks.
-   - Postal Ninja is off by default. `TRACKING_ENABLE_POSTAL_NINJA=true` inserts it before
-     17TRACK.
+   - Postal Ninja is off by default. `TRACKING_ENABLE_POSTAL_NINJA=true` adds it after the
+     other aggregators, whatever its tier, before UPU.
    - Exception: checksum-valid China Post `C…CN` and `L…CN` numbers try 17TRACK first,
      because it returns much richer history for them (see
      [COMPARISON.md](https://github.com/plhery/universal-parcel-scraper/blob/main/providers/COMPARISON.md)). Dedicated adapters such
@@ -65,10 +65,9 @@ Clients show the earliest next-check eligibility; polling windows can delay the 
 
 For new lookups, the iPhone's device region takes precedence over a trusted Cloudflare
 `CF-IPCountry` header as a country hint.
-A destination reported by a carrier takes precedence. The hint lets ParcelsApp retry an
-empty answer once with its country selector, within the same lookup budget. It does not
-establish the carrier, set the delivery destination or change scan clocks. The visitor's IP
-address is not sent to providers. Reopening a shared parcel does not change its hint.
+A destination reported by a carrier takes precedence. The hint puts that country's carriers
+first when recognition asks carriers whether they know the number. It does not establish
+the carrier, set the delivery destination or change scan clocks. The visitor's IP address is not sent to providers. Reopening a shared parcel does not change its hint.
 
 **Affinity.** A provider that returns history is saved with its lookup number in
 `carrier_data.routing`. The next check starts there, whatever its place in the order, as

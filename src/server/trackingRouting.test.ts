@@ -845,8 +845,9 @@ describe('persistent tracking routing', () => {
       universal.mockClear();
       const router = new TrackingRouter({ direct, universal, health, now: () => time, enablePostalNinja });
       await expect(router.fetch(parcel(), false)).rejects.toBeInstanceOf(RoutingDeferred);
-      expect(universal.mock.calls.map(([source]) => source)).toEqual(
-        ['ParcelsApp', 'Ship24', ...(enablePostalNinja ? ['Postal Ninja'] : []), '17TRACK']);
+      // The scraper's coverage orders them; each is asked once.
+      expect(universal.mock.calls.map(([source]) => source).sort()).toEqual(
+        ['17TRACK', 'ParcelsApp', ...(enablePostalNinja ? ['Postal Ninja'] : []), 'Ship24']);
     }
   });
   it('counts contacted providers so a check that reached nobody is not health evidence', async () => {
