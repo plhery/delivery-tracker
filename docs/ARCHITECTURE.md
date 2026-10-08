@@ -30,7 +30,7 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
 | `shared/` | Translations, tracking message map, analytics catalog and postcode examples, shared by web and iOS |
 | `contracts/` | OpenAPI contract (source of TypeScript and Swift types) and cross-platform fixtures |
 | `supabase/` | Append-only migrations and SQL assertions for RLS |
-| `ios/` | SwiftUI app, Share extension, widgets, Live Activities ([README](../ios/README.md)) |
+| `ios/` | SwiftUI app, Share extension, widgets ([README](../ios/README.md)) |
 | `ops/` | Sentry and Grafana dashboards |
 | `scripts/` | Code generation, validation and smoke tests |
 

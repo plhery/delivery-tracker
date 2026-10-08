@@ -394,7 +394,7 @@ struct AccountView: View {
                         }
                         .padding(15)
                         .accessibilityIdentifier("settings.widgets")
-                        if !store.isGuest {
+                        if !store.isGuest && ParcelStore.offersLiveActivities {
                             settingsDivider
                             Toggle(isOn: Binding(get: { store.deliveryLiveActivitiesEnabled }, set: { store.setDeliveryLiveActivitiesEnabled($0) })) {
                                 SettingsRow(title: localizer.text("liveActivity.settingTitle"), symbol: "wave.3.right", detail: localizer.text("liveActivity.settingDescription"), padded: false)
@@ -404,7 +404,7 @@ struct AccountView: View {
                         }
                     }
                     .tint(settingsGreen)
-                    if let error = store.deliveryLiveActivityError {
+                    if ParcelStore.offersLiveActivities, let error = store.deliveryLiveActivityError {
                         Text(error).font(.caption).foregroundStyle(.red)
                     }
                     SettingsGroup(title: localizer.text("settings.preferences")) {

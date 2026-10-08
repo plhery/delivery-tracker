@@ -53,7 +53,7 @@ until it arrives.
 
 Also in the box: light and dark themes, seven languages (English, German, French, Italian,
 Spanish, Portuguese and Polish), a web app you can install, and on iPhone a barcode
-scanner, a Share extension, widgets and Live Activities.
+scanner, a Share extension and widgets.
 
 Peek shows no ads and sells no data. A parcel followed without an account is forgotten 30
 days after it arrives. The [privacy notice](PRIVACY.md) has the rest.
@@ -109,7 +109,7 @@ press Run. It starts with sample parcels, so it needs no account, no server and 
 team.
 
 The [iPhone guide](ios/README.md) covers connecting it to a server, signing it for a real
-phone, notifications, widgets and Live Activities.
+phone, notifications and widgets.
 
 ## Host your own
 

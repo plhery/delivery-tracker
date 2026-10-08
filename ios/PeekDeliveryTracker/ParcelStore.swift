@@ -30,6 +30,10 @@ final class ParcelStore: ObservableObject {
         let result: RefreshResult
     }
 
+    /// Live Activities are switched off: the store ends any still showing and withdraws this
+    /// iPhone's registration, so the server starts no more.
+    static let offersLiveActivities = false
+
     @Published private(set) var parcels: [Parcel] = [] {
         didSet { if !holdingDeliverySurfaces { publishDeliverySurfaces() } }
     }
@@ -112,7 +116,7 @@ final class ParcelStore: ObservableObject {
         demo = DemoRepository()
         self.device = device ?? DeviceParcels(client: configuration.mode == .api ? .api(configuration: configuration, transport: transport) : nil)
         deliveryWidgetEnabled = deliveryWidgetStore?.isEnabled ?? true
-        deliveryLiveActivitiesEnabled = deliveryWidgetStore?.liveActivitiesEnabled ?? true
+        deliveryLiveActivitiesEnabled = Self.offersLiveActivities && (deliveryWidgetStore?.liveActivitiesEnabled ?? true)
         deliveryLiveActivityRegistrationRemovalPending = !deliveryLiveActivitiesEnabled
         deliveryWidgetStore?.setLiveActivitiesEnabled(deliveryLiveActivitiesEnabled)
         cacheOwnerID = session.user?.id

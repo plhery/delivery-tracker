@@ -1893,6 +1893,20 @@ extension SessionIsolationTests {
         XCTAssertEqual(remaining, [new])
     }
 
+    @MainActor func testLiveActivitiesStayOffWhenTheyWereSwitchedOnBefore() throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let shared = try XCTUnwrap(DeliveryWidgetSharedStore(appGroupIdentifier: configuration.appGroupIdentifier, fallbackToStandard: true))
+        shared.setLiveActivitiesEnabled(true)
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+
+        let store = ParcelStore(configuration: configuration, session: session, localizer: Localizer(), transport: transport)
+
+        XCTAssertFalse(store.deliveryLiveActivitiesEnabled)
+        XCTAssertFalse(shared.liveActivitiesEnabled)
+    }
+
     @MainActor func testAuthOutageDoesNotForceSignOut() async throws {
         let transport = transport()
         defer { transport.invalidateAndCancel() }

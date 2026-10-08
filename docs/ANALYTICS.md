@@ -49,7 +49,7 @@ are virtual names, never real URLs.
   Sharing a parcel from an account counts under the same names.
 - **Discovery**: search used (never the query), filters, sorting.
 - **Friends**: profile save, invitation create/revoke/accept/share, remove, disable.
-- **Settings**: language, appearance, notifications, widgets, Live Activities, export,
+- **Settings**: language, appearance, notifications, widgets, export,
   account deletion, app opens.
 - **Delivery email**: switched on or off in Settings, the one-time offer accepted or
   declined, the example opened, and the email's opt-out page used. That page counts

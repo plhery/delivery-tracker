@@ -1,8 +1,8 @@
 # iPhone app
 
 Peek on the iPhone is a native SwiftUI app (not a web view) for iOS 18+, with a Share
-extension, Home Screen widgets and Live Activities. It uses Liquid Glass on iOS 26 and
-materials on older versions. It talks to the same `/api` as the web app: signed in, or without an account through the
+extension and Home Screen widgets. It uses Liquid Glass on iOS 26 and materials on older
+versions. It talks to the same `/api` as the web app: signed in, or without an account through the
 public parcel links, whose owner keys it keeps in the keychain.
 
 ## Run the demo
@@ -65,9 +65,8 @@ nowhere.
    `APNS_BUNDLE_ID` on the server. The bundle id must match the installed app.
 
 `scripts/refresh-ios-app.sh` can also install with a free Personal Team. Apple doesn't
-allow App Groups, push or Associated Domains there, so the widget can't read parcels, Live
-Activities don't update while the app is closed, and links open in the browser first: the
-invitation page then offers "Open in the iOS app". Sign in with Apple also needs a paid
+allow App Groups, push or Associated Domains there, so the widget can't read parcels and links
+open in the browser first: the invitation page then offers "Open in the iOS app". Sign in with Apple also needs a paid
 team ([AUTHENTICATION.md](../docs/AUTHENTICATION.md)). App Attest also needs a
 paid team. The Personal Team project disables it and uses Turnstile for anonymous
 lookups instead. No paid Cloudflare account is needed.
@@ -80,15 +79,14 @@ carrier detection do not need a check. Debug uses development App Attest keys,
 Release uses production keys; only a separate development server accepts the
 former. Server settings are in [DEPLOYMENT.md](../docs/DEPLOYMENT.md).
 
-## Notifications, widgets, Live Activities
+## Notifications and widgets
 
 - The app asks for notification permission only after the user taps Enable (from a small
   prompt above the tab bar, or from Account). The device token goes to the API and isn't
   stored locally. Debug builds use the APNs sandbox and Release builds use production.
-- **Live Activities** have their own setting and don't need alert permission. The server
-  starts one at `out_for_delivery`, updates it, and ends it with the outcome, for up to two
-  parcels. Sign-out, account deletion or turning the setting off ends them and removes the
-  registration.
+- **Live Activities** are switched off (`ParcelStore.offersLiveActivities`). Settings has no
+  switch for them, and the app ends any still showing and withdraws the iPhone's
+  registration, so the server starts none.
 - **The widget** shows the next parcel and up to two out-for-delivery parcels. Tapping one
   opens it.
 - **The delivery email** belongs to the account, not the device. Settings › Delivery updates
