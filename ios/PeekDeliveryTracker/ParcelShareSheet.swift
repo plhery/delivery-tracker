@@ -365,6 +365,8 @@ private struct SharePreviewCard: View {
 
     var body: some View {
         let identity = CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
+        // Handed from one carrier to another, or about to be, it carries both marks, as the page does.
+        let delivery = parcel.deliveringCarrier.map { CarrierVisualIdentity.of($0, catalog: catalog, language: localizer.language) }
         VStack(alignment: .leading, spacing: 8) {
             Text(localizer.text(wrapped ? "share.preview.wrapped" : "share.preview.title"))
                 .font(.caption)
@@ -373,7 +375,11 @@ private struct SharePreviewCard: View {
                 .padding(.horizontal, 2)
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
-                    CarrierFleetMark(identity: identity).padding(.bottom, 4)
+                    VStack(alignment: .leading, spacing: 7) {
+                        CarrierFleetMark(identity: identity)
+                        if let delivery { CarrierFleetMark(identity: delivery) }
+                    }
+                    .padding(.bottom, 4)
                     if let name, !wrapped {
                         Text(gift ? localizer.text("share.gift.inside") + " " + name : name)
                             .font(.footnote.weight(.semibold))

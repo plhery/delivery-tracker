@@ -5,13 +5,14 @@ import type { CSSProperties } from 'react';
 import { CARRIER_PALETTES, CARRIER_TRUCK, carrierBrand, carrierBrandFamily, carrierDecal, mix, type CarrierPalette, type TruckDecalShape } from '../../brand';
 import { PARCEL, flapPoints } from '../../components/Icon';
 import { PIP_FRAME } from '../../components/map/pipGeometry';
+import type { Rect } from '../../components/map/layout';
 import { formatKm, type Route } from '../../components/map/route';
 import type { CarrierInfo } from '../../lib/carriers';
 import type { Translate } from '../../lib/messages';
 import { formatJourneyDuration } from '../../lib/passport';
 import { CORE_STAGES } from '../../lib/stages';
 import type { ParcelWithEvents } from '../../types';
-import { GEIST, writable } from '../pictureFont';
+import { GEIST, textWidth, writable } from '../pictureFont';
 import { journeyMap, LABEL_SIZE, type Tint } from './cardMap';
 
 /** The card's width in CSS pixels: the column of the email it is shown in. Every measure below is in these. */
@@ -23,6 +24,13 @@ const SCALE = CARD_PIXELS / WIDTH;
 const MAP = { height: 236, insets: { top: 48, right: 18, bottom: 56, left: 18 } };
 /** The carrier and the time, in the top corners. */
 const TOP = { inset: 16, height: 18 };
+/** How far under the first carrier's mark a second one stands, as on the app's card. */
+const MARK_GAP = 7;
+/**
+ * A second carrier's mark adds a line to the top row: the route starts below it, and the map grows by that much, as on
+ * the app's shared card.
+ */
+const HANDOVER_ROOM = 24;
 /** "Delivered", the line under it with the space above it, and the track with the space around it. */
 const HEADLINE = 28 * 1.125;
 const FACTS = 8 + 15 * 1.5;
@@ -60,6 +68,32 @@ function truckSvg(carrier: CarrierInfo, palette: CarrierPalette): string {
     + decals[carrierDecal(carrier.id)].map(decal).join('')
     + wheels.centers.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${wheels.tire.r}" fill="${paint(wheels.tire.fill)}"/><circle cx="${x}" cy="${y}" r="${wheels.hub.r}" fill="${paint(wheels.hub.fill)}"/>`).join('')
     + '</svg>';
+}
+
+/** The carrier's name as its mark writes it, when the picture's face can. */
+function wordmark(carrier: CarrierInfo): { family: string; name: string | null } {
+  const family = carrierBrandFamily(carrier.id);
+  return { family, name: writable(WORDMARKS[family] ?? carrier.name, GEIST) };
+}
+
+/** The carrier's mark: its truck, and its name in its own colour. */
+function CarrierMark({ carrier }: { carrier: CarrierInfo }) {
+  const palette = carrierBrand(carrier.color, CARRIER_PALETTES[carrier.id]);
+  const brand = palette['brand-light'];
+  const { family, name } = wordmark(carrier);
+  return <div style={{ display: 'flex', alignItems: 'center', height: u(TOP.height), fontSize: u(12), color: brand }}>
+    <Drawing svg={truckSvg(carrier, palette)} width={27} height={27 * CARRIER_TRUCK.viewBox.height / CARRIER_TRUCK.viewBox.width} />
+    {/* DHL's wordmark leans. */}
+    {name && <span style={{ marginLeft: u(7), ...heavy(.6, brand), ...(family === 'dhl' ? { transform: 'skewX(-12deg)' } : {}) }}>{name}</span>}
+    {name && family === 'gls' && <span style={{ color: '#b98a00', ...heavy(.6, '#b98a00') }}>.</span>}
+  </div>;
+}
+
+/** The box a second carrier's mark takes on the card, in CSS pixels: the map keeps its route, names and Pip off it. */
+function secondMarkBox(carrier: CarrierInfo): Rect {
+  const { family, name } = wordmark(carrier);
+  const words = name ? 7 + textWidth(family === 'gls' ? `${name}.` : name, 12, GEIST) : 0;
+  return { x: 20, y: TOP.inset + TOP.height + MARK_GAP, width: 27 + words + 2, height: TOP.height };
 }
 
 /**
@@ -109,6 +143,8 @@ export interface DeliveryCardInput {
   parcel: ParcelWithEvents;
   /** Null when no carrier is known: the card stays neutral and names none. */
   carrier: CarrierInfo | null;
+  /** The carrier that delivered a parcel handed over by the first: its mark stands under the first one. */
+  delivery?: CarrierInfo | null;
   /** When it was delivered, as the email's sentence says it: "Today, 14:12". Null without a usable time. */
   when: string | null;
   /** Whether the delivered scan carries the carrier's own clock time. */
@@ -128,21 +164,24 @@ export interface DeliveryCard {
 /**
  * The picture in a delivery email: the parcel's card as the app shows it once
  * it has arrived. The journey on the map, with Pip and his open box beside
- * the place it ended; the carrier and when; "Delivered", and what the journey
- * came to. It carries no parcel name, number or address. A parcel none of
- * whose scans could be placed gets the card without the map.
+ * the place it ended; the carrier, with the one it handed the parcel to
+ * under it, and when; "Delivered", and what the journey came to. It carries
+ * no parcel name, number or address. A parcel none of whose scans could be
+ * placed gets the card without the map.
  *
  * Every word on it is checked against the picture's own face first: the
  * renderer would otherwise fetch a font for it from the web.
  */
-export async function deliveryCard({ parcel, carrier, when, timed, t, languageTag }: DeliveryCardInput): Promise<DeliveryCard> {
+export async function deliveryCard({ parcel, carrier, delivery = null, when, timed, t, languageTag }: DeliveryCardInput): Promise<DeliveryCard> {
   const palette = carrier ? carrierBrand(carrier.color, CARRIER_PALETTES[carrier.id]) : null;
   const tint: Tint = palette ? { tone: palette['ink-light'], surface: palette['surface-light'] } : NEUTRAL;
   const { tone, surface } = tint;
-  const brand = palette?.['brand-light'] ?? tone;
-  const map = await journeyMap(parcel, languageTag, { width: WIDTH, height: MAP.height }, MAP.insets, tint);
-  const family = carrier ? carrierBrandFamily(carrier.id) : '';
-  const name = carrier ? writable(WORDMARKS[family] ?? carrier.name, GEIST) : null;
+  const second = carrier && delivery;
+  const top = TOP.height + (second ? MARK_GAP + TOP.height : 0);
+  const mapHeight = MAP.height + (second ? HANDOVER_ROOM : 0);
+  // Pip keeps his ceiling: beside the parcel's dot, he only keeps off the second mark.
+  const map = await journeyMap(parcel, languageTag, { width: WIDTH, height: mapHeight }, { ...MAP.insets, top: MAP.insets.top + (second ? HANDOVER_ROOM : 0) }, tint,
+    { ceiling: MAP.insets.top, covered: second ? secondMarkBox(second) : undefined });
   const headline = writable(t('stage.delivered'), GEIST) ?? '';
   const facts = map ? journeyFacts(map.route, parcel, timed, t, languageTag) : null;
   const time = when ? writable(when, GEIST) : null;
@@ -150,13 +189,13 @@ export async function deliveryCard({ parcel, carrier, when, timed, t, languageTa
   const to = (map?.route.destination ?? map?.route.current?.place)?.name;
   const pipHeight = (width: number) => width * PIP_FRAME.height / PIP_FRAME.width;
   const words = HEADLINE + (facts ? FACTS : 0);
-  const height = map ? MAP.height + words + TRACK : TOP.inset + TOP.height + BESIDE.gap + Math.max(words, pipHeight(BESIDE.pip)) + TRACK;
+  const height = map ? mapHeight + words + TRACK : TOP.inset + top + BESIDE.gap + Math.max(words, pipHeight(BESIDE.pip)) + TRACK;
   const clear = `rgba(${[1, 3, 5].map((offset) => parseInt(surface.slice(offset, offset + 2), 16)).join(', ')}, `;
 
   const response = new ImageResponse(
     <div style={{ display: 'flex', flexDirection: 'column', position: 'relative', width: '100%', height: '100%', overflow: 'hidden', borderRadius: u(24), background: surface, color: INK, fontFamily: GEIST.name }}>
-      {map && <div style={{ display: 'flex', position: 'relative', width: u(WIDTH), height: u(MAP.height) }}>
-        <Drawing svg={map.svg} width={WIDTH} height={MAP.height} style={{ position: 'absolute', left: 0, top: 0 }} />
+      {map && <div style={{ display: 'flex', position: 'relative', width: u(WIDTH), height: u(mapHeight) }}>
+        <Drawing svg={map.svg} width={WIDTH} height={mapHeight} style={{ position: 'absolute', left: 0, top: 0 }} />
         {map.labels.map((label) => <div key={label.id} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'absolute', left: u(label.x), top: u(label.y), width: u(label.width), height: u(22),
           borderRadius: u(7), color: tone, whiteSpace: 'nowrap', lineHeight: 1,
@@ -164,20 +203,18 @@ export async function deliveryCard({ parcel, carrier, when, timed, t, languageTa
           ...(label.kind === 'area' ? { fontSize: u(10.5), letterSpacing: u(.84) } : { fontSize: u(LABEL_SIZE), background: `${clear}.92)`, ...heavy(.25, tone) }),
         }}>{label.text}</div>)}
         {/* The drawing fades into the card where the words begin; Pip stands in front of the fade. */}
-        <div style={{ display: 'flex', position: 'absolute', left: 0, top: 0, width: u(WIDTH), height: u(MAP.height), backgroundImage: `linear-gradient(to bottom, ${clear}0) 78%, ${surface} 100%)` }} />
+        <div style={{ display: 'flex', position: 'absolute', left: 0, top: 0, width: u(WIDTH), height: u(mapHeight), backgroundImage: `linear-gradient(to bottom, ${clear}0) 78%, ${surface} 100%)` }} />
         {map.pip && <Drawing svg={pipSvg(tint)} width={map.pip.width} height={pipHeight(map.pip.width)} style={{ position: 'absolute', left: u(map.pip.x), top: u(map.pip.y) }} />}
       </div>}
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: u(TOP.height),
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', height: u(top),
         ...(map ? { position: 'absolute', left: u(20), right: u(16), top: u(TOP.inset) } : { margin: `${u(TOP.inset)}px ${u(16)}px 0 ${u(20)}px` }),
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', fontSize: u(12), color: brand }}>
-          {carrier && palette && <Drawing svg={truckSvg(carrier, palette)} width={27} height={27 * CARRIER_TRUCK.viewBox.height / CARRIER_TRUCK.viewBox.width} />}
-          {/* DHL's wordmark leans. */}
-          {name && <span style={{ marginLeft: u(7), ...heavy(.6, brand), ...(family === 'dhl' ? { transform: 'skewX(-12deg)' } : {}) }}>{name}</span>}
-          {name && family === 'gls' && <span style={{ color: '#b98a00', ...heavy(.6, '#b98a00') }}>.</span>}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {carrier && <CarrierMark carrier={carrier} />}
+          {second && <div style={{ display: 'flex', marginTop: u(MARK_GAP) }}><CarrierMark carrier={second} /></div>}
         </div>
-        {time && <div style={{ display: 'flex', fontSize: u(11), color: tone }}>{time}</div>}
+        {time && <div style={{ display: 'flex', alignItems: 'center', height: u(TOP.height), fontSize: u(11), color: tone }}>{time}</div>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: `0 ${u(20)}px`, ...(map ? {} : { marginTop: u(BESIDE.gap) }) }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>

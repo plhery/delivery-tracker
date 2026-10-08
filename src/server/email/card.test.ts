@@ -66,6 +66,18 @@ describe('deliveryCard', () => {
     expect(land[0]).toBeLessThan(0xf7);
   });
 
+  it('stands the carrier it was handed to under the first, its map a line taller for it', async () => {
+    const plain = size((await deliveryCard(input('en'))).png);
+    const handed = await deliveryCard(input('en', { delivery: carrierInfo('swiss-post', 'en') }));
+    expect(handed).toMatchObject({ ends: { from: 'Hamburg', to: 'Zürich' }, mapped: true });
+    expect(Math.abs(size(handed.png).height - plain.height - 24 * CARD_PIXELS / 456)).toBeLessThan(1);
+    // Swiss Post's yellow truck, under DHL's.
+    const [red, green, blue] = await pixel(handed.png, Math.round(30 * CARD_PIXELS / 456), Math.round(52 * CARD_PIXELS / 456));
+    expect(red).toBeGreaterThan(200);
+    expect(green).toBeGreaterThan(150);
+    expect(blue).toBeLessThan(90);
+  });
+
   it('gives a parcel without a single placed scan the card without the map', async () => {
     const unplaced = parcel([['accepted', '2026-10-01T16:48:00Z'], ['delivered', '2026-10-03T12:12:00Z']]);
     const card = await deliveryCard(input('en', { parcel: unplaced }));

@@ -1,8 +1,8 @@
 import 'server-only';
 
 import { geoPath } from 'd3-geo';
-import { projection } from '../../components/map/camera';
-import { layout, mapView, targetCamera, type Insets, type Overlay, type Size } from '../../components/map/layout';
+import { projection, type Camera } from '../../components/map/camera';
+import { layout, mapView, shownOf, targetCamera, type Insets, type Overlay, type PipPlacing, type Rect, type Size } from '../../components/map/layout';
 import { countryPlace, defaultMode, routeFromEvents, type Route } from '../../components/map/route';
 import { countryLabel, geography, loadWorld } from '../../components/map/world';
 import { countryName } from 'universal-parcel-scraper/app';
@@ -30,10 +30,15 @@ export interface Tint { tone: string; surface: string }
  * camera, names and place for Pip, from the same code, with the land as SVG
  * paths instead of a canvas. Null when no scan could be placed.
  *
+ * As on the app's card, Pip may stand as high as `ceiling` (the frame's top
+ * unless told), and the route, its names and Pip keep off `covered`, what the
+ * card writes over the map below its top row.
+ *
  * The world's shapes load here, on the first map: nothing else on the server
  * needs them.
  */
-export async function journeyMap(parcel: ParcelWithEvents, languageTag: string, size: Size, insets: Insets, tint: Tint): Promise<JourneyMap | null> {
+export async function journeyMap(parcel: ParcelWithEvents, languageTag: string, size: Size, insets: Insets, tint: Tint,
+  { ceiling = insets.top, covered }: { ceiling?: number; covered?: Rect } = {}): Promise<JourneyMap | null> {
   if (!parcel.events.some((event) => event.place)) return null;
   await loadWorld();
   // A name the picture's face cannot write is left out: the dot stays, unnamed.
@@ -46,9 +51,12 @@ export async function journeyMap(parcel: ParcelWithEvents, languageTag: string, 
   if (!route.stops.length) return null;
 
   const mode = defaultMode(route, 'delivered');
-  const camera = targetCamera(route, mode, size, insets, 'rect');
-  const overlay = layout(route, camera, size, insets, 'rect', 'ends', false, mode, false, languageTag, { mood: 'joy', ceiling: insets.top },
-    (text) => textWidth(text, LABEL_SIZE, GEIST));
+  const pip: PipPlacing = { mood: 'joy', ceiling };
+  const width = (text: string) => textWidth(text, LABEL_SIZE, GEIST);
+  const drawn = (camera: Camera, box?: Rect) =>
+    layout(route, camera, size, insets, 'rect', 'ends', false, mode, false, languageTag, pip, width, undefined, box);
+  const camera = targetCamera(route, mode, size, insets, 'rect', covered, covered && ((view, box) => shownOf(drawn(view, box))));
+  const overlay = drawn(camera, covered);
 
   const { detail, inView, globe, visited } = mapView(camera, size);
   const world = geography(detail);

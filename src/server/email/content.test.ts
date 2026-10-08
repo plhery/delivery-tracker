@@ -66,7 +66,7 @@ describe('deliveryEmailContent', () => {
     expect(email.html).toContain(`<h1 style=`);
     expect(email.html).toContain(`>${english('email.delivered.title', { name: 'New sneakers' })}</h1>`);
     expect(email.card).toEqual(card().png);
-    expect(cardInput()).toMatchObject({ carrier: { id: 'dhl' }, when: 'Today, 14:12', timed: true, languageTag: 'en-CH' });
+    expect(cardInput()).toMatchObject({ carrier: { id: 'dhl' }, delivery: null, when: 'Today, 14:12', timed: true, languageTag: 'en-CH' });
   });
 
   it.each([
@@ -99,20 +99,20 @@ describe('deliveryEmailContent', () => {
       .toBe(english('email.delivered.by.today', { carrier: 'DHL', time: '14:12' }));
   });
 
-  it('names the carrier that brought it to the door after a handover, and keeps the app’s mark on the card', async () => {
+  it('names the carrier that brought it to the door after a handover, and marks the card with both, as the app does', async () => {
     const handedOver = row({ carrier: 'swiss-post', carrier_data: { original_carrier: 'dhl', active_tracking_carrier: 'swiss-post' } });
     expect(sentence((await deliveryEmailContent(input({ parcel: handedOver }))).text)).toBe(english('email.delivered.by.today', { carrier: 'Swiss Post', time: '14:12' }));
-    expect(cardInput().carrier).toMatchObject({ id: 'dhl' });
+    expect(cardInput()).toMatchObject({ carrier: { id: 'dhl' }, delivery: { id: 'swiss-post' } });
     // A last carrier nobody could name is not named, whoever the parcel started with.
     const lostTrack = row({ carrier: 'dhl', carrier_data: { original_carrier: 'dhl', active_tracking_carrier: 'intl-post' } });
     expect(sentence((await deliveryEmailContent(input({ parcel: lostTrack }))).text)).toBe(english('email.delivered.line.today', { time: '14:12' }));
-    expect(cardInput().carrier).toMatchObject({ id: 'dhl' });
+    expect(cardInput()).toMatchObject({ carrier: { id: 'dhl' }, delivery: null });
   });
 
   it('names the carrier its carrier said would deliver, before that one was followed', async () => {
     const named = row({ carrier: 'chronopost', carrier_data: { delivery_carrier: 'dpd-de', delivery_tracking_number: '01234567890123' } });
     expect(sentence((await deliveryEmailContent(input({ parcel: named }))).text)).toBe(english('email.delivered.by.today', { carrier: 'DPD Germany', time: '14:12' }));
-    expect(cardInput().carrier).toMatchObject({ id: 'chronopost' });
+    expect(cardInput()).toMatchObject({ carrier: { id: 'chronopost' }, delivery: { id: 'dpd-de' } });
   });
 
   it('has a subject and a title for a parcel without a name', async () => {

@@ -56,6 +56,24 @@ describe('journeyMap', () => {
     expect(Math.round(map.route.km)).toBeGreaterThan(600);
   });
 
+  it('keeps the route’s names and Pip off what the card writes over the map', async () => {
+    const journey = parcel([['accepted', '2026-10-01T16:48:00Z', HAMBURG], ['delivered', '2026-10-03T12:12:00Z', ZURICH]]);
+    const name = (await draw(journey))!.labels.find(({ text }) => text === 'Hamburg')!;
+    // A second carrier's mark where Hamburg's name stood.
+    const covered = { x: name.x, y: name.y, width: name.width, height: 22 };
+    const map = (await journeyMap(journey, 'en-CH', SIZE, INSETS, TINT, { covered }))!;
+    expect(map.labels.map(({ text }) => text).sort()).toEqual(['Hamburg', 'Zürich']);
+    const apart = (box: { x: number; y: number; width: number; height: number }) => box.x + box.width <= covered.x || box.x >= covered.x + covered.width
+      || box.y + box.height <= covered.y || box.y >= covered.y + covered.height;
+    for (const label of map.labels) expect(apart({ ...label, height: 22 })).toBe(true);
+    expect(apart({ x: map.pip!.x, y: map.pip!.y, width: map.pip!.width, height: map.pip!.width })).toBe(true);
+    // A map that starts its route a line lower for the mark keeps Pip's ceiling where it was.
+    const lower = (await journeyMap(journey, 'en-CH', { ...SIZE, height: SIZE.height + 24 }, { ...INSETS, top: INSETS.top + 24 }, TINT, { ceiling: INSETS.top, covered }))!;
+    expect(lower.svg).toContain('height="260" viewBox="0 0 456 260"');
+    expect(lower.labels).toHaveLength(2);
+    expect(lower.pip!.y).toBeGreaterThanOrEqual(INSETS.top - 24 * lower.pip!.width / 300);
+  });
+
   it('writes nothing from the parcel but the names of places', async () => {
     const map = (await draw(parcel([['accepted', '2026-10-01T16:48:00Z', HAMBURG], ['delivered', '2026-10-03T12:12:00Z', ZURICH]])))!;
     expect(`${map.svg}${JSON.stringify(map.labels)}`).not.toMatch(/TESTPARCEL|private name|ALEX|Samplestrasse|<text/);

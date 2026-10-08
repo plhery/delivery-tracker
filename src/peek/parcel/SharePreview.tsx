@@ -3,7 +3,7 @@ import { CarrierMark } from '../../components/CarrierMark';
 import { ParcelIllustration } from '../../components/Icon';
 import { useI18n } from '../../i18n';
 import { carrierBrand } from '../../lib/carrierBrand';
-import { carrierInfo, displayedCarrierId, formatTrackingNumber } from '../../lib/carriers';
+import { carrierInfo, deliveringCarrierId, displayedCarrierId, formatTrackingNumber } from '../../lib/carriers';
 import { parcelHasCarrierUpdate } from '../../lib/parcelStatus';
 import type { ParcelWithEvents } from '../../types';
 import { maskedNumber, numberEnds } from '../links';
@@ -29,6 +29,9 @@ export function SharePreview({ parcel, name, showNumber, gift }: {
   const carrier = carrierInfo(displayedCarrierId(parcel), locale);
   // No carrier has been found for the number yet: the card stays neutral, as the page does.
   const known = parcel.carrier !== 'unknown' || parcelHasCarrierUpdate(parcel);
+  // Handed from one carrier to another, or about to be, it carries both marks, as the page does.
+  const deliveringId = known ? deliveringCarrierId(parcel) : null;
+  const delivery = deliveringId ? carrierInfo(deliveringId, locale) : null;
   const headline = wrapped ? t('share.gift.headline') : gift ? t('share.gift.here') : parcelHeadline(parcel, t);
   const detail = wrapped ? giftArrival(parcel, wording) : (gift ? giftDelivered(parcel, wording) : null) ?? parcelDetail(parcel, wording);
   const number = showNumber ? formatTrackingNumber(parcel.trackingNumber, parcel.carrier) : maskedNumber(numberEnds(parcel.trackingNumber));
@@ -37,7 +40,12 @@ export function SharePreview({ parcel, name, showNumber, gift }: {
     <p className="peeks-preview__caption" id={caption}>{t(wrapped ? 'share.preview.wrapped' : 'share.preview.title')}</p>
     <div className="peeks-preview" style={known ? carrierBrand(carrier).style : undefined} data-gift={gift || undefined}>
       <div className="peeks-preview__text">
-        {known ? <CarrierMark carrier={carrier} /> : <span className="peeks-preview__nocarrier">{t('link.unknown.carrier')}</span>}
+        {!known ? <span className="peeks-preview__nocarrier">{t('link.unknown.carrier')}</span>
+          : delivery ? <span className="peeks-preview__marks">
+            <CarrierMark carrier={carrier} />
+            <span className="peeks-preview__delivery" style={carrierBrand(delivery).style}><CarrierMark carrier={delivery} /></span>
+          </span>
+          : <CarrierMark carrier={carrier} />}
         {name && !wrapped && <span className="peeks-preview__name">{gift ? `${t('share.gift.inside')} ${name}` : name}</span>}
         <strong>{headline}</strong>
         {detail && <span className="peeks-preview__detail">{detail}</span>}

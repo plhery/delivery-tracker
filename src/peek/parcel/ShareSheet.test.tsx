@@ -299,6 +299,14 @@ describe('the share sheet of a looked-up parcel', () => {
     expect(document.querySelector('.peeks-preview__pip .parcel-illustration__label')).toBeNull();
   });
 
+  it('carries both marks of a parcel handed from one carrier to another, as the page does', () => {
+    const handedOver = testView({ parcel: { carrier: 'swiss-post', originalCarrier: 'aliexpress', trackingSource: 'swiss-post' } });
+    render(<OwnerSheet initial={{ ...handedOver, link: { ...handedOver.link, gift: true, shared: true } }} />);
+    const marks = document.querySelectorAll('.peeks-preview .carrier-mark');
+    expect([...marks].map((mark) => mark.getAttribute('title'))).toEqual(['AliExpress / Cainiao', 'Swiss Post']);
+    expect(document.querySelector('.peeks-preview__delivery')).toHaveAttribute('style');
+  });
+
   it('keeps the card neutral for a number no carrier knows yet', () => {
     const unknown = testView({ parcel: { carrier: 'unknown', syncStatus: 'waiting' }, stages: ['pending'] });
     const { unmount } = render(<OwnerSheet />);

@@ -249,12 +249,13 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
 
   const activeCarrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
   // Handed from one carrier to another, or about to be, the card carries both marks and says who delivers, as a parcel's
-  // own card does.
+  // own card does. So does a gift's: its journey tells the country it comes from anyway, and the one who rings is news.
   const deliveringId = deliveringCarrierId(parcel);
-  const delivering = !present && carrierKnown && deliveringId ? carrierInfo(deliveringId, locale) : null;
-  const notes = present ? [] : !carrierKnown ? [t('link.unknown.body', { number: number ?? t('common.parcel') })] : [
+  const delivering = carrierKnown && deliveringId ? carrierInfo(deliveringId, locale) : null;
+  const deliveryNote = delivering ? t('parcel.deliveryCarrier', { carrier: delivering.name }) : null;
+  const notes = present ? (deliveryNote ? [deliveryNote] : []) : !carrierKnown ? [t('link.unknown.body', { number: number ?? t('common.parcel') })] : [
     previousEstimateLine(previousEstimate, parcel, wording),
-    delivering ? t('parcel.deliveryCarrier', { carrier: delivering.name }) : null,
+    deliveryNote,
     !checking && (parcelIsUnannounced(parcel) || stage === 'registered') ? t('link.notScanned', { carrier: displayed.name }) : null,
   ].filter((note): note is string => !!note);
 

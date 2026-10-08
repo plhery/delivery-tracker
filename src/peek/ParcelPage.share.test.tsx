@@ -396,6 +396,21 @@ describe('a gift', () => {
     expect(row.querySelector('time')).toHaveAttribute('datetime', newest.occurredAt);
   });
 
+  it('names both carriers of a parcel handed from one to another, wrapped and opened, as any card does', async () => {
+    const handover = { carrier: 'swiss-post', originalCarrier: 'aliexpress', trackingSource: 'swiss-post' } as const;
+    const marks = (card: HTMLElement) => [...card.querySelectorAll('.peekp-card__top .carrier-mark')].map((mark) => mark.getAttribute('title'));
+    const shown = wrapped();
+    const page = open({ ...shown, parcel: { ...shown.parcel, ...handover } }, { hash: words });
+    const card = await screen.findByRole('region', { name: 'Something’s on its way to you' });
+    expect(marks(card)).toEqual(['AliExpress / Cainiao', 'Swiss Post']);
+    expect(within(card).getByText('Delivery with Swiss Post')).toBeVisible();
+    page.unmount();
+    open(view({ owner: false, link: { gift: true }, events: arrived, parcel: handover }));
+    const opened = await screen.findByRole('region', { name: 'It’s here' });
+    expect(marks(opened)).toEqual(['AliExpress / Cainiao', 'Swiss Post']);
+    expect(within(opened).getByText('Delivery with Swiss Post')).toBeVisible();
+  });
+
   it('adds a wrapped gift to the calendar without its name', async () => {
     const user = userEvent.setup();
     open(wrapped(), { hash: words });

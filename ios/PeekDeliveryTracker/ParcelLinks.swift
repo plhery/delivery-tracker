@@ -350,6 +350,7 @@ extension ParcelLinkStore {
     /// `delivered` (the fixture once it has arrived: no route, so its box opens),
     /// `route` (a demo parcel with a route, which may be kept), `gift` (the gift fixture, on its
     /// way), `giftDelivered` (the same gift, delivered, with the words its link carried),
+    /// `giftHandover` (the gift on its way, handed to Swiss Post),
     /// `handover` (a parcel AliExpress handed to Swiss Post, on its way from Shenzhen to Zürich), `handoverPlain` (the same
     /// parcel, its scans without a place), `stopped` or `gone`.
     /// `-sdt.debug.parcelLink.signedIn YES` shows it as a signed-in person sees it.
@@ -378,6 +379,10 @@ extension ParcelLinkStore {
                     location: "Zürich, CH", occurredAt: DateParser.isoString(now.addingTimeInterval(-180))), at: 0)
             } else {
                 response?.package.expectedDelivery = ParcelOrganizer.dayKey(now) + " 13:00–17:00"
+            }
+            if variant == "giftHandover" {
+                response?.package.carrierData.originalCarrier = package.carrier
+                response?.package.carrierData.activeTrackingCarrier = .swissPost
             }
             response?.package.lastSyncedAt = DateParser.isoString(now.addingTimeInterval(-120))
         }

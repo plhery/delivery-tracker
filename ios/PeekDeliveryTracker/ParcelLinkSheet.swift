@@ -588,11 +588,22 @@ private struct GiftParcelCard: View {
 
     var body: some View {
         let identity = CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
+        // Handed from one carrier to another, or about to be, a gift carries both marks and says who delivers, as any
+        // shared card does: its journey tells the country it comes from anyway, and the one who rings is news.
+        let delivering = parcel.deliveringCarrier
+        let delivery = delivering.map { CarrierVisualIdentity.of($0, catalog: catalog, language: localizer.language) }
+        let deliveryLine = delivering.map {
+            localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: $0, language: localizer.language).displayName])
+        }
         let tone = ExperimentalPalette.lilac
         let width: CGFloat = typeSize.isAccessibilitySize ? 150 : opened ? 250 : 220
         VStack(spacing: 0) {
-            HStack(spacing: 4) {
-                CarrierFleetMark(identity: identity).layoutPriority(1)
+            HStack(alignment: .firstMark, spacing: 4) {
+                VStack(alignment: .leading, spacing: 7) {
+                    CarrierFleetMark(identity: identity).alignmentGuide(.firstMark) { $0[VerticalAlignment.center] }
+                    if let delivery { CarrierFleetMark(identity: delivery) }
+                }
+                .layoutPriority(1)
                 Spacer(minLength: 8)
                 LinkRefreshButton(parcel: parcel, refreshing: refreshing, tint: tone, action: onRefresh)
             }
@@ -609,6 +620,9 @@ private struct GiftParcelCard: View {
                     Text(detail)
                         .font(.callout.weight(.medium))
                         .foregroundStyle(tone)
+                }
+                if let deliveryLine {
+                    Text(deliveryLine).font(.caption).foregroundStyle(.secondary)
                 }
             }
             .multilineTextAlignment(.center)

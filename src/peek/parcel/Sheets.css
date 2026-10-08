@@ -43,6 +43,10 @@
 .peeks-preview[data-gift] { --tone: var(--lilac); --tone-surface: var(--lilac-soft); }
 .peeks-preview__text { display: grid; gap: 2px; flex: 1; min-width: 0; }
 .peeks-preview .carrier-mark, .peeks-preview__nocarrier { margin-bottom: 6px; }
+/* A parcel handed from one carrier to another: the delivering carrier's mark, in its own colours, under the first. */
+.peeks-preview__marks { display: grid; justify-items: start; gap: 7px; margin-bottom: 6px; min-width: 0; }
+.peeks-preview__marks .carrier-mark { margin-bottom: 0; }
+.peeks-preview__delivery { display: flex; min-width: 0; --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark)); }
 .peeks-preview .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; overflow: visible; }
 .peeks-preview__nocarrier { color: var(--ink-soft); font-size: 12px; font-weight: 650; }
 .peeks-preview__name { font-size: 12.5px; font-weight: 600; overflow-wrap: anywhere; }

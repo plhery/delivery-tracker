@@ -86,7 +86,7 @@ export async function parcelLinkPreview(linkId: unknown, headers: Headers, local
     const { t } = wording;
     const stage = parcelStage(parcel);
     const steps = stage ? stageMeta(stage).progress + 1 : 0;
-    // A gift on its way names no carrier: who carries it can tell where it comes from.
+    // A gift on its way names no carrier in its preview, which only tells that something is coming, and when.
     if (found.wrappedGift) return { ...giftPreviewText(parcel, wording), carrier: null, steps, gift: true };
     const known = parcel.carrier !== 'unknown' || parcelHasCarrierUpdate(parcel);
     const carrier = known ? carrierInfo(displayedCarrierId(parcel), locale) : null;

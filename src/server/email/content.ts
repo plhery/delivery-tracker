@@ -56,14 +56,16 @@ async function emailContent(input: DeliveryEmailInput, draw = drawCard): Promise
   const name = notificationText(String(input.parcel.label ?? '').replace(/\p{Cc}/gu, ' '), 80);
   const named = (carrier: CarrierInfo) => UNNAMED_CARRIERS.has(carrier.id) ? null : carrier;
   // The sentence names who brought it to the door, even one its first carrier named and nobody followed; the card
-  // keeps the carrier the app marks the parcel with.
-  const deliverer = named(carrierInfo(deliveringCarrierId(parcel) ?? activeTrackingCarrierId(parcel), locale));
+  // keeps the carrier the app marks the parcel with, and under it the one it was handed to, as the app's card does.
+  const handedTo = deliveringCarrierId(parcel);
+  const deliverer = named(carrierInfo(handedTo ?? activeTrackingCarrierId(parcel), locale));
   const marked = named(carrierInfo(displayedCarrierId(parcel), locale));
+  const delivery = handedTo ? named(carrierInfo(handedTo, locale)) : null;
   const when = deliveredWhen(parcel, { known: input.deliveredTime, timezone: input.timezone, now: input.now, languageTag });
 
   let card: DeliveryCard | null = null;
   try {
-    card = await draw({ parcel, carrier: marked, when: cornerTime(when, t, languageTag), timed: 'time' in when, t, languageTag });
+    card = await draw({ parcel, carrier: marked, delivery, when: cornerTime(when, t, languageTag), timed: 'time' in when, t, languageTag });
   } catch (error) {
     // The email is worth sending without its picture.
     logOperationalEvent('delivery_email_card_failed', { package_id: parcel.id, error_type: errorType(error) }, 'warning');
