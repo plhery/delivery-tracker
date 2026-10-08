@@ -49,7 +49,15 @@ while IFS= read -r migration; do
     psql "$database_url" -X -v ON_ERROR_STOP=1 \
       -f "$repo_root/supabase/tests/pre_provider_carrier_labels.sql"
   fi
+  if [[ "$(basename "$migration")" == "20261008050000_review_queue_replays.sql" ]]; then
+    psql "$database_url" -X -v ON_ERROR_STOP=1 \
+      -f "$repo_root/supabase/tests/pre_review_queue_replays.sql"
+  fi
   psql "$database_url" -X -v ON_ERROR_STOP=1 -f "$migration"
+  if [[ "$(basename "$migration")" == "20261008050000_review_queue_replays.sql" ]]; then
+    psql "$database_url" -X -v ON_ERROR_STOP=1 \
+      -f "$repo_root/supabase/tests/review_queue_replays.sql"
+  fi
   if [[ "$(basename "$migration")" == "20261005030000_provider_carrier_labels.sql" ]]; then
     psql "$database_url" -X -v ON_ERROR_STOP=1 \
       -f "$repo_root/supabase/tests/provider_carrier_labels.sql"

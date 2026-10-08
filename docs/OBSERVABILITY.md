@@ -128,12 +128,20 @@ where fix_status = 'open'
 order by last_seen desc;
 ```
 
-After shipping support, set `fix_status = 'fixed'`, `fixed_at` to its deployment time
-and `fix_reference` to the commit or release. A later successful direct check with
-accepted, timestamped progress for that same number promotes it to `verified`.
-Provider answers, thin results, preserved older summaries and a different handoff
-number cannot verify a fix. Use `ignored` with a note for a case that needs no change;
-future sightings still accumulate.
+Each server version replays the backlog once, a minute after it starts. It reruns
+detection and the adapter check for the 500 most recently seen open cases, without asking
+any carrier, and marks `fixed` each case it finds no gap for: `fix_reference` names the
+version (the scraper release the app pins, plus the app commit in an image) and `notes`
+says why. A case whose configured carrier changed meanwhile stays open.
+`tracking_review_runs` keeps one row per version, so restarts and other servers do not
+replay it again; another server takes over a replay left unfinished for ten minutes.
+
+A fix the replay cannot see is marked by hand: set `fix_status = 'fixed'`, `fixed_at`
+to its deployment time and `fix_reference` to the commit or release. Either way, a later
+successful direct check with accepted, timestamped progress for that same number promotes
+it to `verified`. Provider answers, thin results, preserved older summaries and a
+different handoff number cannot verify a fix. Use `ignored` with a note for a case that
+needs no change; future sightings still accumulate.
 
 ## Unmapped wording
 
@@ -141,7 +149,25 @@ future sightings still accumulate.
 carrier status map, so it can be mapped instead of guessed forever. There is one row per
 carrier, provider code and normalized description. `count` and `last_seen` grow on repeat
 sightings. It holds no tracking number or account reference. Each refresh records at most
-32 observations, and a failed write never fails the refresh.
+32 observations, and a failed write never fails the refresh. `last_seen_version` names
+the server version of the latest sighting.
+
+Each refresh also sends the keys of the wording its carrier maps did resolve, with its
+version. An open row with one of those keys closes as `mapped`, with `reviewed_version`
+and `review_note`. If a server that names its version sees that wording unmapped again,
+the row reopens: the map covers it only sometimes. Wording no refresh sees again, such as
+that of finished parcels, stays open until reviewed by hand.
+
+Wording a carrier map leaves unmapped on purpose belongs in
+`tracking_status_intentionally_unmapped`. Adding or editing a row there closes the open
+observations it covers as `ignored`, with its note, and later sightings close as they are
+recorded. A row without a provider code covers only wording that came without one; a row
+without a description covers every wording of its code:
+
+```sql
+insert into public.tracking_status_intentionally_unmapped (carrier, provider_code, note)
+values ('CARRIER_ID', 'CODE', 'Why the carrier map leaves it unmapped.');
+```
 
 Classifier corrections also need guarded migrations for stored events. Completed parcels
 no longer refresh, so parser fixes alone leave their histories unchanged. Repairs preserve
@@ -166,7 +192,7 @@ group by carrier
 order by sightings desc, wordings desc;
 
 select provider_code, description_normalized, chosen_stage, stage_source,
-       count, first_seen, last_seen, sample_event_id
+       count, first_seen, last_seen, last_seen_version, sample_event_id
 from public.tracking_status_observations
 where reviewed_at is null and carrier = 'CARRIER_ID'
 order by count desc, last_seen desc;
@@ -178,7 +204,8 @@ that release, mark it:
 
 ```sql
 update public.tracking_status_observations
-set reviewed_at = now(), resolution = 'mapped'  -- or 'wording_rule', 'ignored'
+set reviewed_at = now(), resolution = 'mapped',  -- or 'wording_rule', 'ignored'
+    review_note = 'WHY'
 where observation_key = 'OBSERVATION_KEY';
 ```
 
@@ -242,6 +269,9 @@ Key JSON events:
   yet), `input_required` or `invalid_input`;
 - `tracking_sync_audit_write_failed`, `tracking_sync_audit_maintenance_failed`,
   `tracking_status_observation_write_failed`;
+- `review_queues_replayed`: the support backlog replay of a `version`, with
+  `cases_replayed` and `cases_fixed`. `review_queue_replay_failed` (error, with
+  `error_type`) when it could not run; it is retried every five minutes;
 - `sync_claim_failed`: the sync worker could not claim a job, with its `failure_count` and
   `failing_for_ms`, how long claims have been failing. A database restart leaves a few of
   them. Alert when they repeat for two minutes (`failing_for_ms` of 120000 or more).

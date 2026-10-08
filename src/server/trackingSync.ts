@@ -44,6 +44,7 @@ import { upuHistory } from './upuHistory';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
 import { eventTimestamp, latestResultTime, resultTimezone } from 'universal-parcel-scraper/app';
 import { trackingSupportEvidence } from './trackingSupport';
+import { deployedVersion } from './reviewQueues';
 import { carrierLookupKey, recognitionKey, SharedLookups, universalLookupKey, type ParcelLookups } from './sharedLookups';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
@@ -444,6 +445,27 @@ export function normalizeObservedDescription(description: string): string {
   return description.toLocaleLowerCase('en-US').trim().split(/\s+/).join(' ').slice(0, 500);
 }
 
+/** How one event's wording is observed: its key, carrier, code and stage source; null without wording or stage. */
+function observedWording(event: JsonObject, fallbackCarrierId: string) {
+  const raw = isRecord(event.raw_data) ? event.raw_data : {};
+  const source = typeof raw.stage_source === 'string' ? raw.stage_source : '';
+  const description = normalizeObservedDescription(String(event.description ?? ''));
+  const chosenStage = String(event.stage ?? '');
+  if (!source || !description || !chosenStage) return null;
+  const eventId = String(event.provider_event_id ?? '');
+  // Every provider event id is prefixed with the carrier that served it, so a
+  // timeline merged from two carriers keeps each wording with its own.
+  const carrier = (eventId.split(':')[0] || fallbackCarrierId).slice(0, 100);
+  if (!carrier) return null;
+  const providerCode = typeof raw.provider_code === 'string' && raw.provider_code
+    ? raw.provider_code.slice(0, 100)
+    : null;
+  const key = createHash('sha256')
+    .update(JSON.stringify([carrier, providerCode ?? '', description]))
+    .digest('hex');
+  return { key, carrier, providerCode, description, source, chosenStage, eventId };
+}
+
 /**
  * Collects the carrier wording whose stage did not come from a carrier map, so
  * an operator can map it later. The package and event identifiers travel with
@@ -455,38 +477,39 @@ export function collectStatusObservations(
 ): StatusObservation[] {
   const observations = new Map<string, StatusObservation>();
   for (const event of events) {
-    const raw = isRecord(event.raw_data) ? event.raw_data : {};
-    const source = typeof raw.stage_source === 'string' ? raw.stage_source : '';
-    if (!source || source === 'carrier_map') continue;
-    const description = normalizeObservedDescription(String(event.description ?? ''));
-    const chosenStage = String(event.stage ?? '');
-    if (!description || !chosenStage) continue;
-    const eventId = String(event.provider_event_id ?? '');
-    // Every provider event id is prefixed with the carrier that served it, so a
-    // timeline merged from two carriers keeps each wording with its own.
-    const carrier = (eventId.split(':')[0] || fallbackCarrierId).slice(0, 100);
-    if (!carrier) continue;
-    const providerCode = typeof raw.provider_code === 'string' && raw.provider_code
-      ? raw.provider_code.slice(0, 100)
-      : null;
-    const key = createHash('sha256')
-      .update(JSON.stringify([carrier, providerCode ?? '', description]))
-      .digest('hex');
-    if (observations.has(key)) continue;
-    observations.set(key, {
-      observation_key: key,
-      carrier,
-      provider_code: providerCode,
-      description_normalized: description,
+    const observed = observedWording(event, fallbackCarrierId);
+    if (!observed || observed.source === 'carrier_map' || observations.has(observed.key)) continue;
+    observations.set(observed.key, {
+      observation_key: observed.key,
+      carrier: observed.carrier,
+      provider_code: observed.providerCode,
+      description_normalized: observed.description,
       language_guess: null,
-      stage_source: source.slice(0, 100),
-      chosen_stage: chosenStage,
+      stage_source: observed.source.slice(0, 100),
+      chosen_stage: observed.chosenStage,
       package_id: String(event.package_id ?? ''),
-      provider_event_id: eventId,
+      provider_event_id: observed.eventId,
     });
     if (observations.size >= MAX_STATUS_OBSERVATIONS_PER_SYNC) break;
   }
   return [...observations.values()];
+}
+
+/**
+ * The observation keys of wording a carrier map gave its stage in every scan
+ * that carried it. An open observation with one of them is covered by the
+ * scraper this server runs.
+ */
+export function collectMappedStatusKeys(events: readonly JsonObject[], fallbackCarrierId: string): string[] {
+  const observed = events.flatMap((event) => observedWording(event, fallbackCarrierId) ?? []);
+  const unmapped = new Set(observed.filter(({ source }) => source !== 'carrier_map').map(({ key }) => key));
+  const keys = new Set<string>();
+  for (const { key, source } of observed) {
+    if (source !== 'carrier_map' || unmapped.has(key)) continue;
+    keys.add(key);
+    if (keys.size >= MAX_STATUS_OBSERVATIONS_PER_SYNC) break;
+  }
+  return [...keys];
 }
 
 /** Stages before the carrier moves the parcel, in order. */
@@ -728,7 +751,8 @@ export class TrackingSyncService {
   // Unmapped carrier wording is review material, never a reason to fail a
   // refresh: a failed write is logged each time and reported to Sentry once.
   // The events keep their computed identities, whose prefix names the carrier
-  // that worded them; a reused identity only locates the sample row.
+  // that worded them; a reused identity only locates the sample row. Wording
+  // the scraper mapped is sent too, so its open observation closes.
   private async recordStatusObservations(
     events: JsonObject[],
     carrierId: string,
@@ -744,9 +768,10 @@ export class TrackingSyncService {
       const stored = reusedIdentities.get(observation.provider_event_id);
       return stored ? { ...observation, provider_event_id: stored } : observation;
     });
-    if (observations.length === 0) return;
+    const mapped = collectMappedStatusKeys([...events, ...localEvents], carrierId);
+    if (observations.length === 0 && mapped.length === 0) return;
     try {
-      await this.client.recordTrackingStatusObservations(observations);
+      await this.client.recordTrackingStatusObservations(observations, mapped, deployedVersion());
     } catch (error) {
       if (context.signal?.aborted) return;
       logOperationalEvent('tracking_status_observation_write_failed', {

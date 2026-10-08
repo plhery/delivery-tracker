@@ -18,6 +18,7 @@ import { deliveryEmailService } from './email/deliveryEmails';
 import { recordParcelAlertRemoved, recordParcelsForgotten, recordPublicLookupUsage } from './metrics';
 import { pushServices } from './push';
 import { FriendshipPushService, FriendshipPushWorker } from './friendshipPush';
+import { ReviewQueueReplay } from './reviewQueues';
 import { serviceClient } from './runtime';
 import { SyncJobLeaseLost, type SupabaseServiceClient } from './supabase';
 import { TrackingSyncService, type SyncSummary } from './trackingSync';
@@ -447,6 +448,7 @@ interface BackgroundRuntime {
   worker: SyncJobWorker;
   scheduler: ScheduledSync;
   friendshipWorker: FriendshipPushWorker;
+  reviews: ReviewQueueReplay;
 }
 
 const globalBackground = globalThis as typeof globalThis & {
@@ -458,15 +460,17 @@ export function startBackgroundServices(): BackgroundRuntime | null {
   if (!client) return null;
   const current = globalBackground.__deliveryBackgroundRuntime;
   if (current?.state.draining) return current;
-  if (current?.client === client && current.friendshipWorker) {
+  if (current?.client === client && current.friendshipWorker && current.reviews) {
     current.worker.start();
     current.scheduler.start();
     current.friendshipWorker.start();
+    current.reviews.start();
     return current;
   }
   current?.worker.stop();
   current?.scheduler.stop();
   current?.friendshipWorker?.stop();
+  current?.reviews?.stop();
   const state = initialState();
   const notifier = pushServices(client);
   // The delivery email needs no push channel: it is sent wherever mail is configured.
@@ -481,11 +485,14 @@ export function startBackgroundServices(): BackgroundRuntime | null {
   const worker = new SyncJobWorker(service, state);
   const scheduler = new ScheduledSync(client, worker, state);
   const friendshipWorker = new FriendshipPushWorker(new FriendshipPushService(client, notifier.web, notifier.native));
-  const runtime = { client, state, worker, scheduler, friendshipWorker };
+  // Once per deployed version, the support backlog is replayed against it.
+  const reviews = new ReviewQueueReplay(client);
+  const runtime = { client, state, worker, scheduler, friendshipWorker, reviews };
   globalBackground.__deliveryBackgroundRuntime = runtime;
   worker.start();
   scheduler.start();
   friendshipWorker.start();
+  reviews.start();
   logOperationalEvent('background_services_started', {
     sync_enabled: true,
     web_push_enabled: Boolean(notifier.web),
@@ -512,5 +519,6 @@ export async function drainBackgroundServices(): Promise<void> {
   runtime.state.draining = true;
   runtime.scheduler.stop();
   runtime.friendshipWorker.stop();
+  runtime.reviews.stop();
   await runtime.worker.drain();
 }

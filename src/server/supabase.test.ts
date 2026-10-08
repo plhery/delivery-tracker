@@ -399,11 +399,46 @@ describe('tracking audit PostgREST client', () => {
     await client.recordTrackingStatusObservations([]);
     expect(request).not.toHaveBeenCalled();
     await client.recordTrackingStatusObservations(observations);
+    await client.recordTrackingStatusObservations([], ['b'.repeat(64)], 'v1');
 
-    expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/record_tracking_status_observations', {
-      method: 'POST',
-      body: { p_observations: observations },
-    });
+    expect(request.mock.calls).toEqual([
+      ['/rest/v1/rpc/record_tracking_status_observations', {
+        method: 'POST',
+        body: { p_observations: observations, p_mapped_keys: [], p_version: null },
+      }],
+      ['/rest/v1/rpc/record_tracking_status_observations', {
+        method: 'POST',
+        body: { p_observations: [], p_mapped_keys: ['b'.repeat(64)], p_version: 'v1' },
+      }],
+    ]);
+  });
+
+  it('claims, reads, fixes and finishes a review queue replay', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const request = vi.spyOn(client, 'request')
+      .mockResolvedValueOnce('claimed')
+      .mockResolvedValueOnce([{ id: 'case-1', tracking_number: 'TEST1234', configured_carrier: null }])
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce('elsewhere');
+    const cases = [{ id: 'case-1', configured_carrier: null, note: 'Replay found no gap.' }];
+
+    await expect(client.claimTrackingReviewRun('v1', 600)).resolves.toBe('claimed');
+    await expect(client.listOpenTrackingSupportCases(500)).resolves.toEqual([
+      { id: 'case-1', tracking_number: 'TEST1234', configured_carrier: null },
+    ]);
+    await expect(client.fixReplayedTrackingSupportCases('v1', cases)).resolves.toBe(1);
+    await client.finishTrackingReviewRun('v1', { cases_replayed: 1, cases_fixed: 1 });
+    await expect(client.claimTrackingReviewRun('v1', 600)).rejects.toThrow('Supabase did not return the review run state');
+
+    expect(request.mock.calls.slice(0, 4)).toEqual([
+      ['/rest/v1/rpc/claim_tracking_review_run', { method: 'POST', body: { p_version: 'v1', p_lease_seconds: 600 } }],
+      ['/rest/v1/tracking_support_cases?select=id%2Ctracking_number%2Cconfigured_carrier&fix_status=eq.open&order=last_seen.desc&limit=500'],
+      ['/rest/v1/rpc/fix_replayed_tracking_support_cases', { method: 'POST', body: { p_version: 'v1', p_cases: cases } }],
+      ['/rest/v1/rpc/finish_tracking_review_run', {
+        method: 'POST', body: { p_version: 'v1', p_result: { cases_replayed: 1, cases_fixed: 1 } },
+      }],
+    ]);
   });
 
   it('returns audit maintenance counts', async () => {

@@ -29,6 +29,7 @@ afterEach(() => {
     runtime.worker.stop();
     runtime.scheduler.stop();
     runtime.friendshipWorker.stop();
+    runtime.reviews.stop();
   }
   delete globalRuntime.__deliveryBackgroundRuntime;
   vi.useRealTimers();

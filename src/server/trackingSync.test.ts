@@ -3,6 +3,7 @@ import { CarrierError } from 'universal-parcel-scraper';
 import { REGISTRY } from 'universal-parcel-scraper/node';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { secondsUntilNextSync, workerPollDelay } from './background';
+import { deployedVersion } from './reviewQueues';
 import { normalizeCarrierResult, type CarrierResult } from 'universal-parcel-scraper';
 import { STORED_EVENT_IDENTITIES, type SupabaseServiceClient } from './supabase';
 import { AdapterRegistry, type AdapterEnvironment } from 'universal-parcel-scraper/node';
@@ -13,6 +14,7 @@ import {
   CarrierTrackingAdapter,
   buildEvents,
   classifyStage,
+  collectMappedStatusKeys,
   collectStatusObservations,
   detectSyncAnomalies,
   fairSyncPackages,
@@ -458,6 +460,40 @@ describe('status observation collection', () => {
     }], 'ctt')).toEqual([]);
   });
 
+  it('keys the wording a carrier map resolved in every scan that carried it', () => {
+    const scan = (description: string, stage_source: string, provider_code = '5') => ({
+      package_id: 'package-1', stage: 'in_transit', description,
+      provider_event_id: `ctt:${description}:${stage_source}`, raw_data: { stage_source, provider_code },
+    });
+    const mapped = scan('Objeto entregue', 'carrier_map');
+    const keys = collectMappedStatusKeys([
+      mapped, { ...mapped },
+      scan('Em trânsito', 'carrier_map', '3'), scan('Em trânsito', 'none', '3'),
+      scan('Estado interno 99', 'none', '99'),
+    ], 'ctt');
+    // The key an unmapped observation of the same wording would carry.
+    const [observed] = collectStatusObservations([{ ...mapped, raw_data: { stage_source: 'none', provider_code: '5' } }], 'ctt');
+    expect(keys).toEqual([observed?.observation_key]);
+
+    const many = Array.from({ length: MAX_STATUS_OBSERVATIONS_PER_SYNC + 8 }, (_, index) => scan(`Mapped ${index}`, 'carrier_map'));
+    expect(collectMappedStatusKeys(many, 'ctt')).toHaveLength(MAX_STATUS_OBSERVATIONS_PER_SYNC);
+  });
+
+  it('sends the keys of mapped wording with the server version', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValue({
+      status: 'in_transit', current_stage: 'in_transit', current_stage_source: 'carrier_map',
+      events: [{ time: '2026-01-01T12:00:00Z', description: 'Sorted in regional hub', provider_code: 'HUB',
+        stage: 'in_transit', stage_source: 'carrier_map' }],
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    await expect(service.syncPackage({ id: 'observed', carrier: 'ctt', tracking_number: 'TEST1234' }))
+      .resolves.toMatchObject({ updated: 1 });
+    expect(client.recordTrackingStatusObservations).toHaveBeenCalledWith(
+      [], [expect.stringMatching(/^[0-9a-f]{64}$/)], deployedVersion(),
+    );
+  });
+
   it('records unresolved wording after the events are persisted', async () => {
     const client = fakeClient();
     const adapter = { fetch: vi.fn().mockResolvedValue({
@@ -496,7 +532,7 @@ describe('status observation collection', () => {
     expect(client.recordTrackingStatusObservations).toHaveBeenCalledWith([
       expect.objectContaining({ chosen_stage: 'pending', stage_source: 'none' }),
       expect.objectContaining({ chosen_stage: 'in_transit', stage_source: 'wording:language' }),
-    ]);
+    ], [], deployedVersion());
     expect(client.recordTrackingStatusObservations.mock.invocationCallOrder[0])
       .toBeGreaterThan(client.insertEvents.mock.invocationCallOrder[0]);
   });
@@ -513,7 +549,7 @@ describe('status observation collection', () => {
       .resolves.toMatchObject({ waiting: 1, updated: 0, errors: 0 });
     expect(client.recordTrackingStatusObservations).toHaveBeenCalledWith([
       expect.objectContaining({ chosen_stage: 'pending', stage_source: 'none' }),
-    ]);
+    ], [], deployedVersion());
     expect(client.updatePackage).toHaveBeenCalledWith('observed', expect.objectContaining({ current_stage: 'pending' }));
   });
 
@@ -530,7 +566,7 @@ describe('status observation collection', () => {
     expect(client.insertEvents).not.toHaveBeenCalled();
     expect(client.recordTrackingStatusObservations).toHaveBeenCalledWith([
       expect.objectContaining({ provider_code: 'ZZ1', chosen_stage: 'pending', stage_source: 'none' }),
-    ]);
+    ], [], deployedVersion());
   });
 
   it('swallows an observation write failure and reports it once', async () => {

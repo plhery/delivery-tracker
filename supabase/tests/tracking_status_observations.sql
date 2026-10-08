@@ -53,11 +53,11 @@ begin
     raise exception 'the worker role cannot read status observations';
   end if;
 
-  if has_function_privilege('anon', 'public.record_tracking_status_observations(jsonb)', 'execute')
-    or has_function_privilege('authenticated', 'public.record_tracking_status_observations(jsonb)', 'execute') then
+  if has_function_privilege('anon', 'public.record_tracking_status_observations(jsonb,text[],text)', 'execute')
+    or has_function_privilege('authenticated', 'public.record_tracking_status_observations(jsonb,text[],text)', 'execute') then
     raise exception 'browser roles can record status observations';
   end if;
-  if not has_function_privilege('service_role', 'public.record_tracking_status_observations(jsonb)', 'execute') then
+  if not has_function_privilege('service_role', 'public.record_tracking_status_observations(jsonb,text[],text)', 'execute') then
     raise exception 'the worker role cannot record status observations';
   end if;
 

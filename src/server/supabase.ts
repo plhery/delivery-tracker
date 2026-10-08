@@ -1012,13 +1012,54 @@ export class SupabaseServiceClient extends SupabaseClient {
 
   // Carrier wording whose stage the sync had to classify or fall back to. The
   // package and provider event ids resolve one sample event inside the
-  // function; the stored row keeps only that opaque event id.
-  async recordTrackingStatusObservations(observations: JsonObject[]): Promise<void> {
-    if (observations.length === 0) return;
+  // function; the stored row keeps only that opaque event id. The mapped keys
+  // name wording the server's scraper mapped, which closes its open row.
+  async recordTrackingStatusObservations(
+    observations: JsonObject[],
+    mappedKeys: string[] = [],
+    version: string | null = null,
+  ): Promise<void> {
+    if (observations.length === 0 && mappedKeys.length === 0) return;
     await this.request('/rest/v1/rpc/record_tracking_status_observations', {
       method: 'POST',
-      body: { p_observations: observations },
+      body: { p_observations: observations, p_mapped_keys: mappedKeys, p_version: version },
     });
+  }
+
+  /** Whether this server is to replay the review queues for its version, another one is, or one did. */
+  async claimTrackingReviewRun(version: string, leaseSeconds: number): Promise<'claimed' | 'running' | 'done'> {
+    const state = await this.request('/rest/v1/rpc/claim_tracking_review_run', {
+      method: 'POST', body: { p_version: version, p_lease_seconds: leaseSeconds },
+    });
+    if (state === 'claimed' || state === 'running' || state === 'done') return state;
+    throw new SupabaseError('Supabase did not return the review run state');
+  }
+
+  async finishTrackingReviewRun(version: string, result: JsonObject): Promise<void> {
+    await this.request('/rest/v1/rpc/finish_tracking_review_run', {
+      method: 'POST', body: { p_version: version, p_result: result },
+    });
+  }
+
+  /** The open support cases, the most recently seen first. */
+  async listOpenTrackingSupportCases(limit: number): Promise<JsonObject[]> {
+    const params = query({
+      select: 'id,tracking_number,configured_carrier',
+      fix_status: 'eq.open',
+      order: 'last_seen.desc',
+      limit: String(limit),
+    });
+    return rows(await this.request(`/rest/v1/tracking_support_cases?${params}`));
+  }
+
+  /** Marks fixed the replayed cases still open with the same configured carrier; answers how many. */
+  async fixReplayedTrackingSupportCases(
+    version: string,
+    cases: Array<{ id: string; configured_carrier: string | null; note: string }>,
+  ): Promise<number> {
+    return Number(await this.request('/rest/v1/rpc/fix_replayed_tracking_support_cases', {
+      method: 'POST', body: { p_version: version, p_cases: cases },
+    }) ?? 0);
   }
 
   async maintainSyncAudit(): Promise<{ abandoned: number; purged: number }> {
