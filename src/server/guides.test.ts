@@ -103,6 +103,13 @@ describe('what a guides page tells a search engine', () => {
     expect(next).not.toContain(`/guides/${first.slug}`);
   });
 
+  it('starts a guide’s trail at the landing in the guide’s language', async () => {
+    const french = guideLinks('fr')[0];
+    const html = renderToStaticMarkup(await GuideRoute({ locale: 'fr', slug: french.slug }));
+    const [, crumbs] = JSON.parse(/<script type="application\/ld\+json">(.*?)<\/script>/.exec(html)![1])['@graph'];
+    expect(crumbs.itemListElement.map((item: { item: string }) => item.item)).toEqual(['https://peek.example/fr', 'https://peek.example/fr/guides', `https://peek.example/fr/guides/${french.slug}`]);
+  });
+
   it('writes the guides’ own page with a card for each', async () => {
     const html = renderToStaticMarkup(await GuideIndexRoute({ locale: 'it' }));
     expect([...html.matchAll(/class="guide-card" href="([^"]+)"/g)].map(([, href]) => href)).toEqual(guideLinks('it').map(({ slug }) => `/it/guides/${slug}`));

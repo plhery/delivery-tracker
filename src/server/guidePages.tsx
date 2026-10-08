@@ -9,6 +9,7 @@ import { frenchSpacing } from '../guides/markdown';
 import { SUPPORTED_LOCALES, type Locale } from '../lib/locale';
 import type { Translate } from '../lib/messages';
 import { guide, guideAddresses, guideAlternates, guideLinkBySlug, guideLinks } from './guides';
+import { landingAddress } from './landingMetadata';
 import { jsonForScript } from './landingStructuredData';
 import { messagesFor } from './requestLocale';
 import { requestOrigin, siteOrigin } from './requestOrigin';
@@ -111,7 +112,7 @@ export async function GuideRoute({ locale, slug }: { locale: Locale; slug: strin
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Peek', item: site.href },
+          { '@type': 'ListItem', position: 1, name: 'Peek', item: landingAddress(site, locale) },
           { '@type': 'ListItem', position: 2, name: t('guides.title'), item: guideAlternates(site)[locale] },
           { '@type': 'ListItem', position: 3, name: text.title, item: url },
         ],
