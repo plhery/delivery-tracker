@@ -12237,6 +12237,18 @@
     ]
   },
   {
+    "input": "AP00821064969338",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
+    "input": "AP00822511080252",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
     "input": "AS010007869US",
     "carrier": "asendia",
     "confidence": "high",
@@ -13336,6 +13348,22 @@
     "carrier": "unknown",
     "confidence": "none",
     "candidates": []
+  },
+  {
+    "input": "DOFR9010192105464HD",
+    "carrier": "aliexpress",
+    "confidence": "high",
+    "candidates": [
+      "aliexpress"
+    ]
+  },
+  {
+    "input": "DOFR9010202101005HD",
+    "carrier": "aliexpress",
+    "confidence": "high",
+    "candidates": [
+      "aliexpress"
+    ]
   },
   {
     "input": "DQ0DK20000034530118220Z",
@@ -15601,6 +15629,14 @@
     ]
   },
   {
+    "input": "LZ449705219CN",
+    "carrier": "china-post",
+    "confidence": "high",
+    "candidates": [
+      "china-post"
+    ]
+  },
+  {
     "input": "LZ464222669CN",
     "carrier": "china-post",
     "confidence": "high",
@@ -16368,6 +16404,28 @@
   },
   {
     "input": "RC045003744LT",
+    "carrier": "intl-post",
+    "confidence": "high",
+    "candidates": [
+      "intl-post"
+    ],
+    "asked": [
+      "chronopost"
+    ]
+  },
+  {
+    "input": "RC052807282EE",
+    "carrier": "intl-post",
+    "confidence": "high",
+    "candidates": [
+      "intl-post"
+    ],
+    "asked": [
+      "chronopost"
+    ]
+  },
+  {
+    "input": "RC052807407EE",
     "carrier": "intl-post",
     "confidence": "high",
     "candidates": [
