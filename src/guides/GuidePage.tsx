@@ -10,8 +10,10 @@ import { guidePath } from './paths';
 /** Words a reader gets through in a minute. */
 const READING_PACE = 220;
 
+/** A day as its language writes it. French writes the first of a month "1er", which Intl does not. */
 function day(iso: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(languageTags[locale], { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`));
+  return new Intl.DateTimeFormat(languageTags[locale], { dateStyle: 'long', timeZone: 'UTC' }).formatToParts(new Date(`${iso}T00:00:00Z`))
+    .map(({ type, value }) => (locale === 'fr' && type === 'day' && value === '1' ? '1er' : value)).join('');
 }
 
 /** One guide: its title, its picture, its text, the way to the tracker, and where to read on. */

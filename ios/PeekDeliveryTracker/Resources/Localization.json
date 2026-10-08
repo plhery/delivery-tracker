@@ -3870,7 +3870,7 @@
     "guides.more": "Continua a leggere",
     "guides.sources": "Fonti",
     "guides.title": "Guide",
-    "guides.updated": "Aggiornato il {{date}}",
+    "guides.updated": "Aggiornato: {{date}}",
     "homeScreen.add": "Tocca {{more}}, poi {{add}}",
     "homeScreen.choose": "Scegli {{add}}",
     "homeScreen.menu": "Tocca {{menu}} nella barra degli indirizzi di Safari",

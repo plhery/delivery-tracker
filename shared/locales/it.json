@@ -1083,7 +1083,7 @@
   "guides.heading": "Il tracciamento dei pacchi, spiegato semplice",
   "guides.lead": "Risposte chiare su numeri di tracciamento, stati e dogana, e su cosa fare quando un pacco non dà più notizie.",
   "guides.all": "Tutte le guide",
-  "guides.updated": "Aggiornato il {{date}}",
+  "guides.updated": "Aggiornato: {{date}}",
   "guides.minutes": "{{count}} min di lettura",
   "guides.contents": "In questa guida",
   "guides.sources": "Fonti",

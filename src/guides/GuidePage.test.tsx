@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import en from '../../shared/locales/en.json';
 import fr from '../../shared/locales/fr.json';
+import italian from '../../shared/locales/it.json';
 import type { Locale } from '../lib/locale';
 import { translateMessage, type Messages, type Translate } from '../lib/messages';
 import { SOURCE_URL } from '../lib/source';
@@ -88,6 +89,19 @@ describe('a guide’s page', () => {
     expect(within(more).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/fr/guides/tracking-statuses-explained', '/fr/guides/tracking-number-formats']);
     expect(within(more).getByText('About tracking-statuses.')).toBeVisible();
     expect(screen.getByText('Mis à jour le 9 novembre 2026')).toBeVisible();
+  });
+
+  it('dates the first of a month as each language writes it', () => {
+    const first = { ...guide, updated: '2026-10-01' };
+    const updated = (locale: Locale, messages: Messages) => {
+      const { unmount } = render(<GuidePage guide={first} id="customs" locale={locale} t={t(locale, messages)} links={links} others={[]} />);
+      const text = document.querySelector('.guide__meta time')!.textContent;
+      unmount();
+      return text;
+    };
+    expect(updated('fr', fr)).toBe('Mis à jour le 1er octobre 2026');
+    expect(updated('it', italian)).toBe('Aggiornato: 1 ottobre 2026');
+    expect(updated('en', en)).toBe('Updated 1 October 2026');
   });
 
   it('leaves the list of sections out of a short guide', () => {
