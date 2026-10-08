@@ -40,15 +40,12 @@ sell personal data, serve advertising, or use advertising analytics.
   Friends.
 - Technical request data processed by the hosting, reverse-proxy, Auth, and mail
   infrastructure, such as IP address, timestamp, and user agent.
-- Server diagnostic logs include parcel tracking numbers, carrier,
-  synchronization outcomes, and error details to diagnose tracking failures.
-  Sentry error reports hold the same details, but name a parcel by a keyed
-  pseudonym instead of its tracking number, and leave out the body, the query
-  and the IP address of the request that failed. They may retain request and
-  response headers, addresses shortened to their path, and bounded excerpts of
-  carriers' responses, including personal data present in them. A tracking
-  number the failing operation does not name, such as a delivery partner's
-  quoted in a carrier's error, can still appear.
+- Server diagnostic logs and Sentry error reports include parcel tracking
+  numbers, carrier, synchronization outcomes, and error details to diagnose
+  tracking failures. Sentry reports leave out the body, the query and the IP
+  address of the request that failed. They may retain request and response
+  headers, addresses shortened to their path, and bounded excerpts of carriers'
+  responses, including personal data present in them.
 
 ## Why and where data is processed
 
@@ -206,8 +203,8 @@ A lookup is forgotten 30 days after the parcel is delivered or returned, or
 90 days after its last news (a scan, or the link being opened), or at once
 when you ask from the device that made it. The parcel's data goes with its
 last link. If you sign in and keep the parcel, it becomes part of your account.
-Diagnostic logs can retain its tracking number, and Sentry reports its
-pseudonym, as described above.
+Diagnostic logs and Sentry reports can retain its tracking number as described
+above.
 
 ## Sharing a parcel and alerts for a link
 
@@ -299,11 +296,9 @@ disabled browser endpoints, ordinary native device registrations, and delivery
 acknowledgements may remain until account deletion or operational cleanup.
 Infrastructure backups and security logs may persist for the limited retention
 configured by their operator. The service's own logs are kept for 30 days and
-can retain a tracking number after its parcel or account is deleted. Sentry
-reports are kept for up to 90 days; those made before this notice took effect,
-and the exceptions described above, can also hold a tracking number. The record
-of a delivery email goes with the account; Resend deletes its own copy after 30
-days.
+Sentry reports for up to 90 days; both can retain a tracking number after its
+parcel or account is deleted. The record of a delivery email goes with the
+account; Resend deletes its own copy after 30 days.
 
 Use **Download my data** in the account menu for a machine-readable export,
 including your Friends profile and connections. Use **Delete account** to
