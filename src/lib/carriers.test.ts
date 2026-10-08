@@ -957,7 +957,8 @@ describe('carrier detection', () => {
     // (kept as a separate product/route even where infrastructure is shared).
     // Source: https://www.royalmail.com/royal-mail-you/intellectual-property-rights/linking-our-website
     expect(detectCarrier('EC080250821GB')).toBe('parcelforce');
-    expectUniversalFallback('parcelforce');
+    // Royal Mail's own tracking follows it.
+    expectAutomaticProfile('parcelforce', 'royal-mail');
   });
 
   it('planzer — Planzer', () => {
@@ -1517,7 +1518,7 @@ describe('ambiguous number shapes', () => {
     expect(detectCarrierMatch('123456789012343')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['fedex', 'dpd-fr', 'yunda'],
+      candidates: ['fedex', 'dpd-fr', 'brt', 'yunda'],
     });
   });
 

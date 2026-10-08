@@ -25,7 +25,7 @@ function fakeClient(claims: Array<'claimed' | 'running' | 'done' | Error> = ['cl
       { id: 'case-royal', tracking_number: 'RR123456785GB', configured_carrier: 'royal-mail' },
       // Still ambiguous, and still without a direct adapter.
       { id: 'case-ambiguous', tracking_number: '123456789012', configured_carrier: 'fedex' },
-      { id: 'case-adapter', tracking_number: 'EE123456785GB', configured_carrier: 'parcelforce' },
+      { id: 'case-adapter', tracking_number: 'RR123456785IE', configured_carrier: 'an-post' },
     ]),
     fixReplayedTrackingSupportCases: vi.fn().mockResolvedValue(1),
     finishTrackingReviewRun: vi.fn().mockResolvedValue(undefined),
@@ -49,7 +49,7 @@ describe('review queue replay', () => {
     expect(replaySupportCase('RR123456785GB', 'royal-mail'))
       .toBe('Replay found no gap: detection names royal-mail with high confidence.');
     expect(replaySupportCase('123456789012', 'fedex')).toBeNull();
-    expect(replaySupportCase('EE123456785GB', 'parcelforce')).toBeNull();
+    expect(replaySupportCase('RR123456785IE', 'an-post')).toBeNull();
     expect(replaySupportCase('RR123456785FI', null)).toBeNull();
   });
 

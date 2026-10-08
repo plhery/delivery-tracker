@@ -72,8 +72,8 @@ describe('tracking support context', () => {
   });
 
   it('records an identified carrier whose tracking still depends on providers', () => {
-    expect(trackingSupportContext('EE123456785GB', 'parcelforce')).toMatchObject({
-      detection_carrier: 'parcelforce', detection_confidence: 'high', reasons: ['no_direct_adapter'],
+    expect(trackingSupportContext('RR123456785IE', 'an-post')).toMatchObject({
+      detection_carrier: 'an-post', detection_confidence: 'high', reasons: ['no_direct_adapter'],
     });
   });
 
@@ -127,7 +127,7 @@ describe('tracking support evidence', () => {
   });
 
   it('does not count a universal-only carrier as a direct fix without a provider label', () => {
-    expect(trackingSupportEvidence(parcel, progress, 'parcelforce', 'updated', false).support_direct_progress).toBe(false);
+    expect(trackingSupportEvidence(parcel, progress, 'an-post', 'updated', false).support_direct_progress).toBe(false);
   });
 
   it('binds handoff evidence to the delivery number so it cannot verify the original number', () => {
