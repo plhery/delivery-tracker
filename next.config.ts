@@ -5,8 +5,11 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['universal-parcel-scraper', 'playwright-core', 'onnxruntime-web', 'node-app-attest', 'cbor'],
   // OCR runs in a file-backed worker outside Next's import graph. Include its
   // model and Node WASM runtime so the standalone server can start it locally.
+  // Playwright reads its browser list from a path it computes, which Turbopack
+  // does not trace.
   outputFileTracingIncludes: {
     '/*': [
+      './node_modules/playwright-core/browsers.json',
       './node_modules/universal-parcel-scraper/dist/**/*',
       './node_modules/universal-parcel-scraper/data/**/*',
       './node_modules/universal-parcel-scraper/package.json',
