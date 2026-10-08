@@ -349,6 +349,60 @@ describe('deliveryEmailContent for a parcel ready to collect', () => {
   });
 });
 
+describe('deliveryEmailContent for a parcel collected from its pickup point', () => {
+  const collected = (overrides: Partial<DeliveryEmailInput> = {}, parcel: Partial<ApiPackageRow> = {}) => input({
+    parcel: row({
+      tracking_events: [event('accepted', '2026-10-01T09:00:00+00:00'), event('ready_for_pickup', '2026-10-02T10:00:00+00:00'), event('delivered', '2026-10-03T12:12:00+00:00')],
+      ...parcel,
+    }),
+    ...overrides,
+  });
+
+  it('says it was collected and when, names no carrier, and draws the parcel delivered', async () => {
+    const email = await deliveryEmailContent(collected());
+    expect(email.subject).toBe(english('email.collected.subject', { name: 'New sneakers' }));
+    expect(email.text.split('\n').slice(0, 3)).toEqual([
+      english('email.collected.title', { name: 'New sneakers' }),
+      english('email.collected.line.today', { time: '14:12' }),
+      english('email.delivered.textJourney', { url: JOURNEY }),
+    ]);
+    expect(email.html).toContain(`>${english('email.collected.title', { name: 'New sneakers' })}</h1>`);
+    expect(email.html).not.toContain(en['detail.pickupPoint']);
+    expect(cardInput()).toMatchObject({ stage: 'delivered', carrier: { id: 'dhl' }, when: 'Today, 14:12', timed: true });
+  });
+
+  it.each([
+    ['today', { deliveredTime: 'timed' }, { time: '14:12' }],
+    ['yesterday', { deliveredTime: 'timed', now: new Date('2026-10-04T06:00:00Z') }, { time: '14:12' }],
+    ['date', { deliveredTime: 'timed', now: new Date('2026-10-08T06:00:00Z') }, { date: '03.10.2026', time: '14:12' }],
+    ['day', { deliveredTime: 'date' }, { date: '03.10.2026' }],
+    ['plain', { deliveredTime: 'none' }, {}],
+  ] as const)('says "%s"', async (kind, overrides, variables) => {
+    expect(sentence((await deliveryEmailContent(collected(overrides))).text)).toBe(english(`email.collected.line.${kind}`, variables));
+  });
+
+  it('has a subject and a title for a parcel without a name', async () => {
+    const email = await deliveryEmailContent(collected({}, { label: '' }));
+    expect(email.subject).toBe(en['email.collected.subjectUnnamed']);
+    expect(email.text.split('\n')[0]).toBe(en['email.collected.titleUnnamed']);
+  });
+
+  it.each(SUPPORTED_LOCALES)('is written in full in %s', async (locale) => {
+    const email = await deliveryEmailContent(collected({ locale, deliveredTime: 'timed', now: new Date('2026-10-08T06:00:00Z') }));
+    expect(email.subject).toBe(messagesFor(locale)['email.collected.subject'].replace('{{name}}', 'New sneakers'));
+    for (const part of [email.subject, email.text, email.html]) {
+      expect(part).not.toContain('{{');
+      expect(part).not.toContain('undefined');
+    }
+  });
+
+  it('is delivered, as before, for a parcel that never waited at its pickup point', async () => {
+    // The carrier may name a pickup point for a parcel it brought to the door.
+    expect(row().carrier_data).toHaveProperty('pickup_point');
+    expect((await deliveryEmailContent(input())).subject).toBe(english('email.delivered.subject', { name: 'New sneakers' }));
+  });
+});
+
 describe('exampleDeliveryEmail', () => {
   it('tells of a made-up parcel in the reader’s language, with links that lead home', async () => {
     const email = await exampleDeliveryEmail('en', 'https://peek.example.test');

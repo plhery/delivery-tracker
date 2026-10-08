@@ -293,8 +293,9 @@ loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
   the banner is sent.
 - The delivery email is apart from notifications: off until the account switches it on,
   and switched off per parcel. A parcel is told once when it is ready to collect and once
-  when it is delivered, so one collected from a pickup point gets both. Each goes after the
-  notifications of the sync job that stored the scan, on deployments without push too.
+  when it is delivered, so one collected from a pickup point gets both: the second says it
+  was collected. Each goes after the notifications of the sync job that stored the scan, on
+  deployments without push too.
   - A parcel is never emailed for what it already showed when it joined the account. A
     scan with a clock time must be later than that moment. One with only a day, or no
     time, counts when an earlier check of the parcel, since it joined, answered with

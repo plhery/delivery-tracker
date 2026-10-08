@@ -68,8 +68,10 @@ async function emailContent(input: DeliveryEmailInput, draw = drawCard): Promise
 
   const parcel = toParcel(input.parcel);
   const stage = input.stage ?? 'delivered';
-  // The message's own words: the rest of the email is the same for both.
-  const told = stage === 'delivered' ? 'delivered' : 'pickup';
+  // The message's own words: the rest of the email is the same for all three. A delivered parcel that waited at a
+  // pickup point was collected there.
+  const told = stage === 'ready_for_pickup' ? 'pickup'
+    : parcel.events.some((event) => event.stage === 'ready_for_pickup') ? 'collected' : 'delivered';
   // Cut like a push title, and kept on one line: the name is also the subject.
   const name = notificationText(String(input.parcel.label ?? '').replace(/\p{Cc}/gu, ' '), 80);
   const named = (carrier: CarrierInfo) => UNNAMED_CARRIERS.has(carrier.id) ? null : carrier;
@@ -97,7 +99,8 @@ async function emailContent(input: DeliveryEmailInput, draw = drawCard): Promise
     brand: t('app.title'),
     tagline: t('app.tagline'),
     title: name ? t(`email.${told}.title`, { name }) : t(`email.${told}.titleUnnamed`),
-    sentence: t(`email.${told}.${deliverer ? 'by' : 'line'}.${when.kind}`, {
+    // Whoever collected it, the carrier did not bring it: its sentence names nobody.
+    sentence: t(told === 'collected' || !deliverer ? `email.${told}.line.${when.kind}` : `email.${told}.by.${when.kind}`, {
       carrier: deliverer?.name ?? '', time: 'time' in when ? when.time : '', date: 'date' in when ? when.date : '',
     }),
     place: waitsAt && placeWords(waitsAt, t),
@@ -124,13 +127,14 @@ async function emailContent(input: DeliveryEmailInput, draw = drawCard): Promise
 }
 
 /**
- * The email that says a parcel was delivered, or is ready to collect: subject,
- * plain text, HTML and the map card.
+ * The email that says a parcel was delivered, was collected from its pickup
+ * point, or is ready to collect: subject, plain text, HTML and the map card.
  *
- * It names the parcel as its owner named it and the carrier, and says when; a
- * parcel ready to collect, the pickup point the carrier gave. It never carries
- * the tracking number, the recipient, their address or a pickup code, and none
- * of the carrier's own scan text, which can hold any of them.
+ * It names the parcel as its owner named it and, unless it was collected, the
+ * carrier, and says when; a parcel ready to collect, the pickup point the
+ * carrier gave. It never carries the tracking number, the recipient, their
+ * address or a pickup code, and none of the carrier's own scan text, which can
+ * hold any of them.
  */
 export async function deliveryEmailContent(input: DeliveryEmailInput): Promise<DeliveryEmailContent> {
   return emailContent(input);
