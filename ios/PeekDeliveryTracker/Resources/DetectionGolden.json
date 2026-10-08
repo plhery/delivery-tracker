@@ -10877,6 +10877,17 @@
     ]
   },
   {
+    "input": "RR123456785TS",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "chronopost"
+    ],
+    "asked": [
+      "chronopost"
+    ]
+  },
+  {
     "input": "RR123456789PL",
     "carrier": "unknown",
     "confidence": "low",
@@ -11584,6 +11595,38 @@
     "carrier": "unknown",
     "confidence": "none",
     "candidates": []
+  },
+  {
+    "input": "XR123456785TS",
+    "carrier": "chronopost",
+    "confidence": "high",
+    "candidates": [
+      "chronopost"
+    ]
+  },
+  {
+    "input": "XT010847192TS",
+    "carrier": "chronopost",
+    "confidence": "high",
+    "candidates": [
+      "chronopost"
+    ]
+  },
+  {
+    "input": "XT123456785TS",
+    "carrier": "chronopost",
+    "confidence": "high",
+    "candidates": [
+      "chronopost"
+    ]
+  },
+  {
+    "input": "XT335285235FR",
+    "carrier": "chronopost",
+    "confidence": "high",
+    "candidates": [
+      "chronopost"
+    ]
   },
   {
     "input": "XU123456785FR",

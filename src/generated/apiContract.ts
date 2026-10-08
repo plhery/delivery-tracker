@@ -314,7 +314,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}NL$",
+        "pattern": "^(?!(?:PZ|XR|XT|XU|XW|XY))[A-Z]{2}\\d{9}NL$",
         "confidence": "high",
         "checksum": "s10"
       },
@@ -1056,7 +1056,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       },
       {
-        "pattern": "^(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}FR$",
+        "pattern": "^(?!(?:PZ|XR|XT|XU|XW|XY))[A-Z]{2}\\d{9}FR$",
         "confidence": "high",
         "checksum": "s10"
       }
@@ -1095,7 +1095,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^(?:PZ|XU|XW|XY)\\d{9}[A-Z]{2}$",
+        "pattern": "^(?:PZ|XR|XT|XU|XW|XY)\\d{9}[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       },
@@ -1692,7 +1692,7 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CA$|CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$|CL$)[A-Z]{2}$",
+        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XR|XT|XU|XW|XY))[A-Z]{2}\\d{9}(?!CA$|CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$|TS$|JF$|CL$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }
