@@ -1084,6 +1084,55 @@ describe('TrackingSyncService', () => {
     if (!checked) await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1 });
   });
 
+  it.each([
+    { name: 'unseen, added two hours ago', created: '2026-09-09T08:30:00Z', last: '2026-09-09T10:00:15Z', at: '2026-09-09T10:10:00Z', checked: 0 },
+    { name: 'unseen, added two hours ago', created: '2026-09-09T08:30:00Z', last: '2026-09-09T10:00:15Z', at: '2026-09-09T11:00:00Z', checked: 1 },
+    { name: 'unseen, added a day ago', created: '2026-09-08T10:00:00Z', last: '2026-09-09T06:00:15Z', at: '2026-09-09T11:00:00Z', checked: 0 },
+    { name: 'unseen, added a day ago', created: '2026-09-08T10:00:00Z', last: '2026-09-09T06:00:15Z', at: '2026-09-09T12:00:00Z', checked: 1 },
+    { name: 'unseen, added three days ago', created: '2026-09-06T09:00:00Z', last: '2026-09-08T12:00:15Z', at: '2026-09-09T11:00:00Z', checked: 0 },
+    { name: 'unseen, added three days ago', created: '2026-09-06T09:00:00Z', last: '2026-09-08T12:00:15Z', at: '2026-09-09T12:00:00Z', checked: 1 },
+    { name: 'a provider answered', created: '2026-09-06T09:00:00Z', last: '2026-09-09T10:00:15Z', at: '2026-09-09T10:10:00Z', checked: 1,
+      routing: { last_success_at: '2026-09-09T09:00:00Z', last_event_at: '2026-09-09T09:00:00Z' } },
+    { name: 'a carrier needs input', created: '2026-09-06T09:00:00Z', last: '2026-09-09T10:00:15Z', at: '2026-09-09T11:00:00Z', checked: 1,
+      routing: { input_needed: { carrier: 'gls-de', field: 'postcode' } } },
+  ])('schedules an unknown number ($name) at $at: $checked checks', async ({ created, last, at, checked, routing }) => {
+    const parcel = { id: 'unseen', user_id: 'a', carrier: 'unknown', current_stage: 'pending', tracking_number: 'TEST1234',
+      created_at: created, last_synced_at: last, sync_status: 'waiting',
+      carrier_data: { routing: { version: 1, configured_carrier: 'unknown', failures: {}, ...routing } } };
+    const client = fakeClient([parcel]);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null, () => new Date(at));
+    await expect(service.sync()).resolves.toMatchObject({ checked });
+    // A manual refresh is never held back by it.
+    if (!checked) await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1 });
+  });
+
+  it('stops scheduling a one-off lookup nobody has seen after six hours, until its link is opened', async () => {
+    const unseen = { carrier: 'unknown', current_stage: 'pending', tracking_number: 'TEST1234', user_id: null, one_off: true,
+      created_at: '2026-09-09T05:30:00Z', last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'waiting', archived_at: null,
+      carrier_data: { routing: { version: 1, configured_carrier: 'unknown', failures: {} } } };
+    const check = async (parcels: JsonObject[], at: string) => {
+      const client = fakeClient();
+      client.listFollowedOneOffPackages.mockResolvedValue(parcels);
+      const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+        { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null, () => new Date(at));
+      return (await service.sync()).checked;
+    };
+    // Hourly while young, then off the schedule.
+    await expect(check([{ ...unseen, id: 'young' }], '2026-09-09T11:00:00Z')).resolves.toBe(1);
+    await expect(check([{ ...unseen, id: 'old' }], '2026-09-09T11:30:00Z')).resolves.toBe(0);
+    // A number a provider has answered for keeps the schedule.
+    const seen = { ...unseen, id: 'seen', carrier_data: { routing: { version: 1, configured_carrier: 'unknown', failures: {},
+      last_success_at: '2026-09-09T10:00:15Z' } } };
+    await expect(check([seen], '2026-09-09T11:30:00Z')).resolves.toBe(1);
+    // Opening the link still queues a check every six hours, then daily.
+    expect(isOpenedParcelSyncDue(unseen, new Date('2026-09-09T11:30:00Z'))).toBe(false);
+    expect(isOpenedParcelSyncDue(unseen, new Date('2026-09-09T16:00:00Z'))).toBe(true);
+    const twoDays = { ...unseen, created_at: '2026-09-07T05:30:00Z' };
+    expect(isOpenedParcelSyncDue(twoDays, new Date('2026-09-09T16:00:00Z'))).toBe(false);
+    expect(isOpenedParcelSyncDue(twoDays, new Date('2026-09-10T10:00:00Z'))).toBe(true);
+  });
+
   it('keeps out-for-delivery parcels hourly overnight and allows manual refreshes', async () => {
     const parcel = {
       id: 'overnight', carrier: 'swiss-post', current_stage: 'out_for_delivery', tracking_number: 'TEST1234',

@@ -141,6 +141,7 @@ Daytime is 08:00–22:00 Europe/Zurich. Overnight, everything is checked hourly.
 | GLS (DE, CH, FR) | at most hourly, 4 h after a failure, manual refresh included |
 | No new event for 48 h (from when it was added) | hourly around the clock; manual refresh still allowed |
 | Nobody waiting for it | hourly around the clock; manual refresh still allowed |
+| Number no carrier or provider has seen (no carrier identified, no history, no input asked) | hourly for 6 h after it was added, then every 6 h, daily after 48 h, around the clock; manual refresh still allowed |
 
 Cooldowns use the persisted `last_synced_at` and `sync_status`, so restarts and repeated
 Refresh taps don't bypass them. New or reconfigured parcels are checked at once. A scheduled
@@ -157,10 +158,11 @@ open parcel is checked hourly
 **Parcels followed without an account** are checked only while one of their links was
 opened in the last 24 hours or has an alert on. Otherwise a parcel waits until a link is
 opened again; that read queues a check at once when the schedule would run one, and never
-more often than the schedule, however often the link is polled. A scheduled run checks at
-most ten of them, after every account's share, the least recently checked first. Their own
-checks queue behind every account's refresh and the scheduled run. A delivered or returned
-one is not checked.
+more often than the schedule, however often the link is polled. One whose number nobody
+has seen 6 h after it was added leaves the schedule too; opening a link still queues a
+check at its cadence. A scheduled run checks at most ten of them, after every account's
+share, the least recently checked first. Their own checks queue behind every account's
+refresh and the scheduled run. A delivered or returned one is not checked.
 
 HTTP 429 without `Retry-After` is not retried immediately. Adapters that allow one
 transient retry honour a `Retry-After` of up to one minute; longer windows fail the attempt.

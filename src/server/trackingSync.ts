@@ -55,6 +55,13 @@ const WATCHED_AFTER_OPEN_MS = 60 * 60 * 1_000;
 const VALID_STAGES = new Set<string>(STAGES);
 /** Scheduled checks fall back to hourly this long after a parcel's newest carrier event, or after it was added. */
 const IDLE_AFTER_MS = 48 * 60 * 60 * 1_000;
+/**
+ * A number nobody has seen yet is checked hourly for this long after it was
+ * added, then every six hours. A one-off lookup then leaves the schedule.
+ */
+const UNSEEN_HOURLY_MS = 6 * 60 * 60 * 1_000;
+/** After this long unseen, a number is checked daily. */
+const UNSEEN_DAILY_AFTER_MS = 48 * 60 * 60 * 1_000;
 
 /**
  * An unsuccessful partner confirmation must not double every refresh's cost.
@@ -105,12 +112,37 @@ function lastActivity(parcel: JsonObject): number | null {
   return times.length ? Math.max(...times) : null;
 }
 
-/** `unwatched`: nobody is waiting for the parcel, so it is checked hourly, as an idle one is. */
-function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date, unwatched = false): boolean {
+/**
+ * How long ago a parcel was added when no carrier or provider has answered
+ * for its number yet: no carrier identified or recognised, no history and
+ * nothing asked of the user. Null once one has.
+ */
+function unseenFor(parcel: JsonObject, now: Date): number | null {
+  if (!['unknown', 'intl-post'].includes(String(parcel.carrier)) || String(parcel.current_stage ?? 'pending') !== 'pending') return null;
+  const data = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
+  const routing = routingState(parcel);
+  if (data.original_carrier || data.universal_input || routing.last_success_at || routing.last_event_at
+    || routing.confirmed_carrier || routing.discovered_carrier || routing.input_needed || routing.provider_input_needed) return null;
+  const added = Date.parse(String(parcel.created_at ?? ''));
+  return Number.isFinite(added) ? Math.max(0, now.getTime() - added) : 0;
+}
+
+/**
+ * `unwatched`: nobody is waiting for the parcel, so it is checked hourly, as an idle one is.
+ * `oneOff`: a lookup without an account, which leaves the schedule when nobody has seen its number for hours.
+ */
+function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date, unwatched = false, oneOff = false): boolean {
   if (!isTrackingSyncDue(parcel, now)) return false;
+  const unseen = unseenFor(parcel, now);
+  if (oneOff && unseen !== null && unseen >= UNSEEN_HOURLY_MS) return false;
   const lastChecked = Date.parse(String(parcel.last_synced_at ?? ''));
   if (!Number.isFinite(lastChecked)) return true;
   const local = DateTime.fromJSDate(now, { zone: 'Europe/Zurich' });
+  if (unseen !== null) {
+    // Hourly, then every 6 h, then daily, around the clock.
+    const hours = unseen < UNSEEN_HOURLY_MS ? 1 : unseen < UNSEEN_DAILY_AFTER_MS ? 6 : 24;
+    return lastChecked < local.startOf('hour').minus({ hours: hours - 1 }).toMillis();
+  }
   const intervalMinutes = parcel.current_stage === 'out_for_delivery'
     ? 2 : Math.max(10, (CARRIER_DEFINITIONS[String(parcel.carrier) as CarrierId]?.tracking.refresh?.minMinutes ?? 0));
   const activity = lastActivity(parcel);
@@ -123,9 +155,10 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date, unwatched = f
 }
 
 /**
- * Whether opening a one-off parcel's link should queue a check: only when a
- * scheduled run would check the parcel now. Reading a link never checks a
- * carrier more often than the schedule does, however often it is polled.
+ * Whether opening a one-off parcel's link should queue a check: only when the
+ * schedule's cadence for the parcel has come round, including for a lookup
+ * that left the schedule because nobody has seen its number. Reading a link
+ * never checks a carrier more often than that, however often it is polled.
  */
 export function isOpenedParcelSyncDue(parcel: JsonObject, now: Date): boolean {
   const open = !['delivered', 'returned'].includes(String(parcel.current_stage))
@@ -530,9 +563,9 @@ export class TrackingSyncService {
       const summary = emptySyncSummary();
       const now = this.now();
       const unwatched = await this.unwatchedPackages(now, context.signal);
-      const due = (parcel: JsonObject) => isScheduledTrackingSyncDue(parcel, now, unwatched.has(String(parcel.id)));
-      const accounts = fairSyncPackages((await this.client.listActivePackages()).filter(due));
-      for (const parcel of [...accounts, ...await this.followedOneOffPackages(due, now, context.signal)]) {
+      const due = (oneOff: boolean) => (parcel: JsonObject) => isScheduledTrackingSyncDue(parcel, now, unwatched.has(String(parcel.id)), oneOff);
+      const accounts = fairSyncPackages((await this.client.listActivePackages()).filter(due(false)));
+      for (const parcel of [...accounts, ...await this.followedOneOffPackages(due(true), now, context.signal)]) {
         summary.checked += 1;
         summary[await this.syncOne(parcel, context)] += 1;
       }
