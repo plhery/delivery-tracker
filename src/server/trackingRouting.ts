@@ -430,6 +430,9 @@ export class TrackingRouter {
       } catch (error) {
         signal?.throwIfAborted();
         const failure = fail(carrier, error);
+        // The carrier does not issue this number (a failed check digit): a
+        // provider's name for it, saved by an older check, stops being asked.
+        if (carrierErrorKind(error) === 'invalid_input' && state.discovered_carrier === carrier) delete state.discovered_carrier;
         state.direct_retry_at = failure.retry_at;
         if (failure.kind === 'rate_limited' && recent()) {
           state.next_check_at = iso(Math.min(millis(failure.retry_at), millis(state.last_success_at) + freshnessWindow(now())));

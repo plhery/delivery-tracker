@@ -6,7 +6,7 @@ import type { CarrierResult } from 'universal-parcel-scraper';
 import * as monitoring from './observability';
 import * as metrics from './metrics';
 import { universalCarrierHints } from 'universal-parcel-scraper/app';
-import { IndeterminateError, InputRequiredError, NotFoundError } from 'universal-parcel-scraper';
+import { IndeterminateError, InputRequiredError, InvalidInputError, NotFoundError } from 'universal-parcel-scraper';
 import * as scraper from 'universal-parcel-scraper';
 import { recognitionAskedCarriers } from '../lib/carriers';
 
@@ -404,6 +404,19 @@ describe('persistent tracking routing', () => {
     const result = await router.fetch(parcel({ carrier_data: { routing: state({ discovered_carrier: 'ups' }) } }), false);
     expect(direct).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'ups' }), 'ups');
     expect(result.result.routing).toMatchObject({ confirmed_carrier: 'ups' });
+  });
+  it('forgets a saved carrier hint once its adapter refuses the number', async () => {
+    const { router, direct } = setup();
+    // A name saved before providers stopped proposing a carrier whose check digit the number fails.
+    direct.mockRejectedValue(new InvalidInputError('DHL Express', 'The waybill check digit does not match'));
+    const result = await router.fetch(parcel({ carrier_data: { routing: state({ discovered_carrier: 'dhl-express' }) } }), false);
+    expect(direct).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ carrier: 'dhl-express' }), 'dhl-express');
+    expect(result.result.routing).not.toHaveProperty('discovered_carrier');
+    expect(result.result.routing).toMatchObject({ failures: { 'dhl-express': { kind: 'schema', user_error: 'carrier:invalid_input' } } });
+    // Once its cooldown is over, nothing asks it again.
+    direct.mockClear();
+    await router.fetch(parcel({ carrier_data: { routing: { ...result.result.routing as JsonObject, failures: {} } } }), false);
+    expect(direct).not.toHaveBeenCalled();
   });
   it('asks a carrier that does not know the number yet again within hours, a provider after a day', async () => {
     const { router, direct, universal } = setup();
