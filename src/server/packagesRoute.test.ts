@@ -45,3 +45,15 @@ it('still lists the parcels when the read cannot be recorded', async () => {
   expect((await response.json()).packages).toHaveLength(1);
   expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'packages', operation: 'record_account_opened' });
 });
+
+it('serves the carrier\'s scans without "Tracking added" once they reach back to it, nor any source', async () => {
+  const event = { package_id: parcel.id, location: null, point: null };
+  vi.spyOn(SupabaseUserClient.prototype, 'listPackages').mockResolvedValue([{ ...parcel, carrier: 'swiss-post', tracking_events: [
+    { ...event, id: 'added', stage: 'pending', description: 'Tracking added', occurred_at: '2026-10-02T08:00:00+00:00', provider_event_id: 'app:pending' },
+    { ...event, id: 'delivered', stage: 'delivered', description: 'Delivered', occurred_at: '2026-10-01T15:00:00+00:00', provider_event_id: 'swiss-post:a' },
+  ] }]);
+  vi.spyOn(SupabaseUserClient.prototype, 'recordOpened').mockResolvedValue(undefined);
+  const [served] = (await (await list()).json()).packages;
+  expect(served.tracking_events).toEqual([expect.objectContaining({ id: 'delivered', place: null })]);
+  expect(JSON.stringify(served)).not.toContain('provider_event_id');
+});

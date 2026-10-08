@@ -195,6 +195,24 @@ describe('what a link shows', () => {
     expect(shown({ gift: 'yes', stopped: 1 })).toMatchObject({ gift: false, shared: true });
   });
 
+  it('starts the journey with "Tracking added" only until the carrier\'s scans reach back to it', () => {
+    const scan = { id: 'scan', package_id: 'parcel', stage: 'delivered', description: 'Delivered', location: null,
+      occurred_at: '2026-10-02T07:00:00+00:00', provider_event_id: 'swiss-post:delivered', point: null };
+    // The link shows Peek's own row from when the link was made.
+    const added = { id: 'added', package_id: 'parcel', stage: 'pending', description: 'Tracking added', location: null,
+      occurred_at: '2026-10-02T08:00:00+00:00', provider_event_id: 'app:pending', point: null };
+    const shown = (events: Record<string, unknown>[]) => publicParcelResponse({
+      link: { id: 'k7Qm2xHd9RtW', created_at: '2026-10-02T08:00:00Z', forget_at: null },
+      package: { id: 'parcel', tracking_number: 'TESTPARCEL123456', carrier: 'swiss-post', sync_status: 'ok',
+        created_at: '2026-10-02T08:00:00Z', carrier_data: {}, tracking_events: events },
+    }, alerts).package.tracking_events;
+    expect(shown([added]).map((event) => event.id)).toEqual(['added']);
+    // A delivered parcel looked up later does not show the lookup above the delivery.
+    expect(shown([added, scan]).map((event) => event.id)).toEqual(['scan']);
+    expect(shown([{ ...scan, occurred_at: '2026-10-02T09:00:00+00:00' }, added]).map((event) => event.id)).toEqual(['scan', 'added']);
+    expect(JSON.stringify(shown([added]))).not.toContain('provider_event_id');
+  });
+
   it('answers with the shapes the web and iPhone clients decode from the shared fixture', () => {
     const { publicParcel, publicLookup, publicGiftParcel } = contractFixture;
     const stored = {

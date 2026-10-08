@@ -8,12 +8,48 @@ import { isRecord, type JsonObject } from './types';
 
 let reported = false;
 
-/** The stored point only feeds the place; the API does not return it. */
-function withoutPoint(event: JsonObject): JsonObject {
-  if (!('point' in event)) return event;
+/**
+ * The stored point only feeds the place, and the source only tells Peek's own
+ * rows apart: the API returns neither.
+ */
+function served(event: JsonObject): JsonObject {
+  if (!('point' in event) && !('provider_event_id' in event)) return event;
   const rest = { ...event };
   delete rest.point;
+  delete rest.provider_event_id;
   return rest;
+}
+
+/** A row Peek writes itself (`app:` source), such as "Tracking added". */
+function isOwnRow(event: JsonObject): boolean {
+  return typeof event.provider_event_id === 'string' && event.provider_event_id.startsWith('app:');
+}
+
+/**
+ * The timeline is the carrier's story. Peek's own row, "Tracking added" or a
+ * new carrier still to answer, only opens it: once a carrier scan is as old
+ * as that row or older, the row is left out, so it never sits among the
+ * scans or above a delivery. The stored row, the stage and alerts are not
+ * affected.
+ */
+function timeline(events: JsonObject[]): JsonObject[] {
+  const time = (event: JsonObject) => Date.parse(String(event.occurred_at));
+  const firstScan = Math.min(...events.filter((event) => !isOwnRow(event)).map(time).filter(Number.isFinite));
+  return events.filter((event) => !isOwnRow(event) || !(firstScan <= time(event)));
+}
+
+/** A stored package row with its events' sources left out, every row kept: the account's export. */
+export function withoutEventSources(row: JsonObject): JsonObject {
+  if (!Array.isArray(row.tracking_events)) return row;
+  return {
+    ...row,
+    tracking_events: row.tracking_events.map((event) => {
+      if (!isRecord(event) || !('provider_event_id' in event)) return event;
+      const rest = { ...event };
+      delete rest.provider_event_id;
+      return rest;
+    }),
+  };
 }
 
 function eventPoint(value: unknown): EventPoint | null {
@@ -32,9 +68,11 @@ function carrierCountry(carrier: unknown): string | null {
 }
 
 /**
- * Adds a `place` to every scan of an API package row: where the scan's free
- * text locates it, or null. Places are worked out when the package is served,
- * so improving the gazetteer improves every parcel, old ones included.
+ * An API package row as it is served. Every scan gets a `place`: where its
+ * free text locates it, or null. Places are worked out when the package is
+ * served, so improving the gazetteer improves every parcel, old ones
+ * included. Peek's own opening row is left out once carrier scans reach back
+ * to it (see `timeline`).
  */
 export function withEventPlaces(row: JsonObject): JsonObject {
   if (isRecord(row.carrier_data) && 'add_recognition_pending' in row.carrier_data) {
@@ -43,7 +81,7 @@ export function withEventPlaces(row: JsonObject): JsonObject {
     row = { ...row, carrier_data: data };
   }
   if (!Array.isArray(row.tracking_events) || !row.tracking_events.length) return row;
-  const events = row.tracking_events.filter(isRecord);
+  const events = timeline(row.tracking_events.filter(isRecord));
   const carrierData = isRecord(row.carrier_data) ? row.carrier_data : {};
   try {
     const ordered = [...events].sort((a, b) => String(a.occurred_at).localeCompare(String(b.occurred_at)));
@@ -56,12 +94,12 @@ export function withEventPlaces(row: JsonObject): JsonObject {
     const byEvent = new Map(ordered.map((event, index) => [event, places[index]]));
     return {
       ...row,
-      tracking_events: events.map((event) => ({ ...withoutPoint(event), place: byEvent.get(event) ?? null })),
+      tracking_events: events.map((event) => ({ ...served(event), place: byEvent.get(event) ?? null })),
     };
   } catch (error) {
     // A map is a nice extra: the parcel still loads without one.
     if (!reported) captureOperationalError(error, { component: 'api', operation: 'locate_event_places' });
     reported = true;
-    return { ...row, tracking_events: events.map(withoutPoint) };
+    return { ...row, tracking_events: events.map(served) };
   }
 }

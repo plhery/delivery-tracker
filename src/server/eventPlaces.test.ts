@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as observability from './observability';
 import * as places from 'universal-parcel-scraper/places';
 vi.mock('universal-parcel-scraper/places', { spy: true });
-import { withEventPlaces } from './eventPlaces';
+import { withEventPlaces, withoutEventSources } from './eventPlaces';
 
 it('keeps addition-only query context out of client package data', () => {
   const row = { carrier_data: { add_recognition_pending: true, lookup_country_hint: 'CH' } };
@@ -60,6 +60,30 @@ describe('withEventPlaces', () => {
     expect(withEventPlaces({ id: 'parcel' })).toEqual({ id: 'parcel' });
   });
 
+  it('opens the timeline with Peek\'s own row only until the carrier\'s scans reach back to it', () => {
+    const added = { ...event('added', null, '2026-09-27T10:00:00+00:00'), stage: 'pending', description: 'Tracking added', provider_event_id: 'app:pending' };
+    const scan = (id: string, occurredAt: string) => ({ ...event(id, null, occurredAt), provider_event_id: `swiss-post:${id}` });
+    const served = (events: Record<string, unknown>[]) => (withEventPlaces({ id: 'parcel', carrier: 'swiss-post', tracking_events: events }) as {
+      tracking_events: Record<string, unknown>[];
+    }).tracking_events;
+
+    // Only the row, or only later scans: it starts the journey.
+    expect(served([added]).map((row) => row.id)).toEqual(['added']);
+    expect(served([scan('later', '2026-09-27T12:00:00+00:00'), added]).map((row) => row.id)).toEqual(['later', 'added']);
+    // Added mid-journey or after the delivery: the carrier's scans tell the story alone.
+    const delivered = { ...scan('delivered', '2026-09-26T15:00:00+00:00'), stage: 'delivered' };
+    expect(served([added, delivered, scan('earlier', '2026-09-25T08:00:00+00:00')]).map((row) => row.id)).toEqual(['delivered', 'earlier']);
+    expect(served([added, scan('same', '2026-09-27T10:00:00+00:00')]).map((row) => row.id)).toEqual(['same']);
+    // A carrier change waiting for its first answer is Peek's row too.
+    expect(served([{ ...added, description: 'Carrier changed; waiting for tracking' }, scan('earlier', '2026-09-25T08:00:00+00:00')])
+      .map((row) => row.id)).toEqual(['earlier']);
+    // Without a source, as from a link read before its database said it, every row stays.
+    const unsourced = { ...added, provider_event_id: undefined };
+    expect(served([unsourced, scan('earlier', '2026-09-25T08:00:00+00:00')]).map((row) => row.id)).toEqual(['added', 'earlier']);
+    // The source is never served.
+    expect(served([added, scan('later', '2026-09-27T12:00:00+00:00')]).every((row) => !('provider_event_id' in row))).toBe(true);
+  });
+
   it('serves the parcel without places when the gazetteer fails, and reports it once', () => {
     vi.spyOn(places, 'placesForEvents').mockImplementation(() => {
       throw new Error('missing gazetteer');
@@ -70,5 +94,20 @@ describe('withEventPlaces', () => {
     expect(withEventPlaces(row)).toEqual(row);
     expect(capture).toHaveBeenCalledTimes(1);
     expect(capture).toHaveBeenCalledWith(expect.any(Error), { component: 'api', operation: 'locate_event_places' });
+  });
+});
+
+describe('withoutEventSources', () => {
+  it('keeps every stored row, Peek\'s own included, without its source', () => {
+    const row = { id: 'parcel', tracking_events: [
+      { ...event('added', null, '2026-09-27T10:00:00+00:00'), provider_event_id: 'app:pending' },
+      { ...event('scan', null, '2026-09-25T08:00:00+00:00'), provider_event_id: 'swiss-post:scan' },
+    ] };
+    expect(withoutEventSources(row)).toEqual({ id: 'parcel', tracking_events: [
+      event('added', null, '2026-09-27T10:00:00+00:00'),
+      event('scan', null, '2026-09-25T08:00:00+00:00'),
+    ] });
+    expect(row.tracking_events[0]).toHaveProperty('provider_event_id');
+    expect(withoutEventSources({ id: 'parcel' })).toEqual({ id: 'parcel' });
   });
 });

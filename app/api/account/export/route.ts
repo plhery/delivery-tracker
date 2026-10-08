@@ -6,6 +6,7 @@ import {
   requireUserClient,
 } from '../../../../src/server/api';
 
+import { withoutEventSources } from '../../../../src/server/eventPlaces';
 import { friendsRPC, friendsSnapshot } from '../../../../src/server/friends';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,7 @@ export const GET = apiRoute(async (context) => {
       enabled: typeof preferences.email_on_delivery === 'boolean' ? preferences.email_on_delivery : null,
       sent: await client.listDeliveryEmails(),
     },
-    packages: await client.listPackages(true),
+    packages: (await client.listPackages(true)).map(withoutEventSources),
   }, 200, {
     'Content-Disposition': 'attachment; filename="peek-export.json"',
   });

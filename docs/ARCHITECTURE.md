@@ -48,7 +48,8 @@ Key server modules:
 - `trackingSync.ts` runs one refresh through the adapter registry;
   `trackingRouting.ts` decides which source to ask ([ROUTING.md](ROUTING.md)), and
   `sharedLookups.ts` lets the copies of a number in one scheduled run share their lookups.
-- `eventPlaces.ts` uses the scraper's place resolver to put each scan on the map,
+- `eventPlaces.ts` serves a parcel's timeline (see [Data lifecycle](#data-lifecycle))
+  and uses the scraper's place resolver to put each scan on the map,
   when the API returns a parcel ([README](https://github.com/plhery/universal-parcel-scraper/blob/main/places/README.md)).
   Lines between recorded stops are solid; approximate areas have dotted markers.
   On the web the route is drawn as one stroke, from its first place to the parcel's, and
@@ -250,6 +251,12 @@ loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
 
 - **Adding a parcel** writes it through the user's RLS client and queues a job with the
   service role. Clients poll the small job resource, then reload the parcel list once.
+- **A parcel's timeline** opens with a row Peek stores itself (an `app:` source): "Tracking
+  added", or a new carrier still to answer. It is served only while no carrier scan is as
+  old as it or older, a link placing it when the link was made, so a parcel added
+  mid-journey or after its delivery shows the carrier's scans alone. The row never sets
+  the stage, an alert or an email. `src/server/eventPlaces.ts` applies this to every
+  parcel and link the API serves; the account export keeps every stored row.
 - **Archiving** keeps the parcel and its history.
 - **A lookup without an account** stores the number once per carrier and inputs, with one
   link per lookup. A link is forgotten 30 days after the parcel is delivered or returned,

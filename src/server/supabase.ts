@@ -25,18 +25,19 @@ const PACKAGE_COLUMNS = [
   'email_muted',
 ].join(',');
 /**
- * The package shape the API returns. It never carries provider_event_id. A
- * scan's `point`, the carrier's own coordinates, feeds eventPlaces.ts, which
- * drops it from the response.
+ * The package shape the API returns once eventPlaces.ts has served it. A
+ * scan's `point`, the carrier's own coordinates, gives its place, and its
+ * provider_event_id tells Peek's own rows from the carrier's: the response
+ * carries neither.
  */
-const PACKAGE_SELECT = `${PACKAGE_COLUMNS},tracking_events(id,package_id,stage,description,location,occurred_at,point:raw_data->point)`;
+const PACKAGE_SELECT = `${PACKAGE_COLUMNS},tracking_events(id,package_id,stage,description,location,occurred_at,provider_event_id,point:raw_data->point)`;
 const ACTIVE_PACKAGE_SELECT = 'id,user_id,tracking_number,label,carrier,current_stage,tracking_url,dpd_postcode,created_at,last_synced_at,sync_status,carrier_data,tracking_generation';
 /**
  * Where the sync loaders put each stored event's identity, instant, stage and
  * wording, so a reworded scan can update its row in place and another source's
  * copy of a stored scan is not stored again (see eventIdentity.ts). Only the
  * service client's sync loaders embed it, under this alias: no API response or
- * mapper reads it, and provider_event_id never reaches a client.
+ * mapper reads it.
  */
 export const STORED_EVENT_IDENTITIES = 'stored_event_identities';
 const SYNC_EVENT_IDENTITIES = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at,stage,description,location,time:raw_data->>time,provider_code:raw_data->>provider_code,observed_without_provider_timestamp:raw_data->observed_without_provider_timestamp)`;

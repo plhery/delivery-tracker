@@ -75,13 +75,15 @@ describe('guarded tracking writes', () => {
     const identities = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at,stage,description,location,time:raw_data->>time,provider_code:raw_data->>provider_code,observed_without_provider_timestamp:raw_data->observed_without_provider_timestamp)`;
     expect(select(serviceRequest, 0).endsWith(`,${identities}`)).toBe(true);
     expect(select(serviceRequest, 1).endsWith(`,${identities}`)).toBe(true);
-    // The API's package shape never names provider_event_id, nor when the parcel joined its account.
+    // The API's package shape reads provider_event_id only to tell Peek's own rows, which eventPlaces.ts
+    // serves without it, and never when the parcel joined its account.
     const apiShape = 'id,tracking_number,label,carrier,created_at,expected_delivery,last_status_text,'
       + 'last_synced_at,sync_status,sync_error,tracking_url,dpd_postcode,carrier_data,archived_at,'
-      + 'notifications_muted,email_muted,tracking_events(id,package_id,stage,description,location,occurred_at,point:raw_data->point)';
+      + 'notifications_muted,email_muted,tracking_events(id,package_id,stage,description,location,occurred_at,provider_event_id,point:raw_data->point)';
     expect(select(userRequest, 0)).toBe(apiShape);
     expect(select(userRequest, 1)).toBe(apiShape);
-    expect(select(userRequest, 2)).not.toContain('provider_event_id');
+    expect(select(userRequest, 2)).toBe(apiShape);
+    expect(select(userRequest, 3)).not.toContain('provider_event_id');
   });
 
   it('always scopes batch status reads to the requesting owner', async () => {
@@ -581,7 +583,6 @@ describe('delivery emails', () => {
     const ownerRequest = vi.spyOn(owned, 'request').mockResolvedValue([{ id: parcel }]);
     await owned.getPackage(parcel);
     expect(params.get('select')).toBe(new URL(`https://database.example${ownerRequest.mock.calls[0]![0]}`).searchParams.get('select'));
-    expect(params.get('select')).not.toContain('provider_event_id');
   });
 
   it('saves the email choice only when a request makes one', async () => {
