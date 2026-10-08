@@ -20,10 +20,9 @@
 .landing-footer__name { gap: 8px; }
 .landing-footer a { gap: 5px; }
 .landing-footer a svg { width: 13px; height: 13px; }
-/* The guides' list: out of sight until its link is pressed, then a card above the page. */
-.landing-guides { width: min(100% - 32px, 440px); max-height: min(100dvh - 48px, 640px); margin: auto; padding: 24px; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 28px; background: var(--canvas); color: var(--ink); box-shadow: 0 24px 80px rgb(0 0 0 / 14%); font-size: 15px; text-align: start; }
-/* The foot lays out its own children; the list is one of them only in the markup. */
-.landing-guides:not(:popover-open) { display: none; }
+/* The guides' list: out of sight until its link is pressed, then a card above the page. The foot lays out its own
+   children; the list is one of them only in the markup, so it is hidden here, where a browser without popovers reads it too. */
+.landing-guides { display: none; width: min(100% - 32px, 440px); max-height: min(100dvh - 48px, 640px); margin: auto; padding: 24px; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 28px; background: var(--canvas); color: var(--ink); box-shadow: 0 24px 80px rgb(0 0 0 / 14%); font-size: 15px; text-align: start; }
 .landing-guides:popover-open { display: grid; gap: 14px; animation: sheet-arrive .32s var(--spring) both; }
 .landing-guides::backdrop { background: rgb(15 22 15 / 28%); }
 .landing-guides strong { font-size: 22px; font-weight: 650; letter-spacing: -.02em; line-height: 1.2; text-wrap: balance; }
