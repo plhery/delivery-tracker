@@ -1122,6 +1122,10 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       },
       {
+        "pattern": "^(?!(?:PZ|XR|XT|XU|XW|XY))[A-Z]{2}\\d{9}(?:JB|JF|TS)$",
+        "confidence": "high"
+      },
+      {
         "pattern": "^\\d{14}[0-9A-Z]$",
         "confidence": "low",
         "checksum": "dpd"

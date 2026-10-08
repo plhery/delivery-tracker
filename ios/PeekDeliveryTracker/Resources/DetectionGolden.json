@@ -12319,6 +12319,14 @@
     "candidates": []
   },
   {
+    "input": "BC989633266JB",
+    "carrier": "chronopost",
+    "confidence": "high",
+    "candidates": [
+      "chronopost"
+    ]
+  },
+  {
     "input": "BE0000000001",
     "carrier": "amazon-logistics",
     "confidence": "high",
@@ -13800,12 +13808,9 @@
   },
   {
     "input": "FZ246006535JB",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "chronopost",
+    "confidence": "high",
     "candidates": [
-      "chronopost"
-    ],
-    "asked": [
       "chronopost"
     ]
   },
@@ -13917,6 +13922,14 @@
     "confidence": "high",
     "candidates": [
       "gofo"
+    ]
+  },
+  {
+    "input": "GH205472665JB",
+    "carrier": "chronopost",
+    "confidence": "high",
+    "candidates": [
+      "chronopost"
     ]
   },
   {
@@ -14184,12 +14197,9 @@
   },
   {
     "input": "HV520454959JF",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "chronopost",
+    "confidence": "high",
     "candidates": [
-      "chronopost"
-    ],
-    "asked": [
       "chronopost"
     ]
   },
@@ -15825,6 +15835,22 @@
     ]
   },
   {
+    "input": "NP123456789JB",
+    "carrier": "chronopost",
+    "confidence": "high",
+    "candidates": [
+      "chronopost"
+    ]
+  },
+  {
+    "input": "NP989065909JB",
+    "carrier": "chronopost",
+    "confidence": "high",
+    "candidates": [
+      "chronopost"
+    ]
+  },
+  {
     "input": "NVSGBEDBP03784ADPL",
     "carrier": "unknown",
     "confidence": "low",
@@ -16613,12 +16639,9 @@
   },
   {
     "input": "RR123456785TS",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "chronopost",
+    "confidence": "high",
     "candidates": [
-      "chronopost"
-    ],
-    "asked": [
       "chronopost"
     ]
   },
@@ -17854,12 +17877,9 @@
   },
   {
     "input": "XN136114912JB",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "chronopost",
+    "confidence": "high",
     "candidates": [
-      "chronopost"
-    ],
-    "asked": [
       "chronopost"
     ]
   },
