@@ -904,6 +904,12 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       },
       {
+        "pattern": "^250\\d{13}$",
+        "confidence": "low",
+        "checksum": "gs1",
+        "preferred": true
+      },
+      {
         "pattern": "^10\\d{12}$",
         "confidence": "low",
         "preferred": true
@@ -1710,7 +1716,7 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XR|XT|XU|XW|XY))[A-Z]{2}\\d{9}(?!CA$|CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$|TS$|JF$|CL$)[A-Z]{2}$",
+        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XR|XT|XU|XW|XY))[A-Z]{2}\\d{9}(?!CA$|CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$|TS$|JF$|JB$|RV$|VF$|CL$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }
@@ -2730,6 +2736,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^U9999\\d{11}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^U(?!9999)\\d{15}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://www.uniuni.com/tracking/?no={trackingNumber}",
@@ -2867,6 +2877,14 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^GFUS\\d{14}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^GF\\d{13}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^CR\\d{12}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://www.gofo.com/us/track?searchID={trackingNumber}",
@@ -4345,7 +4363,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^(?:FMP[CP]|MYS[PR])\\d{10}$",
+        "pattern": "^(?!PB)[A-Z]{3}[CPR]\\d{10}$",
         "confidence": "high"
       }
     ]
@@ -4432,7 +4450,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       },
       {
-        "pattern": "^INTLCMD\\d{9}$",
+        "pattern": "^INTLCM[A-Z]\\d{9}$",
         "confidence": "high"
       }
     ]
@@ -4596,7 +4614,7 @@ export const CARRIER_CAPABILITIES = {
           "spx.ph"
         ],
         "pathPattern": "^/track/?$",
-        "query": "^((?:SPX)?PH\\d{10,16}[A-Z]?)$"
+        "query": "^((?:SPX|SPE)?PH\\d{10,16}[A-Z]?)$"
       },
       {
         "domains": [
@@ -4613,19 +4631,23 @@ export const CARRIER_CAPABILITIES = {
           "spx.ph",
           "shopeexpress.ph"
         ],
-        "path": "^/detail/((?:SPX)?PH\\d{10,16}[A-Z]?)(?:/|$)"
+        "path": "^/detail/((?:SPX|SPE)?PH\\d{10,16}[A-Z]?)(?:/|$)"
       },
       {
         "domains": [
           "spx.ph",
           "shopeexpress.ph"
         ],
-        "fragment": "^/detail/((?:SPX)?PH\\d{10,16}[A-Z]?)(?:$|[?&])"
+        "fragment": "^/detail/((?:SPX|SPE)?PH\\d{10,16}[A-Z]?)(?:$|[?&])"
       }
     ],
     "detectionRules": [
       {
         "pattern": "^SPXPH\\d{10,16}[A-Z]?$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^SPEPH\\d{11}[0-9A-Z]$",
         "confidence": "high"
       },
       {
