@@ -1,4 +1,4 @@
-import { useId, useRef, type MouseEvent } from 'react';
+import { useId, useRef, useState, type MouseEvent } from 'react';
 import { GUIDE_LINKS } from '../../generated/guides';
 import { guidePath } from '../../guides/paths';
 import { useI18n } from '../../i18n';
@@ -12,28 +12,37 @@ import { trackAction } from '../../lib/analytics';
 export function GuidesLink() {
   const { t, locale } = useI18n();
   const list = useRef<HTMLDivElement>(null);
-  // Pressing the link while the list is open closes it, as any press outside the list does.
-  const wasOpen = useRef(false);
+  // Pressing the link while the list is open closes it. A press outside the list has already closed it when the
+  // click arrives, so whether it was open is read as the press starts; a click no press started (Enter, a screen
+  // reader) reads it as it comes.
+  const wasOpen = useRef<boolean | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const id = useId();
   const links = GUIDE_LINKS[locale];
   if (!links.length) return null;
+  const showing = () => list.current?.matches(':popover-open') === true;
 
-  function open(event: MouseEvent<HTMLAnchorElement>) {
+  function toggle(event: MouseEvent<HTMLAnchorElement>) {
+    const open = wasOpen.current ?? showing();
+    wasOpen.current = null;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
     // A browser without popovers follows the link to the guides' own page.
     if (!list.current?.showPopover) return;
     event.preventDefault();
-    if (wasOpen.current) return;
+    if (open) {
+      if (showing()) list.current.hidePopover();
+      return;
+    }
     list.current.showPopover();
     trackAction('guides-open');
   }
 
   return <>
-    <a href={guidePath(locale)} aria-haspopup="dialog" aria-controls={id} onClick={open}
-      onPointerDown={() => { wasOpen.current = list.current?.matches(':popover-open') === true; }}
-      onKeyDown={() => { wasOpen.current = false; }}>{t('guides.title')}</a>
-    <div ref={list} id={id} popover="auto" className="landing-guides" role="dialog" aria-label={t('guides.title')}>
-      <strong>{t('guides.heading')}</strong>
+    <a href={guidePath(locale)} aria-haspopup="dialog" aria-controls={id} aria-expanded={expanded} onClick={toggle}
+      onPointerDown={() => { wasOpen.current = showing(); }} onKeyDown={() => { wasOpen.current = null; }}>{t('guides.title')}</a>
+    <div ref={list} id={id} popover="auto" className="landing-guides" role="dialog" aria-labelledby={`${id}-title`}
+      onToggle={(event) => setExpanded(event.currentTarget.matches(':popover-open'))}>
+      <strong id={`${id}-title`}>{t('guides.heading')}</strong>
       <ul>{links.map(({ id: guide, slug, title }) => <li key={guide}><a href={guidePath(locale, slug)}>{title}</a></li>)}</ul>
       <a className="landing-guides__all" href={guidePath(locale)}>{t('guides.all')}</a>
     </div>

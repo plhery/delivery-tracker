@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import en from '../shared/locales/en.json' with { type: 'json' };
 import fr from '../shared/locales/fr.json' with { type: 'json' };
 import pl from '../shared/locales/pl.json' with { type: 'json' };
 
@@ -46,16 +47,21 @@ test('the landing’s foot lists the guides out of sight, opens the list in plac
 
   await page.goto('/');
   const foot = page.locator('.landing-footer');
-  const list = page.getByRole('dialog', { name: 'Guides' });
+  const link = foot.getByRole('link', { name: 'Guides', exact: true });
+  // The list is named by its heading, and the link says whether it is open.
+  const list = page.getByRole('dialog', { name: en['guides.heading'] });
   await expect(list).toBeHidden();
-  await foot.getByRole('link', { name: 'Guides' }).click();
+  await expect(link).toHaveAttribute('aria-expanded', 'false');
+  await link.click();
   await expect(list).toBeVisible();
+  await expect(link).toHaveAttribute('aria-expanded', 'true');
   expect(path(page)).toBe('/');
   await expect(list.getByRole('listitem')).toHaveCount(listed.length);
   await page.keyboard.press('Escape');
   await expect(list).toBeHidden();
+  await expect(link).toHaveAttribute('aria-expanded', 'false');
 
-  await foot.getByRole('link', { name: 'Guides' }).click();
+  await link.click();
   const first = list.getByRole('listitem').first().getByRole('link');
   const title = (await first.textContent())!;
   await first.click();
