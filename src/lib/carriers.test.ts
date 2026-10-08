@@ -1379,12 +1379,18 @@ describe('carrier detection', () => {
       expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
       expect(match.candidates).toContain('usps');
     }
-    // OSS EXAMPLE 22-digit legacy/IMpb numbers: ambiguous with Austrian Post.
+    // OSS EXAMPLE 22-digit IMpb numbers with a USPS channel and a passing check digit.
     // Source: https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json
     for (const number of [
       '9400111206206406260787', '9400111201080805483016', '9405803699300124287899',
-      '9434611206206406227577', '9101123456789000000013', '9261290336128704042634',
+      '9434611206206406227577',
     ]) {
+      const match = detectCarrierMatch(number);
+      // Selected outright from scraper releases with the IMpb rule, suggested first before.
+      expect([match.carrier, ...match.candidates]).toContain('usps');
+    }
+    // A legacy number whose Mailer ID doesn't fit, and a DHL eCommerce family: ambiguous.
+    for (const number of ['9101123456789000000013', '9261290336128704042634']) {
       const match = detectCarrierMatch(number);
       expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
       expect(match.candidates).toContain('usps');

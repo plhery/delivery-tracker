@@ -910,12 +910,19 @@ final class CarrierCatalogTests: XCTestCase {
         let pic = "9210090000000012345679"
         let longPic = "92000000000123456789012344"
         let routed = ["42000000" + pic, "420000000000" + pic, "42000000" + longPic]
-        for number in [pic, longPic, "9300000000000000000000", "9400000000000000000009"] + routed {
+        for number in [longPic] + routed {
             XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode(number), number)
             let match = catalog.detect(number)
             XCTAssertEqual(match.carrier, .unknown, number)
             XCTAssertEqual(match.confidence, .low, number)
             XCTAssertEqual(match.preferred, [.usps], number)
+        }
+        // 22-digit PICs that follow the IMpb layout: selected outright by catalogs with the
+        // IMpb rule, suggested first by earlier ones.
+        for number in [pic, "9300000000000000000000", "9400000000000000000009"] {
+            XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode(number), number)
+            let match = catalog.detect(number)
+            XCTAssertTrue(match.carrier == .usps || match.preferred == [.usps], number)
         }
         XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode("9210 0900-0000.0012 3456 79"))
         // Retail labels use channel 95; 91 is the legacy construct.
