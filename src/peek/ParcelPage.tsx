@@ -20,6 +20,7 @@ import { focusClickedButton } from '../lib/modal';
 import { parcelDeliveryEstimate, parcelHasCarrierUpdate, parcelIsUnannounced } from '../lib/parcelStatus';
 import { pickupPoint } from '../lib/pickupPoint';
 import { currentEvent, isFinal, sortEventsDesc } from '../lib/stages';
+import { useTabTitle } from '../lib/tabTitle';
 import { deviceAlert } from './alerts';
 import { linkNote, noteLink, useLinkNote } from './deviceNotes';
 import { collapseGiftRows, isWrappedGift, maskedNumber, parcelLinkErrorKey, type ParcelLinkView } from './links';
@@ -31,7 +32,7 @@ import { carrierLinks, FreshnessLine, Notes, NumberSection, ShipmentFacts } from
 import { ForgetDialog, ForgetFooter, forgetParcel } from './parcel/Forget';
 import { GiftNote, GiftSurprise } from './parcel/Gift';
 import { Glyph } from './parcel/glyphs';
-import { useNow, useOffline, useTabTitle, useWideLayout } from './parcel/hooks';
+import { useNow, useOffline, useWideLayout } from './parcel/hooks';
 import { AccountRow, AddToDeliveries, AlreadyFollowed, KeepSheet, PassportTeaser, SharedWithYou } from './parcel/Keep';
 import { OtherParcels } from './parcel/OtherParcels';
 import { RouteMap } from './parcel/RouteMap';
@@ -159,6 +160,7 @@ function Shell({ title, onHome, controls, banner, brand, entrance, live, news, c
   children: ReactNode;
 }) {
   const { t } = useI18n();
+  // When the page closes the tab is the app's: the title the page was loaded with was the parcel's.
   useTabTitle(title, `${t('app.title')} — ${t('app.tagline')}`);
   // A sheet hands the focus back to the button that opened it, in Safari too.
   return <div className="peekp" style={brand} onClickCapture={focusClickedButton}>

@@ -38,12 +38,3 @@ function subscribeToConnection(notify: () => void) {
 export function useOffline(): boolean {
   return useSyncExternalStore(subscribeToConnection, () => navigator.onLine === false, () => false);
 }
-
-/**
- * The tab's title while the page is open. When the page closes the tab is
- * `after`: the title the page was loaded with was the parcel's, not the app's.
- */
-export function useTabTitle(title: string, after: string): void {
-  useEffect(() => { document.title = title; }, [title]);
-  useEffect(() => () => { document.title = after; }, [after]);
-}

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { I18nProvider, LanguageControl, type Locale, type MessageKey, type Messages, useI18n } from '../i18n';
 import { startAnalytics } from '../lib/analytics';
 import { AppearanceProvider } from '../lib/appearance';
 import { DeliveryEmailLinkError, deliveryEmailToken, switchDeliveryEmail } from '../lib/deliveryEmail';
+import { useTabTitle } from '../lib/tabTitle';
 import { PeekLockup } from './PeekMark';
 import './EmailOff.css';
 
@@ -45,9 +46,7 @@ function EmailOff() {
   const view: View = hash !== null && !token ? 'invalid' : answer && answer.token === token ? answer.view : 'ask';
   const { title, body } = WORDS[view];
 
-  useEffect(() => {
-    document.title = `${t('app.title')} — ${t(title)}`;
-  }, [t, title]);
+  useTabTitle(`${t('app.title')} — ${t(title)}`);
 
   async function change(next: 'off' | 'on') {
     if (!token || asking) return;
