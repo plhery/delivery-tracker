@@ -53,6 +53,8 @@ async function doorWithParcel(page: Page) {
   await page.goBack();
   const card = page.locator('.door-device [data-parcel-link]');
   await expect(card).toContainText('Out for delivery');
+  // A click first scrolls a card lying under the page's scroll padding into view: it is measured where the click finds it.
+  await card.scrollIntoViewIfNeeded();
   return card;
 }
 
