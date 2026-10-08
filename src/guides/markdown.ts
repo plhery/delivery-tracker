@@ -53,6 +53,12 @@ type Directive = (typeof DIRECTIVES)[number];
 export const GUIDE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
+/** Whether a date is written `2026-01-31` and is a day of the calendar: Date.parse moves 2026-02-30 to March. */
+function isDay(text: string): boolean {
+  const time = Date.parse(`${text}T00:00:00Z`);
+  return DAY.test(text) && !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === text;
+}
+
 /** The words of some inline text, without its marks. */
 export function plainText(inline: readonly Inline[]): string {
   return inline.map((node) => (node.type === 'text' || node.type === 'code' ? node.text : plainText(node.children))).join('');
@@ -115,6 +121,7 @@ export function parseInline(source: string, where = 'guide'): Inline[] {
         nodes.push({ type: 'em', children });
         continue;
       }
+      if (char === '!' && source[at + 1] === '[') fail('a guide holds no images; a "!" before a link is written "\\!"');
       if (char === '[') {
         flush(); at += 1;
         const children = until('](');
@@ -235,10 +242,17 @@ export function parseBlocks(markdown: string, where = 'guide'): Block[] {
       index = end + 1;
       continue;
     }
+    if (line.startsWith(':::')) {
+      throw new Error(`${where}: "${line}" opens nothing; a drawn block starts with ${DIRECTIVES.map((name) => `":::${name}"`).join(', ')} and ends with a ":::" line of its own`);
+    }
     let end = index;
     while (end < lines.length && lines[end].trim() && !lines[end].startsWith(':::')) end += 1;
     const chunk = lines.slice(index, end);
     index = end;
+    for (const item of chunk) {
+      if (/^ {0,3}(?:-{3,}|\*{3,}|_{3,}) *$/.test(item)) throw new Error(`${where}: a guide draws no lines across its text: "${item}"`);
+      if (/^[*+] /.test(item)) throw new Error(`${where}: a list's items start with "- " or "1. ": "${item}"`);
+    }
     const heading = /^(#{2,3}) (\S.*)$/.exec(chunk[0]);
     if (heading) {
       if (chunk.length > 1) throw new Error(`${where}: a heading stands alone, with an empty line below it: "${chunk[0]}"`);
@@ -290,7 +304,7 @@ export function parseGuide(source: string, where = 'guide'): Guide {
   };
   if (!GUIDE_SLUG.test(guide.slug)) throw new Error(`${where}: the slug is lowercase letters, digits and hyphens: "${guide.slug}"`);
   for (const day of [guide.published, guide.updated]) {
-    if (!DAY.test(day) || Number.isNaN(Date.parse(day))) throw new Error(`${where}: a date is written 2026-01-31, not "${day}"`);
+    if (!isDay(day)) throw new Error(`${where}: a date is a day of the calendar, written 2026-01-31, not "${day}"`);
   }
   if (guide.updated < guide.published) throw new Error(`${where}: a guide cannot be updated before it is published`);
   if (!guide.blocks.length) throw new Error(`${where}: the guide has no text`);

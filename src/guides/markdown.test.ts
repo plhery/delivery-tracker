@@ -21,7 +21,11 @@ describe('a guide’s Markdown', () => {
     expect(() => parseGuide(head.replace('updated: 2026-02-01\n', 'updated: 2026-02-01\ntitle: Again\n') + '\nText.')).toThrow(/written once/);
     expect(() => parseGuide(head.replace('picture: Pip looks at a map.\n', '') + '\nText.')).toThrow(/"picture" is missing/);
     expect(() => parseGuide(head.replace('where-is-my-parcel', 'Where_Is') + '\nText.')).toThrow(/the slug is lowercase/);
-    expect(() => parseGuide(head.replace('2026-02-01', '1 February') + '\nText.')).toThrow(/a date is written 2026-01-31/);
+    expect(() => parseGuide(head.replace('2026-02-01', '1 February') + '\nText.')).toThrow(/written 2026-01-31, not "1 February"/);
+    for (const day of ['2026-02-30', '2026-04-31', '2025-02-29', '2026-13-01']) {
+      expect(() => parseGuide(head.replace('2026-02-01', day) + '\nText.'), day).toThrow(/a date is a day of the calendar/);
+    }
+    expect(parseGuide(head.replace('2026-02-01', '2028-02-29') + '\nText.').updated).toBe('2028-02-29');
     expect(() => parseGuide(head.replace('2026-02-01', '2025-12-01') + '\nText.')).toThrow(/updated before it is published/);
     expect(() => parseGuide(`${head}\n## A heading first\n`)).toThrow(/opens with a paragraph/);
     expect(() => parseGuide(`${head}\n\n`)).toThrow(/has no text/);
@@ -45,6 +49,8 @@ describe('a guide’s Markdown', () => {
     expect(() => parseInline('A stray ] bracket')).toThrow(/needs a backslash/);
     expect(() => parseInline('Empty **** bold')).toThrow(/bold text is empty/);
     expect(() => parseInline('')).toThrow(/text is empty/);
+    expect(() => parseInline('![A map](https://a.example/map.png)')).toThrow(/holds no images/);
+    expect(parseInline('Yes\\![a link](https://a.example)')).toEqual([{ type: 'text', text: 'Yes!' }, { type: 'link', href: 'https://a.example', children: [{ type: 'text', text: 'a link' }] }]);
   });
 
   it('reads lists, notes and tables', () => {
@@ -66,6 +72,11 @@ describe('a guide’s Markdown', () => {
     expect(() => parseBlocks('# A title')).toThrow(/headings are "## " or "### "/);
     expect(() => parseBlocks('## A heading\nwith a line')).toThrow(/a heading stands alone/);
     expect(() => parseBlocks('A paragraph\n  with an indented line')).toThrow(/start at the margin/);
+    // Markdown the guides do not use is refused, not published as something else.
+    expect(() => parseBlocks('* One\n* Two')).toThrow(/items start with "- "/);
+    expect(() => parseBlocks('+ One\n+ Two')).toThrow(/items start with "- "/);
+    expect(() => parseBlocks('A paragraph\n* and a list')).toThrow(/items start with "- "/);
+    for (const rule of ['---', '***', '___', 'A heading as a line\n---']) expect(() => parseBlocks(rule), rule).toThrow(/draws no lines/);
   });
 
   it('gives two headings of the same words different anchors', () => {
@@ -91,6 +102,10 @@ describe('a guide’s Markdown', () => {
 
   it('refuses a drawing it does not know or cannot finish', () => {
     expect(() => parseBlocks(':::gallery\n- A\n:::')).toThrow(/there is no ":::gallery"/);
+    for (const opening of [':::', ':::Steps', '::: steps', ':::steps:']) {
+      expect(() => parseBlocks(`${opening}\n- A | B\n:::`, 'content/guides/x/en.md'), opening).toThrow(`content/guides/x/en.md: "${opening}" opens nothing`);
+    }
+    expect(() => parseBlocks('A paragraph.\n:::', 'content/guides/x/en.md')).toThrow('content/guides/x/en.md: ":::" opens nothing');
     expect(() => parseBlocks(':::steps\n- A | B')).toThrow(/not closed/);
     expect(() => parseBlocks(':::steps\n:::')).toThrow(/":::steps" is empty/);
     expect(() => parseBlocks(':::steps now\n- A | B\n:::')).toThrow(/takes nothing after its name/);

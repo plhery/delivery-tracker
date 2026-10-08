@@ -37,6 +37,8 @@ Text.
 - `slug`: the address in that language, as lowercase ASCII letters, digits and hyphens.
   Changing it breaks links that already point at the guide.
 - `updated`: the day the facts were last checked.
+- The English text has at least 600 words, and each translation between 0.6 and 1.6 times
+  as many.
 
 ## What the text can hold
 
@@ -45,8 +47,9 @@ Text.
 - `**bold**`, `*italics*`, `` `code` `` for tracking numbers and a carrier's exact words.
 - Links to an `https://` page, to the tracker as `[Peek](/)`, which leads to the landing in
   the guide's language, and to another guide by id as `[customs](guide:customs)`, which
-  leads to that guide in the guide's language.
-- A backslash before `*`, `[`, `]` or `|` writes the character itself.
+  leads to that guide in the guide's language. A guide does not link itself.
+- A backslash before `*`, `[`, `]`, `|` or `!` writes the character itself. There are no
+  pictures, rules or `*`/`+` lists.
 
 Four blocks are drawn rather than set as text:
 

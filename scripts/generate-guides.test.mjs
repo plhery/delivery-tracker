@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -61,8 +61,13 @@ test('a link to a guide that does not exist, a shared address and a long title a
   refuses(({ edit }) => edit('es', /^title: .+$/m, `title: ${'largo '.repeat(14)}`), /the title has 83 characters/);
 });
 
-test('a folder the list does not name is refused', () => {
+test('a folder the list does not name, and an id that is no slug, are refused', () => {
   refuses(({ directory, first }) => cpSync(path.join(directory, first), path.join(directory, 'unlisted'), { recursive: true }), /unlisted is not listed/);
+  refuses(({ directory, first }) => {
+    renameSync(path.join(directory, first), path.join(directory, 'Bad_Id'));
+    const index = path.join(directory, 'index.json');
+    writeFileSync(index, readFileSync(index, 'utf8').replace(`"${first}"`, '"Bad_Id"'));
+  }, /"Bad_Id" is not an id/);
 });
 
 test('French titles are listed as French guides are set, the narrow space written as its escape', () => {

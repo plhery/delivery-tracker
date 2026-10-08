@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { SUPPORTED_LOCALES } from '../src/lib/locale.ts';
-import { figureShape, linkedGuides, parseGuide, typeset, wordCount } from '../src/guides/markdown.ts';
+import { figureShape, GUIDE_SLUG, linkedGuides, parseGuide, typeset, wordCount } from '../src/guides/markdown.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const contentRoot = path.join(root, 'content', 'guides');
@@ -20,6 +20,8 @@ const LIMITS = { title: 60, description: [110, 165], words: 600, translated: [.6
 export function readGuides(directory = contentRoot) {
   const ids = JSON.parse(readFileSync(path.join(directory, 'index.json'), 'utf8'));
   if (!Array.isArray(ids) || new Set(ids).size !== ids.length) throw new Error('content/guides/index.json lists each guide once');
+  // An id names the guide's screen in the analytics and its `guide:` links.
+  for (const id of ids) if (typeof id !== 'string' || !GUIDE_SLUG.test(id)) throw new Error(`content/guides/index.json: ${JSON.stringify(id)} is not an id: lowercase letters, digits and hyphens`);
   const folders = readdirSync(directory, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
   for (const folder of folders) if (!ids.includes(folder)) throw new Error(`content/guides/${folder} is not listed in index.json`);
 
