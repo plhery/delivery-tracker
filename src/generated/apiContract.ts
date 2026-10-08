@@ -1046,7 +1046,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^(?:[68][A-Z]|5[N-Z])\\d{11}$",
+        "pattern": "^(?:[1-36-9][A-Z]|5[N-Z])\\d{11}$",
         "confidence": "high",
         "checksum": "colissimo"
       },
@@ -1055,12 +1055,16 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       },
       {
-        "pattern": "^(?:870|880)\\d{11}[0-9A-Z]$",
+        "pattern": "^(?:86[56]|87[05]|88[05])\\d{11}[0-9A-Z]$",
         "confidence": "high",
         "checksum": "dpd"
       },
       {
         "pattern": "^(?:870|880)\\d{11}[0-9A-Z]$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^(?:86[56]|87[05]|88[05])\\d{11}$",
         "confidence": "low"
       },
       {
@@ -1210,7 +1214,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^[A-Z0-9]{12}(?:0[1-9]|[1-8]\\d|9[0-5]|97|98)\\d{3}$",
+        "pattern": "^[A-Z0-9]{12}(?:(?:0[1-9]|[1-8]\\d|9[0-5]|97|98)\\d{3}|[BL][1-9]\\d{3})$",
         "confidence": "low"
       },
       {
@@ -1222,7 +1226,9 @@ export const CARRIER_CAPABILITIES = {
       "Colis Prive"
     ],
     "countries": [
-      "FR"
+      "FR",
+      "BE",
+      "LU"
     ]
   },
   "geodis": {
@@ -3372,6 +3378,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^VG\\d{11}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^JD(?:\\d{13}|[A-Z]\\d{12}|[A-Z]{2}\\d{11})$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://www.jingdonglogistics.com/Tracking?waybillCodes={trackingNumber}",
@@ -3778,7 +3788,7 @@ export const CARRIER_CAPABILITIES = {
           "sporing.bring.no",
           "sporing.posten.no"
         ],
-        "path": "^/sporing/([A-Z0-9]{13,18})/?$"
+        "path": "^/sporing/([A-Z0-9]{13,20})/?$"
       },
       {
         "domains": [
@@ -3788,6 +3798,18 @@ export const CARRIER_CAPABILITIES = {
         "params": [
           "q"
         ]
+      },
+      {
+        "domains": [
+          "tracking.bring.com",
+          "tracking.bring.se",
+          "tracking.bring.dk"
+        ],
+        "params": [
+          "packageNumber",
+          "q"
+        ],
+        "path": "^/tracking/([A-Z0-9]{13,20})/?$"
       }
     ],
     "detectionRules": [
@@ -3795,6 +3817,24 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^[A-Z]{2}\\d{9}NO$",
         "confidence": "high",
         "checksum": "s10"
+      },
+      {
+        "pattern": "^37[03]\\d{15}$",
+        "confidence": "low",
+        "checksum": "gs1",
+        "preferred": true
+      },
+      {
+        "pattern": "^0037[03]\\d{15}$",
+        "confidence": "low",
+        "checksum": "sscc",
+        "preferred": true
+      },
+      {
+        "pattern": "^70\\d{15}$",
+        "confidence": "low",
+        "checksum": "gs1",
+        "preferred": true
       }
     ],
     "trackingUrlTemplate": "https://sporing.bring.no/sporing/{trackingNumber}?lang=en",
