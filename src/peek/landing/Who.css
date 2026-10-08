@@ -28,7 +28,7 @@
 .landing-guides strong { font-size: 22px; font-weight: 650; letter-spacing: -.02em; line-height: 1.2; text-wrap: balance; }
 .landing-guides ul { display: grid; margin: 0; padding: 0; border-radius: 18px; background: var(--paper); list-style: none; }
 .landing-guides li + li { border-top: 1px solid var(--line); }
-.landing-guides li a { display: flex; align-items: center; min-height: 52px; padding: 10px 16px; line-height: 1.35; text-decoration: none; }
+.landing-guides li a { display: flex; align-items: center; min-height: 52px; padding: 10px 16px; line-height: 1.35; text-decoration: none; overflow-wrap: anywhere; }
 .landing-guides li a:hover { text-decoration: underline; }
 .landing-guides__all { justify-self: center; display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-soft); font-size: 13px; }
 @media (prefers-reduced-motion: reduce) { .landing-guides:popover-open { animation: none; } }
