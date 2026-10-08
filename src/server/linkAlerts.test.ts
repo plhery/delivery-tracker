@@ -52,6 +52,7 @@ beforeEach(() => {
   failures = vi.spyOn(client, 'setParcelLinkAlertFailures').mockResolvedValue();
   vi.spyOn(client, 'latestScanTimes').mockResolvedValue(new Map());
   vi.spyOn(client, 'packageJoinTimes').mockResolvedValue(new Map());
+  vi.spyOn(client, 'handoffScans').mockResolvedValue([]);
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
@@ -127,6 +128,23 @@ describe('what an alert announces', () => {
     const counted = vi.spyOn(metrics, 'recordParcelAlertSent');
     expect(await alerts.dispatch()).toMatchObject({ attempted: 0, sent: 0 });
     expect(send).not.toHaveBeenCalled();
+    expect(counted).toHaveBeenCalledExactlyOnceWith('skipped');
+  });
+
+  it('handles a relay copy told after the scan it repeats silently, as for accounts', async () => {
+    pending([row({ event_id: 'copy', occurred_at: '2026-10-02T12:30:00Z', event_created_at: '2026-10-02T12:39:00Z' })]);
+    const stored = (id: string, source: string, occurred_at: string, created_at: string) => ({
+      id, stage: 'in_transit', occurred_at, created_at, provider_event_id: `${source}:${id}`,
+    });
+    vi.mocked(client.handoffScans).mockResolvedValue([{
+      id: 'package-1', carrier: 'dhl', carrier_data: { original_carrier: 'dhl', active_tracking_carrier: 'swiss-post' }, tracking_events: [
+        stored('scan', 'swiss-post', '2026-10-02T12:30:41Z', '2026-10-02T12:31:00Z'), stored('copy', 'dhl', '2026-10-02T12:30:00Z', '2026-10-02T12:39:00Z'),
+      ],
+    }]);
+    const counted = vi.spyOn(metrics, 'recordParcelAlertSent');
+    expect(await alerts.dispatch()).toMatchObject({ attempted: 0, sent: 0 });
+    expect(send).not.toHaveBeenCalled();
+    expect(handled).toHaveBeenCalledExactlyOnceWith('alert-1', ['copy']);
     expect(counted).toHaveBeenCalledExactlyOnceWith('skipped');
   });
 

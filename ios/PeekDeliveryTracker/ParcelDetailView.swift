@@ -1020,9 +1020,13 @@ struct ParcelJournal: View {
     @State private var showingFullJourney = true
 
     var body: some View {
-        let groups = journalDays(parcel)
-        let eventCount = parcel.trackingEvents.count
-        let currentEventID = parcel.currentEvent?.id
+        let entries = parcel.journalEntries
+        let groups = journalDays(entries)
+        let eventCount = entries.count
+        // A copy the journal shows under its scan is current through that scan.
+        let currentEventID = parcel.currentEvent.flatMap { current in
+            entries.first { $0.id == current.id || $0.relays.contains(current) }?.id
+        }
         let syncing = parcel.displayStatus.syncing
         return VStack(alignment: .leading, spacing: 0) {
             Button {
@@ -1052,9 +1056,9 @@ struct ParcelJournal: View {
                         .foregroundStyle(.secondary).padding(.top, 22).padding(.bottom, 13)
                         .accessibilityAddTraits(.isHeader)
                     VStack(alignment: .leading, spacing: 18) {
-                        ForEach(group.events) { event in
-                            JournalEventRow(event: event, tint: tint,
-                                isCurrent: event.id == currentEventID,
+                        ForEach(group.entries) { entry in
+                            JournalEventRow(event: entry.event, relays: entry.relays, tint: tint,
+                                isCurrent: entry.id == currentEventID,
                                 syncing: syncing)
                         }
                     }
@@ -1064,14 +1068,15 @@ struct ParcelJournal: View {
         .padding(.horizontal, 2)
     }
 
-    private func journalDays(_ parcel: Parcel) -> [JournalDay] {
+    private func journalDays(_ entries: [JournalEntry]) -> [JournalDay] {
         var groups: [JournalDay] = []
         let calendar = Calendar.current
-        for event in parcel.sortedEvents {
+        for entry in entries {
+            let event = entry.event
             let date = DateParser.date(event.occurredAt)
             let key = date.map { String(calendar.startOfDay(for: $0).timeIntervalSince1970) } ?? event.occurredAt
             if let index = groups.firstIndex(where: { $0.id == key }) {
-                groups[index].events.append(event)
+                groups[index].entries.append(entry)
             } else {
                 let label: String
                 if let date {
@@ -1082,7 +1087,7 @@ struct ParcelJournal: View {
                         label = localizer.shortDate(date) + (year == calendar.component(.year, from: Date()) ? "" : " \(year)")
                     }
                 } else { label = event.occurredAt }
-                groups.append(JournalDay(id: key, label: label, events: [event]))
+                groups.append(JournalDay(id: key, label: label, entries: [entry]))
             }
         }
         return groups
@@ -1098,11 +1103,12 @@ private struct CarrierEditorRequest: Identifiable {
 private struct JournalDay: Identifiable {
     let id: String
     let label: String
-    var events: [TrackingEvent]
+    var entries: [JournalEntry]
 }
 
 private struct JournalEventRow: View {
     let event: TrackingEvent
+    var relays: [TrackingEvent] = []
     let tint: Color
     let isCurrent: Bool
     let syncing: Bool
@@ -1118,12 +1124,18 @@ private struct JournalEventRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(syncing && isCurrent && event.stage == .pending
                      ? localizer.text("timeline.syncing")
-                     : localizer.eventDescription(event.description.nonEmpty ?? localizer.text(event.stage.localizationKey)))
+                     : wording(event))
                     .font(.footnote)
                     .fixedSize(horizontal: false, vertical: true)
                 if let location = event.location?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty {
                     EventLocation(location: location)
                         .font(.caption2).foregroundStyle(.secondary)
+                }
+                // A copy's words stay in sight, in case it was a scan of its own.
+                ForEach(relayed, id: \.self) { line in
+                    Text(line)
+                        .font(.caption2).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1134,6 +1146,16 @@ private struct JournalEventRow: View {
     private var time: String {
         guard let date = DateParser.date(event.occurredAt) else { return "—" }
         return localizer.clockTime(date)
+    }
+
+    private func wording(_ event: TrackingEvent) -> String {
+        localizer.eventDescription(event.description.nonEmpty ?? localizer.text(event.stage.localizationKey))
+    }
+
+    /// The copies' words, once each, when they differ from the scan's.
+    private var relayed: [String] {
+        var seen: Set<String> = [wording(event)]
+        return relays.map(wording).filter { seen.insert($0).inserted }
     }
 }
 

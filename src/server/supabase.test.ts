@@ -717,4 +717,20 @@ describe('notification reads', () => {
     expect(pages.map((page) => page.get('id')!.slice(4, -1).split(',').length)).toEqual([100, 1]);
     expect(pages[0]!.get('select')).toBe('id,created_at,owned_since');
   });
+
+  it('reads the scans of handed-over parcels, with their carriers, for relay copies', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const scan = { id: 'scan', stage: 'in_transit', occurred_at: '2026-09-09T14:16:00Z', created_at: '2026-09-09T15:30:01Z', provider_event_id: 'dhl:a' };
+    const request = vi.spyOn(client, 'request').mockResolvedValue([
+      { id: 'package-1', carrier: 'dhl', original_carrier: 'dhl', active_tracking_carrier: 'swiss-post', tracking_events: [scan] },
+    ]);
+    await expect(client.handoffScans(['package-1', 'package-2', 'package-1'])).resolves.toEqual([{
+      id: 'package-1', carrier: 'dhl', carrier_data: { original_carrier: 'dhl', active_tracking_carrier: 'swiss-post' }, tracking_events: [scan],
+    }]);
+    const page = new URL(`https://database.example${String(request.mock.calls[0]![0])}`).searchParams;
+    expect(page.get('id')).toBe('in.(package-1,package-2)');
+    // A parcel of one carrier has nothing to pair.
+    expect(page.get('carrier_data->>original_carrier')).toBe('not.is.null');
+    expect(page.get('select')).toContain('tracking_events(id,stage,occurred_at,created_at,provider_event_id)');
+  });
 });

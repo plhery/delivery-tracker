@@ -346,6 +346,7 @@ struct TrackingEvent: Codable, Equatable, Hashable, Sendable, Identifiable {
     var location: String? = nil
     var occurredAt: String
     var place: EventPlace? = nil
+    var relayOf: UUID? = nil
 
     private enum CodingKeys: String, CodingKey {
         case id
@@ -355,6 +356,7 @@ struct TrackingEvent: Codable, Equatable, Hashable, Sendable, Identifiable {
         case location
         case occurredAt
         case place
+        case relayOf
     }
 }
 

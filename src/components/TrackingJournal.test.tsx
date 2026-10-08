@@ -43,6 +43,29 @@ describe('TrackingJournal', () => {
     expect(flag).toHaveAttribute('aria-hidden', 'true');
   });
 
+  it('shows an earlier carrier\'s relay copy as a line under the scan it repeats, keeping its words', () => {
+    const { container } = render(<TrackingJournal events={[
+      event('arrived', '2024-09-09T14:16:51', 'Arrival in destination country'),
+      { ...event('copy', '2024-09-09T14:16:00', 'The shipment has arrived in the destination country'), relayOf: 'arrived' },
+      // A scan of its own taken for a copy is still there to read.
+      event('sorted', '2024-09-09T15:40:38', 'Sorted'),
+      { ...event('loaded', '2024-09-09T15:40:00', 'Loaded onto a vehicle'), relayOf: 'sorted' },
+      // Told after the scan in the same words: nothing more to show, and the scan stays the current step.
+      { ...event('delivered', '2024-09-09T18:00:00', 'Delivered'), stage: 'delivered' },
+      { ...event('delivered-copy', '2024-09-09T18:00:30', 'Delivered'), stage: 'delivered', relayOf: 'delivered' },
+      // Without the scan it repeats, a copy keeps its row.
+      { ...event('orphan', '2024-09-09T10:00:00', 'Handed over'), relayOf: 'not-served' },
+    ]} />);
+    expect(screen.getByText('4 updates')).toBeInTheDocument();
+    const rows = [...container.querySelectorAll('.tracking-journal__events li')];
+    expect(rows.map(row => [...row.querySelectorAll('p')].map(line => line.textContent))).toEqual([
+      ['Delivered'], ['Sorted', 'Loaded onto a vehicle'], ['Arrival in destination country', 'The shipment has arrived in the destination country'], ['Handed over'],
+    ]);
+    expect([...container.querySelectorAll('.tracking-journal__relay')].map(line => line.textContent))
+      .toEqual(['Loaded onto a vehicle', 'The shipment has arrived in the destination country']);
+    expect(rows[0]).toHaveAttribute('aria-current', 'step');
+  });
+
   it('handles missing descriptions, invalid scan times and empty syncing history', () => {
     const { rerender } = render(<TrackingJournal events={[event('invalid', 'Unknown date', '')]} />);
     expect(screen.getByText('Unknown date')).toBeInTheDocument();

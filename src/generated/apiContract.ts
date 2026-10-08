@@ -5103,6 +5103,7 @@ export interface ApiTrackingEventRow {
   "location": string | null;
   "occurred_at": string;
   "place"?: ApiEventPlace | null;
+  "relay_of"?: string;
 }
 
 export interface ApiPackageRow {

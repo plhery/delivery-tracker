@@ -682,6 +682,25 @@ export class SupabaseClient {
     return joined;
   }
 
+  /**
+   * The packages handed over from one carrier to another, each with its
+   * carriers and its stored scans, saying when each was stored, so a relay copy
+   * can be told from news (relayCopies.ts). A package of one carrier is left out.
+   */
+  async handoffScans(packageIds: string[]): Promise<JsonObject[]> {
+    const ids = [...new Set(packageIds)];
+    const pages = Array.from({ length: Math.ceil(ids.length / 100) }, (_, page) => ids.slice(page * 100, page * 100 + 100));
+    const found = await Promise.all(pages.map(async (page) => rows(await this.request(`/rest/v1/packages?${query([
+      ['id', `in.(${page.join(',')})`],
+      ['carrier_data->>original_carrier', 'not.is.null'],
+      ['select', 'id,carrier,original_carrier:carrier_data->>original_carrier,active_tracking_carrier:carrier_data->>active_tracking_carrier,'
+        + 'tracking_events(id,stage,occurred_at,created_at,provider_event_id)'],
+    ])}`))));
+    return found.flat().map(({ original_carrier, active_tracking_carrier, ...row }) => ({
+      ...row, carrier_data: { original_carrier, active_tracking_carrier },
+    }));
+  }
+
   async listPendingPushNotifications(): Promise<JsonObject[]> {
     const params = query({ select: '*', order: 'event_created_at.asc', limit: '1000' });
     return rows(await this.request(`/rest/v1/pending_push_notifications?${params}`));

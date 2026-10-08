@@ -78,6 +78,8 @@ export interface TrackingEvent {
   location?: string;
   place?: EventPlace;
   occurredAt: string; // ISO timestamp
+  /** The scan of the new carrier this scan of the earlier one repeats; the timeline shows it under that scan. */
+  relayOf?: string;
 }
 
 export interface ParcelWithEvents extends Parcel {

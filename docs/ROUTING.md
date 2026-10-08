@@ -283,6 +283,13 @@ A parcel often changes carrier at the border. The origin history is always kept.
 - Until then the parcel is followed on the origin. The cards, parcel links and the delivered email
   already name the partner the origin names (`delivery_carrier`) as who delivers, and the cards and
   links show its number (`delivery_tracking_number`) after the followed one.
+- After the handoff the origin often goes on telling the partner's scans in its own
+  words, within a minute of them. Both rows are stored, since the same rule now and then
+  pairs two scans of their own. A row of the earlier carrier at the same stage as another
+  source's, within 60 s either way, is served with `relay_of`, that row's id (closest pairs
+  first, one pair per row). The apps show its words as a line under that row instead of a
+  step of its own. Of a pair, the row stored second announces no push or link alert, and
+  the delivered email quotes the other one ([`relayCopies.ts`](../src/server/relayCopies.ts)).
 - Compatibility: AliExpress `L…CH` numbers keep a Swiss Post confirmation probe, and
   selected Swiss postal routes keep their Cainiao fallback.
 

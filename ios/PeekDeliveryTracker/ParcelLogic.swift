@@ -125,6 +125,22 @@ extension Parcel {
         trackingEvents.sorted(by: Self.eventPrecedes)
     }
 
+    /// The journal's rows, newest first. An earlier carrier's copy of a scan
+    /// (`relayOf`) is a line under that scan, and keeps a row of its own when
+    /// that scan is not there.
+    var journalEntries: [JournalEntry] {
+        let byID = Dictionary(trackingEvents.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var relays: [UUID: [TrackingEvent]] = [:]
+        var folded = Set<UUID>()
+        for event in trackingEvents {
+            guard let scanID = event.relayOf, scanID != event.id, let scan = byID[scanID], scan.relayOf == nil else { continue }
+            relays[scanID, default: []].append(event)
+            folded.insert(event.id)
+        }
+        return sortedEvents.filter { !folded.contains($0.id) }
+            .map { JournalEntry(event: $0, relays: (relays[$0.id] ?? []).sorted(by: Self.eventPrecedes)) }
+    }
+
     /// The country code of the first place the parcel was scanned, which is where it was posted.
     var stampOrigin: String? {
         trackingEvents.filter { $0.place != nil }
@@ -315,6 +331,13 @@ private final class LatestEventCache: @unchecked Sendable {
         }
         return current
     }
+}
+
+/// A row of the journal: a scan, and the earlier carrier's copies of it.
+struct JournalEntry: Identifiable, Equatable, Sendable {
+    let event: TrackingEvent
+    let relays: [TrackingEvent]
+    var id: UUID { event.id }
 }
 
 struct ParcelDisplayStatus: Sendable {

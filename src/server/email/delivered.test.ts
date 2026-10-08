@@ -35,6 +35,10 @@ describe('deliveredScan', () => {
     expect(deliveredScan(parcel('dhl', events.slice(0, 2)))).toBeNull();
     expect(deliveredWhen(parcel('dhl', events), { ...reader, stage: 'ready_for_pickup', known: 'timed' })).toEqual({ kind: 'today', time: '11:30' });
   });
+  it('is the scan a relay copy repeats, not the copy told after it', () => {
+    const events = [scan('2026-10-03T12:12:00Z', { id: 'scan' }), scan('2026-10-03T12:12:40Z', { id: 'copy', relayOf: 'scan' })];
+    expect(deliveredScan(parcel('dpd-de', events))?.id).toBe('scan');
+  });
 });
 
 describe('deliveredWhen, told what the scan knows', () => {

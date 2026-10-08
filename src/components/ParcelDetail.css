@@ -146,6 +146,7 @@
 .tracking-journal__location { display: flex; align-items: baseline; gap: 4px; margin-top: 3px; font-size: 11px; color: var(--ink-soft); overflow-wrap: anywhere; }
 /* The nudge lines the flag up with the scan text above it. */
 .tracking-journal__flag { flex: none; margin-left: -1px; font-size: 12px; line-height: 1; }
+.tracking-journal .tracking-journal__relay { margin-top: 3px; font-size: 11px; color: var(--ink-soft); }
 .tracking-journal .timeline-empty { margin-top: 12px; color: var(--ink-soft); }
 /* A long journey folds its older days into one line each. */
 .tracking-journal__day > summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; border-top: 1px solid var(--line); list-style: none; cursor: pointer; }

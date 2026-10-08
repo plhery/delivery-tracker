@@ -4,17 +4,19 @@ import { timeZoneCountry } from 'universal-parcel-scraper';
 import { carrierTimezone } from './carriers';
 import { captureOperationalError } from './observability';
 import { placesForEvents, type EventPoint } from 'universal-parcel-scraper/places';
+import { relayCopies } from './relayCopies';
 import { isRecord, type JsonObject } from './types';
 
 let reported = false;
 
 /**
  * The stored point only feeds the place, and the source only tells Peek's own
- * rows apart: the API returns neither.
+ * rows and relay copies apart: the API returns neither. A relay copy names the
+ * scan it repeats instead.
  */
-function served(event: JsonObject): JsonObject {
-  if (!('point' in event) && !('provider_event_id' in event)) return event;
-  const rest = { ...event };
+function served(event: JsonObject, relayOf?: string): JsonObject {
+  if (!('point' in event) && !('provider_event_id' in event) && !relayOf) return event;
+  const rest: JsonObject = { ...event, ...(relayOf ? { relay_of: relayOf } : {}) };
   delete rest.point;
   delete rest.provider_event_id;
   return rest;
@@ -72,7 +74,8 @@ function carrierCountry(carrier: unknown): string | null {
  * free text locates it, or null. Places are worked out when the package is
  * served, so improving the gazetteer improves every parcel, old ones
  * included. Peek's own opening row is left out once carrier scans reach back
- * to it (see `timeline`).
+ * to it (see `timeline`), and an earlier carrier's relay copy of a scan names
+ * that scan (`relay_of`, see relayCopies.ts).
  */
 export function withEventPlaces(row: JsonObject): JsonObject {
   if (isRecord(row.carrier_data) && 'add_recognition_pending' in row.carrier_data) {
@@ -82,6 +85,8 @@ export function withEventPlaces(row: JsonObject): JsonObject {
   }
   if (!Array.isArray(row.tracking_events) || !row.tracking_events.length) return row;
   const events = timeline(row.tracking_events.filter(isRecord));
+  const relays = relayCopies(row);
+  const shown = (event: JsonObject) => served(event, relays.get(String(event.id)));
   const carrierData = isRecord(row.carrier_data) ? row.carrier_data : {};
   try {
     const ordered = [...events].sort((a, b) => String(a.occurred_at).localeCompare(String(b.occurred_at)));
@@ -94,12 +99,12 @@ export function withEventPlaces(row: JsonObject): JsonObject {
     const byEvent = new Map(ordered.map((event, index) => [event, places[index]]));
     return {
       ...row,
-      tracking_events: events.map((event) => ({ ...served(event), place: byEvent.get(event) ?? null })),
+      tracking_events: events.map((event) => ({ ...shown(event), place: byEvent.get(event) ?? null })),
     };
   } catch (error) {
     // A map is a nice extra: the parcel still loads without one.
     if (!reported) captureOperationalError(error, { component: 'api', operation: 'locate_event_places' });
     reported = true;
-    return { ...row, tracking_events: events.map(served) };
+    return { ...row, tracking_events: events.map(shown) };
   }
 }

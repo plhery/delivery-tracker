@@ -213,6 +213,19 @@ describe('what a link shows', () => {
     expect(JSON.stringify(shown([added]))).not.toContain('provider_event_id');
   });
 
+  it('names the scan a relay copy repeats, as the apps fold it', () => {
+    const scan = (id: string, source: string, occurred_at: string) => ({ id, package_id: 'parcel', stage: 'delivered', description: 'Delivered',
+      location: null, occurred_at, provider_event_id: `${source}:${id}`, point: null });
+    const shown = publicParcelResponse({
+      link: { id: 'k7Qm2xHd9RtW', created_at: '2026-10-02T08:00:00Z', forget_at: null },
+      package: { id: 'parcel', tracking_number: 'TESTPARCEL123456', carrier: 'chronopost', sync_status: 'ok', created_at: '2026-10-02T08:00:00Z',
+        carrier_data: { original_carrier: 'chronopost', active_tracking_carrier: 'dpd-de' },
+        tracking_events: [scan('scan', 'dpd-de', '2026-10-02T07:00:00+00:00'), scan('copy', 'chronopost', '2026-10-02T07:00:30+00:00')] },
+    }, alerts).package.tracking_events;
+    expect(shown.map(({ id, relay_of }) => [id, relay_of])).toEqual([['scan', undefined], ['copy', 'scan']]);
+    expect(shown[0]).not.toHaveProperty('relay_of');
+  });
+
   it('answers with the shapes the web and iPhone clients decode from the shared fixture', () => {
     const { publicParcel, publicLookup, publicGiftParcel } = contractFixture;
     const stored = {

@@ -11,14 +11,34 @@ const OPEN_DAYS = 2;
 const LISTED_DAYS = 3;
 
 /**
+ * The scans the journal lists, and the relay copies each one has: an earlier
+ * carrier's copy of a scan (`relayOf`) is a line under that scan, and keeps a
+ * row of its own when that scan is not there.
+ */
+function withRelays(events: TrackingEvent[]): { listed: TrackingEvent[]; relays: Map<string, TrackingEvent[]> } {
+  const byId = new Map(events.map(event => [event.id, event]));
+  const relays = new Map<string, TrackingEvent[]>();
+  const folded = new Set<TrackingEvent>();
+  for (const event of events) {
+    const scan = event.relayOf ? byId.get(event.relayOf) : undefined;
+    if (!scan || scan === event || scan.relayOf) continue;
+    relays.set(scan.id, [...(relays.get(scan.id) ?? []), event]);
+    folded.add(event);
+  }
+  return { listed: events.filter(event => !folded.has(event)), relays };
+}
+
+/**
  * The whole journey grouped by local calendar day, newest first. With `fold`,
  * a long journey shows its newest days, the days before as one line each to
  * open, and keeps the oldest behind a button.
  */
-export function TrackingJournal({ events, syncing = false, fold = false }: { events: TrackingEvent[]; syncing?: boolean; fold?: boolean }) {
+export function TrackingJournal({ events: allEvents, syncing = false, fold = false }: { events: TrackingEvent[]; syncing?: boolean; fold?: boolean }) {
   const { languageTag, t } = useI18n();
   const [oldestShown, setOldestShown] = useState(false);
+  const { listed: events, relays } = withRelays(allEvents);
   const current = currentEvent(events);
+  const wording = (event: TrackingEvent) => localizedEventDescription(event.description, t) || stageLabel(t, event.stage);
   const groups = new Map<string, { date: Date | null; events: TrackingEvent[] }>();
   for (const event of sortEventsDesc(events)) {
     const date = new Date(event.occurredAt);
@@ -45,10 +65,13 @@ export function TrackingJournal({ events, syncing = false, fold = false }: { eve
       const date = new Date(event.occurredAt);
       const valid = Number.isFinite(date.getTime());
       const isCurrent = event.id === current?.id;
+      // A copy's words stay in sight, in case it was a scan of its own.
+      const relayed = [...new Set((relays.get(event.id) ?? []).map(wording))].filter(line => line !== wording(event));
       return <li key={event.id} className={isCurrent ? 'tracking-journal__current' : undefined} aria-current={isCurrent ? 'step' : undefined}>
         <time dateTime={valid ? event.occurredAt : undefined}>{valid ? new Intl.DateTimeFormat(languageTag, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date) : '—'}</time>
-        <div><p>{syncing && isCurrent && event.stage === 'pending' ? t('timeline.syncing') : localizedEventDescription(event.description, t) || stageLabel(t, event.stage)}</p>
+        <div><p>{syncing && isCurrent && event.stage === 'pending' ? t('timeline.syncing') : wording(event)}</p>
           {event.location?.trim() && <EventPlace location={event.location} />}
+          {relayed.map(line => <p key={line} className="tracking-journal__relay">{line}</p>)}
         </div>
       </li>;
     })}

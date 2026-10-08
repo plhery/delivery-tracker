@@ -1,9 +1,10 @@
 import { generateKeyPairSync } from 'node:crypto';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { compareNotificationEvents, DeliveryLiveActivityNotificationService, NativePushNotificationService, WebPushNotificationService } from './push';
 import { SupabaseServiceClient } from './supabase';
 
 const privateKey = generateKeyPairSync('ec', { namedCurve: 'prime256v1' }).privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+beforeEach(() => { vi.spyOn(SupabaseServiceClient.prototype, 'handoffScans').mockResolvedValue([]); });
 afterEach(() => vi.restoreAllMocks());
 
 /** Web Push counts milliseconds and APNs seconds. */
@@ -165,4 +166,54 @@ it.each(['web', 'native'] as const)('records a batch whose newest scan is more t
   expect(await announced('2026-10-07T07:20:00Z')).toBe(true);
   // A day without a clock has no age to judge.
   expect(await announced('2026-10-05T00:00:00Z', false)).toBe(true);
+});
+
+it.each(['web', 'native'] as const)('records the row of a relay pair that reached the parcel second as handled without announcing it, for %s', async (channel) => {
+  const client = new SupabaseServiceClient('https://example.test', 'test');
+  const clock = clocks('2026-09-09T15:45:00Z');
+  const apns = new NativePushNotificationService(client, 'team', 'key', privateKey, 'app', clock.apns);
+  const service = channel === 'web' ? new WebPushNotificationService(client, '', '', '', clock.web) : apns;
+  const send = vi.spyOn(service, 'send').mockResolvedValue();
+  const ack = channel === 'web' ? vi.spyOn(client, 'recordPushDeliveries').mockResolvedValue() : vi.spyOn(client, 'recordNativePushDeliveries').mockResolvedValue();
+  const pending = channel === 'web' ? vi.spyOn(client, 'listPendingPushNotifications') : vi.spyOn(client, 'listPendingNativePushNotifications');
+  vi.spyOn(client, 'updatePushSubscription').mockResolvedValue();
+  vi.spyOn(client, 'updateNativePushDevice').mockResolvedValue();
+  vi.spyOn(client, 'packageJoinTimes').mockResolvedValue(new Map([['pkg', '2026-09-01T08:00:00Z']]));
+  vi.spyOn(client, 'latestScanTimes').mockResolvedValue(new Map([['pkg', '2026-09-09T15:40:38Z']]));
+  // DHL handed the parcel over to Swiss Post and tells its scans again.
+  const stored = (id: string, source: string, stage: string, occurred_at: string, created_at: string) => ({
+    id, stage, occurred_at, created_at, provider_event_id: `${source}:${id}`,
+  });
+  const scans = [
+    // Swiss Post's scan was announced; DHL's copy comes with a later check.
+    stored('arrived', 'swiss-post', 'in_transit', '2026-09-09T15:10:51Z', '2026-09-09T15:12:00Z'),
+    stored('arrived-copy', 'dhl', 'in_transit', '2026-09-09T15:10:00Z', '2026-09-09T15:30:00Z'),
+    // DHL's copy came first, then Swiss Post's own, with a scan DHL never told.
+    stored('sorted-copy', 'dhl', 'in_transit', '2026-09-09T15:40:00Z', '2026-09-09T15:41:00Z'),
+    stored('sorted', 'swiss-post', 'in_transit', '2026-09-09T15:40:38Z', '2026-09-09T15:44:00Z'),
+    stored('customs', 'swiss-post', 'customs', '2026-09-09T15:20:00Z', '2026-09-09T15:44:00Z'),
+  ];
+  const handoffs = vi.mocked(client.handoffScans).mockResolvedValue([{
+    id: 'pkg', carrier: 'dhl', carrier_data: { original_carrier: 'dhl', active_tracking_carrier: 'swiss-post' }, tracking_events: scans,
+  }]);
+  const dispatched = async (...ids: string[]) => {
+    pending.mockResolvedValueOnce(ids.map((id) => {
+      const { stage, occurred_at, created_at } = scans.find((scan) => scan.id === id)!;
+      return { subscription_id: 'sub', device_id: 'device', package_id: 'pkg', event_id: id, stage, occurred_at, event_created_at: created_at };
+    }));
+    send.mockClear(); ack.mockClear();
+    await service.dispatch();
+    expect(ack).toHaveBeenCalledExactlyOnceWith(channel === 'web' ? 'sub' : 'device', ids);
+    return send.mock.calls.map(([event]) => event.event_id);
+  };
+  // Within an hour of the parcel's newest scan, yet no news.
+  expect(await dispatched('arrived-copy')).toEqual([]);
+  expect(handoffs).toHaveBeenCalledWith(['pkg']);
+  expect(await dispatched('sorted')).toEqual([]);
+  // The rest of the batch is announced as ever, and so is the row that came first.
+  expect(await dispatched('sorted', 'customs')).toEqual(['customs']);
+  expect(await dispatched('sorted-copy')).toEqual(['sorted-copy']);
+  // A failed lookup announces as before.
+  handoffs.mockRejectedValueOnce(new Error('down'));
+  expect(await dispatched('sorted')).toEqual(['sorted']);
 });

@@ -66,6 +66,8 @@ Key server modules:
   that moment, stored by the check that runs as it is added or more than a day older than
   it. A first history that arrives later, from the hours before the add, is announced.
   A batch whose newest scan is more than a day old is stored and shown without an alert.
+  A handoff's relay copy that reaches the parcel after the scan it repeats is never the one
+  announced ([ROUTING.md](ROUTING.md#handoffs-two-carriers)).
 - `email/` tells an account by email that a parcel was delivered or is ready to collect,
   when the account asked for it. The database hands each parcel out once per stage (`claim_delivery_emails`),
   `deliveryEmails.ts` writes the email and sends it through any SMTP service, and
@@ -268,8 +270,10 @@ loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
   added", or a new carrier still to answer. It is served only while no carrier scan is as
   old as it or older, a link placing it when the link was made, so a parcel added
   mid-journey or after its delivery shows the carrier's scans alone. The row never sets
-  the stage, an alert or an email. `src/server/eventPlaces.ts` applies this to every
-  parcel and link the API serves; the account export keeps every stored row.
+  the stage, an alert or an email. An earlier carrier's relay copy of a scan is served
+  under that scan ([handoffs](ROUTING.md#handoffs-two-carriers)).
+  `src/server/eventPlaces.ts` applies this to every parcel and link the API serves; the
+  account export keeps every stored row.
 - **Archiving** keeps the parcel and its history.
 - **A lookup without an account** stores the number once per carrier and inputs, with one
   link per lookup. A link is forgotten 30 days after the parcel is delivered or returned,

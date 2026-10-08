@@ -546,6 +546,37 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(response.packages.first?.trackingEvents, [])
     }
 
+    func testJournalShowsAnEarlierCarriersCopyUnderTheScanItRepeats() throws {
+        let packageID = UUID()
+        let (scan, copy, other, orphan) = (UUID(), UUID(), UUID(), UUID())
+        let event = { (id: UUID, description: String, at: String, relayOf: UUID?) in
+            """
+            {"id": "\(id.uuidString)", "package_id": "\(packageID.uuidString)", "stage": "in_transit",
+             "description": "\(description)", "location": null, "occurred_at": "\(at)"\(relayOf.map { ", \"relay_of\": \"\($0.uuidString)\"" } ?? "")}
+            """
+        }
+        let json = """
+        {"packages": [{
+          "id": "\(packageID.uuidString)", "tracking_number": "RELAYTEST0001", "label": "Relayed", "carrier": "dhl",
+          "created_at": "2026-09-01T10:00:00Z", "expected_delivery": null, "last_status_text": null, "last_synced_at": null,
+          "sync_status": "ok", "sync_error": null, "tracking_url": null, "dpd_postcode": null, "archived_at": null,
+          "notifications_muted": false,
+          "tracking_events": [
+            \(event(scan, "Arrival in destination country", "2026-09-09T14:16:51Z", nil)),
+            \(event(copy, "The shipment has arrived in the destination country", "2026-09-09T14:16:00Z", scan)),
+            \(event(other, "Sorted for delivery", "2026-09-09T15:42:29Z", nil)),
+            \(event(orphan, "The shipment is being prepared for delivery", "2026-09-10T04:44:00Z", UUID()))
+          ]
+        }]}
+        """
+        let parcel = try XCTUnwrap(JSONDecoder.deliveryTracker.decode(PackageListResponse.self, from: Data(json.utf8)).packages.first)
+        XCTAssertEqual(parcel.trackingEvents.first { $0.id == copy }?.relayOf, scan)
+        // The copy is a line under its scan; one whose scan is not there keeps its row.
+        XCTAssertEqual(parcel.journalEntries.map(\.id), [orphan, other, scan])
+        XCTAssertEqual(parcel.journalEntries.last?.relays.map(\.id), [copy])
+        XCTAssertTrue(parcel.journalEntries.dropLast().allSatisfy(\.relays.isEmpty))
+    }
+
     func testGeneratedRequestModelsEncodeAPIFieldNamesAndEnumValues() throws {
         let packageRequest = CreatePackageRequest(
             trackingNumber: "99.34.123456.12345678",

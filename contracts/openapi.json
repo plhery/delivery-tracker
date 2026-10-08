@@ -7616,6 +7616,11 @@
               }
             ],
             "description": "Null when the location names no place the server can trust."
+          },
+          "relay_of": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Set on a scan of the carrier the parcel was handed over from that repeats a scan of another source, at the same stage and within a minute: that scan's id. Apps show it under that scan rather than as a step of its own, and keep its words visible, since it may be a scan of its own."
           }
         }
       },

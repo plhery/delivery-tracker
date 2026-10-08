@@ -13,6 +13,7 @@ import { ALERT_PRESET_STAGES } from '../lib/notificationPresets';
 import { capitalized } from '../peek/parcel/summary';
 import { recordParcelAlertRemoved, recordParcelAlertSent } from './metrics';
 import { logOperationalEvent } from './observability';
+import { relayRepeats } from './relayCopies';
 import { messagesFor } from './requestLocale';
 import type { SupabaseServiceClient } from './supabase';
 import { errorMessage, isRecord, type JsonObject } from './types';
@@ -425,17 +426,34 @@ export function compareNotificationEvents(left: JsonObject, right: JsonObject): 
     || stringField(right, 'event_id').localeCompare(stringField(left, 'event_id'));
 }
 
-/** What a batch of new scans is measured against, by parcel: its newest stored scan, and when it joined its account. */
-interface ParcelTimes { latest: ReadonlyMap<string, string>; joined: ReadonlyMap<string, string> }
+/**
+ * What a batch of new scans is measured against, by parcel: its newest stored
+ * scan, when it joined its account, and the relay copies that reached it after
+ * the scan they pair with (relayCopies.ts).
+ */
+interface ParcelTimes { latest: ReadonlyMap<string, string>; joined: ReadonlyMap<string, string>; repeats: ReadonlySet<string> }
 
-/** A lookup that fails leaves its map empty, and its rule then announces every batch as before. */
+/** A lookup that fails leaves its answer empty, and its rule then announces every batch as before. */
 async function parcelTimes(client: SupabaseServiceClient, batches: Iterable<JsonObject[]>): Promise<ParcelTimes> {
   const ids = [...batches].map((events) => stringField(events[0]!, 'package_id')).filter(Boolean);
-  const read = async (load: () => Promise<Map<string, string>>) => {
-    try { return await load(); } catch { return new Map<string, string>(); }
+  const read = async <T>(load: () => Promise<T>, none: T) => {
+    try { return await load(); } catch { return none; }
   };
-  const [latest, joined] = await Promise.all([read(() => client.latestScanTimes(ids)), read(() => client.packageJoinTimes(ids))]);
-  return { latest, joined };
+  const [latest, joined, handoffs] = await Promise.all([
+    read(() => client.latestScanTimes(ids), new Map<string, string>()),
+    read(() => client.packageJoinTimes(ids), new Map<string, string>()),
+    read(() => client.handoffScans(ids), []),
+  ]);
+  return { latest, joined, repeats: new Set(handoffs.flatMap((row) => [...relayRepeats(row)])) };
+}
+
+/**
+ * The scan a batch announces: its newest, leaving out the row of a relay pair
+ * that reached the parcel second, which repeats news the parcel already had.
+ * None when that is all the batch holds.
+ */
+function announcedScan(events: readonly JsonObject[], { repeats }: ParcelTimes): JsonObject | undefined {
+  return events.filter((event) => !repeats.has(stringField(event, 'event_id'))).sort(compareNotificationEvents)[0];
 }
 
 const BACKFILL_TOLERANCE_MS = 60 * 60 * 1_000;
@@ -444,8 +462,8 @@ const ADD_CHECK_MS = 5 * 60 * 1_000;
 const DAY_MS = 24 * 60 * 60 * 1_000;
 
 /**
- * A batch is announced by its newest scan, unless that scan is not news; the
- * batch is then recorded as handled without a notification.
+ * A batch is announced by its newest scan (`announcedScan`), unless that scan
+ * is not news; the batch is then recorded as handled without a notification.
  *
  * - Backfilled: older than the parcel's newest scan, give or take an hour of
  *   clock skew (partner scans can run ahead). A carrier change backfills
@@ -495,9 +513,9 @@ export class WebPushNotificationService {
     const times = await parcelTimes(this.client, grouped.values());
     for (const events of grouped.values()) {
       signal?.throwIfAborted();
-      const newest = [...events].sort(compareNotificationEvents)[0]!;
-      const subscriptionId = stringField(newest, 'subscription_id');
-      if (isOldNews(newest, times, this.now())) {
+      const newest = announcedScan(events, times);
+      const subscriptionId = stringField(events[0]!, 'subscription_id');
+      if (!newest || isOldNews(newest, times, this.now())) {
         await this.client.recordPushDeliveries(subscriptionId, events.map((event) => stringField(event, 'event_id')).filter(Boolean));
         continue;
       }
@@ -625,7 +643,7 @@ export class ParcelLinkAlertService {
     const times = await parcelTimes(client, grouped.values());
     for (const [alertId, events] of grouped) {
       signal?.throwIfAborted();
-      const newest = events.filter((event) => this.announces(event)).sort(compareNotificationEvents)[0];
+      const newest = announcedScan(events.filter((event) => this.announces(event)), times);
       const finished = FINISHED_STAGES.has(stringField(events[0]!, 'package_stage'));
       const failures = Number(events[0]!.failures ?? 0);
       const eventIds = events.map((event) => stringField(event, 'event_id')).filter(Boolean);
@@ -820,9 +838,9 @@ export class NativePushNotificationService {
     const times = await parcelTimes(this.client, grouped.values());
     for (const events of grouped.values()) {
       signal?.throwIfAborted();
-      const newest = [...events].sort(compareNotificationEvents)[0]!;
-      const deviceId = stringField(newest, 'device_id');
-      if (newest.live_activity_delivered === true || isOldNews(newest, times, this.now() * 1_000)) {
+      const newest = announcedScan(events, times);
+      const deviceId = stringField(events[0]!, 'device_id');
+      if (!newest || newest.live_activity_delivered === true || isOldNews(newest, times, this.now() * 1_000)) {
         await this.client.recordNativePushDeliveries(
           deviceId,
           events.map((event) => stringField(event, 'event_id')).filter(Boolean),

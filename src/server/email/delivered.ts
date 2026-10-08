@@ -18,9 +18,13 @@ export type DeliveredWhen =
   | { kind: 'day'; date: string }
   | { kind: 'plain' };
 
-/** The scan the email tells of, delivered or ready to collect: the newest one, as the app orders scans. */
+/**
+ * The scan the email tells of, delivered or ready to collect: the newest one,
+ * as the app orders scans. A relay copy gives way to the scan it repeats,
+ * which is served with it.
+ */
 export function deliveredScan(parcel: ParcelWithEvents, stage: EmailStage = 'delivered'): TrackingEvent | null {
-  return sortEventsDesc(parcel.events.filter((event) => event.stage === stage))[0] ?? null;
+  return sortEventsDesc(parcel.events.filter((event) => event.stage === stage && !event.relayOf))[0] ?? null;
 }
 
 /**

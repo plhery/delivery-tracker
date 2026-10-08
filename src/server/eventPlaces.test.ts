@@ -84,6 +84,34 @@ describe('withEventPlaces', () => {
     expect(served([added, scan('later', '2026-09-27T12:00:00+00:00')]).every((row) => !('provider_event_id' in row))).toBe(true);
   });
 
+  it('serves an earlier carrier\'s relay copy with the scan it repeats, and keeps both rows', () => {
+    const scan = (id: string, source: string, stage: string, occurredAt: string, description: string) => ({
+      ...event(id, null, occurredAt), stage, description, provider_event_id: `${source}:${id}`,
+    });
+    const row = {
+      id: 'parcel', carrier: 'dhl', carrier_data: { original_carrier: 'dhl', active_tracking_carrier: 'swiss-post' }, tracking_events: [
+        scan('arrived', 'swiss-post', 'in_transit', '2026-09-09T14:16:51+00:00', 'Arrival in destination country'),
+        scan('copy', 'dhl', 'in_transit', '2026-09-09T14:16:00+00:00', 'The shipment has arrived in the destination country'),
+        // Two scans of their own at the same stage would pair too: both stay, words and all.
+        scan('sorted', 'swiss-post', 'in_transit', '2026-09-09T15:40:38+00:00', 'Sorted'),
+        scan('loaded', 'dhl', 'in_transit', '2026-09-09T15:40:00+00:00', 'Loaded onto a vehicle'),
+        scan('customs', 'dhl', 'customs', '2026-09-09T14:18:00+00:00', 'Customs clearance'),
+      ],
+    };
+    const served = (withEventPlaces(row) as { tracking_events: Record<string, unknown>[] }).tracking_events;
+    expect(served.map(({ id, relay_of, description }) => [id, relay_of, description])).toEqual([
+      ['arrived', undefined, 'Arrival in destination country'],
+      ['copy', 'arrived', 'The shipment has arrived in the destination country'],
+      ['sorted', undefined, 'Sorted'],
+      ['loaded', 'sorted', 'Loaded onto a vehicle'],
+      ['customs', undefined, 'Customs clearance'],
+    ]);
+    expect(served.every((scan) => !('provider_event_id' in scan))).toBe(true);
+    // A parcel of one carrier has none.
+    expect((withEventPlaces({ ...row, carrier_data: {} }) as { tracking_events: Record<string, unknown>[] }).tracking_events
+      .some((scan) => 'relay_of' in scan)).toBe(false);
+  });
+
   it('serves the parcel without places when the gazetteer fails, and reports it once', () => {
     vi.spyOn(places, 'placesForEvents').mockImplementation(() => {
       throw new Error('missing gazetteer');
