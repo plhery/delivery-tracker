@@ -212,15 +212,15 @@ export class TrackingRouter {
     // one; ParcelsApp submits it with its direct lookup.
     // timezone is the parcel carrier's catalog zone; when that is UTC, the zone
     // of the carrier confirmed for the same number, else null.
-    universal: (source: UniversalSource, number: string, timeoutMs: number, postcode: string | null, timezone: string | null, countryHint?: string | null) => Promise<CarrierResult>;
+    universal: (source: UniversalSource, number: string, timeoutMs: number, postcode: string | null, timezone: string | null) => Promise<CarrierResult>;
     health: ProviderHealth;
-    preflightInputNeeded?: (number: string, countryHint?: string | null) => { provider: string; field: 'dpdPostcode' } | undefined;
-    takePrefetchedUniversal?: (source: UniversalSource, number: string, postcode: string | null, countryHint?: string | null) => CarrierResult | undefined;
+    preflightInputNeeded?: (number: string) => { provider: string; field: 'dpdPostcode' } | undefined;
+    takePrefetchedUniversal?: (source: UniversalSource, number: string, postcode: string | null) => CarrierResult | undefined;
     /**
      * The answer another check of the same run already got, or awaits, for
      * exactly this lookup. Reusing it contacts nobody, so it takes no lease.
      */
-    reusedUniversal?: (source: UniversalSource, number: string, postcode: string | null, timezone: string | null, countryHint?: string | null) => Promise<CarrierResult> | undefined;
+    reusedUniversal?: (source: UniversalSource, number: string, postcode: string | null, timezone: string | null) => Promise<CarrierResult> | undefined;
     /** A carrier's cheap check of whether it knows a number; without it, no recognition runs. */
     recognize?: (carrier: string, number: string, context?: TrackingContext) => Promise<Recognition>;
     recognizeBrowser?: (carrier: string, number: string, context?: TrackingContext, previousError?: unknown) => Promise<Recognition>;
@@ -246,7 +246,7 @@ export class TrackingRouter {
     const providerInput = isRecord(metadata.universal_input) && metadata.universal_input.number === universalNumber
       && typeof metadata.universal_input.postcode === 'string' ? metadata.universal_input.postcode : null;
     if (!metadata.universal_input && !state.provider_input_needed) {
-      state.provider_input_needed = this.options.preflightInputNeeded?.(universalNumber, countryHint);
+      state.provider_input_needed = this.options.preflightInputNeeded?.(universalNumber);
       if (state.provider_input_needed) recordProviderInput(state.provider_input_needed.provider, 'asked');
     }
     if (state.preferred_number && state.preferred_number !== universalNumber) state.preferred_provider = undefined;
@@ -265,7 +265,7 @@ export class TrackingRouter {
     if (declared === 'unknown' && !state.confirmed_carrier && !metadata.original_carrier
       && !parcel.dpd_postcode && !metadata.universal_input && String(parcel.current_stage ?? 'pending') === 'pending') {
       for (const source of sources) {
-        const result = this.options.takePrefetchedUniversal?.(source, universalNumber, null, countryHint);
+        const result = this.options.takePrefetchedUniversal?.(source, universalNumber, null);
         if (result && usable(result)) { prefetchedUniversal.set(source, result); break; }
       }
     }
@@ -578,7 +578,7 @@ export class TrackingRouter {
       if (attemptedUniversal.has(source) || remaining <= 5_000 || millis(state.failures[source]?.retry_at) > now().getTime()) return null;
       attemptedUniversal.add(source);
       const postcode = providerInput ?? (typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null);
-      const prefetched = prefetchedUniversal.get(source) ?? this.options.takePrefetchedUniversal?.(source, universalNumber, postcode, countryHint);
+      const prefetched = prefetchedUniversal.get(source) ?? this.options.takePrefetchedUniversal?.(source, universalNumber, postcode);
       if (prefetched) {
         const result = normalizeCarrierResult(prefetched);
         if (usable(result) && !foreignHistory(result, universalCarrier, parcel.created_at)) {
@@ -586,9 +586,7 @@ export class TrackingRouter {
           return { result: { ...result, tracking_provider: source }, sourceCarrierId: 'unknown', swissPostReady: null, handoffFallbackErrorType: null };
         }
       }
-      const country = [metadata.destination_country, metadata.destination_country_name, metadata.lookup_country_hint]
-        .find((value): value is string => typeof value === 'string' && Boolean(value.trim()));
-      const reused = this.options.reusedUniversal?.(source, universalNumber, postcode, zone, country);
+      const reused = this.options.reusedUniversal?.(source, universalNumber, postcode, zone);
       const acquire = async () => {
         try { return await this.options.health.acquireTrackingProvider(source); }
         catch {
@@ -623,8 +621,7 @@ export class TrackingRouter {
       let retryAfterMs = 0;
       try {
         const result = normalizeCarrierResult(await (reused ?? this.options.universal(source, universalNumber,
-          Math.max(1, Math.min(universalSourceBudget(source), Math.floor(universalDeadline - performance.now()) - 5_000)), postcode, zone,
-          ...(country ? [country] as const : []))));
+          Math.max(1, Math.min(universalSourceBudget(source), Math.floor(universalDeadline - performance.now()) - 5_000)), postcode, zone)));
         if (!usable(result)) throw new TypeError('No usable universal progress');
         if (foreignHistory(result, universalCarrier, parcel.created_at)) {
           report('foreign_history_rejected', source);

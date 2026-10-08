@@ -614,7 +614,7 @@ describe('TrackingSyncService', () => {
     expect(adapter.recognize).toHaveBeenCalledTimes(5);
   });
 
-  it.each(['ParcelsApp', 'Ship24'] as const)('carries the country hint through %s lookup and later direct recovery', async (provider) => {
+  it.each(['ParcelsApp', 'Ship24'] as const)('keeps the country hint through a %s lookup that does not send it and later direct recovery', async (provider) => {
     vi.spyOn(scraper, 'universalPlan').mockReturnValue({
       sources: [provider], carrier: null, tier: () => 'unknown', rank: () => 0,
     });
@@ -629,7 +629,7 @@ describe('TrackingSyncService', () => {
     let now = new Date('2026-09-10T12:00:00Z');
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
     await service.syncPackage(parcel);
-    expect(adapter.fetchUniversal).toHaveBeenCalledExactlyOnceWith(provider, 'TEST1234', expect.any(Number), null, 'Europe/Berlin', 'FR');
+    expect(adapter.fetchUniversal).toHaveBeenCalledExactlyOnceWith(provider, 'TEST1234', expect.any(Number), null, 'Europe/Berlin');
     const saved = client.updatePackage.mock.calls.at(-1)![1];
     expect(saved.carrier_data.lookup_country_hint).toBe('FR');
     expect(saved.carrier_data.destination_country).toBeUndefined();
@@ -2439,13 +2439,6 @@ describe('TrackingSyncService', () => {
     expect(universal.fetchSource).toHaveBeenCalledWith('Ship24', 'TEST1234', 1000, '8000', null);
     await adapter.fetchUniversal('Ship24', 'TEST1234', 1000, null, 'Europe/Zurich');
     expect(universal.fetchSource).toHaveBeenLastCalledWith('Ship24', 'TEST1234', 1000, null, 'Europe/Zurich');
-  });
-
-  it('passes the country hint through the host adapter to the published scraper', async () => {
-    const universal = { fetchSource: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
-    const adapter = new CarrierTrackingAdapter(universal as unknown as UniversalTracker);
-    await adapter.fetchUniversal('ParcelsApp', 'TEST1234', 1000, '00000', 'Europe/Paris', 'FR');
-    expect(universal.fetchSource).toHaveBeenCalledExactlyOnceWith('ParcelsApp', 'TEST1234', 1000, '00000', 'Europe/Paris', undefined, 'FR');
   });
 
   it('keeps expired Shipping history out of the timeline and Sentry', async () => {

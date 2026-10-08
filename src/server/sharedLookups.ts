@@ -125,8 +125,8 @@ export function carrierLookupKey(carrier: string, trackingNumber: string, tracki
 }
 
 /** What a universal provider lookup sends. */
-export function universalLookupKey(source: string, trackingNumber: string, postcode: string | null, timezone: string | null, country?: string | null): unknown[] {
-  return ['universal', source, number(trackingNumber), text(postcode), text(timezone), text(country)];
+export function universalLookupKey(source: string, trackingNumber: string, postcode: string | null, timezone: string | null): unknown[] {
+  return ['universal', source, number(trackingNumber), text(postcode), text(timezone)];
 }
 
 /** A carrier's check of whether it knows a number, over HTTP or in a browser. */

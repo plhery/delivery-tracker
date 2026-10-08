@@ -46,7 +46,7 @@ async function recognize(trackingNumber: string, beforeAsking?: () => Promise<vo
   }, RECOGNITION_BUDGET_MS, signal);
   const cheap = settleRecognition(outcomes);
   const preflight = !cheap.carrier && !cheap.choices.length && health
-    ? await preflightTracking(trackingNumber, health, signal, countryHint) : undefined;
+    ? await preflightTracking(trackingNumber, health, signal) : undefined;
   if (!cheap.carrier && !cheap.choices.length && !preflight?.trackingFound) {
     const due = browserCandidates.filter(({ carrier }) => !outcomes.some((outcome) => outcome.carrier === carrier && outcome.status !== 'failed'));
     outcomes.push(...await recognizeAll(due, (carrier, context) => recognizeBrowser(carrier, trackingNumber, context, errors.get(carrier)),

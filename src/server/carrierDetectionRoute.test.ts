@@ -70,7 +70,7 @@ it('uses the device region to order queries, partitions its cache and preserves 
   expect(recognize).toHaveBeenCalledTimes(answered);
 });
 
-it('uses a trusted visitor country for recognition and universal preflight without expanding detection', async () => {
+it('uses a trusted visitor country for recognition, not universal preflight, without expanding detection', async () => {
   const number = '00000000000052';
   const response = await POST(new NextRequest('https://delivery.example/api/carriers/detect', {
     method: 'POST', headers: { 'content-type': 'application/json', Authorization: 'Bearer detection-test',
@@ -81,7 +81,7 @@ it('uses a trusted visitor country for recognition and universal preflight witho
   const answer = await response.json();
   expect(answer.asked).toEqual(recognitionAskedCarriers(number, { countryHint: 'FR' }));
   expect(asked()).toHaveLength(5);
-  expect(preflightTracking).toHaveBeenCalledWith(number, expect.any(SupabaseServiceClient), expect.any(AbortSignal), 'FR');
+  expect(preflightTracking).toHaveBeenCalledWith(number, expect.any(SupabaseServiceClient), expect.any(AbortSignal));
 });
 
 it('refuses an invalid device region before spending recognition resources', async () => {
@@ -352,7 +352,7 @@ it('uses universal preflight for a number with no direct candidates and reports 
   vi.mocked(preflightTracking).mockResolvedValue({ trackingFound: true, providers: [{ provider: 'Ship24', outcome: 'history' }] });
   const response = await request('TESTPREFLIGHT0001');
   expect(await response.json()).toEqual({ trackingNumber: 'TESTPREFLIGHT0001', carrier: 'unknown', trackingFound: true, providers: [{ provider: 'Ship24', outcome: 'history' }] });
-  expect(preflightTracking).toHaveBeenCalledWith('TESTPREFLIGHT0001', expect.any(SupabaseServiceClient), expect.any(AbortSignal), null);
+  expect(preflightTracking).toHaveBeenCalledWith('TESTPREFLIGHT0001', expect.any(SupabaseServiceClient), expect.any(AbortSignal));
   expect(recognize).not.toHaveBeenCalled();
 });
 

@@ -84,14 +84,10 @@ describe('persistent tracking routing', () => {
     await http.router.fetch(parcel({ tracking_number: '000000000015' }), false);
     expect(http.recognizeBrowser).not.toHaveBeenCalled();
   });
-  it.each([
-    [{ lookup_country_hint: 'FR' }, 'FR'],
-    [{ lookup_country_hint: 'FR', destination_country: 'CH' }, 'CH'],
-    [{ lookup_country_hint: 'FR', destination_country_name: 'Germany' }, 'Germany'],
-  ])('forwards a destination before the weak country hint: %j', async (carrier_data, country) => {
+  it('sends universal providers neither the country hint nor a destination', async () => {
     const { router, universal } = setup();
-    await router.fetch(parcel({ carrier_data }), false);
-    expect(universal).toHaveBeenCalledWith('ParcelsApp', 'TEST1234', expect.any(Number), null, null, country);
+    await router.fetch(parcel({ carrier_data: { lookup_country_hint: 'FR', destination_country: 'CH' } }), false);
+    expect(universal).toHaveBeenCalledExactlyOnceWith('ParcelsApp', 'TEST1234', expect.any(Number), null, null);
   });
 
   it('retains actionable input failures through a deferred lookup', async () => {
@@ -786,7 +782,7 @@ describe('persistent tracking routing', () => {
     const router = new TrackingRouter({ direct, universal, health, recognize, recognizeBrowser, reusedUniversal, now: () => time });
     const result = await router.fetch(parcel(), false);
     expect(result.result).toMatchObject({ tracking_provider: 'ParcelsApp', routing: { preferred_provider: 'ParcelsApp' } });
-    expect(reusedUniversal).toHaveBeenCalledExactlyOnceWith('ParcelsApp', 'TEST1234', null, null, undefined);
+    expect(reusedUniversal).toHaveBeenCalledExactlyOnceWith('ParcelsApp', 'TEST1234', null, null);
     expect(universal).not.toHaveBeenCalled();
     expect(health.acquireTrackingProvider).not.toHaveBeenCalled();
     expect(health.finishTrackingProvider).not.toHaveBeenCalled();
@@ -1187,13 +1183,13 @@ describe('routingFailure with carrier package errors', () => {
 });
 
 describe('universal preflight and recipient input', () => {
-  it('reuses a selected carrier preflight only in the same country context', async () => {
+  it('reuses a selected carrier preflight whatever the country hint', async () => {
     const { router, direct, universal, health } = setup();
     direct.mockRejectedValue(new Error('carrier unavailable'));
-    const cached = vi.fn((source, _number, _postcode, country) => source === 'ParcelsApp' && country === 'FR' ? history() : undefined);
+    const cached = vi.fn((source) => source === 'ParcelsApp' ? history() : undefined);
     router.options.takePrefetchedUniversal = cached;
     const result = await router.fetch(parcel({ carrier: 'dhl', carrier_data: { lookup_country_hint: 'FR' } }), false);
-    expect(cached).toHaveBeenCalledWith('ParcelsApp', 'TEST1234', null, 'FR');
+    expect(cached).toHaveBeenCalledWith('ParcelsApp', 'TEST1234', null);
     expect(result.result.tracking_provider).toBe('ParcelsApp');
     expect(universal).not.toHaveBeenCalled();
     expect(health.acquireTrackingProvider).not.toHaveBeenCalled();
