@@ -322,7 +322,9 @@ guessed.
 `tracking_provider_health` (service role only) coordinates workers:
 
 - one 90 s lease per universal provider, token-fenced, expiring if a worker crashes;
-- 5 s spacing after a healthy call;
+- 5 s spacing after a healthy call or one without history. A check that finds a provider
+  free again within 6 s waits for it (twice at most) when the call still keeps its full
+  lookup budget, rather than recording a cooldown and moving on;
 - cooldowns: 429 → at least 15 min, verification → 1 h, other failures → 1 min to 1 h
   (exponential);
 - not-found and `no_history` are per-parcel and never open a global cooldown.

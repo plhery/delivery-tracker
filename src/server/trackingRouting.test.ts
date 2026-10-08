@@ -34,8 +34,10 @@ function setup(now = time) {
   // No carrier knows the number unless a test says so.
   const recognize = vi.fn().mockResolvedValue({ known: false });
   const recognizeBrowser = vi.fn().mockResolvedValue({ known: false });
-  return { direct, universal, health, recognize, recognizeBrowser,
-    router: new TrackingRouter({ direct, universal, health, recognize, recognizeBrowser, now: () => now }) };
+  // A provider's spacing is waited out instantly.
+  const wait = vi.fn().mockResolvedValue(undefined);
+  return { direct, universal, health, recognize, recognizeBrowser, wait,
+    router: new TrackingRouter({ direct, universal, health, recognize, recognizeBrowser, wait, now: () => now }) };
 }
 beforeEach(() => vi.spyOn(monitoring, 'reportRoutingEvent').mockImplementation(() => undefined));
 afterEach(() => vi.restoreAllMocks());
@@ -733,10 +735,50 @@ describe('persistent tracking routing', () => {
     expect(universal).toHaveBeenCalledOnce();
   });
   it('skips a shared provider cooldown and tries a healthy provider', async () => {
-    const { router, health, universal } = setup();
+    const { router, health, universal, wait } = setup();
     health.acquireTrackingProvider.mockResolvedValueOnce({ token: null, retry_at: '2026-09-10T13:00:00Z' });
     await router.fetch(parcel(), false);
     expect(universal.mock.calls.map(([source]) => source)).toEqual(['Ship24']);
+    expect(wait).not.toHaveBeenCalled();
+  });
+  it('waits out a provider spaced after another check instead of skipping it', async () => {
+    const { router, health, universal, wait } = setup();
+    health.acquireTrackingProvider.mockResolvedValueOnce({ token: null, retry_at: '2026-09-10T12:00:04Z' });
+    const result = await router.fetch(parcel(), false);
+    const first = health.acquireTrackingProvider.mock.calls[0][0];
+    expect(wait).toHaveBeenCalledExactlyOnceWith(4_000, undefined);
+    expect(health.acquireTrackingProvider.mock.calls.map(([source]) => source)).toEqual([first, first]);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual([first]);
+    expect(result.result).toMatchObject({ tracking_provider: first, routing: { failures: {} } });
+    expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('provider_paced', expect.objectContaining({ provider: first }));
+  });
+  it('records a provider still spaced after two waits as busy and moves on', async () => {
+    const { router, health, universal, wait } = setup();
+    health.acquireTrackingProvider.mockResolvedValueOnce({ token: null, retry_at: '2026-09-10T12:00:02Z' })
+      .mockResolvedValueOnce({ token: null, retry_at: '2026-09-10T12:00:03Z' })
+      .mockResolvedValueOnce({ token: null, retry_at: '2026-09-10T12:00:05Z' });
+    const result = await router.fetch(parcel(), false);
+    const first = health.acquireTrackingProvider.mock.calls[0][0];
+    expect(wait.mock.calls.map(([ms]) => ms)).toEqual([2_000, 3_000]);
+    expect(universal).toHaveBeenCalledOnce();
+    expect(universal.mock.calls[0][0]).not.toBe(first);
+    expect(result.result.routing).toMatchObject({ failures: { [first]: { kind: 'rate_limited', retry_at: '2026-09-10T12:00:05Z' } } });
+  });
+  it('does not wait for a spaced provider when the wait would cut into its lookup budget', async () => {
+    const { router, health, universal, wait } = setup();
+    let clock = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => clock);
+    const total = scraper.universalPlan({ carriers: ['unknown'], trackingNumber: 'TEST1234' }).sources
+      .reduce((sum, source) => sum + scraper.universalSourceBudget(source) + 5_000, 0);
+    // The check reaches the first provider with 20 s of its universal budget left.
+    health.acquireTrackingProvider.mockImplementationOnce(async () => {
+      clock += total - 20_000;
+      return { token: null, retry_at: '2026-09-10T12:00:02Z' };
+    });
+    await router.fetch(parcel(), false);
+    expect(wait).not.toHaveBeenCalled();
+    expect(universal).toHaveBeenCalledOnce();
+    expect(universal.mock.calls[0][2]).toBe(15_000);
   });
   it('retains provider-specific Retry-After and stops cascading on a fresh universal 429', async () => {
     const { router, universal, health } = setup();

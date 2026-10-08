@@ -1,4 +1,5 @@
 import 'server-only';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { trackingFailureCode } from './trackingFailure';
 
 import { DateTime } from 'luxon';
@@ -186,6 +187,12 @@ export function detectionNames(number: string, carrier: string): boolean {
 const CANDIDATE_PROBE_WINDOW = 30 * DAY;
 /** Every recognition answer a sync waits for; later answers are ignored. */
 const RECOGNITION_BUDGET_MS = 15_000;
+/**
+ * A provider busy for no longer than this is only spaced after another check
+ * (5 s after a healthy call): it is waited for, at most twice per provider.
+ */
+const PACING_WAIT_MS = 6_000;
+const PACING_ROUNDS = 2;
 
 export class RoutingDeferred extends Error {
   /** `attempted` counts providers actually contacted; zero means every tier was still cooling down. */
@@ -213,6 +220,8 @@ export class TrackingRouter {
     recognize?: (carrier: string, number: string, context?: TrackingContext) => Promise<Recognition>;
     recognizeBrowser?: (carrier: string, number: string, context?: TrackingContext, previousError?: unknown) => Promise<Recognition>;
     now?: () => Date;
+    /** Waits out a provider's spacing; tests replace the timer. */
+    wait?: (ms: number, signal?: AbortSignal) => Promise<unknown>;
     enablePostalNinja?: boolean;
   }) {}
 
@@ -572,17 +581,31 @@ export class TrackingRouter {
           return { result: { ...result, tracking_provider: source }, sourceCarrierId: 'unknown', swissPostReady: null, handoffFallbackErrorType: null };
         }
       }
-      let lease: { token: string | null; retry_at: string };
-      try { lease = await this.options.health.acquireTrackingProvider(source); }
-      catch {
-        report('health_store_unavailable', source, 'transport');
-        state.failures[source] = { count: 0, kind: 'transport', retry_at: iso(now().getTime() + 15 * 60_000) };
-        return null; // Fail closed: do not flood upstreams when coordination is down.
+      const acquire = async () => {
+        try { return await this.options.health.acquireTrackingProvider(source); }
+        catch {
+          report('health_store_unavailable', source, 'transport');
+          state.failures[source] = { count: 0, kind: 'transport', retry_at: iso(now().getTime() + 15 * 60_000) };
+          return null;
+        }
+      };
+      let lease = await acquire();
+      for (let round = 0; lease && !lease.token && round < PACING_ROUNDS; round++) {
+        // Spacing after another check frees the provider within seconds: wait
+        // when the call keeps its full lookup budget. A cooldown is not waited for.
+        const wait = millis(lease.retry_at) - now().getTime();
+        if (!millis(lease.retry_at) || wait > PACING_WAIT_MS
+          || universalDeadline - performance.now() - Math.max(0, wait) - 5_000 < universalSourceBudget(source)) break;
+        report('provider_paced', source);
+        await (this.options.wait ?? ((ms, abort) => sleep(ms, undefined, { signal: abort })))(Math.max(250, wait), signal);
+        lease = await acquire();
       }
+      if (!lease) return null; // Fail closed: do not flood upstreams when coordination is down.
       if (!lease.token) {
         state.failures[source] = { count: state.failures[source]?.count ?? 0, kind: 'rate_limited', retry_at: lease.retry_at };
         report('provider_cooldown', source); return null;
       }
+      const { token } = lease;
       attempts++;
       const before = performance.now();
       let kind: RoutingFailureKind | null = null;
@@ -590,7 +613,8 @@ export class TrackingRouter {
       try {
         const country = [metadata.destination_country, metadata.destination_country_name, metadata.lookup_country_hint]
           .find((value) => typeof value === 'string' && value.trim());
-        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(universalSourceBudget(source), remaining - 5_000), postcode, zone,
+        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber,
+          Math.max(1, Math.min(universalSourceBudget(source), Math.floor(universalDeadline - performance.now()) - 5_000)), postcode, zone,
           ...(typeof country === 'string' ? [country] as const : [])));
         if (!usable(result)) throw new TypeError('No usable universal progress');
         if (foreignHistory(result, universalCarrier, parcel.created_at)) {
@@ -620,7 +644,7 @@ export class TrackingRouter {
           report('provider_input_lookup', source, step);
         }
         // An answer about this number keeps the provider's circuit closed, like not-found.
-        try { await this.options.health.finishTrackingProvider(source, lease.token, kind === 'no_history' || kind === 'input_required' ? 'not_found' : kind, retryAfterMs, performance.now() - before); }
+        try { await this.options.health.finishTrackingProvider(source, token, kind === 'no_history' || kind === 'input_required' ? 'not_found' : kind, retryAfterMs, performance.now() - before); }
         catch { report('health_store_unavailable', source, 'transport'); }
       }
     };
