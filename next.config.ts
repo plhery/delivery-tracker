@@ -1,35 +1,4 @@
-import { createHash } from 'node:crypto';
-import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
-
-const withSerwist = withSerwistInit({
-  swSrc: 'app/sw.ts',
-  swDest: 'public/sw.js',
-  disable: process.env.NODE_ENV === 'development',
-  // Registration lives in ClientApplication so updateViaCache and reload
-  // behavior are explicit and covered by the application tests.
-  register: false,
-  // Only files the browser uses. Fonts, social images and email templates in
-  // public/ are read by the server, and the manifest is rendered per request.
-  globPublicPatterns: ['icons/*', 'privacy.html', 'privacy.css', 'theme.css', 'push-sw.js'],
-  // The App Router never loads the Pages Router runtime (framework, main), and
-  // modern browsers skip the nomodule polyfills. Route handlers get empty
-  // client chunks.
-  exclude: [
-    /^static\/chunks\/(?:framework|main|polyfills)-[0-9a-f]+\.js$/,
-    /^static\/chunks\/app\/(?:api|health|manifest\.webmanifest)\//,
-  ],
-  // Next's dynamic documents are not part of the public-file precache. Their
-  // HTML needs the response's CSP nonce; refresh them whenever the built assets
-  // change, so the app shell always matches the precached scripts.
-  manifestTransforms: [async (entries) => {
-    const revision = createHash('sha256').update(JSON.stringify(entries)).digest('hex');
-    return {
-      manifest: [...entries, ...['/', '/~offline'].map((url) => ({ url, size: 0, revision }))],
-      warnings: [],
-    };
-  }],
-});
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -130,4 +99,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSerwist(nextConfig);
+export default nextConfig;

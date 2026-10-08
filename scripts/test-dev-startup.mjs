@@ -14,7 +14,7 @@ await once(reservation, 'listening');
 const { port } = reservation.address();
 await new Promise((resolve, reject) => reservation.close((error) => error ? reject(error) : resolve()));
 const child = spawn(process.execPath, [
-  'node_modules/next/dist/bin/next', 'dev', '--webpack',
+  'node_modules/next/dist/bin/next', 'dev',
   '--hostname', '127.0.0.1', '--port', String(port),
 ], {
   cwd: root,

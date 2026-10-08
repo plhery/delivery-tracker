@@ -5,7 +5,7 @@ import { relative, resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const next = resolve(root, '.next');
 const staticDirectory = resolve(next, 'static');
-const [worker, workerSource, pushWorker, manifestText, privacy, offline, ogImage, staticEntries, serverFiles] = await Promise.all([
+const [worker, workerSource, pushWorker, manifestText, privacy, offline, ogImage, staticEntries, serverFiles, buildManifest] = await Promise.all([
   readFile(resolve(root, 'public/sw.js'), 'utf8'),
   readFile(resolve(root, 'app/sw.ts'), 'utf8'),
   readFile(resolve(root, 'public/push-sw.js'), 'utf8'),
@@ -15,6 +15,7 @@ const [worker, workerSource, pushWorker, manifestText, privacy, offline, ogImage
   readFile(resolve(root, 'public/og.png')),
   readdir(staticDirectory, { recursive: true, withFileTypes: true }),
   readFile(resolve(next, 'required-server-files.json'), 'utf8'),
+  readFile(resolve(next, 'build-manifest.json'), 'utf8'),
 ]);
 
 await stat(resolve(next, 'standalone/server.js'));
@@ -48,8 +49,9 @@ assert.match(worker, /["']?revision["']?:["'][a-f0-9]{64}["'],["']?url["']?:["']
 assert.match(workerSource, /matchPrecache\('\/'\)/, 'app launches must open the precached shell');
 assert.match(workerSource, /request\.mode === 'navigate' && url\.pathname === '\/',/, 'only `/` opens from the precached shell: a language address is the page the server wrote');
 assert.doesNotMatch(worker, /["']\/(?:fonts\/|auth-emails\/|og\.(?:png|svg))/, 'server-only public files must not be downloaded by browsers');
-assert.doesNotMatch(worker, /\/_next\/static\/chunks\/(?:(?:framework|main|polyfills)-[0-9a-f]+\.js|app\/api\/)/, 'chunks the App Router never loads must not be precached');
-assert.match(worker, /\/_next\/static\/chunks\/main-app-[0-9a-f]+\.js/, 'the App Router entry must stay precached');
+const { polyfillFiles, rootMainFiles } = JSON.parse(buildManifest);
+for (const file of polyfillFiles) assert.ok(!worker.includes(`/_next/${file}`), 'the nomodule polyfills modern browsers skip must not be precached');
+for (const file of rootMainFiles) assert.ok(worker.includes(`/_next/${file}`), 'the App Router entry must stay precached');
 assert.ok(!JSON.parse(serverFiles).config.deploymentId, 'a deployment id in asset addresses would re-download unchanged files after every deployment');
 assert.match(offline, /await connection\(\)/, 'offline HTML must render with its matching CSP nonce');
 assert.match(offline, /FeedbackScreen/, 'offline must use the shared translated screen');

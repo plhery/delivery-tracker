@@ -32,7 +32,7 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
 | `supabase/` | Append-only migrations and SQL assertions for RLS |
 | `ios/` | SwiftUI app, Share extension, widgets ([README](../ios/README.md)) |
 | `ops/` | Sentry and Grafana dashboards |
-| `scripts/` | Code generation, validation and smoke tests |
+| `scripts/` | Code generation, the service worker's build, validation and smoke tests |
 
 Key server modules:
 

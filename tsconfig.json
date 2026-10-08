@@ -24,7 +24,6 @@
       }
     ],
     "types": [
-      "@serwist/next/typings",
       "@testing-library/jest-dom"
     ],
     "paths": {
