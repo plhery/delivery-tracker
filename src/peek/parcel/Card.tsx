@@ -3,7 +3,7 @@ import { AutoCarrierNotice } from '../../components/AutoCarrierNotice';
 import { CarrierMark } from '../../components/CarrierMark';
 import { Icon, PARCEL, ParcelIllustration } from '../../components/Icon';
 import type { Rect } from '../../components/map/WorldMap';
-import { HANDOVER_ROOM, useCoveredBox } from '../../components/ParcelMap';
+import { useCoveredBox } from '../../components/ParcelMap';
 import { ProgressTrack } from '../../components/ProgressTrack';
 import { useI18n } from '../../i18n';
 import { carrierBrand } from '../../lib/carrierBrand';
@@ -62,6 +62,13 @@ function KraftPip({ carrier, number, open, hero, sparks, ribbon = false }: {
     </div>}
   </div>;
 }
+
+/**
+ * A second carrier's mark adds a line to the card's top row. Its map is taller than the opened card's, so the route only
+ * starts below the mark, keeping the room it has on any other card, and the card grows by that much, all of it map.
+ * ParcelPage.css gives the same height.
+ */
+const HANDOVER_ROOM = 24;
 
 const FLAG_ICONS: Record<ParcelAttention, ReactNode> = {
   sync_error: <Icon name="refresh" />,

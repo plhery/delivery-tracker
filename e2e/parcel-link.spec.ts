@@ -267,12 +267,12 @@ test('shows a parcel handed from one carrier to another with both marks, its map
   // The route's names and dots keep off the second mark.
   await expect(card.locator('.peekp-map')).toHaveCount(isMobile ? 1 : 0);
   if (isMobile) {
-    // The first name stood where the second mark now is. The card grows by two lines of map, and the route moves down
-    // with them, name and all.
+    // The first name stood where the second mark now is. The card's map grows by what the route needs to start below
+    // the mark, and the route moves down with it, name and all.
     expect(apart(plain.name, second)).toBe(false);
     expect(apart(await within(name), second)).toBe(true);
-    expect(Math.abs((await within(name)).y - plain.name.y - 40)).toBeLessThan(1);
-    expect((await card.boundingBox())!.height - plain.height).toBeGreaterThanOrEqual(40);
+    expect(Math.abs((await within(name)).y - plain.name.y - 24)).toBeLessThan(1);
+    expect((await card.boundingBox())!.height - plain.height).toBeGreaterThanOrEqual(24);
     for (const dot of await card.locator('.peekp-map g[data-kind] circle').all()) expect(apart(await within(dot), second)).toBe(true);
   }
   // Each carrier's website stands under its own number, below the card.

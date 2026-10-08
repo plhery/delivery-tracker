@@ -46,9 +46,9 @@ const pip = (stage: Stage | undefined, floor?: number): PipPlacing | null => {
 };
 
 /**
- * A second carrier's mark adds a line to the top of a card with a map. The card grows by two lines, and its route
+ * A second carrier's mark adds a line to the top of the opened card's map. The card grows by two lines, and its route
  * starts that much lower, so it keeps the room it has on any other card. Pip keeps his ceiling: beside the parcel's
- * dot, he only keeps off the mark. The cards' CSS gives the same height.
+ * dot, he only keeps off the mark. The card's CSS gives the same height.
  */
 export const HANDOVER_ROOM = 40;
 
