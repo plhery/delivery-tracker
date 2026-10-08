@@ -35,9 +35,12 @@ it('bounds a hung handoff, reports it, and still invokes HTTP cleanup', async ()
   events.on('SIGTERM', cleanup);
   installShutdownHandlers(() => new Promise(() => {}), target);
   events.emit('SIGTERM');
-  await vi.advanceTimersByTimeAsync(6500);
+  await vi.advanceTimersByTimeAsync(17_999);
+  expect(cleanup).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(1);
   expect(cleanup).toHaveBeenCalledOnce();
   expect(report).toHaveBeenCalledWith(expect.any(Error), { component: 'server', operation: 'shutdown' });
-  await vi.advanceTimersByTimeAsync(18500);
+  expect(exit).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(7000);
   expect(exit).toHaveBeenCalledWith(1);
 });

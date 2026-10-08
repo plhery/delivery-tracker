@@ -66,8 +66,10 @@ All tables and views here are service-role only.
   `waiting`. Real failures end as `error`. A `fetch` that reused answers another copy of
   its number got earlier in the same scheduled run counts them in `shared_answers`.
 
-Completed rows are kept for 90 days. Attempts still running after 30 min are marked
-`abandoned` and reported. Deleting a package or account deletes its audit.
+Completed rows are kept for 90 days. A check cut off at shutdown ends `interrupted`, with
+its `tracking_sync_completed` line; one whose worker died is marked `abandoned` when its
+job is claimed again. Attempts still running after 30 min are marked `abandoned` and
+reported. Deleting a package or account deletes its audit.
 
 A check whose parcel is deleted while it runs, or whose next write finds its carrier
 changed, ends as `superseded`: nothing is saved and no error is reported. A deleted parcel
@@ -278,7 +280,8 @@ Lines carry `app`, `container`, `event` and `level` labels, for example
 Key JSON events:
 
 - `tracking_sync_started`, `tracking_sync_step`, `tracking_sync_completed` (by `attempt_id`).
-  The completed line has the `outcome` and `events_new`;
+  The completed line has the `outcome` and `events_new`; a check cut off at shutdown
+  ends `interrupted`, with `error_type` `WorkerShutdown`;
 - `tracking_scrape` and `tracking_routing`, which include `transport_fallback`, carry the
   `attempt_id` of the check whose lookup they belong to. Lookups outside a check, such as
   carrier recognition, have none. A `tracking_scrape` `outcome` is `success`, `error`, or
@@ -297,6 +300,7 @@ Key JSON events:
   `sync_claim_recovered` follows with the first claim that works again and says how long
   the streak lasted;
 - `sync_job_failed`, `sync_job_finish_failed` (by `job_id`). Alert on these;
+- `sync_job_handoff` (by `job_id`): at shutdown, whether the job went back to the queue;
 - `sync_job_dropped` (by `job_id`): a package job had nothing left to finish, with the
   `reason`: `parcel_deleted` before its check, or `job_withdrawn` when a deletion or a
   carrier change took the job during it. `tracking_sync_audit_skipped` (by `attempt_id`):

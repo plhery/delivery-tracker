@@ -88,7 +88,9 @@ async function start() {
 async function stop(child) {
   const exited = once(child, 'exit');
   child.kill('SIGTERM');
-  await waitFor(() => child.exitCode !== null || child.signalCode !== null, 'Shutdown stalled', 9_000);
+  // The worker gives the check in progress 10 seconds, then a few to stop, before it
+  // hands the job back; the whole shutdown must still end well inside Coolify's 30 seconds.
+  await waitFor(() => child.exitCode !== null || child.signalCode !== null, 'Shutdown stalled', 20_000);
   const [code, signal] = await exited;
   assert.equal(signal, null);
   assert.equal(code, 143); // Next performed its normal HTTP drain and exit.

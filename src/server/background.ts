@@ -21,11 +21,17 @@ import { FriendshipPushService, FriendshipPushWorker } from './friendshipPush';
 import { ReviewQueueReplay } from './reviewQueues';
 import { serviceClient } from './runtime';
 import { SyncJobLeaseLost, type SupabaseServiceClient } from './supabase';
+import { WorkerShutdown } from './trackingAudit';
 import { TrackingSyncService, type SyncSummary } from './trackingSync';
 import type { JsonObject } from './types';
 
 const AUTO_ARCHIVE_DAYS = 60;
 const MAX_WORKER_BACKOFF_MS = 60_000;
+// The platform stops the old container 30 s after SIGTERM (docs/DEPLOYMENT.md). A check
+// in progress gets 10 s to end on its own: nearly all take less. Then it is aborted, and
+// the handoff waits at most 4 s for it to stop before returning its job to the queue.
+export const CHECK_FINISH_MS = 10_000;
+const ABORT_SETTLE_MS = 4_000;
 
 export interface BackgroundState {
   lastScheduledSync: number | null;
@@ -75,6 +81,17 @@ export function workerPollDelay(pollIntervalMs: number, consecutiveFailures: num
   );
 }
 
+/** Waits for `work` to settle, for at most `ms`. */
+async function settleWithin(work: Promise<unknown> | null, ms: number): Promise<void> {
+  if (!work) return;
+  let timer: NodeJS.Timeout | undefined;
+  await Promise.race([
+    work.catch(() => undefined),
+    new Promise<void>((resolve) => { timer = setTimeout(resolve, ms); }),
+  ]);
+  clearTimeout(timer);
+}
+
 export class SyncJobWorker {
   readonly workerId = `${hostname()}:${process.pid}:${randomUUID().slice(0, 12)}`;
   #stopped = false;
@@ -84,7 +101,9 @@ export class SyncJobWorker {
   #claimFailingSince: number | null = null;
   #claimReportedAfterMs: number | null = null;
   #activeJob: AbortController | null = null;
-  #claim: Promise<JsonObject | null> | null = null;
+  readonly #stopping = new AbortController();
+  #processing: Promise<boolean> | null = null;
+  #draining: Promise<void> | null = null;
   #ownedJob: string | null = null;
   #handoff: Promise<void> | null = null;
 
@@ -105,18 +124,32 @@ export class SyncJobWorker {
     this.schedule(0);
   }
 
+  /** Stops taking jobs and aborts the work in progress at once. */
   stop(): void {
     this.#stopped = true;
-    this.#activeJob?.abort();
+    this.#stopping.abort(new WorkerShutdown());
+    this.#activeJob?.abort(new WorkerShutdown());
     if (this.#timer) clearTimeout(this.#timer);
     this.#timer = null;
   }
 
-  /** Abort local work, then atomically return only our own job to the queue. */
-  async drain(): Promise<void> {
-    this.stop();
-    await this.#claim?.catch(() => null);
-    await this.releaseOwnedJob();
+  /**
+   * Stops taking jobs and lets the check in progress end, for `finishMs` at most; a
+   * scheduled run stops before its next check. What is still running is then aborted,
+   * and only our own unfinished job goes back to the queue.
+   */
+  drain(finishMs = CHECK_FINISH_MS): Promise<void> {
+    this.#draining ??= (async () => {
+      this.#stopped = true;
+      if (this.#timer) clearTimeout(this.#timer);
+      this.#timer = null;
+      this.#stopping.abort(new WorkerShutdown());
+      await settleWithin(this.#processing, finishMs);
+      this.stop();
+      await settleWithin(this.#processing, ABORT_SETTLE_MS);
+      await this.releaseOwnedJob();
+    })();
+    return this.#draining;
   }
 
   private async releaseOwnedJob(): Promise<void> {
@@ -145,10 +178,12 @@ export class SyncJobWorker {
     this.#running = true;
     let processed = false;
     try {
-      processed = await this.processNext();
+      this.#processing = this.processNext();
+      processed = await this.#processing;
     } catch (error) {
       if (!this.#stopped) captureOperationalError(error, { component: 'sync-worker', operation: 'run' });
     } finally {
+      this.#processing = null;
       this.#running = false;
       if (!this.#stopped) {
         this.schedule(processed ? 0 : workerPollDelay(
@@ -162,8 +197,7 @@ export class SyncJobWorker {
   private async processNext(): Promise<boolean> {
     let job: JsonObject | null;
     try {
-      this.#claim = this.service.client.claimSyncJob(this.workerId);
-      job = await this.#claim;
+      job = await this.service.client.claimSyncJob(this.workerId);
     } catch (error) {
       this.#consecutiveClaimFailures += 1;
       this.#claimFailingSince ??= Date.now();
@@ -189,7 +223,6 @@ export class SyncJobWorker {
       }
       return false;
     }
-    this.#claim = null;
     if (this.#claimFailingSince !== null) {
       logOperationalEvent('sync_claim_recovered', {
         failure_count: this.#consecutiveClaimFailures,
@@ -234,7 +267,7 @@ export class SyncJobWorker {
       }).catch((error: unknown) => controller.abort(error)).finally(() => { renewal = null; });
     }, 15_000);
     heartbeat.unref();
-    const context = { jobId, lease: { jobId, workerId: this.workerId }, signal };
+    const context = { jobId, lease: { jobId, workerId: this.workerId }, signal, stopping: this.#stopping.signal };
     let scheduledCheckIn: ScheduledCheckIn | null = null;
     try {
       let summary: SyncSummary;
@@ -319,7 +352,7 @@ export class SyncJobWorker {
       this.state.lastError = null;
       logOperationalEvent('sync_job_completed', { job_id: jobId, kind, ...result });
     } catch (error) {
-      if (this.#stopped) {
+      if (error instanceof WorkerShutdown || signal.reason instanceof WorkerShutdown) {
         // The replacement resumes the same persisted Sentry check-in. Shutdown
         // is not a carrier failure and must not finish a successfully handed-off job.
         await this.releaseOwnedJob();

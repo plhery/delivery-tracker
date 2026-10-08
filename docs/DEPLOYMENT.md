@@ -216,10 +216,13 @@ host answers. Point `UMAMI_APP_ORIGIN` and the smoke test at the new host.
 
 ## Shutdown and crash recovery
 
-On SIGTERM/SIGINT the process turns unready at once and stops taking new work. It aborts
-active tracking and hands its job back to the queue, closing audit rows as `interrupted`
-without using up a retry. Next.js then drains HTTP requests. Time limits: 6.5 s for the
-handoff, 500 ms for Sentry, 25 s overall.
+On SIGTERM/SIGINT the process turns unready at once and stops taking new work. A check
+in progress gets 10 s to end; a scheduled run stops before its next parcel. A job that
+finishes in time is done. Otherwise the check is aborted and logged and recorded as
+`interrupted`, and its job goes back to the queue without using up a retry; the
+replacement checks what is still due. Next.js then drains HTTP requests. Time limits: 4 s
+for an aborted check to stop, 18 s for the whole handoff, 500 ms for Sentry, 25 s
+overall, inside the platform's 30 s grace period.
 
 If a process is killed or the host dies, its job's **90 s lease** (renewed every 15 s)
 expires and another worker picks it up. A job gets three crash attempts; orderly deploys
@@ -231,8 +234,8 @@ to a new build by itself, in the background or after a few idle seconds, and nev
 something is open or being typed. It comes back to the same tab, parcel and scroll
 position.
 
-`npm run test:deployment` (run in CI after the build) interrupts a job on the built server,
-checks the handoff, restarts and finishes the job.
+`npm run test:deployment` (run in CI after the build) stops the built server during a job
+that never ends, checks the handoff, restarts and finishes the job.
 
 ## Operating
 

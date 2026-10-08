@@ -33,6 +33,7 @@ import { STORED_EVENT_IDENTITIES, type SupabaseServiceClient } from './supabase'
 import { restatedIdentities, sameInstantIdentities, sharedScans, withIdentities, withoutCopyDrift } from './eventIdentity';
 import {
   TrackingSyncAudit,
+  WorkerShutdown,
   type SyncAnomalyCode,
   type SyncRunContext,
 } from './trackingAudit';
@@ -609,6 +610,20 @@ export function detectSyncAnomalies(
 
 type SyncOutcome = 'updated' | 'unchanged' | 'waiting' | 'errors' | 'unsupported' | 'superseded';
 
+/**
+ * The work, or its rejection as soon as shutdown aborts it: a carrier that does not
+ * watch the signal cannot hold the job's handoff. A lost lease waits for the work.
+ */
+function untilShutdown<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return work;
+  return new Promise<T>((resolve, reject) => {
+    const abort = () => { if (signal.reason instanceof WorkerShutdown) reject(signal.reason); };
+    signal.addEventListener('abort', abort, { once: true });
+    work.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+    if (signal.aborted) abort();
+  });
+}
+
 class SupersededTrackingSync extends Error {}
 
 export class TrackingSyncService {
@@ -638,6 +653,9 @@ export class TrackingSyncService {
       // Copies of one number, in several accounts or followed without one, share their lookups.
       const lookups = new SharedLookups(parcels);
       for (const parcel of parcels) {
+        // At shutdown the run stops between checks; its job goes back to the queue, and the
+        // replacement checks the parcels still due.
+        if (context.stopping?.aborted) throw context.stopping.reason;
         summary.checked += 1;
         summary[await this.syncOne(parcel, context, lookups)] += 1;
       }
@@ -837,21 +855,37 @@ export class TrackingSyncService {
   private async syncOne(parcel: JsonObject, context: SyncRunContext, lookups?: SharedLookups): Promise<SyncOutcome> {
     context.signal?.throwIfAborted();
     const id = String(parcel.id ?? '');
-    const carrierId = String(parcel.carrier ?? '');
     if (!id) throw new TypeError('A package id is required for synchronization');
-    const previousStage = String(parcel.current_stage ?? 'pending');
     const now = this.now();
     const audit = new TrackingSyncAudit(
       this.client,
       id,
       String(parcel.tracking_number ?? ''),
-      carrierId || 'unknown',
-      previousStage,
+      String(parcel.carrier ?? '') || 'unknown',
+      String(parcel.current_stage ?? 'pending'),
       context,
       now,
     );
     await audit.start();
+    try {
+      return await untilShutdown(this.check(parcel, context, audit, now, lookups), context.signal);
+    } catch (error) {
+      // Shutdown ends the check now, whatever its carrier is still doing: the job goes back to the queue.
+      if (context.signal?.reason instanceof WorkerShutdown) await audit.interrupt();
+      throw error;
+    }
+  }
 
+  /** One parcel's check, from choosing its carrier to the end of its audit. */
+  private async check(
+    parcel: JsonObject,
+    context: SyncRunContext,
+    audit: TrackingSyncAudit,
+    now: Date,
+    lookups?: SharedLookups,
+  ): Promise<SyncOutcome> {
+    const carrierId = String(parcel.carrier ?? '');
+    const previousStage = String(parcel.current_stage ?? 'pending');
     const addition = isRecord(parcel.carrier_data) && parcel.carrier_data.add_recognition_pending === true;
     let consumeAddition = addition;
 

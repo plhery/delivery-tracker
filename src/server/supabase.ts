@@ -988,9 +988,11 @@ export class SupabaseServiceClient extends SupabaseClient {
     attemptId: string,
     values: JsonObject,
     steps: JsonObject[],
+    options: { timeoutMs?: number } = {},
   ): Promise<boolean> {
     return await this.request('/rest/v1/rpc/complete_tracking_sync_attempt', {
       method: 'POST',
+      timeoutMs: options.timeoutMs,
       body: {
         p_attempt_id: attemptId,
         p_values: values,

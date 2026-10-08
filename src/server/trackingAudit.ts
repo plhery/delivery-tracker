@@ -43,8 +43,22 @@ export type SyncAnomalyCode =
 export interface SyncRunContext {
   jobId?: string | null;
   lease?: { jobId: string; workerId: string };
+  /** Aborts the work: a lost lease, or shutdown with {@link WorkerShutdown}. */
   signal?: AbortSignal;
+  /** Shutdown asks a scheduled run to stop before its next check and hand its job back. */
+  stopping?: AbortSignal;
   trigger: SyncTrigger;
+}
+
+/**
+ * Why shutdown stops the sync worker's work. A check it aborts ends as `interrupted`,
+ * and the job goes back to the queue without using up a retry.
+ */
+export class WorkerShutdown extends Error {
+  constructor() {
+    super('The sync worker is shutting down');
+    this.name = 'WorkerShutdown';
+  }
 }
 
 export interface SyncAuditCompletion {
@@ -102,6 +116,7 @@ export class TrackingSyncAudit {
   readonly #startedAtIso: string;
   readonly #steps: StoredStep[] = [];
   #reportedWriteFailure = false;
+  #ended = false;
   readonly #healthSamples = new Map<string, HealthSample>();
 
   constructor(
@@ -227,6 +242,9 @@ export class TrackingSyncAudit {
   }
 
   async finish(completion: SyncAuditCompletion): Promise<void> {
+    // A check that shutdown interrupted has ended, whatever its carrier answers afterwards.
+    if (this.#ended) return;
+    this.#ended = true;
     if (!this.#steps.some((step) => step.step === 'complete')) {
       this.record('complete', 'succeeded', elapsedMilliseconds(this.#startedAt), {
         outcome: completion.outcome,
@@ -289,6 +307,31 @@ export class TrackingSyncAudit {
       anomaly_count: (completion.anomalyCodes ?? []).length,
       error_type: values.error_type,
     }, completion.outcome === 'error' ? 'error' : 'info');
+  }
+
+  /**
+   * Ends a check that shutdown aborted: logged at once, then saved with its steps as
+   * `interrupted`. Should this write come too late, the job's handoff closes the row.
+   */
+  async interrupt(): Promise<void> {
+    if (this.#ended) return;
+    this.#ended = true;
+    const durationMs = Math.round(elapsedMilliseconds(this.#startedAt));
+    this.record('complete', 'succeeded', durationMs, { outcome: 'interrupted' });
+    logOperationalEvent('tracking_sync_completed', {
+      ...this.logContext(),
+      outcome: 'interrupted',
+      duration_ms: durationMs,
+      error_type: 'WorkerShutdown',
+    });
+    await this.writeAudit('complete_attempt', async () => {
+      await this.client.completeSyncAttempt(this.attemptId, {
+        outcome: 'interrupted',
+        error_type: 'WorkerShutdown',
+        completed_at: new Date().toISOString(),
+        duration_ms: durationMs,
+      }, this.#steps, { timeoutMs: 3_000 });
+    });
   }
 
   private logContext(): JsonObject {

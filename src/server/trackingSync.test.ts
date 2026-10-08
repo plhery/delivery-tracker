@@ -32,6 +32,7 @@ import {
 } from './trackingSync';
 import type { JsonObject } from './types';
 import * as observability from './observability';
+import { WorkerShutdown } from './trackingAudit';
 import { UniversalTrackingError } from 'universal-parcel-scraper/node';
 import { UpstreamHttpError } from 'universal-parcel-scraper/node';
 import { NOOP_RECORDER } from 'universal-parcel-scraper/node';
@@ -1045,6 +1046,67 @@ describe('TrackingSyncService', () => {
       { trigger: 'package', signal: controller.signal },
     )).rejects.toThrow();
     expect(report).not.toHaveBeenCalled();
+  });
+
+  it('ends a check that shutdown cuts off as interrupted, without waiting for its carrier', async () => {
+    const logged = vi.spyOn(observability, 'logOperationalEvent').mockImplementation(() => undefined);
+    const client = fakeClient();
+    const controller = new AbortController();
+    // The carrier never answers and does not watch the signal.
+    const adapter = { fetch: vi.fn(() => new Promise<never>(() => {})) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    const checking = service.syncPackage(
+      { id: 'parcel', carrier: 'ctt', tracking_number: 'TEST1234', current_stage: 'in_transit' },
+      { trigger: 'package', signal: controller.signal },
+    );
+    await vi.waitFor(() => expect(adapter.fetch).toHaveBeenCalledOnce());
+    controller.abort(new WorkerShutdown());
+    await expect(checking).rejects.toBeInstanceOf(WorkerShutdown);
+    expect(client.completeSyncAttempt).toHaveBeenCalledExactlyOnceWith(expect.any(String), expect.objectContaining({
+      outcome: 'interrupted', error_type: 'WorkerShutdown',
+    }), expect.any(Array), { timeoutMs: 3_000 });
+    expect(logged).toHaveBeenCalledWith('tracking_sync_completed', expect.objectContaining({
+      carrier: 'ctt', outcome: 'interrupted', error_type: 'WorkerShutdown',
+    }));
+    expect(client.updatePackage).not.toHaveBeenCalledWith('parcel', expect.objectContaining({ sync_status: 'error' }));
+  });
+
+  it('lets a check whose lease is lost run to its end, without calling it interrupted', async () => {
+    const client = fakeClient();
+    const controller = new AbortController();
+    let answer!: (value: CarrierResult) => void;
+    const adapter = { fetch: vi.fn(() => new Promise<CarrierResult>(done => { answer = done; })) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    let settled = false;
+    const checking = service.syncPackage(
+      { id: 'parcel', carrier: 'ctt', tracking_number: 'TEST1234', current_stage: 'in_transit' },
+      { trigger: 'package', signal: controller.signal },
+    ).finally(() => { settled = true; });
+    await vi.waitFor(() => expect(adapter.fetch).toHaveBeenCalledOnce());
+    controller.abort(new Error('lease lost'));
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    answer({ status: 'in_transit' });
+    await checking.catch(() => undefined);
+    expect(client.completeSyncAttempt).not.toHaveBeenCalledWith(expect.anything(),
+      expect.objectContaining({ outcome: 'interrupted' }), expect.anything(), expect.anything());
+  });
+
+  it('stops a scheduled run between checks at shutdown, letting the check in progress finish', async () => {
+    const due = { carrier: 'ctt', current_stage: 'in_transit', tracking_number: 'TEST1234',
+      last_synced_at: '2026-09-09T09:00:00Z', sync_status: 'ok', user_id: 'owner' };
+    const client = fakeClient([{ ...due, id: 'first' }, { ...due, id: 'second' }]);
+    const stopping = new AbortController();
+    const adapter = { fetch: vi.fn(async (): Promise<CarrierResult> => {
+      stopping.abort(new WorkerShutdown());
+      return { status: 'in_transit' };
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null,
+      () => new Date('2026-09-09T10:12:00Z'));
+    await expect(service.sync({ trigger: 'scheduled', stopping: stopping.signal })).rejects.toBeInstanceOf(WorkerShutdown);
+    expect(adapter.fetch).toHaveBeenCalledOnce();
+    expect(client.completeSyncAttempt).toHaveBeenCalledOnce();
+    expect(client.completeSyncAttempt.mock.calls[0][1]).not.toMatchObject({ outcome: 'interrupted' });
   });
 
   it('follows one-off parcels opened in the last 24 hours, after the accounts and ten at most', async () => {
