@@ -890,17 +890,6 @@ export class SupabaseServiceClient extends SupabaseClient {
     })).flatMap((row) => typeof row.id === 'string' ? [row.id] : []);
   }
 
-  /**
-   * The open parcels out for delivery someone has on screen: their account's
-   * apps or one of their links read them since `viewedSince`, or a Live
-   * Activity shows them.
-   */
-  async listViewedDeliveryIds(viewedSince: Date): Promise<string[]> {
-    return rows(await this.request('/rest/v1/rpc/viewed_delivery_ids', {
-      method: 'POST', body: { p_viewed_since: viewedSince.toISOString() },
-    })).flatMap((row) => typeof row.id === 'string' ? [row.id] : []);
-  }
-
   /** When the account's apps last read its parcels, as its export shows it; null when no read was recorded. */
   async accountLastOpened(userId: string): Promise<string | null> {
     const params = query({ select: 'last_opened_at', user_id: `eq.${userId}`, limit: '1' });

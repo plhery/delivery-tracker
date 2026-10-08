@@ -123,15 +123,6 @@ describe('one-off parcels and their links', () => {
     expect(params(path).get('order')).toBe('last_synced_at.asc.nullsfirst,created_at.asc');
   });
 
-  it('lists the parcels out for delivery someone has on screen', async () => {
-    const client = service();
-    const request = vi.spyOn(client, 'request').mockResolvedValue([{ id: 'viewed-1' }, { id: 42 }]);
-    await expect(client.listViewedDeliveryIds(new Date('2026-10-01T10:00:00Z'))).resolves.toEqual(['viewed-1']);
-    expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/viewed_delivery_ids', {
-      method: 'POST', body: { p_viewed_since: '2026-10-01T10:00:00.000Z' },
-    });
-  });
-
   it('lists the parcels nobody is waiting for, and records that an account read its parcels', async () => {
     const client = service();
     const request = vi.spyOn(client, 'request').mockResolvedValue([{ id: 'quiet-1' }, { id: 'quiet-2' }, { id: null }]);

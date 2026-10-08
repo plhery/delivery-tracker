@@ -626,7 +626,6 @@ function fakeClient(packages: JsonObject[] = []) {
     listActivePackages: vi.fn().mockResolvedValue(packages),
     listFollowedOneOffPackages: vi.fn().mockResolvedValue([]),
     listUnwatchedPackageIds: vi.fn().mockResolvedValue([]),
-    listViewedDeliveryIds: vi.fn().mockResolvedValue([]),
     autoLinkPackages: vi.fn().mockResolvedValue(0),
     updatePackage: vi.fn().mockResolvedValue(undefined),
     insertEvents: vi.fn().mockResolvedValue(undefined),
@@ -1241,18 +1240,6 @@ describe('TrackingSyncService', () => {
     expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'tracking', operation: 'list_unwatched_packages' });
   });
 
-  it('keeps every parcel out for delivery on the 2-minute cadence when the ones on screen cannot be listed', async () => {
-    const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
-    const client = fakeClient([{ id: 'a1', user_id: 'a', carrier: 'swiss-post', current_stage: 'out_for_delivery',
-      tracking_number: 'TEST1234', last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok' }]);
-    const failure = new Error('function unavailable');
-    client.listViewedDeliveryIds.mockRejectedValue(failure);
-    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
-      { fetch: vi.fn().mockResolvedValue({ status: 'out_for_delivery' }) }, null, () => new Date('2026-09-09T10:02:00Z'));
-    await expect(service.sync()).resolves.toMatchObject({ checked: 1 });
-    expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'tracking', operation: 'list_viewed_deliveries' });
-  });
-
   it('queues a check when a link is opened only if the schedule would check the parcel now', () => {
     const parcel = { carrier: 'swiss-post', current_stage: 'in_transit', tracking_number: 'TEST1234',
       last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok', archived_at: null };
@@ -1267,10 +1254,14 @@ describe('TrackingSyncService', () => {
     expect(isOpenedParcelSyncDue({ ...parcel, current_stage: 'returned' }, at('12:00:00'))).toBe(false);
     expect(isOpenedParcelSyncDue({ ...parcel, archived_at: '2026-09-09T09:00:00Z' }, at('12:00:00'))).toBe(false);
     expect(isOpenedParcelSyncDue({ ...parcel, current_stage: 'delivered', last_status_text: 'TO_BE_DELIVERED' }, at('12:00:00'))).toBe(true);
-    // Someone reading a link has the parcel on screen: out for delivery, it is checked every 2 minutes.
+    // Out for delivery, the carrier's own adapter answering: every 2 minutes.
     const delivering = { ...parcel, current_stage: 'out_for_delivery' };
     expect(isOpenedParcelSyncDue(delivering, at('10:01:59'))).toBe(false);
     expect(isOpenedParcelSyncDue(delivering, at('10:02:00'))).toBe(true);
+    // A universal provider answering: reading a link does not make it more often.
+    const relayed = { ...delivering, carrier_data: { tracking_provider: 'ParcelsApp' } };
+    expect(isOpenedParcelSyncDue(relayed, at('10:02:00'))).toBe(false);
+    expect(isOpenedParcelSyncDue(relayed, at('10:10:00'))).toBe(true);
     // Overnight it stays hourly.
     expect(isOpenedParcelSyncDue({ ...delivering, last_synced_at: '2026-09-09T20:00:15Z' }, at('20:02:00'))).toBe(false);
     // A provider's cooldown holds a link's reader back as it holds the schedule.
@@ -1278,16 +1269,17 @@ describe('TrackingSyncService', () => {
   });
 
   it.each([
-    // Out for delivery: every 2 minutes while someone has it on screen, otherwise like any other stage.
-    { carrier: 'swiss-post', stage: 'out_for_delivery', viewed: true, time: '10:02:00', checked: 1 },
-    { carrier: 'swiss-post', stage: 'out_for_delivery', viewed: true, time: '10:01:59', checked: 0 },
-    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:02:00', checked: 0 },
-    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:09:59', checked: 0 },
-    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:10:00', checked: 1 },
-    { carrier: 'spring-gds', stage: 'out_for_delivery', viewed: true, time: '10:02:00', checked: 1 },
+    // Out for delivery, the carrier's own adapter answering: every 2 minutes.
+    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:02:00', checked: 1 },
+    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:01:59', checked: 0 },
+    // A universal provider answering: like any other stage.
+    { carrier: 'swiss-post', provider: 'ParcelsApp', stage: 'out_for_delivery', time: '10:02:00', checked: 0 },
+    { carrier: 'swiss-post', provider: 'ParcelsApp', stage: 'out_for_delivery', time: '10:09:59', checked: 0 },
+    { carrier: 'swiss-post', provider: 'ParcelsApp', stage: 'out_for_delivery', time: '10:10:00', checked: 1 },
+    // A carrier with a longer interval of its own keeps it.
+    { carrier: 'spring-gds', stage: 'out_for_delivery', time: '10:02:00', checked: 0 },
     { carrier: 'spring-gds', stage: 'out_for_delivery', time: '10:10:00', checked: 0 },
     { carrier: 'spring-gds', stage: 'out_for_delivery', time: '10:30:00', checked: 1 },
-    { carrier: 'swiss-post', stage: 'in_transit', viewed: true, time: '10:02:00', checked: 0 },
     { carrier: 'swiss-post', stage: 'in_transit', time: '10:02:00', checked: 0 },
     { carrier: 'swiss-post', stage: 'in_transit', time: '10:10:00', checked: 1 },
     { carrier: 'spring-gds', stage: 'in_transit', time: '10:02:00', checked: 0 },
@@ -1301,20 +1293,18 @@ describe('TrackingSyncService', () => {
     { carrier: 'swiss-post', stage: 'customs', time: '10:02:00', checked: 0 },
     { carrier: 'swiss-post', stage: 'registered', time: '10:10:00', checked: 1 },
     { carrier: 'gls-de', stage: 'in_transit', time: '10:02:00', checked: 0 },
-  ])('schedules $carrier at $stage at $time (on screen: $viewed): $checked checks', async ({ carrier, stage, viewed, time, checked }) => {
+  ])('schedules $carrier at $stage at $time (provider: $provider): $checked checks', async ({ carrier, provider, stage, time, checked }) => {
     const parcel = {
       id: 'scheduled', carrier, current_stage: stage, tracking_number: 'TEST1234',
       last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok',
+      ...(provider ? { carrier_data: { tracking_provider: provider } } : {}),
     };
     const client = fakeClient([parcel]);
-    client.listViewedDeliveryIds.mockResolvedValue(viewed ? ['scheduled'] : ['another']);
     const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
-    const now = new Date(`2026-09-09T${time}Z`);
-    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      adapter, null, () => new Date(`2026-09-09T${time}Z`));
     await expect(service.sync()).resolves.toMatchObject({ checked });
     expect(adapter.fetch).toHaveBeenCalledTimes(checked);
-    // Read by an app or a link in the last 10 minutes is on screen.
-    expect(client.listViewedDeliveryIds).toHaveBeenCalledExactlyOnceWith(new Date(now.getTime() - 600_000));
   });
 
   it.each([
@@ -1325,6 +1315,13 @@ describe('TrackingSyncService', () => {
     { name: 'added yesterday with old history', created: '2026-09-08T09:00:00Z', lastEvent: '2026-09-01T09:00:00Z', stage: 'in_transit', time: '10:10:00', checked: 1 },
     { name: 'moved within 48 hours', created: '2026-08-30T09:00:00Z', lastEvent: '2026-09-07T10:30:00Z', stage: 'in_transit', time: '10:10:00', checked: 1 },
     { name: 'outside routing with a recent summary', created: '2026-08-30T09:00:00Z', lastEvent: null, lastUpdate: '2026-09-08T18:00:00Z', stage: 'in_transit', time: '10:10:00', checked: 1 },
+    // Registered or accepted, a parcel is checked hourly 12 hours after its newest event or after it was added.
+    { name: 'registered without news for 14 hours', created: '2026-09-01T09:00:00Z', lastEvent: '2026-09-08T20:00:00Z', stage: 'registered', time: '10:10:00', checked: 0 },
+    { name: 'registered without news for 14 hours', created: '2026-09-01T09:00:00Z', lastEvent: '2026-09-08T20:00:00Z', stage: 'registered', time: '11:00:00', checked: 1 },
+    { name: 'accepted without news for 14 hours', created: '2026-09-01T09:00:00Z', lastEvent: '2026-09-08T20:00:00Z', stage: 'accepted', time: '10:10:00', checked: 0 },
+    { name: 'accepted with news 11 hours ago', created: '2026-09-01T09:00:00Z', lastEvent: '2026-09-08T23:10:00Z', stage: 'accepted', time: '10:10:00', checked: 1 },
+    { name: 'registered, added an hour ago with an older label', created: '2026-09-09T09:00:00Z', lastEvent: '2026-09-07T09:00:00Z', stage: 'registered', time: '10:10:00', checked: 1 },
+    { name: 'in transit without news for 14 hours', created: '2026-09-01T09:00:00Z', lastEvent: '2026-09-08T20:00:00Z', stage: 'in_transit', time: '10:10:00', checked: 1 },
   ])('checks a parcel $name at $time: $checked checks', async ({ created, lastEvent, lastUpdate, stage, time, checked }) => {
     const parcel = {
       id: 'idle', carrier: 'swiss-post', current_stage: stage, tracking_number: 'TEST1234',
@@ -1404,6 +1401,41 @@ describe('TrackingSyncService', () => {
     await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1 });
     now = new Date('2026-09-09T21:00:00Z');
     await expect(service.sync()).resolves.toMatchObject({ checked: 1 });
+  });
+
+  it.each([
+    // Swiss Post's window is on Zurich's clock: 15:00–17:00 opens at 13:00 UTC. Until 30 minutes
+    // before, the regular cadence still catches a changed slot.
+    { name: 'hours before its window', window: '2026-09-09 15:00–17:00', last: '10:00:15', time: '10:02:00', checked: 0 },
+    { name: 'hours before its window', window: '2026-09-09 15:00–17:00', last: '10:00:15', time: '10:10:00', checked: 1 },
+    { name: 'just over 30 minutes before its window', window: '2026-09-09 15:00–17:00', last: '12:20:15', time: '12:28:00', checked: 0 },
+    { name: '30 minutes before its window', window: '2026-09-09 15:00–17:00', last: '12:30:15', time: '12:32:00', checked: 1 },
+    { name: 'inside its window', window: '2026-09-09 15:00–17:00', last: '13:30:15', time: '13:32:00', checked: 1 },
+    { name: 'after its window, late', window: '2026-09-09 15:00–17:00', last: '15:30:15', time: '15:32:00', checked: 1 },
+    { name: 'before a window on a later day', window: '2026-09-10 09:00–11:00', last: '10:00:15', time: '10:02:00', checked: 0 },
+    { name: 'after a window on an earlier day', window: '2026-09-08 09:00–11:00', last: '10:00:15', time: '10:02:00', checked: 1 },
+    // A single time has no opening to wait for.
+    { name: 'with a time but no window', window: '2026-09-09 17:00', last: '10:00:15', time: '10:02:00', checked: 1 },
+    // Evri's window is on London's clock, from the catalog: 13:00–15:00 opens at 12:00 UTC, not 11:00.
+    { name: 'before a window on London time', carrier: 'evri-uk', window: '2026-09-09 13:00–15:00', last: '11:20:15', time: '11:22:00', checked: 0 },
+    { name: '30 minutes before a window on London time', carrier: 'evri-uk', window: '2026-09-09 13:00–15:00', last: '11:30:15', time: '11:32:00', checked: 1 },
+    // The zone the carrier's answer declares comes before its catalog's.
+    { name: 'before a window on the clock the answer declares', carrier: 'paack', timezone: 'Europe/Lisbon', window: '2026-09-09 13:00–15:00', last: '11:20:15', time: '11:22:00', checked: 0 },
+    // A whole-day slot on the Canary Islands' clock opens at 08:00 UTC.
+    { name: 'before a whole-day window', carrier: 'paack', timezone: 'Atlantic/Canary', window: '2026-09-09 09:00–22:00', last: '07:20:15', time: '07:22:00', checked: 0 },
+    { name: '30 minutes before a whole-day window', carrier: 'paack', timezone: 'Atlantic/Canary', window: '2026-09-09 09:00–22:00', last: '07:30:15', time: '07:32:00', checked: 1 },
+    // UTC stands for no known zone: the window cannot be placed, so it is not waited for.
+    { name: 'before a window on an unknown clock', timezone: 'UTC', window: '2026-09-09 15:00–17:00', last: '10:00:15', time: '10:02:00', checked: 1 },
+  ])('checks a parcel out for delivery $name at $time: $checked checks', async ({ carrier = 'swiss-post', timezone, window, last, time, checked }) => {
+    const parcel = {
+      id: 'window', carrier, current_stage: 'out_for_delivery', tracking_number: 'TEST1234', expected_delivery: window,
+      last_synced_at: `2026-09-09T${last}Z`, sync_status: 'ok',
+      carrier_data: { ...(timezone ? { timezone } : {}), routing: { version: 1, configured_carrier: carrier, last_event_at: '2026-09-09T06:00:00Z' } },
+    };
+    const client = fakeClient([parcel]);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'out_for_delivery' }) }, null, () => new Date(`2026-09-09T${time}Z`));
+    await expect(service.sync()).resolves.toMatchObject({ checked });
   });
 
   it.each([

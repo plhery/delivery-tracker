@@ -134,11 +134,13 @@ Daytime is 08:00–22:00 Europe/Zurich. Overnight, everything is checked hourly.
 
 | Parcels | Daytime |
 | --- | --- |
-| Out for delivery (direct adapter), on screen | every 2 min |
-| Other stages, and out for delivery off screen (direct adapter) | every 10 min |
-| Served by a universal provider | every 15 min |
-| PostNL | every 30 min, also after a failure |
+| Out for delivery (direct adapter) | every 2 min |
+| Out for delivery, until 30 min before its delivery window opens | every 10 min |
+| Other stages (direct adapter) | every 10 min |
+| Served by a universal provider, out for delivery too | every 15 min |
+| PostNL | every 30 min, also after a failure and out for delivery |
 | GLS (DE, CH, FR) | at most hourly, 4 h after a failure, manual refresh included |
+| Registered or accepted, no new event for 12 h (from when it was added) | hourly around the clock; manual refresh still allowed |
 | No new event for 48 h (from when it was added) | hourly around the clock; manual refresh still allowed |
 | Nobody waiting for it | hourly around the clock; manual refresh still allowed |
 | Number no carrier or provider has seen (no carrier identified, no history, no input asked) | hourly for 6 h after it was added, then every 6 h, daily after 48 h, around the clock; manual refresh still allowed |
@@ -155,15 +157,20 @@ So is someone who looked lately: for an hour after the account's apps read its p
 open parcel is checked hourly
 ([`unwatched_package_ids`](../supabase/migrations/20261003180000_unwatched_parcels.sql)).
 
-**On screen** is narrower, and only changes how often a parcel out for delivery is checked:
-its account's apps read its parcels in the last 10 minutes, one of its links was opened in
-the last 10 minutes, or a Live Activity shows it
-([`viewed_delivery_ids`](../supabase/migrations/20261008193100_on_screen_deliveries.sql)).
-Opening the link of a parcel followed without an account counts at once. Carriers publish
-most delivery scans several minutes after the fact, so a check every 2 minutes only pays
-while someone is looking; the push or email that tells everyone else comes at most
-10 minutes later. When the list cannot be read, every parcel out for delivery keeps the
-2-minute cadence.
+**Out for delivery**, the news is the delivery. A carrier's own adapter is cheap and as
+fresh as the carrier, so a parcel it answers for is checked every 2 minutes whether or not
+anyone is looking, unless nobody is waiting for it or the carrier sets a longer interval of
+its own. A universal provider has quotas, costs more and lags behind the carrier: its
+parcels keep the regular cadence, and the 15 minutes routing waits after each of its
+answers, even while someone is looking. A parcel counts as served by a universal provider
+while the summary it shows came from one (`tracking_provider` in `carrier_data`).
+
+**A delivery window** the carrier announces, such as `2026-10-08 13:00–15:00`, holds the
+2-minute checks back: until 30 minutes before it opens, the regular cadence still catches a
+changed slot. Inside the window and after it ends, they resume. The times are read in the
+zone the carrier's answer declares (`timezone` in `carrier_data`, the recipient's for Paack),
+else in the carrier's catalog zone. A single time, or a
+window whose zone is unknown (UTC in the catalog), is not waited for.
 
 **Parcels followed without an account** are checked only while one of their links was
 opened in the last 24 hours or has an alert on. Otherwise a parcel waits until a link is
