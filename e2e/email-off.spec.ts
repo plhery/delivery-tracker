@@ -76,7 +76,7 @@ test('turns the email back on with the same link, and off again', async ({ page 
   await button(page, 'Turn off').click();
   await button(page, 'Turn back on').click();
   await expect(title(page)).toHaveText('Delivery emails are back on');
-  await expect(page.getByText('You’ll get one short email when a parcel is delivered or ready to collect.')).toBeVisible();
+  await expect(page.getByText('You’ll get a short email when a parcel is ready to collect or delivered.')).toBeVisible();
   await button(page, 'Turn off').click();
   await expect(title(page)).toHaveText('Delivery emails are off');
   expect(posted.map(({ body }) => body)).toEqual([{ token: TOKEN }, { token: TOKEN, enabled: true }, { token: TOKEN }]);

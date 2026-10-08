@@ -5215,6 +5215,7 @@ export interface ApiDeliveryEmailSwitchResponse {
 
 export interface ApiSentDeliveryEmail {
   "packageId": string | null;
+  "stage": "delivered" | "ready_for_pickup";
   "sentAt": string;
 }
 

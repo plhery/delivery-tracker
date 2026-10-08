@@ -624,13 +624,15 @@ describe('delivery emails', () => {
   it('lists the emails an account was sent, for its export', async () => {
     const client = user();
     const request = vi.spyOn(client, 'request').mockResolvedValue([
-      { package_id: parcel, sent_at: '2026-10-03T12:13:00+00:00' },
-      { package_id: null, sent_at: '2026-09-30T09:00:00+00:00' },
-      { package_id: parcel, sent_at: null },
+      { package_id: parcel, stage: 'delivered', sent_at: '2026-10-03T12:13:00+00:00' },
+      { package_id: parcel, stage: 'ready_for_pickup', sent_at: '2026-10-02T16:20:00+00:00' },
+      { package_id: null, stage: 'delivered', sent_at: '2026-09-30T09:00:00+00:00' },
+      { package_id: parcel, stage: 'delivered', sent_at: null },
     ]);
     await expect(client.listDeliveryEmails()).resolves.toEqual([
-      { packageId: parcel, sentAt: '2026-10-03T12:13:00+00:00' },
-      { packageId: null, sentAt: '2026-09-30T09:00:00+00:00' },
+      { packageId: parcel, stage: 'delivered', sentAt: '2026-10-03T12:13:00+00:00' },
+      { packageId: parcel, stage: 'ready_for_pickup', sentAt: '2026-10-02T16:20:00+00:00' },
+      { packageId: null, stage: 'delivered', sentAt: '2026-09-30T09:00:00+00:00' },
     ]);
     expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/owned_delivery_emails', { method: 'POST', body: {} });
   });

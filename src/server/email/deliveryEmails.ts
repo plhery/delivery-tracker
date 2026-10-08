@@ -33,9 +33,9 @@ function accountLocale(stored: string | null): Locale {
 }
 
 /**
- * Tells accounts by email that a parcel was delivered, or is ready to collect:
- * one email per parcel, about whichever comes first. The database decides
- * which scans are news and hands each parcel out once (see
+ * Tells accounts by email that a parcel is ready to collect, and that it was
+ * delivered: at most one email per parcel for each. The database decides which
+ * scans are news and hands each parcel out once per stage (see
  * `claim_delivery_emails`); this writes the email, sends it and records how it
  * ended. An email that could not be sent is claimed again later, up to three
  * times while its scan is fresh. One email that fails never stops the others.

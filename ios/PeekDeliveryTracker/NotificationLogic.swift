@@ -57,8 +57,8 @@ struct NotificationPreferencesDraft: Equatable {
     }
 }
 
-/// The account's delivery email: one short email when a parcel is delivered or ready to
-/// collect, to the address it signs in with. There is none in the demo, or unless the
+/// The account's delivery email: a short email when a parcel is ready to collect and
+/// when it is delivered, to the address it signs in with. There is none in the demo, or unless the
 /// server says it can write to the account, and nothing about email shows then.
 struct DeliveryEmail: Equatable {
     let address: String

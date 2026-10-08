@@ -378,8 +378,9 @@ describe('the account export', () => {
     vi.spyOn(SupabaseUserClient.prototype, 'listPackages').mockResolvedValue([]);
     vi.spyOn(SupabaseUserClient.prototype, 'getNotificationPreferences').mockResolvedValue({ ...stored, email_on_delivery: true });
     const sent = [
-      { packageId, sentAt: '2026-10-03T12:13:00+00:00' },
-      { packageId: null, sentAt: '2026-09-30T09:00:00+00:00' },
+      { packageId, stage: 'delivered' as const, sentAt: '2026-10-03T12:13:00+00:00' },
+      { packageId, stage: 'ready_for_pickup' as const, sentAt: '2026-10-02T16:20:00+00:00' },
+      { packageId: null, stage: 'delivered' as const, sentAt: '2026-09-30T09:00:00+00:00' },
     ];
     const emails = vi.spyOn(SupabaseUserClient.prototype, 'listDeliveryEmails').mockResolvedValue(sent);
     const opened = vi.spyOn(SupabaseServiceClient.prototype, 'accountLastOpened').mockResolvedValue('2026-10-03T21:05:00+00:00');
@@ -397,6 +398,7 @@ describe('the account export', () => {
     const listed = Object.keys(contract.components.schemas.AccountExportResponse.properties);
     for (const key of Object.keys(exported)) expect(listed).toContain(key);
     expect(Object.keys(exported.deliveryEmails).sort()).toEqual([...contract.components.schemas.DeliveryEmailsExport.required].sort());
+    expect(Object.keys(exported.deliveryEmails.sent[0]).sort()).toEqual([...contract.components.schemas.SentDeliveryEmail.required].sort());
   });
 
   it('says that the account never chose, and was sent nothing', async () => {

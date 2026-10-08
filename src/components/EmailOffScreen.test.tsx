@@ -78,7 +78,7 @@ describe('the page a delivery email’s opt-out link opens', () => {
     await user.click(button('Turn off'));
     await user.click(await screen.findByRole('button', { name: 'Turn back on' }));
     await waitFor(() => expect(title()).toHaveTextContent('Delivery emails are back on'));
-    expect(screen.getByText('You’ll get one short email when a parcel is delivered or ready to collect.')).toBeVisible();
+    expect(screen.getByText('You’ll get a short email when a parcel is ready to collect or delivered.')).toBeVisible();
     await user.click(button('Turn off'));
     await waitFor(() => expect(title()).toHaveTextContent('Delivery emails are off'));
     expect(posted().map(([, , body]) => body)).toEqual([{ token: TOKEN }, { token: TOKEN, enabled: true }, { token: TOKEN }]);

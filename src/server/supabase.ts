@@ -1603,11 +1603,12 @@ export class SupabaseUserClient extends SupabaseClient {
     return result;
   }
 
-  /** The delivery emails this account was sent: the parcel, when it still exists, and the time. */
-  async listDeliveryEmails(): Promise<Array<{ packageId: string | null; sentAt: string }>> {
+  /** The delivery emails this account was sent: the parcel, when it still exists, what each told, and the time. */
+  async listDeliveryEmails(): Promise<Array<{ packageId: string | null; stage: EmailStage; sentAt: string }>> {
     const sent = rows(await this.request('/rest/v1/rpc/owned_delivery_emails', { method: 'POST', body: {} }));
     return sent.filter((email) => typeof email.sent_at === 'string').map((email) => ({
       packageId: typeof email.package_id === 'string' ? email.package_id : null,
+      stage: email.stage === 'ready_for_pickup' ? 'ready_for_pickup' : 'delivered',
       sentAt: String(email.sent_at),
     }));
   }

@@ -531,10 +531,12 @@ struct DeliveryEmailSwitchResponse: Codable, Equatable, Hashable, Sendable {
 
 struct SentDeliveryEmail: Codable, Equatable, Hashable, Sendable {
     var packageID: UUID? = nil
+    var stage: SentDeliveryEmailStage
     var sentAt: String
 
     private enum CodingKeys: String, CodingKey {
         case packageID = "packageId"
+        case stage
         case sentAt
     }
 }
@@ -1118,6 +1120,13 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
 
 enum ErrorResponseScope: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
     case daily
+
+    var id: String { rawValue }
+}
+
+enum SentDeliveryEmailStage: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case delivered
+    case readyForPickup = "ready_for_pickup"
 
     var id: String { rawValue }
 }

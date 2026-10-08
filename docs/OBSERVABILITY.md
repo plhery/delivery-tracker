@@ -76,8 +76,8 @@ finishing it. A carrier change that the worker's lease renewal notices before th
 stops the check instead: its attempt stays `running`, and is marked `abandoned` and
 reported as above.
 
-`delivery_emails` records what was emailed: one row per parcel claimed for a delivery
-email, with the account, the scan it told and its `stage` (`delivered`,
+`delivery_emails` records what was emailed: one row per parcel and stage claimed for a
+delivery email, with the account, the scan it told and its `stage` (`delivered`,
 `ready_for_pickup`), `status` (`claimed`, `sent`, `failed`, `skipped`), a `reason` code,
 the attempts and the times. It holds no address and none of the email. A row outlives its
 parcel and goes with its account. The delivery email also reads the attempts above: a

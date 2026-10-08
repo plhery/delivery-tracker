@@ -8106,7 +8106,7 @@
               "boolean",
               "null"
             ],
-            "description": "Whether the account gets one email when a parcel is delivered or ready to collect. null: never chosen, so the one-time offer may show. A request that leaves it out, or sends null, keeps the stored choice."
+            "description": "Whether the account gets an email when a parcel is ready to collect, and when it is delivered. null: never chosen, so the one-time offer may show. A request that leaves it out, or sends null, keeps the stored choice."
           },
           "emailAvailable": {
             "type": "boolean",
@@ -8149,6 +8149,7 @@
         "additionalProperties": false,
         "required": [
           "packageId",
+          "stage",
           "sentAt"
         ],
         "properties": {
@@ -8159,6 +8160,14 @@
             ],
             "format": "uuid",
             "description": "The parcel the email told about. null once that parcel is deleted."
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "delivered",
+              "ready_for_pickup"
+            ],
+            "description": "What the email told: the parcel was delivered, or was ready to collect."
           },
           "sentAt": {
             "type": "string",

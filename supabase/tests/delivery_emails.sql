@@ -950,14 +950,15 @@ begin
 end;
 $$;
 
--- Ready to collect: announced like a delivery when the server asks for it, and
--- the parcel's one email. Collecting it later is not news; a failed email tried
--- again tells what the parcel shows by then.
+-- Ready to collect: announced like a delivery when the server asks for it,
+-- once, and the delivery that follows has its own email. A failed email is
+-- tried again for its own stage only, while the parcel shows it.
 do $$
 declare
   alex constant uuid := 'e1000000-0000-4000-8000-000000000001';
   both_stages constant text[] := array['delivered', 'ready_for_pickup'];
   parcel uuid;
+  original uuid;
   waiting uuid;
   delivered uuid;
   claim jsonb;
@@ -982,34 +983,76 @@ begin
     raise exception 'A parcel ready to collect was not claimed: % %', claim, ledger;
   end if;
   perform public.finish_delivery_email(ledger.id, 'sent');
-  -- Collected: the parcel was told already.
-  update public.packages set current_stage = 'delivered' where id = parcel;
-  perform pg_temp.scan(parcel, 'delivered', '10 minutes', '5 minutes');
-  if pg_temp.sends(public.claim_delivery_emails(20, 20, 80, both_stages)) <> '{}' then
-    raise exception 'A parcel announced ready to collect was emailed again when collected';
-  end if;
-
-  -- A newer pickup scan of a parcel that was told is not news either.
-  update public.packages set current_stage = 'ready_for_pickup' where id = parcel;
-  perform pg_temp.scan(parcel, 'ready_for_pickup', '1 minute', '1 minute');
+  -- A newer pickup scan of a parcel that was told is not news.
+  perform pg_temp.scan(parcel, 'ready_for_pickup', '30 minutes', '20 minutes');
   if pg_temp.sends(public.claim_delivery_emails(20, 20, 80, both_stages)) <> '{}' then
     raise exception 'A parcel moved to another pickup point was emailed twice';
   end if;
+  -- Collected: the delivery is news of its own, once.
+  update public.packages set current_stage = 'delivered' where id = parcel;
+  delivered := pg_temp.scan(parcel, 'delivered', '10 minutes', '5 minutes');
+  claim := public.claim_delivery_emails(20, 20, 80, both_stages);
+  select * into ledger from public.delivery_emails where package_id = parcel and stage = 'delivered';
+  if pg_temp.sends(claim) <> array[parcel] or claim#>>'{send,0,stage}' <> 'delivered'
+      or claim#>>'{send,0,event_id}' <> delivered::text or ledger.status <> 'claimed' or ledger.attempts <> 1
+      or (select status from public.delivery_emails where package_id = parcel and stage = 'ready_for_pickup') <> 'sent' then
+    raise exception 'A parcel announced ready to collect was not emailed when collected: % %', claim, ledger;
+  end if;
+  perform public.finish_delivery_email(ledger.id, 'sent');
+  perform pg_temp.scan(parcel, 'delivered', '1 minute', '1 minute');
+  if pg_temp.sends(public.claim_delivery_emails(20, 20, 80, both_stages)) <> '{}'
+      or (select count(*) from public.delivery_emails where package_id = parcel) <> 2 then
+    raise exception 'A collected parcel was emailed a third time';
+  end if;
 
-  -- An email that failed is tried again with what the parcel shows by then.
+  -- A pickup email that failed is tried again while the parcel waits. Once it
+  -- is collected, the failure stays and the delivery has its own email.
   perform pg_temp.fresh();
   parcel := pg_temp.parcel(alex, 'EMAILPICKUP02', '2 days', 'ready_for_pickup');
   waiting := pg_temp.scan(parcel, 'ready_for_pickup', '3 hours', '2 hours 50 minutes');
   claim := public.claim_delivery_emails(20, 20, 80, both_stages);
   perform public.finish_delivery_email((claim#>>'{send,0,id}')::uuid, 'failed', 'smtp');
   update public.delivery_emails set claimed_at = now() - interval '15 minutes';
+  claim := public.claim_delivery_emails(20, 20, 80, both_stages);
+  select * into ledger from public.delivery_emails where package_id = parcel;
+  if pg_temp.sends(claim) <> array[parcel] or claim#>>'{send,0,stage}' <> 'ready_for_pickup'
+      or ledger.event_id <> waiting or ledger.attempts <> 2 then
+    raise exception 'A failed pickup email was not tried again: % %', claim, ledger;
+  end if;
+  perform public.finish_delivery_email(ledger.id, 'failed', 'smtp');
+  update public.delivery_emails set claimed_at = now() - interval '1 hour';
   update public.packages set current_stage = 'delivered' where id = parcel;
   delivered := pg_temp.scan(parcel, 'delivered', '20 minutes', '10 minutes');
   claim := public.claim_delivery_emails(20, 20, 80, both_stages);
-  select * into ledger from public.delivery_emails where package_id = parcel;
+  select * into ledger from public.delivery_emails where package_id = parcel and stage = 'delivered';
   if pg_temp.sends(claim) <> array[parcel] or claim#>>'{send,0,stage}' <> 'delivered'
-      or ledger.stage <> 'delivered' or ledger.event_id <> delivered or ledger.attempts <> 2 then
-    raise exception 'A failed pickup email was not tried again as the delivery: % %', claim, ledger;
+      or ledger.event_id <> delivered or ledger.attempts <> 1
+      or (select (status, attempts, event_id) from public.delivery_emails where package_id = parcel and stage = 'ready_for_pickup')
+        is distinct from ('failed'::text, 2::smallint, waiting) then
+    raise exception 'A collected parcel whose pickup email failed was not told its delivery: % %', claim, ledger;
+  end if;
+
+  -- Merged legs: a pickup told from one leg holds back no delivery of the
+  -- parcel that stays, whether its row moved with the scan or not.
+  perform pg_temp.fresh();
+  original := pg_temp.parcel(alex, 'EMAILPICKUP06', '3 days', 'ready_for_pickup');
+  waiting := pg_temp.scan(original, 'ready_for_pickup', '6 hours', '5 hours');
+  perform public.finish_delivery_email((public.claim_delivery_emails(20, 20, 80, both_stages)#>>'{send,0,id}')::uuid, 'sent');
+  parcel := pg_temp.parcel(alex, 'EMAILPICKUP07', '2 days');
+  delivered := pg_temp.scan(parcel, 'delivered', '1 hour', '50 minutes');
+  perform public.link_package_tracking(original, parcel);
+  update public.delivery_emails set package_id = null;
+  claim := public.claim_delivery_emails(20, 20, 80, both_stages);
+  if pg_temp.sends(claim) <> array[parcel] or claim#>>'{send,0,stage}' <> 'delivered'
+      or (select package_id from public.tracking_events where id = waiting) <> parcel then
+    raise exception 'A merged parcel told at its pickup point on one leg was not told its delivery: %', claim;
+  end if;
+  -- The pickup scan that was told is still told.
+  delete from public.delivery_emails where stage = 'delivered';
+  update public.packages set current_stage = 'ready_for_pickup' where id = parcel;
+  perform pg_temp.scan(parcel, 'ready_for_pickup', '30 minutes', '20 minutes');
+  if pg_temp.sends(public.claim_delivery_emails(20, 20, 80, both_stages)) <> '{}' then
+    raise exception 'A merged parcel was told again at its pickup point';
   end if;
 
   -- Never one that was already waiting when the parcel joined the account: its
@@ -1098,9 +1141,9 @@ begin
   perform set_config('request.jwt.claim.sub', 'e1000000-0000-4000-8000-000000000001', true);
   select jsonb_agg(to_jsonb(email)) into emails from public.owned_delivery_emails() as email;
   if jsonb_array_length(emails) <> 2
-      or not emails @> jsonb_build_array(jsonb_build_object('package_id', current_setting('email_test.sent_package')))
-      or not emails @> '[{"package_id":null}]'
-      or emails#>>'{0,sent_at}' is null or (select count(*) from jsonb_object_keys(emails->0)) <> 2 then
+      or not emails @> jsonb_build_array(jsonb_build_object('package_id', current_setting('email_test.sent_package'), 'stage', 'delivered'))
+      or not emails @> '[{"package_id":null,"stage":"delivered"}]'
+      or emails#>>'{0,sent_at}' is null or (select count(*) from jsonb_object_keys(emails->0)) <> 3 then
     raise exception 'An account does not read the emails it was sent: %', emails;
   end if;
   perform set_config('request.jwt.claim.sub', 'e1000000-0000-4000-8000-000000000003', true);

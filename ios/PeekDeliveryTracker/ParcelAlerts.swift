@@ -204,8 +204,8 @@ struct ParcelAlertSwitches: View {
     }
 }
 
-/// Offered once, on a delivered parcel, to an account that has never chosen: one short
-/// email when a parcel is delivered or ready to collect. Either answer is saved on the
+/// Offered once, on a delivered parcel, to an account that has never chosen: a short
+/// email when a parcel is ready to collect or delivered. Either answer is saved on the
 /// server, so the offer does not come back.
 struct DeliveryEmailOffer: View {
     enum Phase: Equatable {

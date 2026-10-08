@@ -59,7 +59,7 @@ describe('the delivery email in Settings', () => {
     await open();
     expect(within(section()).getByText('New')).toBeVisible();
     expect(emailSwitch()).toHaveAttribute('aria-checked', 'false');
-    expect(emailSwitch()).toHaveAccessibleDescription('To alex@example.com, the address you sign in with. One short email per parcel, when it’s delivered or ready to collect.');
+    expect(emailSwitch()).toHaveAccessibleDescription('To alex@example.com, the address you sign in with. A short email when a parcel is ready to collect, and when it’s delivered.');
     // After "Which updates?" and its Save button, before the note on how often tracking is checked.
     const order = (first: Element, second: Element) => first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING;
     expect(order(screen.getByRole('button', { name: 'Save preferences' }), section())).toBeTruthy();

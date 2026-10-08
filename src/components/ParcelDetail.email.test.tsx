@@ -188,7 +188,7 @@ describe('the email offer on a delivered parcel', () => {
   it('stands between the delivered card and the parcel’s facts, for an account that never chose', async () => {
     await open(never);
     const card = offer()!;
-    expect(within(card).getByText('One short email per parcel, to alex@example.com. Nothing else.')).toBeVisible();
+    expect(within(card).getByText('A short email to alex@example.com when a parcel is ready to collect or delivered. Nothing else.')).toBeVisible();
     expect(card.previousElementSibling).toHaveClass('detail__hero');
     expect(card.nextElementSibling).toHaveClass('detail__information');
     // In the page, not over it.

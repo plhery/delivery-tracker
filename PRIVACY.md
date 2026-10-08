@@ -120,8 +120,8 @@ and nothing else about the parcel.
 ## Emails
 
 Peek sends two kinds of email, both through Resend (Resend, Inc., United
-States): the sign-in code you ask for and, only if you turn it on, one email
-when a parcel is delivered or ready to collect, whichever comes first.
+States): the sign-in code you ask for and, only if you turn it on, an email
+when a parcel is ready to collect and one when it is delivered.
 
 The delivery email is off until you turn it on under Settings › Delivery
 updates, or accept the offer shown once after a delivery. It goes to the
@@ -130,8 +130,8 @@ carrier, the time and a picture of the journey with its towns. For a parcel
 ready to collect, it also names the pickup point the carrier gave, with its
 address and a link that opens it in Google Maps, as Directions or Show on map
 does. It never contains the tracking number. It has no tracking pixel, no tracked links
-and no remote images. Peek sends one per parcel and nothing else: no
-newsletter and no promotion.
+and no remote images. Peek sends at most these two per parcel and nothing
+else: no newsletter and no promotion.
 
 These emails rest on your consent. Turn them off at any time with the same
 switch, for one parcel in that parcel's alerts, or with the link in every
