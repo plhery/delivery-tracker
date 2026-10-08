@@ -425,28 +425,50 @@ export function compareNotificationEvents(left: JsonObject, right: JsonObject): 
     || stringField(right, 'event_id').localeCompare(stringField(left, 'event_id'));
 }
 
-/**
- * A sync can store scans older than ones the parcel already shows: a carrier
- * change backfills history, a provider reports a scan late. That is not news.
- * A batch is announced only when its newest scan is the parcel's newest, give
- * or take an hour of clock skew (partner scans can run ahead); an older one is
- * recorded as handled without a notification. When the lookup fails, every
- * batch is announced as before.
- */
-async function parcelScanTimes(client: SupabaseServiceClient, batches: Iterable<JsonObject[]>): Promise<Map<string, string>> {
-  try {
-    return await client.latestScanTimes([...batches].map((events) => stringField(events[0]!, 'package_id')).filter(Boolean));
-  } catch {
-    return new Map();
-  }
+/** What a batch of new scans is measured against, by parcel: its newest stored scan, and when it joined its account. */
+interface ParcelTimes { latest: ReadonlyMap<string, string>; joined: ReadonlyMap<string, string> }
+
+/** A lookup that fails leaves its map empty, and its rule then announces every batch as before. */
+async function parcelTimes(client: SupabaseServiceClient, batches: Iterable<JsonObject[]>): Promise<ParcelTimes> {
+  const ids = [...batches].map((events) => stringField(events[0]!, 'package_id')).filter(Boolean);
+  const read = async (load: () => Promise<Map<string, string>>) => {
+    try { return await load(); } catch { return new Map<string, string>(); }
+  };
+  const [latest, joined] = await Promise.all([read(() => client.latestScanTimes(ids)), read(() => client.packageJoinTimes(ids))]);
+  return { latest, joined };
 }
 
 const BACKFILL_TOLERANCE_MS = 60 * 60 * 1_000;
+/** The check that runs as a parcel is added stores its history within this. */
+const ADD_CHECK_MS = 5 * 60 * 1_000;
+const DAY_MS = 24 * 60 * 60 * 1_000;
 
-export function isBackfilledScan(newest: JsonObject, latest: ReadonlyMap<string, string>): boolean {
+/**
+ * A batch is announced by its newest scan, unless that scan is not news; the
+ * batch is then recorded as handled without a notification.
+ *
+ * - Backfilled: older than the parcel's newest scan, give or take an hour of
+ *   clock skew (partner scans can run ahead). A carrier change backfills
+ *   history, a provider reports a scan late.
+ * - Known when added: from before the parcel joined its account, and either
+ *   stored by the check that runs as it is added (the carrier had it then; a
+ *   scan with a clock must also be from before) or more than a day older than
+ *   the add, counting a whole day for a scan without a clock. That first check
+ *   finds the history the owner added the parcel with, whose newest scan is
+ *   always the parcel's newest. A first history that only arrives later, with
+ *   scans from the hours before the add, is still announced.
+ */
+export function isOldNews(newest: JsonObject, { latest, joined }: ParcelTimes): boolean {
+  const packageId = stringField(newest, 'package_id');
   const scanned = Date.parse(stringField(newest, 'occurred_at'));
-  const parcel = Date.parse(latest.get(stringField(newest, 'package_id')) ?? '');
-  return Number.isFinite(scanned) && Number.isFinite(parcel) && scanned < parcel - BACKFILL_TOLERANCE_MS;
+  const parcel = Date.parse(latest.get(packageId) ?? '');
+  if (Number.isFinite(scanned) && Number.isFinite(parcel) && scanned < parcel - BACKFILL_TOLERANCE_MS) return true;
+  const since = Date.parse(joined.get(packageId) ?? '');
+  if (!Number.isFinite(since)) return false;
+  const clockless = newest.event_has_time === false;
+  const stored = Date.parse(stringField(newest, 'event_created_at'));
+  if (stored < since + ADD_CHECK_MS && (clockless || scanned < since)) return true;
+  return scanned + (clockless ? DAY_MS : 0) < since - DAY_MS;
 }
 
 export class WebPushNotificationService {
@@ -466,12 +488,12 @@ export class WebPushNotificationService {
       grouped.set(key, [...(grouped.get(key) ?? []), row]);
     }
     const summary = emptySummary();
-    const latest = await parcelScanTimes(this.client, grouped.values());
+    const times = await parcelTimes(this.client, grouped.values());
     for (const events of grouped.values()) {
       signal?.throwIfAborted();
       const newest = [...events].sort(compareNotificationEvents)[0]!;
       const subscriptionId = stringField(newest, 'subscription_id');
-      if (isBackfilledScan(newest, latest)) {
+      if (isOldNews(newest, times)) {
         await this.client.recordPushDeliveries(subscriptionId, events.map((event) => stringField(event, 'event_id')).filter(Boolean));
         continue;
       }
@@ -571,8 +593,8 @@ const FINISHED_STAGES = new Set(['delivered', 'returned']);
  * the alert's language, when its preset covers the scan's stage. It never
  * carries the parcel's name or number.
  *
- * - A batch of new scans announces its newest covered one, and only when that
- *   is the parcel's newest, as for accounts.
+ * - A batch of new scans announces its newest covered one, unless that is not
+ *   news (`isOldNews`), as for accounts.
  * - A gift on its way is announced as one: without the place of a scan, and
  *   without the scans its page leaves out.
  * - An alert on a browser the parcel's owner gets account notifications on is
@@ -596,7 +618,7 @@ export class ParcelLinkAlertService {
     }
     const summary = emptySummary();
     let failed = 0;
-    const latest = await parcelScanTimes(client, grouped.values());
+    const times = await parcelTimes(client, grouped.values());
     for (const [alertId, events] of grouped) {
       signal?.throwIfAborted();
       const newest = events.filter((event) => this.announces(event)).sort(compareNotificationEvents)[0];
@@ -614,7 +636,7 @@ export class ParcelLinkAlertService {
         if (failuresNow !== failures) await client.setParcelLinkAlertFailures(alertId, failuresNow);
       };
 
-      if (!newest || newest.account_endpoint === true || isBackfilledScan(newest, latest)) {
+      if (!newest || newest.account_endpoint === true || isOldNews(newest, times)) {
         await settle(failures);
         recordParcelAlertSent('skipped');
         continue;
@@ -791,12 +813,12 @@ export class NativePushNotificationService {
       grouped.set(key, [...(grouped.get(key) ?? []), row]);
     }
     const summary = emptySummary();
-    const latest = await parcelScanTimes(this.client, grouped.values());
+    const times = await parcelTimes(this.client, grouped.values());
     for (const events of grouped.values()) {
       signal?.throwIfAborted();
       const newest = [...events].sort(compareNotificationEvents)[0]!;
       const deviceId = stringField(newest, 'device_id');
-      if (newest.live_activity_delivered === true || isBackfilledScan(newest, latest)) {
+      if (newest.live_activity_delivered === true || isOldNews(newest, times)) {
         await this.client.recordNativePushDeliveries(
           deviceId,
           events.map((event) => stringField(event, 'event_id')).filter(Boolean),

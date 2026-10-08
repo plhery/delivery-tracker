@@ -651,6 +651,23 @@ export class SupabaseClient {
     return latest;
   }
 
+  /** When each package joined its account: added to it, or kept from a lookup; its creation for older rows. */
+  async packageJoinTimes(packageIds: string[]): Promise<Map<string, string>> {
+    const joined = new Map<string, string>();
+    const ids = [...new Set(packageIds)];
+    const pages = Array.from({ length: Math.ceil(ids.length / 100) }, (_, page) => ids.slice(page * 100, page * 100 + 100));
+    await Promise.all(pages.map(async (page) => {
+      for (const row of rows(await this.request(`/rest/v1/packages?${query([
+        ['id', `in.(${page.join(',')})`],
+        ['select', 'id,created_at,owned_since'],
+      ])}`))) {
+        const at = row.owned_since ?? row.created_at;
+        if (typeof row.id === 'string' && typeof at === 'string') joined.set(row.id, at);
+      }
+    }));
+    return joined;
+  }
+
   async listPendingPushNotifications(): Promise<JsonObject[]> {
     const params = query({ select: '*', order: 'event_created_at.asc', limit: '1000' });
     return rows(await this.request(`/rest/v1/pending_push_notifications?${params}`));

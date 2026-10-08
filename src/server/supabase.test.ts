@@ -599,3 +599,22 @@ describe('delivery emails', () => {
     expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/owned_delivery_emails', { method: 'POST', body: {} });
   });
 });
+
+describe('notification reads', () => {
+  it('reads when parcels joined their accounts, a page of ids at a time, from their creation when unrecorded', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const ids = Array.from({ length: 101 }, (_, index) => `package-${index}`);
+    const request = vi.spyOn(client, 'request')
+      .mockResolvedValueOnce([
+        { id: 'package-0', created_at: '2026-09-01T08:00:00Z', owned_since: '2026-10-01T08:00:00Z' },
+        { id: 'package-1', created_at: '2026-09-02T08:00:00Z', owned_since: null },
+      ])
+      .mockResolvedValueOnce([{ id: 'package-100', created_at: '2026-09-03T08:00:00Z' }]);
+    await expect(client.packageJoinTimes([...ids, 'package-0'])).resolves.toEqual(new Map([
+      ['package-0', '2026-10-01T08:00:00Z'], ['package-1', '2026-09-02T08:00:00Z'], ['package-100', '2026-09-03T08:00:00Z'],
+    ]));
+    const pages = request.mock.calls.map(([path]) => new URL(`https://database.example${String(path)}`).searchParams);
+    expect(pages.map((page) => page.get('id')!.slice(4, -1).split(',').length)).toEqual([100, 1]);
+    expect(pages[0]!.get('select')).toBe('id,created_at,owned_since');
+  });
+});

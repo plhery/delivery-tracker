@@ -60,6 +60,9 @@ Key server modules:
   devices, and Web Push to the alerts of the parcel's links. Each batch of new scans
   announces its newest one, and only when it is the parcel's newest scan: history a carrier
   change backfills, or a scan reported late, is recorded as handled without an alert.
+  So is what the parcel already showed when it joined the account: a scan from before
+  that moment, stored by the check that runs as it is added or more than a day older than
+  it. A first history that arrives later, from the hours before the add, is announced.
 - `email/` tells an account by email that a parcel was delivered, when the account asked
   for it. The database hands each delivered scan out once (`claim_delivery_emails`),
   `deliveryEmails.ts` writes the email and sends it through any SMTP service, and

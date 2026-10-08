@@ -51,6 +51,7 @@ beforeEach(() => {
   removed = vi.spyOn(client, 'deleteParcelLinkAlert').mockResolvedValue();
   failures = vi.spyOn(client, 'setParcelLinkAlertFailures').mockResolvedValue();
   vi.spyOn(client, 'latestScanTimes').mockResolvedValue(new Map());
+  vi.spyOn(client, 'packageJoinTimes').mockResolvedValue(new Map());
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
@@ -118,6 +119,15 @@ describe('what an alert announces', () => {
     await alerts.dispatch();
     await alerts.dispatch();
     expect(send).toHaveBeenCalledTimes(2);
+  });
+
+  it('handles what the parcel already showed when it was added silently, as for accounts', async () => {
+    pending([row({ stage: 'customs', occurred_at: '2026-10-04T18:00:00Z', event_created_at: '2026-10-05T10:00:01Z' })]);
+    vi.mocked(client.packageJoinTimes).mockResolvedValue(new Map([['package-1', '2026-10-05T10:00:00Z']]));
+    const counted = vi.spyOn(metrics, 'recordParcelAlertSent');
+    expect(await alerts.dispatch()).toMatchObject({ attempted: 0, sent: 0 });
+    expect(send).not.toHaveBeenCalled();
+    expect(counted).toHaveBeenCalledExactlyOnceWith('skipped');
   });
 
   it('tells each alert of a link apart, in its own language and with its own preset', async () => {
