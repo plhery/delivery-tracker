@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next';
-import { missingGuideRewrites } from './src/guides/paths';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -36,10 +35,6 @@ const nextConfig: NextConfig = {
   async redirects() {
     // English has no address of its own beside the other languages': its landing is `/`.
     return [{ source: '/en', destination: '/', permanent: true }];
-  },
-  async rewrites() {
-    // Under the guides, an address that names none of them is the site's 404 page, written by the server.
-    return { beforeFiles: missingGuideRewrites() };
   },
   async headers() {
     return [

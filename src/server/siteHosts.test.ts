@@ -209,6 +209,22 @@ describe('the page proxy', () => {
     }
   });
 
+  it('answers an address below a language’s guides that names none of them with the 404 page, in that language', () => {
+    const rewrite = (path: string) => page(`https://peek.example.test${path}`, { headers: { host: 'peek.example.test', cookie: 'sdt.locale=de' } });
+    for (const locale of SUPPORTED_LOCALES) {
+      const [{ slug }] = GUIDE_LINKS[locale];
+      for (const path of [guidePath(locale, 'no-such-guide'), guidePath(locale, slug.toUpperCase()), guidePath(locale, `${slug}/more`)]) {
+        const response = rewrite(path);
+        expect(response.headers.get('x-middleware-rewrite'), path).toBe('https://peek.example.test/_not-found');
+        expect(response.headers.get('x-middleware-request-cookie'), path).toBe(`sdt.locale=${locale}`);
+        expect(response.headers.get('content-security-policy'), path).toContain("default-src 'self'");
+        expect(response.headers.get('cache-control'), path).toBe('private, no-store');
+      }
+      for (const path of [guidePath(locale), guidePath(locale, slug)]) expect(rewrite(path).headers.get('x-middleware-rewrite'), path).toBeNull();
+    }
+    for (const path of ['/', '/de', '/xx', '/en/guides/x', '/guidesmore']) expect(rewrite(path).headers.get('x-middleware-rewrite'), path).toBeNull();
+  });
+
   it('always answers a language address and the guides itself, a prefetch too', () => {
     const [pages, languages] = config.matcher;
     expect(pages.missing).toHaveLength(2);

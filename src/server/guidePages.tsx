@@ -82,8 +82,8 @@ export async function GuideIndexRoute({ locale }: { locale: Locale }) {
 }
 
 /**
- * One guide, in the language of its address. A rewrite in `next.config.ts` sends an address without a
- * guide to the site's 404 page before it gets here; reached anyway, such a slug is still a 404.
+ * One guide, in the language of its address. The proxy sends an address without a guide to the
+ * site's 404 page before it gets here; reached anyway, such a slug is still a 404.
  */
 export async function GuideRoute({ locale, slug }: { locale: Locale; slug: string }) {
   await connection();

@@ -1,4 +1,3 @@
-import { getRewrittenUrl, unstable_getResponseFromNextConfig } from 'next/experimental/testing/server';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import de from '../../shared/locales/de.json';
@@ -16,8 +15,6 @@ vi.mock('next/server', async (original) => ({ ...await original<typeof import('n
 const { guide, guideAddresses, guideAlternates, guideLinkBySlug, guideLinks } = await import('./guides');
 const { GuideIndexRoute, GuideRoute, guideIndexMetadata, guideMetadata } = await import('./guidePages');
 const { frenchSpacing } = await import('../guides/markdown');
-const { guidePath } = await import('../guides/paths');
-const { default: nextConfig } = await import('../../next.config');
 
 afterEach(() => { request.host = 'peek.example'; vi.unstubAllEnvs(); });
 
@@ -36,20 +33,6 @@ describe('the guides as the server reads them', () => {
       }
     }
     expect(guideLinkBySlug('en', 'no-such-guide')).toBeUndefined();
-  });
-
-  it('sends an address under the guides that names none of them to the site’s 404 page, and nothing else', async () => {
-    const answer = async (path: string) => getRewrittenUrl(await unstable_getResponseFromNextConfig({ url: `https://peek.example${path}`, nextConfig }));
-    const everySlug = SUPPORTED_LOCALES.flatMap((locale) => guideLinks(locale).map(({ slug }) => slug));
-    for (const locale of SUPPORTED_LOCALES) {
-      const own = guideLinks(locale).map(({ slug }) => slug);
-      expect(await answer(guidePath(locale)), locale).toBeNull();
-      for (const slug of own) expect(await answer(guidePath(locale, slug)), slug).toBeNull();
-      // Another language's slug, a made-up one, or anything below a guide is no page in this language.
-      const missing = [...everySlug.filter((slug) => !own.includes(slug)), 'no-such-guide', `${own[0]}x`, `${own[0]}/more`];
-      for (const slug of missing) expect(await answer(guidePath(locale, slug)), slug).toBe('https://peek.example/_not-found');
-    }
-    for (const path of ['/', '/de', '/demo', '/guidesmore', '/en/guides/x']) expect(await answer(path), path).toBeNull();
   });
 
   it('knows where a guide lives in every language, and where the guides’ own page does', () => {

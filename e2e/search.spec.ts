@@ -279,8 +279,13 @@ test('a path nothing lives at answers 404 with the page that says so', async ({ 
     expect(html, address).toContain(notFound('This page isn’t here.'));
     expect(robotsOf(html), address).toBe('noindex');
   }
-  // Under a language's guides, a slug without a guide says so in that language.
-  for (const [address, title] of [['/fr/guides/no-such-guide', 'Cette page est introuvable.'], ['/pl/guides/no/such-guide', 'Nie znaleziono tej strony.']]) {
+  // Under a language's guides, a slug without a guide says so in that language, and so does a guide's slug in other letters.
+  const sitemap = await (await request.get('/sitemap.xml')).text();
+  const paths = [...sitemap.matchAll(/<loc>([^<]*)<\/loc>/g)].map(([, address]) => new URL(address).pathname);
+  const slugIn = (guides: string) => paths.find((path) => path.startsWith(`${guides}/`))!.slice(guides.length + 1);
+  const [english, french] = [slugIn('/guides'), slugIn('/fr/guides')];
+  for (const [address, title] of [['/fr/guides/no-such-guide', 'Cette page est introuvable.'], ['/pl/guides/no/such-guide', 'Nie znaleziono tej strony.'],
+    [`/guides/${english.toUpperCase()}`, 'This page isn’t here.'], [`/fr/guides/${french.toUpperCase()}`, 'Cette page est introuvable.']]) {
     const { response, html } = await firstByte(request, address);
     expect(response.status(), address).toBe(404);
     expect(html, address).toContain(notFound(title));

@@ -1,5 +1,5 @@
 import { GUIDE_LINKS } from '../generated/guides';
-import { isLocale, SUPPORTED_LOCALES, type Locale } from '../lib/locale';
+import { isLocale, type Locale } from '../lib/locale';
 
 /** Where the guides of a language live, or one of them. English has no prefix. */
 export function guidePath(locale: Locale, slug?: string): string {
@@ -18,13 +18,13 @@ export function guidePathLanguage(pathname: string): Locale | null {
 }
 
 /**
- * The addresses under each language's guides that are none of its guides, sent to the site's 404 page
- * (`next.config.ts`). The guides' pages are rendered for each request, so `dynamicParams` has no list
+ * Whether an address below a language's guides names none of them, letter for letter: the proxy answers it
+ * with the site's 404 page. The guides' pages are rendered for each request, so `dynamicParams` has no list
  * to hold a slug against, and a `notFound()` thrown by the page leaves the 404 page for the browser to draw.
  */
-export function missingGuideRewrites(): { source: string; destination: string }[] {
-  return SUPPORTED_LOCALES.map((locale) => ({
-    source: `${guidePath(locale)}/:rest((?!(?:${GUIDE_LINKS[locale].map(({ slug }) => slug).join('|')})$).+)`,
-    destination: '/_not-found',
-  }));
+export function namesNoGuide(pathname: string): boolean {
+  const language = guidePathLanguage(pathname);
+  if (!language) return false;
+  const below = pathname.slice(guidePath(language).length);
+  return below !== '' && !GUIDE_LINKS[language].some(({ slug }) => below === `/${slug}`);
 }

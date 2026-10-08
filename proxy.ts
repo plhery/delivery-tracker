@@ -1,7 +1,7 @@
 import { analyticsConfiguration } from './src/server/analytics';
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
-import { guidePathLanguage } from './src/guides/paths';
+import { guidePathLanguage, namesNoGuide } from './src/guides/paths';
 import { APPEARANCE_BOOTSTRAP } from './src/lib/appearanceConfig';
 import { ENTRY_HINT_BOOTSTRAP } from './src/lib/entryHintConfig';
 import { LOCALE_COOKIE, pathLanguage } from './src/lib/locale';
@@ -60,7 +60,10 @@ export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', contentSecurityPolicy);
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  // An address below a language's guides that names none of them is the site's 404 page, written whole by the server.
+  const response = namesNoGuide(request.nextUrl.pathname)
+    ? NextResponse.rewrite(new URL('/_not-found', request.url), { request: { headers: requestHeaders } })
+    : NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set('Content-Security-Policy', contentSecurityPolicy);
   response.headers.set('Cache-Control', 'private, no-store');
   return response;
