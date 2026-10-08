@@ -953,7 +953,7 @@
   "email.setting.title": "E-Mail, sobald ein Paket ankommt",
   "email.setting.body": "An {{email}}, die Adresse, mit der du dich anmeldest. Eine kurze E-Mail, wenn ein Paket abholbereit ist und wenn es zugestellt ist.",
   "email.setting.example": "Beispiel ansehen",
-  "email.setting.failed": "Die E-Mail-Einstellung konnte nicht gespeichert werden. Versuche es erneut.",
+  "email.setting.failed": "Speichern fehlgeschlagen. Versuche es erneut.",
   "email.parcel.title": "Meldungen für {{name}}",
   "email.parcel.open": "Meldungen für dieses Paket",
   "email.parcel.notifications": "Benachrichtigungen",

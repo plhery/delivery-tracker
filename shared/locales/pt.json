@@ -953,7 +953,7 @@
   "email.setting.title": "Um e-mail quando um envio chegar",
   "email.setting.body": "Para {{email}}, o endereço com que inicias sessão. Um e-mail curto quando um envio estiver pronto para levantamento e quando for entregue.",
   "email.setting.example": "Ver um exemplo",
-  "email.setting.failed": "Não foi possível guardar esta definição. Tenta novamente.",
+  "email.setting.failed": "Não foi possível guardar. Tenta novamente.",
   "email.parcel.title": "Alertas de {{name}}",
   "email.parcel.open": "Alertas deste envio",
   "email.parcel.notifications": "Notificações",
