@@ -137,7 +137,7 @@ and [`truck.json`](truck.json).
 | `postnord` | White lowercase name on two lines on blue | [postnord.com](https://www.postnord.com/) |
 | `poste-italiane` | Blue word Poste on yellow | [poste.it](https://www.poste.it/) |
 | `aramex` | White lowercase a, as on the carrier's own icon, on red | [aramex.com](https://www.aramex.com/) |
-| `j-and-t` | White slanted letters on red | [jtexpress.ph](https://www.jtexpress.ph/) |
+| `j-and-t` | White slanted J&T on red, the J on its foot | [jtexpress.ph](https://www.jtexpress.ph/) |
 | `aliexpress` | White shopping bag with its smile on red | [aliexpress.com](https://www.aliexpress.com/) |
 | `zto` | White slanted letters on blue | [zto.com](https://www.zto.com/) |
 | `yto` | White letters on purple, the T in pink; the pink is an approximation | [yto.net.cn](https://www.yto.net.cn/) |
@@ -194,4 +194,4 @@ and [`truck.json`](truck.json).
 | `intelcom` | White bars rounding into a D on teal | [dragonflyshipping.ca](https://dragonflyshipping.ca/) |
 | `shipup` | Dark green S on lime | [shipup.co](https://www.shipup.co/) |
 | `heppner` | Green figure with its arms raised on blue | [heppner-group.com](https://www.heppner-group.com/) |
-| `j-and-t-cargo` | White slanted J&T, the J on its foot and the T trailing three speed lines, over a smaller CARGO on green | [jtcargo.id](https://www.jtcargo.id/) |
+| `j-and-t-cargo` | White slanted J&T over a bar standing for CARGO, on green | [jtcargo.id](https://www.jtcargo.id/) |
