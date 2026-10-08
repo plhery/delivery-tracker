@@ -28,10 +28,11 @@ Each carrier refresh leaves a trace in three places:
 
 Metrics (Sentry and Prometheus) cover latency and fallback use.
 
-**Privacy.** Logs and Sentry keep tracking numbers, original errors and upstream
-request/response details, with no field redaction in the app. They survive parcel deletion
-until retention expires. Restrict access and retention, and sanitize anything you share
-publicly.
+**Privacy.** Logs keep tracking numbers, original errors and upstream request/response
+details, with no field redaction in the app. Sentry keeps the same errors and details but
+names a parcel by a pseudonym instead of its number (see "Tracking numbers in Sentry"
+below). Both survive parcel deletion until retention expires. Restrict access and
+retention, and sanitize anything you share publicly.
 
 Parcel link ids and owner keys are the exception, because holding one is enough to read
 or forget a parcel. Request logs name those routes without the id
@@ -312,15 +313,16 @@ new fields scalar and bounded.
 
 ## Sentry
 
-The SDK is enabled only when `SENTRY_DSN` is set. Default integrations are on, tracing is
-off by default, and there is no `beforeSend` scrubber. Sentry's own limits and project-side
-scrubbing still apply. Automatic lookups wrap each provider failure in an `AggregateError`
-so every cause is visible.
+The SDK is enabled only when `SENTRY_DSN` is set. Default integrations are on and tracing is
+off by default. Reports keep original errors, their causes and custom fields; `beforeSend`
+and `beforeBreadcrumb` only take tracking numbers out (below). Sentry's own limits and
+project-side scrubbing still apply. Automatic lookups wrap each provider failure in an
+`AggregateError` so every cause is visible.
 
 - **Titles**: messages are sent without a stack trace (`attachStacktrace: false`), so an
   issue is titled by its message rather than by a minified function name.
 - **Grouping**: by component, operation, carrier and error/anomaly type. `attempt_id`,
-  `job_id`, `request_id`, `tracking_number`, `upstream_status` and `database_code` are
+  `job_id`, `request_id`, `tracking_hash`, `upstream_status` and `database_code` are
   searchable tags.
 - **Source maps** stay in the server image only, never in browser assets.
 - **Crons**: daytime and overnight schedules send check-ins; a missed or failed run alerts.
@@ -353,10 +355,46 @@ Sentry's `upstream_http` context before fallback. It contains:
 - recognized body signatures and error codes, plus a text excerpt of the body;
 - all response headers, and the request URL, method, headers, body and timeout.
 
+Like the rest of a report, these lose tracking numbers as described below.
+
 Body inspection stops after 8 KiB or 200 ms. `body_read` says whether the body was
 complete, empty, truncated, timed out, unreadable or skipped as binary. `body_signals` are
 hints, not proof: a bare 403 or `access_denied` doesn't identify an anti-bot vendor.
 Request IDs and excerpts don't affect grouping.
+
+### Tracking numbers in Sentry
+
+A report names its parcel by the `tracking_hash` tag: the first 16 hex digits of the
+number's HMAC-SHA256, under a key derived from `SUPABASE_SERVICE_ROLE_KEY` with the label
+`sentry-tracking-number`. Without the key, a pseudonym can't be traced back to its number,
+however few numbers a carrier allows. Without `SUPABASE_SERVICE_ROLE_KEY` there is no tag;
+rotating it changes every pseudonym.
+
+- **The parcel's number**, wherever the report quotes it (message, exceptions, contexts
+  such as `upstream_http` and custom error fields, extras, breadcrumbs), reads
+  `[tracking:<tracking_hash>]`.
+- **Addresses** anywhere in a report or breadcrumb, the request's and the transaction's
+  included, lose their query and fragment. A path segment of six characters or more with a
+  digit, other than a uuid, reads `:id`.
+- **Breadcrumbs** gather across parcels. In a log line, the value of `tracking_number` or
+  any other field ending in `number` becomes its pseudonym throughout the line; the
+  console's copy of the arguments is dropped.
+- **Incoming requests** keep their headers, less those Sentry filters, but no body, query
+  or client address (`dataCollection.userInfo` is off).
+
+A number the capture doesn't name, such as a delivery partner's quoted in a carrier's
+error, stays readable outside addresses.
+
+To find the reports of a number, compute its pseudonym where the key is set, for example
+in the app's container, and search `tracking_hash:<value>`:
+
+```sh
+node -e 'const { createHmac } = require("node:crypto");
+const key = createHmac("sha256", process.env.SUPABASE_SERVICE_ROLE_KEY.trim()).update("sentry-tracking-number").digest();
+console.log(createHmac("sha256", key).update(process.argv[1].trim()).digest("hex").slice(0, 16))' 'TRACKING_NUMBER'
+```
+
+From a report back to its parcel, follow `attempt_id` or `job_id` to Postgres.
 
 ## Metrics
 

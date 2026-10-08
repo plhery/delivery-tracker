@@ -1,7 +1,8 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import * as Sentry from '@sentry/node';
 import type { Event } from '@sentry/node';
-import { captureOperationalError, capturePublicAllowance, captureTrackingHealth, flushObservability, initObservability, reportRoutingEvent } from './observability';
+import { captureOperationalError, capturePublicAllowance, captureTrackingHealth, flushObservability, initObservability, reportRoutingEvent,
+  trackingHash } from './observability';
 import { UniversalTrackingError } from 'universal-parcel-scraper/node';
 import { UpstreamHttpError } from 'universal-parcel-scraper/node';
 import { createAdapterRegistry } from './adapterRegistry';
@@ -32,6 +33,8 @@ vi.mock('@sentry/node', async (importOriginal) => {
 
 afterEach(async () => {
   await Sentry.close();
+  // The next test starts the SDK again.
+  Reflect.deleteProperty(globalThis, '__deliveryObservabilityInitialized');
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
@@ -39,7 +42,9 @@ afterEach(async () => {
 it('retains original exceptions, provider causes, and SDK diagnostic context', async () => {
   vi.stubEnv('SENTRY_DSN', 'https://public@example.test/1');
   vi.stubEnv('SENTRY_ENVIRONMENT', 'test');
+  vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
   expect(initObservability()).toBe(true);
+  const pseudonym = (number: string) => `[tracking:${trackingHash(number)}]`;
   const error = new UniversalTrackingError([
     { source: '17TRACK', reason: 'history unavailable', error: new Error('17TRACK returned HTTP 429') },
     { source: 'ParcelsApp', reason: 'history unavailable', error: new Error('ParcelsApp identity missing') },
@@ -76,18 +81,22 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   ]));
   expect(operational.contexts?.UniversalTrackingError).toHaveProperty('failures');
   expect(operational.tags).toMatchObject({
-    tracking_number: 'TEST1234',
+    tracking_hash: trackingHash('TEST1234'),
     route: '/api/packages/11111111-1111-1111-1111-111111111111?detail=full',
   });
-  expect(operational.extra?.carrier_payload).toEqual({ number: 'TEST1234' });
-  expect(operational.contexts?.carrier_response).toEqual({ number: 'TEST1234', status: 'waiting' });
+  expect(operational.tags).not.toHaveProperty('tracking_number');
+  expect(operational.contexts?.operation).not.toHaveProperty('trackingNumber');
+  // Whatever else the report holds keeps its shape, with the parcel's pseudonym for its number.
+  expect(operational.extra?.carrier_payload).toEqual({ number: pseudonym('TEST1234') });
+  expect(operational.contexts?.carrier_response).toEqual({ number: pseudonym('TEST1234'), status: 'waiting' });
   expect(operational.user?.id).toBe('diagnostic-user');
   expect(operational.breadcrumbs).toEqual(expect.arrayContaining([
-    expect.objectContaining({ message: 'Looking up parcel TEST1234' }),
+    expect.objectContaining({ message: `Looking up parcel ${pseudonym('TEST1234')}` }),
   ]));
 
+  // A capture that names no number keeps its text; its addresses are still cut down.
   const direct = captured.events.find((event) => event.message === 'Direct SDK diagnostic message')!;
-  expect(direct.request?.url).toBe('https://delivery.example.test/api/packages/TEST1234');
+  expect(direct.request?.url).toBe('https://delivery.example.test/api/packages/:id');
   expect(direct.transaction).toBe('parcel-detail');
   expect(direct.exception?.values?.[0]).toMatchObject({ value: 'Parcel TEST1234 unavailable',
     stacktrace: { frames: [expect.objectContaining({
@@ -96,8 +105,7 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   });
   const client = Sentry.getClient()!;
   const options = client.getOptions();
-  expect(options.beforeSend).toBeUndefined();
-  expect(options.dataCollection?.userInfo).toBe(true);
+  expect(options.dataCollection).toMatchObject({ userInfo: false, httpBodies: [], urlQueryParams: false });
   expect(['Console', 'Http', 'NodeFetch', 'RequestData', 'ExtraErrorData']
     .filter((name) => !client.getIntegrationByName(name))).toEqual([]);
   expect(client.getIntegrationByName('Dedupe')).toBeUndefined();
@@ -117,7 +125,7 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   ]);
   expect(repeats[1].fingerprint).toEqual(repeats[0].fingerprint);
   expect(repeats.map((event) => event.tags?.attempt_id).sort()).toEqual(['first', 'second']);
-  expect(repeats.map((event) => event.tags?.tracking_number).sort()).toEqual(['TEST-first', 'TEST-second']);
+  expect(repeats.map((event) => event.tags?.tracking_hash).sort()).toEqual([trackingHash('TEST-first'), trackingHash('TEST-second')].sort());
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   reportRoutingEvent('provider_failed', { carrier: 'dhl', provider: '17TRACK',
     category: 'rate_limited', trackingNumber: 'TEST-first', errorClass: 'UpstreamHttpError', error: new UpstreamHttpError('17TRACK', 429) });
@@ -145,7 +153,7 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   const rateLimit = captured.events.find((event) => event.message === 'Tracking routing: provider_failed')!;
   const swap = captured.events.find((event) => event.message === 'Tracking routing: carrier_auto_swapped')!;
   expect(swap.level).toBe('info');
-  expect(swap.tags).toMatchObject({ carrier: 'dhl', provider: 'ups', tracking_number: 'TEST-first' });
+  expect(swap.tags).toMatchObject({ carrier: 'dhl', provider: 'ups', tracking_hash: trackingHash('TEST-first') });
   // With an exception attached, Sentry titles the issue after its top frame, not the message.
   expect(swap.exception).toBeUndefined();
   expect(rateLimit).toBeUndefined();
@@ -222,4 +230,51 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(usedUp.level).toBe('error');
   expect(usedUp.tags).toMatchObject({ component: 'public-allowance', allowance: 'detection', allowance_state: 'used_up' });
   expect(usedUp.contexts?.public_allowance?.next_steps).toContain('PUBLIC_DETECTIONS_GLOBAL_PER_DAY');
+});
+
+it('names a parcel by a pseudonym and keeps tracking numbers out of reports and breadcrumbs', async () => {
+  vi.stubEnv('SENTRY_DSN', 'https://public@example.test/1');
+  vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
+  expect(initObservability()).toBe(true);
+  const hash = trackingHash('TEST5678')!;
+  expect(hash).toMatch(/^[0-9a-f]{16}$/);
+  // The pseudonym depends on the key: without it, a number can't be matched to its reports.
+  expect(trackingHash('TEST5678', { SUPABASE_SERVICE_ROLE_KEY: 'another-key' })).not.toBe(hash);
+  expect(trackingHash('TEST5678', {})).toBeUndefined();
+
+  // Breadcrumbs gather across parcels: another parcel's log line, and a request about it.
+  const line = JSON.stringify({ event: 'tracking_sync_started', tracking_number: 'TEST9012', error_message: 'No parcel test9012' });
+  Sentry.addBreadcrumb({ category: 'console', level: 'log', message: line, data: { arguments: [line], logger: 'console' } });
+  Sentry.addBreadcrumb({ category: 'http', type: 'http', data: { url: 'https://carrier.example/v1/track/TEST9012/events',
+    'http.method': 'GET', 'http.query': 'number=TEST9012', status_code: 404 } });
+
+  const request = { url: 'https://carrier.example/v1/track?number=TEST5678', method: 'POST', headers: {},
+    body: '{"number":"TEST5678"}', timeout_ms: 10_000 };
+  const refused = new UpstreamHttpError('Example Carrier', 404, undefined, {
+    content_type: 'text/html', headers: { location: 'https://carrier.example/v1/parcels/TEST5678' },
+    response_url: request.url, status_text: 'Not Found', request_ids: {}, body_read: 'complete',
+    bytes_inspected: 40, body_signals: [], body_excerpt: '<p>No parcel test5678</p>',
+  }, request);
+  const id = captureOperationalError(new Error('Lookup of TEST5678 failed', { cause: refused }), {
+    component: 'tracking-sync', operation: 'fetch', carrier: 'example', trackingNumber: 'TEST5678',
+  });
+  await flushObservability();
+  const report = captured.events.find((event) => event.event_id === id)!;
+  expect(report.tags).toMatchObject({ tracking_hash: hash });
+  expect(report.tags).not.toHaveProperty('tracking_number');
+  expect(report.contexts?.operation).toMatchObject({ component: 'tracking-sync', carrier: 'example' });
+  expect(report.contexts?.operation).not.toHaveProperty('trackingNumber');
+  expect(report.exception?.values?.map((value) => value.value)).toContain(`Lookup of [tracking:${hash}] failed`);
+  expect(report.contexts?.upstream_http).toMatchObject({ response_url: 'https://carrier.example/v1/track',
+    body_excerpt: `<p>No parcel [tracking:${hash}]</p>`, headers: { location: 'https://carrier.example/v1/parcels/:id' } });
+  // Every copy of the number goes, the stack's quotes of this file included.
+  expect(JSON.stringify(report)).not.toMatch(/TEST5678/i);
+  expect(JSON.stringify({ ...report, exception: undefined })).not.toMatch(/TEST9012/i);
+
+  const logLine = report.breadcrumbs?.find((crumb) => crumb.category === 'console' && crumb.message?.includes('tracking_sync_started'));
+  expect(JSON.parse(logLine!.message!)).toMatchObject({ tracking_number: `[tracking:${trackingHash('TEST9012')}]`,
+    error_message: `No parcel [tracking:${trackingHash('TEST9012')}]` });
+  expect(logLine!.data).toEqual({ logger: 'console' });
+  const call = report.breadcrumbs?.find((crumb) => crumb.category === 'http' && crumb.data?.status_code === 404);
+  expect(call!.data).toEqual({ url: 'https://carrier.example/v1/track/:id/events', 'http.method': 'GET', status_code: 404 });
 });

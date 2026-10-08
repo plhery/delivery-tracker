@@ -38,8 +38,8 @@ it('leaves the request out of a report for a route whose address or body carries
     Sentry.withIsolationScope((isolation) => {
       // What the SDK's HTTP integration records for an incoming request.
       isolation.setSDKProcessingMetadata({ normalizedRequest: {
-        url: 'https://delivery.example.test/api/public/parcels/k7Qm2xHd9RtW', method: 'GET',
-        headers: { 'x-parcel-key': 'OWNER-KEY', 'user-agent': 'test' },
+        url: 'https://delivery.example.test/api/public/parcels/k7Qm2xHd9RtW?lang=fr', method: 'GET',
+        headers: { 'x-parcel-key': 'OWNER-KEY', 'user-agent': 'test', 'x-forwarded-for': '203.0.113.7' },
         data: '{"links":[{"id":"k7Qm2xHd9RtW","key":"OWNER-KEY"}]}',
       } });
       isolation.setTransactionName('GET /api/public/parcels/k7Qm2xHd9RtW');
@@ -53,11 +53,17 @@ it('leaves the request out of a report for a route whose address or body carries
   const stripped = capture(true);
   expect(await flushObservability()).toBe(true);
 
-  // Other routes keep the SDK's request data; it filters the key header by its name, not the body.
+  // Other routes keep the request without its body, its query or the client's address.
+  // The SDK filters the key header by its name; a number-like segment of the address
+  // reads `:id`, here and in the transaction.
   const usual = captured.events.find((event) => event.event_id === kept)!;
-  expect(usual.request?.url).toContain('k7Qm2xHd9RtW');
-  expect(usual.request?.headers?.['x-parcel-key']).toBe('[Filtered]');
-  expect(JSON.stringify(usual.request)).toContain('OWNER-KEY');
+  expect(usual.request?.url).toBe('https://delivery.example.test/api/public/parcels/:id');
+  expect(usual.transaction).toBe('GET /api/public/parcels/:id');
+  expect(usual.request?.headers).toEqual({ 'x-parcel-key': '[Filtered]', 'user-agent': 'test' });
+  expect(usual.request?.data).toBeUndefined();
+  expect(usual.user?.ip_address).toBeUndefined();
+  // The stack frames quote this file.
+  expect(JSON.stringify({ ...usual, exception: undefined })).not.toMatch(/OWNER-KEY|203\.0\.113\.7|k7Qm2xHd9RtW/);
 
   const report = captured.events.find((event) => event.event_id === stripped)!;
   expect(report.request).toBeUndefined();

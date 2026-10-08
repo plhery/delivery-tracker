@@ -1,7 +1,9 @@
 import 'server-only';
 
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { createHmac } from 'node:crypto';
 import * as Sentry from '@sentry/node';
+import type { Breadcrumb, ErrorEvent } from '@sentry/node';
 import { healthMessage } from './trackingHealth';
 import type { JsonObject } from './types';
 import { UpstreamHttpError, type UpstreamHttpDiagnostics } from 'universal-parcel-scraper/node';
@@ -155,6 +157,112 @@ export function operationalErrorMetadata(error: unknown): OperationalErrorMetada
   return metadata;
 }
 
+/**
+ * A report names its parcel by a pseudonym instead of its tracking number: the first
+ * 16 hex digits of the number's HMAC-SHA256, under a key derived from the service-role
+ * key and kept apart from its other uses by a label. With that key, a number's
+ * pseudonym finds its reports; without it, a report does not give the number back,
+ * even for a carrier whose numbers are few. No key, no pseudonym.
+ */
+export function trackingHash(
+  trackingNumber: string,
+  environment: Record<string, string | undefined> = process.env,
+): string | undefined {
+  const secret = environment.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? '';
+  const number = trackingNumber.trim();
+  if (!secret || !number) return undefined;
+  const key = createHmac('sha256', secret).update('sentry-tracking-number').digest();
+  return createHmac('sha256', key).update(number).digest('hex').slice(0, 16);
+}
+
+/** Where a capture leaves its tracking number for `beforeSend`; it is never sent. */
+const TRACKING_NUMBER = 'deliveryTrackingNumber';
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ADDRESS = /\bhttps?:\/\/[^\s"'<>\\`]+/gi;
+// Log fields that hold a number: tracking_number, active_tracking_number, number…
+const NUMBER_FIELD = /(?:^|_)number$/;
+
+/** A path without query or fragment, where a segment that could be a tracking number reads `:id`. */
+function scrubPath(path: string): string {
+  return path.split(/[?#]/, 1)[0].split('/')
+    .map((segment) => (segment.length >= 6 && /\d/.test(segment) && !UUID.test(segment) ? ':id' : segment))
+    .join('/');
+}
+
+function scrubAddress(address: string): string {
+  const origin = /^https?:\/\/[^/?#]*/i.exec(address)?.[0] ?? '';
+  return origin + scrubPath(address.slice(origin.length));
+}
+
+/**
+ * Every address loses its query and its number-like path segments, and every known
+ * number, in any case, becomes its pseudonym.
+ */
+function textScrubber(numbers: string[]): (text: string) => string {
+  const replacements = [...new Set(numbers.map((number) => number.trim()).filter((number) => number.length >= 4))]
+    .map((number) => {
+      const hash = trackingHash(number);
+      return [new RegExp(number.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), hash ? `[tracking:${hash}]` : '[tracking number]'] as const;
+    });
+  return (text) => replacements.reduce(
+    (result, [pattern, label]) => result.replace(pattern, label),
+    text.replace(ADDRESS, scrubAddress),
+  );
+}
+
+/** A copy with every string scrubbed. Events arrive normalized; breadcrumb data may not be. */
+function scrubValue<T>(value: T, scrub: (text: string) => string, ancestors = new Set<object>()): T {
+  if (typeof value === 'string') return scrub(value) as T;
+  if (!value || typeof value !== 'object') return value;
+  if (ancestors.has(value) || ancestors.size > 20) return '[Truncated]' as T;
+  ancestors.add(value);
+  const copy = Array.isArray(value)
+    ? value.map((item: unknown) => scrubValue(item, scrub, ancestors))
+    : Object.fromEntries(Object.entries(value).map(([key, item]) => [scrub(key), scrubValue(item, scrub, ancestors)]));
+  ancestors.delete(value);
+  return copy as T;
+}
+
+/**
+ * The last step before an event leaves: the number its capture named is replaced
+ * wherever it appears (messages, exceptions, contexts, extras, breadcrumbs), addresses
+ * are cut down, and the incoming request keeps neither its body nor its query.
+ */
+export function scrubSentryEvent(event: ErrorEvent): ErrorEvent {
+  const { sdkProcessingMetadata, ...rest } = event;
+  const number = sdkProcessingMetadata?.[TRACKING_NUMBER];
+  const scrubbed = scrubValue(rest, textScrubber(typeof number === 'string' ? [number] : []));
+  if (scrubbed.request) scrubbed.request = { ...scrubbed.request, data: undefined, query_string: undefined };
+  if (scrubbed.transaction) {
+    scrubbed.transaction = scrubbed.transaction.replace(/(^|\s)(\/\S*)/g, (_, space: string, path: string) => space + scrubPath(path));
+  }
+  return { ...scrubbed, sdkProcessingMetadata };
+}
+
+/**
+ * Breadcrumbs gather across parcels, so each is scrubbed as it is recorded: a log
+ * line's own numbers become their pseudonyms, addresses are cut down, and the console's
+ * copy of the line's arguments is dropped.
+ */
+export function scrubSentryBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb {
+  const numbers: string[] = [];
+  if (breadcrumb.category === 'console' && breadcrumb.message?.startsWith('{')) {
+    try {
+      const line: unknown = JSON.parse(breadcrumb.message);
+      for (const [key, value] of Object.entries(line && typeof line === 'object' ? line : {})) {
+        if (NUMBER_FIELD.test(key) && typeof value === 'string') numbers.push(value);
+      }
+    } catch {
+      // Not one of our log lines: addresses are still cut down.
+    }
+  }
+  const scrub = textScrubber(numbers);
+  const data = breadcrumb.data && Object.fromEntries(Object.entries(breadcrumb.data)
+    .filter(([key]) => !['arguments', 'http.query', 'http.fragment'].includes(key))
+    .map(([key, value]) => [key, scrubValue(value, scrub)]));
+  return { ...breadcrumb, ...(breadcrumb.message ? { message: scrub(breadcrumb.message) } : {}), ...(data ? { data } : {}) };
+}
+
 export function initObservability(): boolean {
   if (runtime.__deliveryObservabilityInitialized) return true;
   const dsn = process.env.SENTRY_DSN?.trim();
@@ -163,7 +271,12 @@ export function initObservability(): boolean {
     dsn,
     environment: process.env.SENTRY_ENVIRONMENT?.trim() || process.env.NODE_ENV || 'development',
     release: resolveSentryRelease(),
-    dataCollection: { userInfo: true },
+    // Request bodies and queries carry tracking numbers. Without user information the
+    // SDK also leaves out the client's address and the headers that forward it: the
+    // visitor's is personal data, and the proxy's says nothing.
+    dataCollection: { userInfo: false, httpBodies: [], urlQueryParams: false },
+    beforeSend: scrubSentryEvent,
+    beforeBreadcrumb: scrubSentryBreadcrumb,
     // Sentry 11 turns on stack traces for messages. A message then arrives as an
     // untyped exception, and its issue is titled after a minified frame ("Object.l").
     attachStacktrace: false,
@@ -186,7 +299,10 @@ function applyContext(
   errorMetadata: OperationalErrorMetadata = {},
 ): void {
   applyUpstreamHttpContext(scope, errorMetadata);
-  scope.setContext('operation', { ...context });
+  const { trackingNumber, ...operation } = context;
+  scope.setContext('operation', operation);
+  // Whatever else quotes the number, beforeSend replaces it with the pseudonym.
+  if (trackingNumber) scope.setSDKProcessingMetadata({ [TRACKING_NUMBER]: trackingNumber });
   const tags: Record<string, string | undefined> = {
     anomaly_code: boundedText(context.anomalyCode, 100),
     attempt_id: boundedText(context.attemptId, 100),
@@ -201,7 +317,7 @@ function applyContext(
     route: boundedText(context.route),
     route_type: boundedText(context.routeType, 100),
     trigger: boundedText(context.trigger, 100),
-    tracking_number: boundedText(context.trackingNumber, 40),
+    tracking_hash: trackingNumber ? trackingHash(trackingNumber) : undefined,
     upstream_status: boundedText(errorMetadata.upstreamStatus, 3),
   };
   for (const [key, value] of Object.entries(tags)) {
