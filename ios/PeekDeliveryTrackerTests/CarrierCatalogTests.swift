@@ -940,6 +940,41 @@ final class CarrierCatalogTests: XCTestCase {
         }
     }
 
+    /// A FedEx label barcode passes when the tracking number it ends in passes: the 22-digit
+    /// `96` barcode's last fifteen digits, or the 34-digit barcode's last twelve behind two zeros.
+    func testFedExLabelBarcodesCheckTheTrackingNumberTheyCarry() {
+        // FedEx's published label examples.
+        for number in ["9611020987654312345672", "9612804045318533301017"] {
+            XCTAssertTrue(CarrierCatalog.isValidFedExGround96Barcode(number), number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("fedex-ground-96", number), true, number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("fedex-1d", number), false, number)
+        }
+        for number in ["9622001560001234567100794808390594", "9632001960123456789400152152152158"] {
+            XCTAssertTrue(CarrierCatalog.isValidFedEx1DBarcode(number), number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("fedex-1d", number), true, number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("fedex-ground-96", number), false, number)
+        }
+        for number in [
+            // GS1 over all 22 digits passes; over the last fifteen it does not.
+            "9611020987654312345673",
+            "9511020987654312345672", "987654312345672", "961102098765431234567", "96110209876543123456720",
+            "9611020987654312345672\n", "\u{0669}611020987654312345672", "9611 020987654312345672",
+        ] {
+            XCTAssertFalse(CarrierCatalog.isValidFedExGround96Barcode(number), number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("fedex-ground-96", number), false, number)
+        }
+        for number in [
+            "9622001560001234567100794808390595",
+            // 4 + 1 × 7 keeps the spec's 13-digit sum, but the layout keeps two zeros there.
+            "9622001560001234567141794808390594",
+            "96220015600012345671794808390594", "794808390594",
+            "9622001560001234567100794808390594\n", "\u{0669}622001560001234567100794808390594",
+        ] {
+            XCTAssertFalse(CarrierCatalog.isValidFedEx1DBarcode(number), number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("fedex-1d", number), false, number)
+        }
+    }
+
     func testPostlogisticsPrintedReferenceAndTrackingLink() throws {
         let printed = "12345678-001"
         let compact = "12345678001"

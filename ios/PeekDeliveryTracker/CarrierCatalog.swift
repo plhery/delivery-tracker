@@ -898,6 +898,8 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         case "luhn": hasLuhnCheckDigit(number)
         case "fedex": isValidFedExTrackingNumber(number)
         case "sf-express": isValidSfExpressWaybill(number)
+        case "fedex-ground-96": isValidFedExGround96Barcode(number)
+        case "fedex-1d": isValidFedEx1DBarcode(number)
         default: nil
         }
     }
@@ -975,6 +977,18 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         let weights = [3, 1, 7]
         let sum = digits[0..<11].enumerated().reduce(0) { $0 + $1.element * weights[$1.offset % 3] }
         return sum % 11 % 10 == digits[11]
+    }
+
+    /// FedEx Ground's 22-digit `96` barcode ends in the 15-digit tracking number it carries;
+    /// its GS1 mod 10 check covers only those fifteen digits.
+    static func isValidFedExGround96Barcode(_ value: String) -> Bool {
+        matches(value, pattern: "^96[0-9]{20}$") && hasGs1CheckDigit(String(value.dropFirst(7)))
+    }
+
+    /// FedEx's 34-digit barcode carries a 12-digit FedEx number behind two zeros in positions
+    /// 21–34; its own check reduces there to the 12-digit check.
+    static func isValidFedEx1DBarcode(_ value: String) -> Bool {
+        matches(value, pattern: "^[0-9]{20}00[0-9]{12}$") && isValidFedExTrackingNumber(String(value.suffix(12)))
     }
 
     /// A digit keeps its value; a letter counts as its ASCII code minus 63, mod 10 (A = 2, …, Z = 7).
