@@ -78,7 +78,7 @@ describe('tracking support context', () => {
   });
 
   it('records a wrong selected carrier separately from the ambiguous shape', () => {
-    expect(trackingSupportContext('HL123456789JB', 'dhl')).toMatchObject({
+    expect(trackingSupportContext('HL123456789FR', 'dhl')).toMatchObject({
       detection_candidates: ['chronopost'], reasons: ['ambiguous_shape', 'carrier_mismatch'],
     });
   });

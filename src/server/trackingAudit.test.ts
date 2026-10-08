@@ -19,10 +19,10 @@ describe('tracking support audit persistence', () => {
     const client = new SupabaseServiceClient('https://database.example', 'service-key');
     const request = vi.spyOn(client, 'request').mockResolvedValue(true);
     const lease = { jobId: 'synthetic-job', workerId: 'synthetic-worker' };
-    const audit = new TrackingSyncAudit(client, 'synthetic-package', 'hl-123456789 jb', 'dhl', 'pending',
+    const audit = new TrackingSyncAudit(client, 'synthetic-package', 'hl-123456789 fr', 'dhl', 'pending',
       { trigger: 'scheduled', jobId: lease.jobId, lease }, new Date('2026-09-10T12:00:00Z'));
     await audit.start();
-    const evidence = trackingSupportEvidence({ tracking_number: 'HL123456789JB' }, {
+    const evidence = trackingSupportEvidence({ tracking_number: 'HL123456789FR' }, {
       status: 'in_transit', current_stage: 'in_transit', last_update: '2026-09-10T11:00:00Z',
     }, 'chronopost', 'updated', false);
     await audit.finish({ outcome: 'updated', sourceCarrier: 'chronopost', supportEvidence: evidence, evaluateHealth: false });
@@ -33,7 +33,7 @@ describe('tracking support audit persistence', () => {
         p_values: expect.objectContaining({
           package_id: 'synthetic-package', configured_carrier: 'dhl', started_at: '2026-09-10T12:00:00.000Z',
           support_context: expect.objectContaining({
-            tracking_number: 'HL123456789JB', configured_carrier: 'dhl',
+            tracking_number: 'HL123456789FR', configured_carrier: 'dhl',
             reasons: ['ambiguous_shape', 'carrier_mismatch'],
           }),
         }),
@@ -45,7 +45,7 @@ describe('tracking support audit persistence', () => {
         p_values: expect.objectContaining({ outcome: 'updated', source_carrier: 'chronopost' }),
         p_steps: [expect.objectContaining({
           step: 'complete', status: 'succeeded', details: {
-            outcome: 'updated', support_lookup_number: 'HL123456789JB',
+            outcome: 'updated', support_lookup_number: 'HL123456789FR',
             support_provider: null, support_direct_progress: true,
           },
         })],
