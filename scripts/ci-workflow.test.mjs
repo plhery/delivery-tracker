@@ -14,3 +14,21 @@ it('runs the browser journeys in the image of the installed Playwright', () => {
       `${name} moved without the browser image in ci.yml: use mcr.microsoft.com/playwright:v${lock[`node_modules/${name}`].version}-noble with its digest`);
   }
 });
+
+// The app names its Sentry release after the image's commit; telling Sentry about a deploy is
+// optional, and must never fail or precede it.
+it('records the deployed commit in Sentry after the deploy, without ever failing it', () => {
+  const workflow = read('.github/workflows/ci.yml');
+  assert.match(workflow, /IMAGE_COMMIT=\$\{\{ github\.sha \}\}/);
+  const deploy = workflow.slice(workflow.indexOf('\n  deploy:'));
+  const start = deploy.indexOf('- name: Record the release in Sentry');
+  assert.ok(start > deploy.indexOf('- name: Check the public site'), 'the release is recorded once the site answers');
+  const step = deploy.slice(start).split(/\n {6}- /)[0];
+  assert.match(step, /\n {8}continue-on-error: true\n/);
+  assert.match(step, /SENTRY_AUTH_TOKEN: \$\{\{ secrets\.SENTRY_AUTH_TOKEN \}\}/);
+  assert.match(step, /if \[ -z "\$SENTRY_AUTH_TOKEN" \] \|\| \[ -z "\$SENTRY_PROJECT" \]; then[^]*?exit 0/);
+  for (const command of ['releases new "$GITHUB_SHA"', 'releases set-commits "$GITHUB_SHA" --auto',
+    'deploys new --release "$GITHUB_SHA" --env production']) {
+    assert.ok(step.includes(command), command);
+  }
+});

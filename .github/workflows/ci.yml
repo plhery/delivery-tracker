@@ -262,3 +262,29 @@ jobs:
         env:
           DEPLOY_URL: ${{ vars.DEPLOY_URL }}
         run: scripts/smoke-url.sh "$DEPLOY_URL"
+      # The app names its Sentry release after the image's commit (IMAGE_COMMIT). Where the
+      # SENTRY_AUTH_TOKEN secret and the SENTRY_PROJECT variable are set (and SENTRY_ORG,
+      # unless the token is an organization token), that release gets its commits and a
+      # production deploy. Without them the step does nothing, and it never fails the deploy.
+      - name: Record the release in Sentry
+        if: steps.current.outputs.latest == 'true'
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SENTRY_AUTH_TOKEN" ] || [ -z "$SENTRY_PROJECT" ]; then
+            echo 'Sentry releases are not set up: no SENTRY_AUTH_TOKEN secret or SENTRY_PROJECT variable'
+            exit 0
+          fi
+          if [ -z "$SENTRY_ORG" ]; then unset SENTRY_ORG; fi
+          # Without a repository integration in Sentry, --auto reads the commits from git.
+          if [ "$(git rev-parse --is-shallow-repository)" = true ]; then git fetch --quiet --unshallow origin; fi
+          sentry() { npx --yes @sentry/cli@3.8.0 "$@"; }
+          sentry releases new "$GITHUB_SHA"
+          sentry releases set-commits "$GITHUB_SHA" --auto --ignore-missing
+          sentry releases finalize "$GITHUB_SHA"
+          sentry deploys new --release "$GITHUB_SHA" --env production

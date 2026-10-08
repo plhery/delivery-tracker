@@ -126,7 +126,13 @@ in the repository:
   repository is renamed;
 - `DEPLOY_ENABLED=true` and `DEPLOY_URL` (the public origin) as variables;
 - `DEPLOY_SSH_TARGET` (`user@host`), `DEPLOY_SSH_KEY` and `DEPLOY_SSH_KNOWN_HOSTS` as
-  secrets.
+  secrets;
+- optionally, `SENTRY_AUTH_TOKEN` as a secret and `SENTRY_PROJECT` as a variable, plus
+  `SENTRY_ORG` unless the token is an organization token (*Settings → Developer Settings →
+  Organization Tokens*, which carry the organization and the `org:ci` scope). After the
+  site answers, the Sentry release named after the deployed commit then gets its commits
+  and a `production` deploy. Without a repository integration in Sentry the commits are
+  read from git. A failure there is shown but never fails the deploy.
 
 [Suite selection](../scripts/ci-changes.mjs) compares each target with the nearest
 successful `main` ancestor of that workflow, or with the pull request base. This includes
