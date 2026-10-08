@@ -62,7 +62,7 @@ describe('going on', () => {
 describe('asking the carriers', () => {
   it.each([
     ['RR123456785FI', 'posti', ['posti', 'chronopost']],
-    ['XR123456785TS', 'chronopost', ['chronopost']],
+    ['RA123456785DE', 'chronopost', ['chronopost']],
   ] as const)('confirms the postal fallback %s through its direct carrier before continuing a paste', (number, carrier, asked) => {
     const waiting = run([pasted(number)]);
     expect(waiting.job).toBeNull();

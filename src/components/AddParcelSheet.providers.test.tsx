@@ -14,7 +14,7 @@ const carrierLine = (name: RegExp) => screen.getByRole('button', { name });
 describe('automatic unknown-carrier lookup', () => {
   it.each([
     ['RR123456785FI', 'posti', 'Posti'],
-    ['XR123456785TS', 'chronopost', 'Chronopost'],
+    ['RA123456785DE', 'chronopost', 'Chronopost'],
   ] as const)('confirms postal fallback %s with the direct carrier before saving', async (trackingNumber, carrier, name) => {
     vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber, carrier, asked: [carrier] });
     const onAdd = vi.fn().mockResolvedValue(undefined);

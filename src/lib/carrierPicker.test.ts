@@ -158,7 +158,7 @@ describe('what a picker beside a number leads with', () => {
 
   it('asks direct carriers about a postal fallback while preserving concrete offline detection', () => {
     expect(canAskCarrier(shape('intl-post', 'high'), 'RR123456785FI')).toBe(true);
-    expect(canAskCarrier(shape('intl-post', 'high'), 'XR123456785TS')).toBe(true);
+    expect(canAskCarrier(shape('intl-post', 'high'), 'RA123456785DE')).toBe(true);
     expect(canAskCarrier(shape('intl-post', 'high'), 'DEMO4471203')).toBe(false);
     expect(canAskCarrier(shape('ups', 'high'), '1Z999AA10123456784')).toBe(false);
     expect(canAskCarrier(shape('unknown', 'low'), '12345678901231')).toBe(true);

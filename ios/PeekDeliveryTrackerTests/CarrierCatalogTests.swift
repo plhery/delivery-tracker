@@ -289,7 +289,7 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(input.carrier, .internationalPost)
         XCTAssertEqual(input.confidence, .high)
         XCTAssertEqual(catalog.recognitionCandidates(for: number), [.posti, .chronopost])
-        XCTAssertEqual(catalog.recognitionCandidates(for: "XR123456785TS"), [.chronopost])
+        XCTAssertEqual(catalog.recognitionCandidates(for: "RA123456785DE"), [.chronopost])
         XCTAssertFalse(catalog.recognitionCandidates(for: "RR123456789FI").contains(.posti))
         XCTAssertTrue(CarrierRecognition.applies(to: input, amazon: false, demo: false))
         XCTAssertFalse(CarrierRecognition.applies(to: input, amazon: false, demo: true))

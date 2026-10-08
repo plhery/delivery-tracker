@@ -582,7 +582,7 @@ describe('persistent tracking routing', () => {
 
     it.each([
       ['RR123456785FI', 'posti', ['posti', 'chronopost']],
-      ['XR123456785TS', 'chronopost', ['chronopost']],
+      ['RA123456785DE', 'chronopost', ['chronopost']],
       ['33870000000000001', 'dhl-ecommerce', ['dhl-ecommerce']],
       ['505600001', 'tnt', ['tnt']],
     ])('tracks %s through its confirmed carrier before a provider', async (number, carrier, candidates) => {
