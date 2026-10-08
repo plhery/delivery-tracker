@@ -735,7 +735,9 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^\\d{15}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "gs1",
+        "preferred": true
       }
     ]
   },
@@ -3160,6 +3162,11 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^[A-Z]{2}\\d{9}JP$",
         "confidence": "high",
         "checksum": "s10"
+      },
+      {
+        "pattern": "^\\d{12}$",
+        "confidence": "low",
+        "checksum": "mod7"
       }
     ],
     "trackingUrlTemplate": "https://trackings.post.japanpost.jp/services/srv/search/direct?reqCodeNo1={trackingNumber}&locale=en",
@@ -4441,7 +4448,13 @@ export const CARRIER_CAPABILITIES = {
         ]
       }
     ],
-    "detectionRules": []
+    "detectionRules": [
+      {
+        "pattern": "^\\d{12}$",
+        "confidence": "low",
+        "checksum": "mod7"
+      }
+    ]
   },
   "speedpak": {
     "displayName": "SpeedPAK",

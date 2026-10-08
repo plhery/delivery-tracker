@@ -22,7 +22,6 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "fedex",
       "dpd-fr",
       "yunda"
     ]
@@ -635,6 +634,19 @@
     ]
   },
   {
+    "input": "020207021381215",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "dpd-fr",
+      "yunda"
+    ],
+    "preferred": [
+      "fedex"
+    ]
+  },
+  {
     "input": "021115C902CF0C99",
     "carrier": "unknown",
     "confidence": "low",
@@ -810,6 +822,9 @@
       "fedex",
       "dpd-fr",
       "yunda"
+    ],
+    "preferred": [
+      "fedex"
     ]
   },
   {
@@ -1004,6 +1019,22 @@
       "fedex",
       "dpd-fr",
       "yunda"
+    ],
+    "preferred": [
+      "fedex"
+    ]
+  },
+  {
+    "input": "042332561009656",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "dpd-fr",
+      "yunda"
+    ],
+    "preferred": [
+      "fedex"
     ]
   },
   {
@@ -1546,6 +1577,19 @@
     ]
   },
   {
+    "input": "102342415431466",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "dpd-fr",
+      "yunda"
+    ],
+    "preferred": [
+      "fedex"
+    ]
+  },
+  {
     "input": "10272483975",
     "carrier": "unknown",
     "confidence": "low",
@@ -1729,7 +1773,6 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "fedex",
       "dpd-fr",
       "yunda"
     ]
@@ -1980,7 +2023,6 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "fedex",
       "dpd-fr",
       "yunda"
     ]
@@ -2022,6 +2064,33 @@
       "relais-colis",
       "tipsa",
       "dhl-ecommerce-es"
+    ]
+  },
+  {
+    "input": "1261-2550-4536",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "sf-express",
+      "dpd-fr",
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "japan-post",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
+    ],
+    "preferred": [
+      "sf-express"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
     ]
   },
   {
@@ -3078,13 +3147,15 @@
       "colis-prive",
       "mrw",
       "brt",
+      "japan-post",
       "sf-express",
       "sto",
       "zto",
       "yamato",
       "j-and-t",
       "j-and-t-cargo",
-      "lbc-express"
+      "lbc-express",
+      "sagawa"
     ],
     "asked": [
       "brt",
@@ -3138,7 +3209,6 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "fedex",
       "yunda"
     ]
   },
@@ -3385,6 +3455,29 @@
       "mondial-relay",
       "colisweb",
       "heppner"
+    ]
+  },
+  {
+    "input": "263823775762",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "japan-post",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
     ]
   },
   {
@@ -3746,6 +3839,18 @@
     "asked": [
       "la-poste",
       "delhivery"
+    ]
+  },
+  {
+    "input": "307349610001114",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "yunda"
+    ],
+    "preferred": [
+      "fedex"
     ]
   },
   {
@@ -4633,12 +4738,14 @@
       "colis-prive",
       "mrw",
       "brt",
+      "japan-post",
       "sf-express",
       "sto",
       "zto",
       "yamato",
       "j-and-t",
-      "lbc-express"
+      "lbc-express",
+      "sagawa"
     ],
     "asked": [
       "brt",
@@ -4878,6 +4985,26 @@
     ]
   },
   {
+    "input": "449044304137820",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "yunda"
+    ]
+  },
+  {
+    "input": "449044304137821",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "yunda"
+    ],
+    "preferred": [
+      "fedex"
+    ]
+  },
+  {
     "input": "460150000103706789",
     "carrier": "unknown",
     "confidence": "low",
@@ -4887,6 +5014,29 @@
     ],
     "asked": [
       "bpost"
+    ]
+  },
+  {
+    "input": "462827533895",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "japan-post",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
     ]
   },
   {
@@ -4905,6 +5055,49 @@
       "relais-colis",
       "tipsa",
       "dhl-ecommerce-es"
+    ]
+  },
+  {
+    "input": "470551104391",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "japan-post",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
+    ]
+  },
+  {
+    "input": "471234567890",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "sf-express",
+      "sto",
+      "zto",
+      "j-and-t",
+      "lbc-express"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
     ]
   },
   {
@@ -4992,12 +5185,14 @@
       "colis-prive",
       "mrw",
       "brt",
+      "japan-post",
       "sf-express",
       "sto",
       "zto",
       "yamato",
       "j-and-t",
-      "lbc-express"
+      "lbc-express",
+      "sagawa"
     ],
     "preferred": [
       "fedex"
@@ -5106,11 +5301,50 @@
     ]
   },
   {
+    "input": "5017-7550-9605",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "japan-post",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
+    ],
+    "preferred": [
+      "fedex"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
+    ]
+  },
+  {
     "input": "502553526650A704483512",
     "carrier": "estafeta",
     "confidence": "high",
     "candidates": [
       "estafeta"
+    ]
+  },
+  {
+    "input": "509466710003247",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "yunda"
+    ],
+    "preferred": [
+      "fedex"
     ]
   },
   {
@@ -5122,12 +5356,14 @@
       "colis-prive",
       "mrw",
       "brt",
+      "japan-post",
       "sf-express",
       "sto",
       "zto",
       "yamato",
       "j-and-t",
-      "lbc-express"
+      "lbc-express",
+      "sagawa"
     ],
     "asked": [
       "brt",
@@ -5158,6 +5394,58 @@
     ]
   },
   {
+    "input": "514220409452",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "purolator",
+      "japan-post",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive",
+      "purolator"
+    ]
+  },
+  {
+    "input": "515596488142",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "japan-post",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
+    ],
+    "preferred": [
+      "fedex"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
+    ]
+  },
+  {
     "input": "516 500 004 348",
     "carrier": "unknown",
     "confidence": "low",
@@ -5171,6 +5459,29 @@
       "zto",
       "j-and-t",
       "lbc-express"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
+    ]
+  },
+  {
+    "input": "517982200083",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "japan-post",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
     ],
     "asked": [
       "brt",
@@ -5434,6 +5745,29 @@
     ]
   },
   {
+    "input": "560045430206",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "japan-post",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
+    ]
+  },
+  {
     "input": "560815852502035603344150",
     "carrier": "unknown",
     "confidence": "low",
@@ -5567,6 +5901,29 @@
       "inpost",
       "bpost",
       "ciblex"
+    ]
+  },
+  {
+    "input": "600078420325",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "japan-post",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
     ]
   },
   {
@@ -5714,6 +6071,62 @@
     "asked": [
       "la-poste",
       "delhivery"
+    ]
+  },
+  {
+    "input": "6271-4993-2452",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "japan-post",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
+    ],
+    "preferred": [
+      "fedex"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
+    ]
+  },
+  {
+    "input": "6286-8414-1971",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "gls-ch",
+      "mondial-relay",
+      "gls-fr",
+      "colis-prive",
+      "gls-de",
+      "mrw",
+      "brt",
+      "japan-post",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t",
+      "lbc-express",
+      "sagawa"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "brt",
+      "colis-prive"
     ]
   },
   {
@@ -6046,6 +6459,18 @@
       "relais-colis",
       "tipsa",
       "dhl-ecommerce-es"
+    ]
+  },
+  {
+    "input": "760135915575222",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "yunda"
+    ],
+    "preferred": [
+      "fedex"
     ]
   },
   {
@@ -6454,7 +6879,6 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "fedex",
       "yunda"
     ]
   },
@@ -6487,7 +6911,6 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "fedex",
       "la-poste",
       "yunda"
     ],
@@ -6520,7 +6943,6 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "fedex",
       "yunda"
     ]
   },
@@ -7261,7 +7683,6 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "fedex",
       "yunda"
     ]
   },
