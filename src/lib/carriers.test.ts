@@ -1385,9 +1385,7 @@ describe('carrier detection', () => {
       '9400111206206406260787', '9400111201080805483016', '9405803699300124287899',
       '9434611206206406227577',
     ]) {
-      const match = detectCarrierMatch(number);
-      // Selected outright from scraper releases with the IMpb rule, suggested first before.
-      expect([match.carrier, ...match.candidates]).toContain('usps');
+      expect(detectCarrierMatch(number)).toMatchObject({ carrier: 'usps', confidence: 'high' });
     }
     // A legacy number whose Mailer ID doesn't fit, and a DHL eCommerce family: ambiguous.
     for (const number of ['9101123456789000000013', '9261290336128704042634']) {
