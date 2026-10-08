@@ -558,9 +558,12 @@ export class TrackingRouter {
     const priority = priorityUniversalSource(universalNumber);
     // Providers with fuller history for this carrier come before the one the parcel stays with.
     const fuller = preferred ? richerSources.filter((source) => plan.rank(source) < plan.rank(preferred)) : [];
-    const offset = state.discovery_cursor % richerSources.length;
-    const ordered = [...new Set<UniversalSource>([...(priority ? [priority] : []), ...fuller, ...(preferred ? [preferred] : []), ...richerSources.slice(offset), ...richerSources.slice(0, offset),
-      ...sources.filter((source) => source === 'UPU')])];
+    // The discovery cursor rotates which aggregator a check starts with.
+    // Postal Ninja and UPU keep their place after the others.
+    const rotation: UniversalSource[] = richerSources.filter((source) => source !== 'Postal Ninja');
+    const offset = state.discovery_cursor % Math.max(1, rotation.length);
+    const ordered = [...new Set<UniversalSource>([...(priority ? [priority] : []), ...fuller, ...(preferred ? [preferred] : []), ...rotation.slice(offset), ...rotation.slice(0, offset),
+      ...sources])];
     // Reserve each source’s lookup budget plus transport allowance (UPU needs only 8s).
     // Start after direct attempts so a slow carrier cannot starve discovery.
     const universalDeadline = performance.now() + sources.reduce((sum, source) => sum + universalSourceBudget(source) + 5_000, 0);
@@ -765,7 +768,7 @@ export class TrackingRouter {
       value.result = { ...value.result, direct_local_fallback: true };
       return persistResult(value, carrier);
     }
-    state.discovery_cursor = (offset + Math.max(1, [...attemptedUniversal].filter((source) => source !== 'UPU').length)) % richerSources.length;
+    state.discovery_cursor = (offset + Math.max(1, [...attemptedUniversal].filter((source) => rotation.includes(source)).length)) % Math.max(1, rotation.length);
     const deadlines = Object.values(state.failures).map((failure) => millis(failure.retry_at)).filter((time) => time > now().getTime());
     state.next_check_at = iso(Math.max(now().getTime() + 15 * 60_000, Math.min(...deadlines, now().getTime() + HOUR)));
     report('all_providers_unavailable', preferred ?? 'none');

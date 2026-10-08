@@ -93,7 +93,8 @@ for ParcelsApp (slow first lookups, one network retry), 30 s for the others, plu
 transport allowance each. That's 120 s in total by default, 155 s with Postal Ninja,
 less when a carrier's order leaves a provider out. Postal S10 lookups get 13 s more for UPU. A slow direct
 attempt doesn't eat into this budget. If the budget runs out first, the discovery cursor
-moves on so the next check starts elsewhere.
+moves on so the next check starts with another of ParcelsApp, Ship24 and 17TRACK. Postal
+Ninja and UPU stay after them.
 
 A failed source waits before it is retried for that parcel:
 
