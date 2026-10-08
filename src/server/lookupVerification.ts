@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { isIP } from 'node:net';
 import { clientIp, clientNetwork, HttpError } from './api';
 import { logOperationalEvent } from './observability';
 import { requestHostname } from './siteHosts';
@@ -9,6 +10,14 @@ import type { SupabaseServiceClient } from './supabase';
 
 const PROOF_SECONDS = 15 * 60;
 const ACTION = 'parcel_lookup';
+/** Networks besides its own a proof works on: a device moving between IPv4 and IPv6, or Wi-Fi and mobile data. */
+const OTHER_NETWORKS = 2;
+/** Proofs whose moves are remembered at once; past this the first to move is forgotten. */
+const MOVED_PROOFS = 10_000;
+/** Expiry, nonce, the family and network tag it was issued on, signature. */
+const PROOF = /^(\d{10})\.([A-Za-z0-9_-]{22})\.([046][A-Za-z0-9_-]{11})\.([A-Za-z0-9_-]{43})$/;
+
+type Refusal = 'missing' | 'malformed' | 'bad_signature' | 'expired' | 'too_many_networks';
 
 export function turnstileSettings(env: Record<string, string | undefined> = process.env) {
   const siteKey = env.TURNSTILE_SITE_KEY?.trim();
@@ -24,12 +33,86 @@ export function turnstileSettings(env: Record<string, string | undefined> = proc
   return { siteKey, secret, hostnames };
 }
 
-function binding(request: Request): string {
-  return `${requestHostname(request.headers) ?? new URL(request.url).hostname}\n${clientNetwork(clientIp(request))}`;
+/**
+ * The network a request comes from, as a proof records it: the address family
+ * (`4`, `6`, or `0` without an address), then a keyed tag of the IPv4 address
+ * or IPv6 /64, so the proof never carries the address itself.
+ */
+function network(secret: string, request: Request): string {
+  const ip = clientIp(request);
+  const counted = clientNetwork(ip);
+  const version = isIP(ip) === 0 ? '0' : isIP(counted) === 4 ? '4' : '6';
+  return `${version}${createHmac('sha256', secret).update(`lookup-network-v1\n${counted}`).digest().subarray(0, 8).toString('base64url')}`;
 }
 
+/** The address family of a recorded network, as logs name it. */
+const family = (recorded: string) => (recorded.startsWith('4') ? 'v4' : recorded.startsWith('6') ? 'v6' : 'none');
+
+/** The proof is signed for the hostname it was issued on; its network is part of the payload. */
 function signature(secret: string, payload: string, request: Request): Buffer {
-  return createHmac('sha256', secret).update(`lookup-proof-v1\n${payload}\n${binding(request)}`).digest();
+  const hostname = requestHostname(request.headers) ?? new URL(request.url).hostname;
+  return createHmac('sha256', secret).update(`lookup-proof-v2\n${hostname}\n${payload}`).digest();
+}
+
+interface Moves { expires: number; networks: Set<string> }
+
+// Next can bundle the lookup and detection routes apart, each with its own copy of
+// this module: the moves live on globalThis, so a proof has one count per process.
+const globalMoves = globalThis as typeof globalThis & { __lookupProofMoves?: Map<string, Moves> };
+
+/** The other networks a proof has worked on, by its nonce. Expired proofs go when another proof moves. */
+function movesOf(nonce: string, expires: number, now: number): Set<string> {
+  const moves = globalMoves.__lookupProofMoves ??= new Map();
+  const known = moves.get(nonce);
+  if (known) return known.networks;
+  for (const [key, entry] of moves) if (entry.expires <= now) moves.delete(key);
+  const first = moves.keys().next();
+  if (moves.size >= MOVED_PROOFS && !first.done) moves.delete(first.value);
+  const entry = { expires, networks: new Set<string>() };
+  moves.set(nonce, entry);
+  return entry.networks;
+}
+
+interface ProofCheck {
+  /** `moved`: accepted on a network the proof had not worked on before. */
+  outcome: 'accepted' | 'moved' | 'refused';
+  reason?: Refusal;
+  fields: Record<string, string | number>;
+}
+
+/**
+ * A proof works on the network it was issued on and on up to two others, so a
+ * device that changes address keeps it while a proof handed around stops after
+ * three networks. The fields say why, never with the address or the proof.
+ */
+function checkProof(secret: string, request: Request): ProofCheck {
+  const used = network(secret, request);
+  const fields: Record<string, string | number> = {
+    kind: new URL(request.url).pathname === '/api/public/parcels' ? 'lookup' : 'detection',
+    used_family: family(used),
+  };
+  const refused = (reason: Refusal): ProofCheck => ({ outcome: 'refused', reason, fields });
+  const proof = request.headers.get('x-lookup-proof');
+  if (!proof) return refused('missing');
+  const now = Math.floor(Date.now() / 1_000);
+  const match = PROOF.exec(proof);
+  // No proof is issued further ahead than its lifetime.
+  if (!match || Number(match[1]) > now + PROOF_SECONDS) return refused('malformed');
+  const [, expiresText = '', nonce = '', issued = '', sent = ''] = match;
+  const expected = signature(secret, `${expiresText}.${nonce}.${issued}`, request);
+  const received = Buffer.from(sent, 'base64url');
+  if (received.length !== expected.length || !timingSafeEqual(received, expected)) return refused('bad_signature');
+  const expires = Number(expiresText);
+  fields.issued_family = family(issued);
+  fields.age_s = now - (expires - PROOF_SECONDS);
+  if (expires <= now) return refused('expired');
+  if (issued === used) return { outcome: 'accepted', fields };
+  const others = movesOf(nonce, expires, now);
+  if (others.has(used)) return { outcome: 'accepted', fields };
+  const full = others.size >= OTHER_NETWORKS;
+  if (!full) others.add(used);
+  fields.networks = 1 + others.size;
+  return full ? refused('too_many_networks') : { outcome: 'moved', fields };
 }
 
 /** A short-lived proof never replaces the IP, network or global lookup budgets. */
@@ -40,16 +123,10 @@ export function requireLookupProof(request: Request): void {
   if (process.env.TURNSTILE_ALLOW_NATIVE_USER_AGENT === 'true'
     && !request.headers.has('x-native-verification')
     && /^PeekDeliveryTracker\/\S+ CFNetwork\/\S+ Darwin\/\S+$/.test(request.headers.get('user-agent') ?? '')) return;
-  const proof = request.headers.get('x-lookup-proof') ?? '';
-  const match = /^(\d{10})\.([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})$/.exec(proof);
-  if (match) {
-    const expires = Number(match[1]);
-    const now = Math.floor(Date.now() / 1_000);
-    const received = Buffer.from(match[3]!, 'base64url');
-    const expected = signature(settings.secret, `${match[1]}.${match[2]}`, request);
-    if (expires > now && expires <= now + PROOF_SECONDS && received.length === expected.length && timingSafeEqual(received, expected)) return;
-  }
-  throw new HttpError(403, 'Please verify your browser and try again.', { 'X-Lookup-Verification': 'required' });
+  const { outcome, reason, fields } = checkProof(settings.secret, request);
+  if (outcome === 'accepted') return;
+  logOperationalEvent('lookup_proof', { outcome, reason, ...fields });
+  if (outcome === 'refused') throw new HttpError(403, 'Please verify your browser and try again.', { 'X-Lookup-Verification': 'required' });
 }
 
 /** Native assertions count the installation before the shared IP and global budgets. */
@@ -87,7 +164,7 @@ export async function verifyLookupBrowser(request: Request, token: unknown): Pro
     }
     outcome = 'verified';
     const expires = Math.floor(Date.now() / 1_000) + PROOF_SECONDS;
-    const payload = `${expires}.${randomBytes(16).toString('base64url')}`;
+    const payload = `${expires}.${randomBytes(16).toString('base64url')}.${network(settings.secret, request)}`;
     return { proof: `${payload}.${signature(settings.secret, payload, request).toString('base64url')}`, expiresAt: expires * 1_000 };
   } catch (error) {
     if (error instanceof HttpError) throw error;

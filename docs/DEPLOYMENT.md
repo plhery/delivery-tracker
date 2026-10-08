@@ -239,11 +239,15 @@ together; leave them unset to disable verification. Test keys are refused in
 production. Keep the secret out of build arguments and browser configuration.
 
 The lookup form starts verification when used and shows a checkbox only when
-needed. A successful check grants a short-lived proof; existing lookup budgets
-still apply. Only parcel creation and detection that contacts a carrier need
-verification. Saved parcels and shared links remain readable during a
-verification outage. Keep the origin behind the trusted proxy and avoid
-Cloudflare challenge pages on JSON APIs and native app traffic.
+needed. A successful check grants a 15-minute proof, kept in the tab's session
+storage; existing lookup budgets still apply. The proof works on the network it
+was issued on and on two more, so a device moving between IPv4 and IPv6 or
+Wi-Fi and mobile data keeps it; each process remembers those moves in memory.
+It is signed with `TURNSTILE_SECRET_KEY`, so it outlives a restart and works on
+every container that shares the key. Only parcel creation and detection that
+contacts a carrier need verification. Saved parcels and shared links remain
+readable during a verification outage. Keep the origin behind the trusted proxy
+and avoid Cloudflare challenge pages on JSON APIs and native app traffic.
 Set `TURNSTILE_ALLOW_NATIVE_USER_AGENT=true` to keep existing anonymous iPhone
 lookups working without verification. This exempts the app's
 `PeekDeliveryTracker/... CFNetwork/... Darwin/...` user-agent; Safari still

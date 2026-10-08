@@ -6697,7 +6697,7 @@
       },
       "post": {
         "operationId": "verifyLookupBrowser",
-        "summary": "Exchange a single-use Turnstile token for a network- and hostname-bound proof lasting 15 minutes; lookup budgets still apply",
+        "summary": "Exchange a single-use Turnstile token for a hostname-bound proof lasting 15 minutes, accepted on the network it was issued on and two others; lookup budgets still apply",
         "security": [],
         "requestBody": {
           "required": true,

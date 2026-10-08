@@ -5,6 +5,14 @@ without tokens, IP addresses or parcel inputs. Compare rejections and service
 failures with completed public lookups and the API's `403`/`429` rates when
 tuning protection. Client lookup failures remain in the existing parcel-lookup
 analytics event. Configuration belongs in [DEPLOYMENT.md](DEPLOYMENT.md).
+`lookup_proof` logs each refused proof with its `reason`: `missing` (none sent,
+as when a page asks before its verification has finished), `malformed`,
+`bad_signature` (another hostname, a changed `TURNSTILE_SECRET_KEY`, or
+tampering), `expired` or `too_many_networks`. It logs `moved` when a proof first
+works on another network. Each line has the request `kind`, the address family
+the proof was issued on and used from (`issued_family`, `used_family`: `v4`,
+`v6` or `none`) and its `age_s`; a move or `too_many_networks` adds the
+`networks` the proof works on. It never has an address or the proof.
 `native_verification` records attestation or assertion outcomes and device budget
 limits, without key identifiers, challenges, assertions or parcel inputs. Verification, anonymous lookup and detection endpoints omit the incoming request
 from error reports because their headers can carry verification credentials.

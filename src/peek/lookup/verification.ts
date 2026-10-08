@@ -1,4 +1,7 @@
-/** Browser verification is kept in this tab, never in persistent storage or a parcel link. */
+/**
+ * Browser verification is kept in this tab's session storage, so a reload keeps
+ * it until it expires; never in persistent storage or a parcel link.
+ */
 interface Proof { proof: string; expiresAt: number }
 interface Turnstile {
   render(container: HTMLElement, options: Record<string, unknown>): string;
@@ -10,16 +13,46 @@ export class LookupVerificationError extends Error {
   constructor() { super('Browser verification could not finish. Please try again.'); }
 }
 
-let proof: Proof | null = null;
+const PROOF_KEY = 'sdt.lookup-proof.v1';
+
+/** The tab's proof; undefined until session storage has been read. */
+let proof: Proof | null | undefined;
 let verify: (() => Promise<string | null>) | null = null;
 let script: Promise<void> | null = null;
 
-export function lookupProof(): string | null {
-  return proof && proof.expiresAt > Date.now() + 5_000 ? proof.proof : null;
+function keep(next: Proof | null): void {
+  proof = next;
+  try {
+    if (next) sessionStorage.setItem(PROOF_KEY, JSON.stringify(next));
+    else sessionStorage.removeItem(PROOF_KEY);
+  } catch {
+    // Without session storage the proof lasts as long as the page.
+  }
 }
 
+function current(): Proof | null {
+  if (proof === undefined) {
+    proof = null;
+    try {
+      const saved: unknown = JSON.parse(sessionStorage.getItem(PROOF_KEY) ?? 'null');
+      const { proof: value, expiresAt } = (saved ?? {}) as Partial<Proof>;
+      if (typeof value === 'string' && typeof expiresAt === 'number') proof = { proof: value, expiresAt };
+    } catch {
+      // An unreadable proof is no proof: verification starts again.
+    }
+  }
+  if (proof && proof.expiresAt <= Date.now()) keep(null);
+  return proof;
+}
+
+export function lookupProof(): string | null {
+  const saved = current();
+  return saved && saved.expiresAt > Date.now() + 5_000 ? saved.proof : null;
+}
+
+/** The server refused this proof: it is not sent again, from this page or after a reload. */
 export function forgetLookupProof(rejected: string | null): void {
-  if (proof?.proof === rejected) proof = null;
+  if (rejected !== null && current()?.proof === rejected) keep(null);
 }
 
 export async function getLookupProof(signal?: AbortSignal): Promise<string | null> {
@@ -86,7 +119,7 @@ export function mountLookupVerification(container: HTMLElement, language: string
         finished = true;
         clearTimeout(timer);
         cancel = null;
-        if (result && !disposed) { proof = result; resolve(result.proof); }
+        if (result && !disposed) { keep(result); resolve(result.proof); }
         else reject(new LookupVerificationError());
       }
       cancel = () => finish();

@@ -1,6 +1,6 @@
 # Peek privacy notice
 
-Effective: 7 October 2026
+Effective: 8 October 2026
 
 Peek follows parcels, on the web and in its iPhone app. This notice says what
 the official service at peektracker.com processes to do that. Peek does not
@@ -61,9 +61,14 @@ Cloudflare Turnstile checks the browser or an in-app verification sheet when you
 prevent automated abuse. It processes browser and network signals; Peek sends
 only its verification token to Cloudflare, not your parcel inputs. See
 [Cloudflare's Turnstile Privacy Addendum](https://www.cloudflare.com/turnstile-privacy-policy/).
-A successful check produces a proof kept in the current tab for fifteen
-minutes (in memory on the iPhone), bound to its network and hostname. Existing parcel pages remain
-readable without a check. Daily account usage counters prevent bulk lookups.
+A successful check produces a proof kept for fifteen minutes in the current
+tab's session storage, so reloading the page keeps it (in memory on the
+iPhone). It is tied to the hostname and to a keyed hash of the network it was
+made on. It also works on up to two other networks, as when your device moves
+between Wi-Fi and mobile data; the service keeps keyed hashes of those networks
+in memory only, and forgets them after the proof expires. Existing parcel
+pages remain readable without a check. Daily account usage counters prevent
+bulk lookups.
 New requests clear counters older than seven days; deleting the account
 removes its counters.
 
