@@ -142,16 +142,25 @@ run iPhone tests; web changes run web checks, unit tests, browser journeys and t
 build. Dependencies and shared client data run both web and iPhone tests. Scraper updates
 keep browser journeys because the package supplies browser code too.
 
-For web changes, once all selected checks have passed, the workflow asks the database,
-with the publishable key, which of the commit's migrations it lacks, and stops if any are
-missing: apply them, then re-run the job. It then runs `deploy <commit>`
-over SSH on the target and the smoke test on `DEPLOY_URL`. Intentionally skipped
-migration tests allow deployment; failures and canceled checks block it. Restrict the key
-on the host to a command that accepts only that request and starts the published image.
 Runs on `main` go one at a time; of the pushes that arrive during a run, only the newest
-is tested and deployed next. Documentation, native-only and SQL-only changes do not
-deploy the web image. The iPhone app is tested in its own workflow and does not hold a
-deploy back.
+is tested next. For web changes, once all selected checks have passed, CI hands the commit
+to the Deploy workflow (`.github/workflows/deploy.yml`). Intentionally skipped migration
+tests allow this; failures and canceled checks block it. Documentation, native-only and
+SQL-only changes do not deploy the web image. The iPhone app is tested in its own workflow
+and does not hold a deploy back.
+
+Every deploy restarts the server, and pushes often come a few minutes apart. So a handed
+over commit waits while CI tests a newer one ([deploy-gate.mjs](../scripts/deploy-gate.mjs)).
+If the newer one passes, its deploy replaces this one and includes it; if it fails, this
+one deploys. A commit pushed on its own deploys as soon as it passes, and none waits more
+than 30 minutes. To deploy the newest tested commit at once, run
+`gh workflow run deploy.yml`.
+
+The deploy asks the database, with the publishable key, which of the commit's migrations
+it lacks, and stops if any are missing: apply them, then re-run the Deploy job. It then
+runs `deploy <commit>` over SSH on the target and the smoke test on `DEPLOY_URL`. Restrict
+the key on the host to a command that accepts only that request and starts the published
+image.
 
 ## Delivery email
 

@@ -195,8 +195,10 @@ jobs:
 
   # Runs only where an instance has set it up: DEPLOY_ENABLED and DEPLOY_URL as repository
   # variables, and the DEPLOY_SSH_* secrets. The iPhone app is tested in its own workflow.
+  # The Deploy workflow (deploy.yml) puts the commit in production, unless a newer commit
+  # being tested replaces it.
   deploy:
-    name: Deploy
+    name: Request the deploy
     # always() lets an intentionally skipped SQL suite through; every selected
     # suite must succeed, and failed or canceled checks cannot deploy.
     if: >-
@@ -209,82 +211,20 @@ jobs:
           || (needs.changes.outputs.migrations == 'false' && needs.migrations.result == 'skipped')) }}
     needs: [changes, checks, unit, migrations, browser, image]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    concurrency:
-      group: production-deploy
-      cancel-in-progress: false
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      # Runs on main go one at a time, so commits are deployed in order. Only a re-run could
-      # put an older commit back, and it is skipped unless its commit is still the newest.
-      - name: Skip a re-run of a commit that is no longer the newest on main
-        id: current
+      # Runs on main go one at a time, so commits are handed over in order. Only a re-run could
+      # hand over an older commit, and it is skipped unless its commit is still the newest.
+      - name: Hand the commit to the Deploy workflow
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           current_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
-          if [ "$GITHUB_RUN_ATTEMPT" = 1 ] || [ "$current_sha" = "$GITHUB_SHA" ]; then
-            echo 'latest=true' >> "$GITHUB_OUTPUT"
-          else
+          if [ "$GITHUB_RUN_ATTEMPT" != 1 ] && [ "$current_sha" != "$GITHUB_SHA" ]; then
             echo "Skipping the re-run of $GITHUB_SHA: main is now $current_sha"
-            echo 'latest=false' >> "$GITHUB_OUTPUT"
-          fi
-      - name: Check that production has this commit's migrations
-        if: steps.current.outputs.latest == 'true'
-        env:
-          SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
-        run: scripts/check-production-migrations.sh
-      - name: Deploy this commit
-        if: steps.current.outputs.latest == 'true'
-        env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
-          DEPLOY_SSH_TARGET: ${{ secrets.DEPLOY_SSH_TARGET }}
-        run: |
-          set -euo pipefail
-          ssh_dir="$(mktemp -d)"
-          trap 'rm -rf "$ssh_dir"' EXIT
-          printf '%s\n' "$DEPLOY_SSH_KEY" > "$ssh_dir/id_ed25519"
-          printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
-          chmod 600 "$ssh_dir/id_ed25519" "$ssh_dir/known_hosts"
-          timeout 10m ssh \
-            -i "$ssh_dir/id_ed25519" \
-            -o BatchMode=yes \
-            -o ConnectTimeout=10 \
-            -o IdentitiesOnly=yes \
-            -o LogLevel=ERROR \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$ssh_dir/known_hosts" \
-            "$DEPLOY_SSH_TARGET" deploy "$GITHUB_SHA"
-      - name: Check the public site
-        if: steps.current.outputs.latest == 'true'
-        env:
-          DEPLOY_URL: ${{ vars.DEPLOY_URL }}
-        run: scripts/smoke-url.sh "$DEPLOY_URL"
-      # The app names its Sentry release after the image's commit (IMAGE_COMMIT). Where the
-      # SENTRY_AUTH_TOKEN secret and the SENTRY_PROJECT variable are set (and SENTRY_ORG,
-      # unless the token is an organization token), that release gets its commits and a
-      # production deploy. Without them the step does nothing, and it never fails the deploy.
-      - name: Record the release in Sentry
-        if: steps.current.outputs.latest == 'true'
-        continue-on-error: true
-        timeout-minutes: 5
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
-        run: |
-          set -euo pipefail
-          if [ -z "$SENTRY_AUTH_TOKEN" ] || [ -z "$SENTRY_PROJECT" ]; then
-            echo 'Sentry releases are not set up: no SENTRY_AUTH_TOKEN secret or SENTRY_PROJECT variable'
             exit 0
           fi
-          if [ -z "$SENTRY_ORG" ]; then unset SENTRY_ORG; fi
-          # Without a repository integration in Sentry, --auto reads the commits from git.
-          if [ "$(git rev-parse --is-shallow-repository)" = true ]; then git fetch --quiet --unshallow origin; fi
-          sentry() { npx --yes @sentry/cli@3.8.0 "$@"; }
-          sentry releases new "$GITHUB_SHA"
-          sentry releases set-commits "$GITHUB_SHA" --auto --ignore-missing
-          sentry releases finalize "$GITHUB_SHA"
-          sentry deploys new --release "$GITHUB_SHA" --env production
+          gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref main -f commit="$GITHUB_SHA"

@@ -1,0 +1,131 @@
+name: Deploy
+
+# Puts a commit that CI tested on main into production. CI hands each one over; run by hand,
+# it deploys the newest tested commit at once. Every deploy restarts the server, so a commit
+# waits while CI tests a newer one, and leaves the deploy to it if it passes
+# (scripts/deploy-gate.mjs, docs/DEPLOYMENT.md).
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Set by CI. Empty deploys the newest commit CI passed on main, at once.
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # A newer commit handed over replaces the one waiting here; a deploy under way is never cut off.
+  settle:
+    name: Wait for newer commits
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: production-deploy-wait
+      cancel-in-progress: true
+    outputs:
+      deploy: ${{ steps.gate.outputs.deploy }}
+      commit: ${{ steps.gate.outputs.commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      # The runner's own Node runs the gate: it needs no packages.
+      - name: Decide whether this commit deploys
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT: ${{ inputs.commit }}
+        run: node scripts/deploy-gate.mjs "--commit=$COMMIT"
+
+  deploy:
+    name: Deploy
+    needs: settle
+    if: needs.settle.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    env:
+      COMMIT: ${{ needs.settle.outputs.commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.settle.outputs.commit }}
+      # Deploys go in order. Only re-running this job could put an older commit back, and it
+      # stops when a newer commit has passed CI since.
+      - name: Skip a re-run of a commit that a newer one replaced
+        id: current
+        if: github.run_attempt != '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/deploy-gate.mjs "--commit=$COMMIT" --at-once
+      - name: Check that production has this commit's migrations
+        if: steps.current.outputs.deploy != 'false'
+        env:
+          SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+        run: scripts/check-production-migrations.sh
+      - name: Deploy this commit
+        if: steps.current.outputs.deploy != 'false'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+          DEPLOY_SSH_TARGET: ${{ secrets.DEPLOY_SSH_TARGET }}
+        run: |
+          set -euo pipefail
+          ssh_dir="$(mktemp -d)"
+          trap 'rm -rf "$ssh_dir"' EXIT
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$ssh_dir/id_ed25519"
+          printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          chmod 600 "$ssh_dir/id_ed25519" "$ssh_dir/known_hosts"
+          timeout 10m ssh \
+            -i "$ssh_dir/id_ed25519" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=10 \
+            -o IdentitiesOnly=yes \
+            -o LogLevel=ERROR \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$ssh_dir/known_hosts" \
+            "$DEPLOY_SSH_TARGET" deploy "$COMMIT"
+      - name: Check the public site
+        if: steps.current.outputs.deploy != 'false'
+        env:
+          DEPLOY_URL: ${{ vars.DEPLOY_URL }}
+        run: scripts/smoke-url.sh "$DEPLOY_URL"
+      # The app names its Sentry release after the image's commit (IMAGE_COMMIT). Where the
+      # SENTRY_AUTH_TOKEN secret and the SENTRY_PROJECT variable are set (and SENTRY_ORG,
+      # unless the token is an organization token), that release gets its commits and a
+      # production deploy. Without them the step does nothing, and it never fails the deploy.
+      - name: Record the release in Sentry
+        if: steps.current.outputs.deploy != 'false'
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SENTRY_AUTH_TOKEN" ] || [ -z "$SENTRY_PROJECT" ]; then
+            echo 'Sentry releases are not set up: no SENTRY_AUTH_TOKEN secret or SENTRY_PROJECT variable'
+            exit 0
+          fi
+          if [ -z "$SENTRY_ORG" ]; then unset SENTRY_ORG; fi
+          # Without a repository integration in Sentry, --auto reads the commits from git.
+          if [ "$(git rev-parse --is-shallow-repository)" = true ]; then git fetch --quiet --unshallow origin; fi
+          sentry() { npx --yes @sentry/cli@3.8.0 "$@"; }
+          sentry releases new "$COMMIT"
+          sentry releases set-commits "$COMMIT" --auto --ignore-missing
+          sentry releases finalize "$COMMIT"
+          sentry deploys new --release "$COMMIT" --env production
