@@ -55,6 +55,13 @@ const ONE_OFF_FOLLOWED_MS = 24 * 60 * 60 * 1_000;
 /** A parcel no notification can reach keeps the daytime cadence this long after its account's apps or one of its links were last opened; then it is checked hourly. */
 const WATCHED_AFTER_OPEN_MS = 60 * 60 * 1_000;
 const VALID_STAGES = new Set<string>(STAGES);
+/**
+ * A parcel out for delivery is on screen this long after its account's apps or
+ * one of its links last read it. Reads are recorded at most every 5 minutes.
+ */
+const VIEWED_AFTER_READ_MS = 10 * 60 * 1_000;
+/** A parcel out for delivery that someone has on screen is checked this often by day. */
+const ON_SCREEN_DELIVERY_MINUTES = 2;
 /** Scheduled checks fall back to hourly this long after a parcel's newest carrier event, or after it was added. */
 const IDLE_AFTER_MS = 48 * 60 * 60 * 1_000;
 /**
@@ -134,11 +141,20 @@ function unseenFor(parcel: JsonObject, now: Date): number | null {
   return Number.isFinite(added) ? Math.max(0, now.getTime() - added) : 0;
 }
 
-/**
- * `unwatched`: nobody is waiting for the parcel, so it is checked hourly, as an idle one is.
- * `oneOff`: a lookup without an account, which leaves the schedule when nobody has seen its number for hours.
- */
-function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date, unwatched = false, oneOff = false): boolean {
+interface ScheduleContext {
+  /** Nobody is waiting for the parcel, so it is checked hourly, as an idle one is. */
+  unwatched?: boolean;
+  /** Someone has the parcel on screen: out for delivery, it is checked every 2 minutes by day. */
+  viewed?: boolean;
+  /** A lookup without an account, which leaves the schedule when nobody has seen its number for hours. */
+  oneOff?: boolean;
+}
+
+function isScheduledTrackingSyncDue(
+  parcel: JsonObject,
+  now: Date,
+  { unwatched = false, viewed = false, oneOff = false }: ScheduleContext = {},
+): boolean {
   if (!isTrackingSyncDue(parcel, now)) return false;
   const unseen = unseenFor(parcel, now);
   if (oneOff && unseen !== null && unseen >= UNSEEN_HOURLY_MS) return false;
@@ -150,8 +166,10 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date, unwatched = f
     const hours = unseen < UNSEEN_HOURLY_MS ? 1 : unseen < UNSEEN_DAILY_AFTER_MS ? 6 : 24;
     return lastChecked < local.startOf('hour').minus({ hours: hours - 1 }).toMillis();
   }
-  const intervalMinutes = parcel.current_stage === 'out_for_delivery'
-    ? 2 : Math.max(10, (CARRIER_DEFINITIONS[String(parcel.carrier) as CarrierId]?.tracking.refresh?.minMinutes ?? 0));
+  // Out for delivery, the news someone is waiting for is the delivery: worth checking often only while they watch.
+  const intervalMinutes = parcel.current_stage === 'out_for_delivery' && viewed
+    ? ON_SCREEN_DELIVERY_MINUTES
+    : Math.max(10, (CARRIER_DEFINITIONS[String(parcel.carrier) as CarrierId]?.tracking.refresh?.minMinutes ?? 0));
   const activity = lastActivity(parcel);
   const idle = unwatched || (activity !== null && now.getTime() - activity >= IDLE_AFTER_MS);
   // Compare schedule windows so request duration does not skip the next tick.
@@ -163,14 +181,15 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date, unwatched = f
 
 /**
  * Whether opening a one-off parcel's link should queue a check: only when the
- * schedule's cadence for the parcel has come round, including for a lookup
- * that left the schedule because nobody has seen its number. Reading a link
- * never checks a carrier more often than that, however often it is polled.
+ * schedule's cadence for a parcel on screen has come round, including for a
+ * lookup that left the schedule because nobody has seen its number. Reading a
+ * link never checks a carrier more often than that, however often it is
+ * polled.
  */
 export function isOpenedParcelSyncDue(parcel: JsonObject, now: Date): boolean {
   const open = !['delivered', 'returned'].includes(String(parcel.current_stage))
     || parcel.last_status_text === 'TO_BE_DELIVERED';
-  return open && parcel.archived_at == null && isScheduledTrackingSyncDue(parcel, now);
+  return open && parcel.archived_at == null && isScheduledTrackingSyncDue(parcel, now, { viewed: true });
 }
 
 export interface TrackingAdapter {
@@ -610,7 +629,10 @@ export class TrackingSyncService {
       const summary = emptySyncSummary();
       const now = this.now();
       const unwatched = await this.unwatchedPackages(now, context.signal);
-      const due = (oneOff: boolean) => (parcel: JsonObject) => isScheduledTrackingSyncDue(parcel, now, unwatched.has(String(parcel.id)), oneOff);
+      const viewed = await this.viewedDeliveries(now, context.signal);
+      const due = (oneOff: boolean) => (parcel: JsonObject) => isScheduledTrackingSyncDue(parcel, now, {
+        unwatched: unwatched.has(String(parcel.id)), viewed: viewed?.has(String(parcel.id)) ?? true, oneOff,
+      });
       const accounts = fairSyncPackages((await this.client.listActivePackages()).filter(due(false)));
       const parcels = [...accounts, ...await this.followedOneOffPackages(due(true), now, context.signal)];
       // Copies of one number, in several accounts or followed without one, share their lookups.
@@ -655,6 +677,22 @@ export class TrackingSyncService {
       signal?.throwIfAborted();
       captureOperationalError(error, { component: 'tracking', operation: 'list_unwatched_packages' });
       return new Set();
+    }
+  }
+
+  /**
+   * The parcels out for delivery someone has on screen: read by their
+   * account's apps or a link in the last 10 minutes, or shown by a Live
+   * Activity. Null when they cannot be read: every parcel out for delivery then
+   * keeps the 2-minute cadence.
+   */
+  private async viewedDeliveries(now: Date, signal?: AbortSignal): Promise<Set<string> | null> {
+    try {
+      return new Set(await this.client.listViewedDeliveryIds(new Date(now.getTime() - VIEWED_AFTER_READ_MS)));
+    } catch (error) {
+      signal?.throwIfAborted();
+      captureOperationalError(error, { component: 'tracking', operation: 'list_viewed_deliveries' });
+      return null;
     }
   }
 

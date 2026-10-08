@@ -598,6 +598,7 @@ function fakeClient(packages: JsonObject[] = []) {
     listActivePackages: vi.fn().mockResolvedValue(packages),
     listFollowedOneOffPackages: vi.fn().mockResolvedValue([]),
     listUnwatchedPackageIds: vi.fn().mockResolvedValue([]),
+    listViewedDeliveryIds: vi.fn().mockResolvedValue([]),
     autoLinkPackages: vi.fn().mockResolvedValue(0),
     updatePackage: vi.fn().mockResolvedValue(undefined),
     insertEvents: vi.fn().mockResolvedValue(undefined),
@@ -1150,6 +1151,18 @@ describe('TrackingSyncService', () => {
     expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'tracking', operation: 'list_unwatched_packages' });
   });
 
+  it('keeps every parcel out for delivery on the 2-minute cadence when the ones on screen cannot be listed', async () => {
+    const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const client = fakeClient([{ id: 'a1', user_id: 'a', carrier: 'swiss-post', current_stage: 'out_for_delivery',
+      tracking_number: 'TEST1234', last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok' }]);
+    const failure = new Error('function unavailable');
+    client.listViewedDeliveryIds.mockRejectedValue(failure);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'out_for_delivery' }) }, null, () => new Date('2026-09-09T10:02:00Z'));
+    await expect(service.sync()).resolves.toMatchObject({ checked: 1 });
+    expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'tracking', operation: 'list_viewed_deliveries' });
+  });
+
   it('queues a check when a link is opened only if the schedule would check the parcel now', () => {
     const parcel = { carrier: 'swiss-post', current_stage: 'in_transit', tracking_number: 'TEST1234',
       last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok', archived_at: null };
@@ -1164,16 +1177,29 @@ describe('TrackingSyncService', () => {
     expect(isOpenedParcelSyncDue({ ...parcel, current_stage: 'returned' }, at('12:00:00'))).toBe(false);
     expect(isOpenedParcelSyncDue({ ...parcel, archived_at: '2026-09-09T09:00:00Z' }, at('12:00:00'))).toBe(false);
     expect(isOpenedParcelSyncDue({ ...parcel, current_stage: 'delivered', last_status_text: 'TO_BE_DELIVERED' }, at('12:00:00'))).toBe(true);
+    // Someone reading a link has the parcel on screen: out for delivery, it is checked every 2 minutes.
+    const delivering = { ...parcel, current_stage: 'out_for_delivery' };
+    expect(isOpenedParcelSyncDue(delivering, at('10:01:59'))).toBe(false);
+    expect(isOpenedParcelSyncDue(delivering, at('10:02:00'))).toBe(true);
+    // Overnight it stays hourly.
+    expect(isOpenedParcelSyncDue({ ...delivering, last_synced_at: '2026-09-09T20:00:15Z' }, at('20:02:00'))).toBe(false);
     // A provider's cooldown holds a link's reader back as it holds the schedule.
     expect(isOpenedParcelSyncDue({ ...parcel, carrier_data: { routing: { version: 1, configured_carrier: 'swiss-post', next_check_at: '2026-09-09T13:00:00Z' } } }, at('12:00:00'))).toBe(false);
   });
 
   it.each([
-    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:02:00', checked: 1 },
-    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:01:59', checked: 0 },
+    // Out for delivery: every 2 minutes while someone has it on screen, otherwise like any other stage.
+    { carrier: 'swiss-post', stage: 'out_for_delivery', viewed: true, time: '10:02:00', checked: 1 },
+    { carrier: 'swiss-post', stage: 'out_for_delivery', viewed: true, time: '10:01:59', checked: 0 },
+    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:02:00', checked: 0 },
+    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:09:59', checked: 0 },
+    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:10:00', checked: 1 },
+    { carrier: 'spring-gds', stage: 'out_for_delivery', viewed: true, time: '10:02:00', checked: 1 },
+    { carrier: 'spring-gds', stage: 'out_for_delivery', time: '10:10:00', checked: 0 },
+    { carrier: 'spring-gds', stage: 'out_for_delivery', time: '10:30:00', checked: 1 },
+    { carrier: 'swiss-post', stage: 'in_transit', viewed: true, time: '10:02:00', checked: 0 },
     { carrier: 'swiss-post', stage: 'in_transit', time: '10:02:00', checked: 0 },
     { carrier: 'swiss-post', stage: 'in_transit', time: '10:10:00', checked: 1 },
-    { carrier: 'spring-gds', stage: 'out_for_delivery', time: '10:02:00', checked: 1 },
     { carrier: 'spring-gds', stage: 'in_transit', time: '10:02:00', checked: 0 },
     { carrier: 'spring-gds', stage: 'in_transit', time: '10:10:00', checked: 0 },
     { carrier: 'spring-gds', stage: 'in_transit', time: '10:29:59', checked: 0 },
@@ -1185,17 +1211,20 @@ describe('TrackingSyncService', () => {
     { carrier: 'swiss-post', stage: 'customs', time: '10:02:00', checked: 0 },
     { carrier: 'swiss-post', stage: 'registered', time: '10:10:00', checked: 1 },
     { carrier: 'gls-de', stage: 'in_transit', time: '10:02:00', checked: 0 },
-  ])('schedules $carrier at $stage at $time: $checked checks', async ({ carrier, stage, time, checked }) => {
+  ])('schedules $carrier at $stage at $time (on screen: $viewed): $checked checks', async ({ carrier, stage, viewed, time, checked }) => {
     const parcel = {
       id: 'scheduled', carrier, current_stage: stage, tracking_number: 'TEST1234',
       last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok',
     };
     const client = fakeClient([parcel]);
+    client.listViewedDeliveryIds.mockResolvedValue(viewed ? ['scheduled'] : ['another']);
     const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
-    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
-      adapter, null, () => new Date(`2026-09-09T${time}Z`));
+    const now = new Date(`2026-09-09T${time}Z`);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
     await expect(service.sync()).resolves.toMatchObject({ checked });
     expect(adapter.fetch).toHaveBeenCalledTimes(checked);
+    // Read by an app or a link in the last 10 minutes is on screen.
+    expect(client.listViewedDeliveryIds).toHaveBeenCalledExactlyOnceWith(new Date(now.getTime() - 600_000));
   });
 
   it.each([

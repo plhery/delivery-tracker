@@ -134,8 +134,8 @@ Daytime is 08:00–22:00 Europe/Zurich. Overnight, everything is checked hourly.
 
 | Parcels | Daytime |
 | --- | --- |
-| Out for delivery (direct adapter) | every 2 min |
-| Other stages (direct adapter) | every 10 min |
+| Out for delivery (direct adapter), on screen | every 2 min |
+| Other stages, and out for delivery off screen (direct adapter) | every 10 min |
 | Served by a universal provider | every 15 min |
 | PostNL | every 30 min, also after a failure |
 | GLS (DE, CH, FR) | at most hourly, 4 h after a failure, manual refresh included |
@@ -154,6 +154,16 @@ So is someone who looked lately: for an hour after the account's apps read its p
 (recorded at most every five minutes) or one of the parcel's links was opened. Any other
 open parcel is checked hourly
 ([`unwatched_package_ids`](../supabase/migrations/20261003180000_unwatched_parcels.sql)).
+
+**On screen** is narrower, and only changes how often a parcel out for delivery is checked:
+its account's apps read its parcels in the last 10 minutes, one of its links was opened in
+the last 10 minutes, or a Live Activity shows it
+([`viewed_delivery_ids`](../supabase/migrations/20261008193100_on_screen_deliveries.sql)).
+Opening the link of a parcel followed without an account counts at once. Carriers publish
+most delivery scans several minutes after the fact, so a check every 2 minutes only pays
+while someone is looking; the push or email that tells everyone else comes at most
+10 minutes later. When the list cannot be read, every parcel out for delivery keeps the
+2-minute cadence.
 
 **Parcels followed without an account** are checked only while one of their links was
 opened in the last 24 hours or has an alert on. Otherwise a parcel waits until a link is
