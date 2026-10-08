@@ -301,6 +301,7 @@ describe('scans a carrier and a universal provider both report', () => {
       ['unknown:delivered', 'gofo:delivered'], ['unknown:label', 'gofo:label'], ['unknown:out', 'gofo:out'],
     ]);
     expect(shared.reused.size).toBe(0);
+    expect([...shared.shifted].sort()).toEqual(['unknown:delivered', 'unknown:out']);
   });
 
   it('lets the carrier take over the universal copy stored while its lookup was down', () => {
@@ -327,8 +328,9 @@ describe('scans a carrier and a universal provider both report', () => {
 
   it('never lets a universal reply move a row a carrier corrected, but lets it reword the row in place', () => {
     const corrected = [row('unknown:out', '2026-01-04T12:59:03+00:00', 'Out for Delivery')];
-    expect(pairs(sharedScans([scan('unknown:out', '2026-01-04T15:59:03Z', 'Out for Delivery')], corrected).skipped))
-      .toEqual([['unknown:out', 'unknown:out']]);
+    const late = sharedScans([scan('unknown:out', '2026-01-04T15:59:03Z', 'Out for Delivery')], corrected);
+    expect(pairs(late.skipped)).toEqual([['unknown:out', 'unknown:out']]);
+    expect([...late.shifted]).toEqual(['unknown:out']);
     const sameInstant = sharedScans([scan('unknown:out', '2026-01-04T12:59:03Z', 'With delivery courier')], corrected);
     expect(sameInstant.skipped.size + sameInstant.reused.size).toBe(0);
     // A carrier's scan whose own identity is stored is left to the upsert.
@@ -336,7 +338,7 @@ describe('scans a carrier and a universal provider both report', () => {
     expect(own.skipped.size + own.reused.size).toBe(0);
   });
 
-  it('matches whole quarter hours up to 14 hours away, with the same wording only', () => {
+  it('matches whole quarter hours up to 14 hours away, times to the minute with the same wording only', () => {
     const stored = [row('gofo:out', '2026-01-04T12:00:00+00:00', 'Out for Delivery')];
     const skipped = (occurredAt: string, description = 'Out for Delivery') => sharedScans(
       [scan('unknown:out', occurredAt, description)], stored,
@@ -351,6 +353,61 @@ describe('scans a carrier and a universal provider both report', () => {
     // A trailing sentence counts only after a finished one.
     expect(sharedScans([scan('unknown:x', '2026-01-04T15:00:00Z', 'Out for Delivery. Call us')],
       [row('gofo:x', '2026-01-04T12:00:00+00:00', 'Out for Delivery.')]).skipped.size).toBe(1);
+  });
+
+  // A carrier's own scans, and a universal provider's own wording of them, unclassified and two hours early.
+  const registered = scan('paack:registered', '2026-01-06T10:50:30Z', 'Shipment registered', 'registered');
+  const accepted = scan('paack:accepted', '2026-01-06T16:38:19Z', 'Shipment accepted', 'accepted');
+  const received = scan('unknown:received', '2026-01-06T08:50:30Z', 'Order details received', 'pending');
+  const centre = scan('unknown:centre', '2026-01-06T14:38:19Z', 'In the distribution centre', 'pending');
+  const stored = (event: ReturnType<typeof scan>) => row(String(event.provider_event_id),
+    event.occurred_at.replace('Z', '+00:00'), event.description, event.stage);
+
+  it('matches other wording on a clock a zone off, whichever source arrives first', () => {
+    const late = sharedScans([received, centre], [registered, accepted].map(stored));
+    expect(pairs(late.skipped)).toEqual([['unknown:centre', 'paack:accepted'], ['unknown:received', 'paack:registered']]);
+    expect([...late.shifted].sort()).toEqual(['unknown:centre', 'unknown:received']);
+
+    const early = sharedScans([registered, accepted], [received, centre].map(stored));
+    expect(pairs(early.reused)).toEqual([['paack:accepted', 'unknown:centre'], ['paack:registered', 'unknown:received']]);
+    expect([...early.shifted].sort()).toEqual(['paack:accepted', 'paack:registered']);
+    // Classified alike, and some hours later.
+    expect(sharedScans([{ ...centre, stage: 'accepted', occurred_at: '2026-01-07T03:38:19Z' }], [stored(accepted)]).skipped.size)
+      .toBe(1);
+  });
+
+  it('leaves other wording a zone off alone without seconds, a stage that agrees or a carrier on one side', () => {
+    const matched = (events: ReturnType<typeof scan>[], rows = [stored(accepted)]) => {
+      const shared = sharedScans(events, rows);
+      return shared.skipped.size + shared.reused.size;
+    };
+    // Times to the minute: two scans of a day often fall whole quarter hours apart.
+    expect(matched([{ ...centre, occurred_at: '2026-01-06T14:38:00Z' }],
+      [stored({ ...accepted, occurred_at: '2026-01-06T16:38:00Z' })])).toBe(0);
+    for (const stage of ['in_transit', 'delivered']) expect(matched([{ ...centre, stage }]), stage).toBe(0);
+    // Not a zone's offset: 20 minutes, a quarter or half hour (a carrier's follow-up scan), over 14 hours.
+    for (const occurredAt of ['2026-01-06T16:18:19Z', '2026-01-06T16:23:19Z', '2026-01-06T16:08:19Z', '2026-01-07T06:53:19Z']) {
+      expect(matched([{ ...centre, occurred_at: occurredAt }]), occurredAt).toBe(0);
+    }
+    // Two copies, or two carriers' scans, are not a carrier's clock against a provider's.
+    expect(matched([centre], [stored({ ...accepted, provider_event_id: 'unknown:accepted' })])).toBe(0);
+    expect(matched([{ ...accepted, provider_event_id: 'dpd:accepted', occurred_at: centre.occurred_at }])).toBe(0);
+    // Two rows a zone away, or a row already at the scan's instant.
+    expect(matched([centre], [stored(accepted), stored({ ...accepted, provider_event_id: 'paack:again', occurred_at: '2026-01-06T17:38:19Z' })]))
+      .toBe(0);
+    expect(matched([centre], [stored(accepted), stored({ ...registered, occurred_at: centre.occurred_at, stage: 'in_transit' })])).toBe(0);
+  });
+
+  it('never moves a row the batch shows at its own instant', () => {
+    // The provider reports the carrier's scan at its real time too: the other scan is its own.
+    const sameTime = scan('unknown:accepted', accepted.occurred_at, 'Accepted', 'accepted');
+    expect(pairs(sharedScans([centre, sameTime], [stored(accepted)]).skipped)).toEqual([['unknown:accepted', 'paack:accepted']]);
+    // A row a carrier took over stays with that carrier's scan, not a later scan whose seconds agree.
+    const taken = row('unknown:sorted', '2026-01-06T10:00:07+00:00', 'Sorted', 'in_transit');
+    const shared = sharedScans([scan('gofo:sorted', '2026-01-06T10:00:07Z', 'Sorted', 'in_transit'),
+      scan('gofo:loaded', '2026-01-06T12:00:07Z', 'Loaded', 'in_transit')], [taken]);
+    expect(pairs(shared.reused)).toEqual([['gofo:sorted', 'unknown:sorted']]);
+    expect(shared.shifted.size).toBe(0);
   });
 
   it('matches other wording at the same instant only within one stage', () => {

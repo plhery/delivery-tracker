@@ -2965,6 +2965,43 @@ describe('scans a carrier and a universal provider both report', () => {
     expect(adapter.fetchUniversal).toHaveBeenCalledTimes(2);
   });
 
+  it('stores once a scan a provider words its own way on a clock two hours early, and records the offset', async () => {
+    vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
+    const store = eventStore();
+    const client = { ...store.client,
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-01-05T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const down = new Error('GOFO tracking endpoint is unavailable');
+    // The copy of the hub scan: other wording, unclassified, and two hours before GOFO's 13:15:42 UTC.
+    const reworded: Scan = { time: '2026-01-03T11:15:42Z', description: 'Item at sorting facility', stage: 'pending' };
+    const adapter = {
+      fetch: vi.fn()
+        .mockRejectedValueOnce(down)
+        .mockResolvedValueOnce(result([hub, label]))
+        .mockRejectedValueOnce(down),
+      fetchUniversal: vi.fn().mockResolvedValue(result([reworded])),
+    };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, now);
+    const sync = async (stage: string) => {
+      await service.syncPackage({ ...parcel, current_stage: stage, [STORED_EVENT_IDENTITIES]: store.identities() });
+      const values = client.completeSyncAttempt.mock.calls.at(-1)![1] as JsonObject;
+      return { batch: ids(store.batch()), anomalies: values.anomaly_codes };
+    };
+    const copyId = providerEventId('unknown', reworded.time, '', reworded.description);
+
+    // GOFO is down: the copy is stored as it came.
+    expect(await sync('pending')).toEqual({ batch: [copyId], anomalies: [] });
+    const copyRow = store.rows.get(copyId)!.id;
+    // GOFO is back: its scan takes the copy's row over, on GOFO's clock and in its words.
+    expect(await sync('pending')).toEqual({ batch: [copyId, own(label)], anomalies: ['provider_clock_offset'] });
+    expect(store.rows.get(copyId)).toMatchObject({ id: copyRow, occurred_at: '2026-01-03T13:15:42Z', stage: 'in_transit',
+      description: hub.description });
+    // Down again: the copy stores nothing and still shows the offset.
+    expect(await sync('in_transit')).toEqual({ batch: [], anomalies: expect.arrayContaining(['provider_clock_offset']) });
+    expect(store.rows.size).toBe(2);
+  });
+
   it('does not take the carrier reply after a fallback for older history', async () => {
     vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
     const store = eventStore();

@@ -32,6 +32,7 @@ export type SyncAnomalyCode =
   | 'invalid_event_timestamp'
   | 'observed_without_timestamp'
   | 'progress_disappeared'
+  | 'provider_clock_offset'
   | 'terminal_stage_regression';
 
 export interface SyncRunContext {
@@ -193,9 +194,11 @@ export class TrackingSyncAudit {
     anomalies: SyncAnomalyCode[],
     completion: Omit<SyncAuditCompletion, 'outcome' | 'anomalyCodes' | 'error'>,
   ): void {
-    // Recorded with the attempt, not alerted: none of these is a fault to look into.
+    // Recorded with the attempt, not alerted: the sync handled each of these. A clock offset
+    // recurs on every check the copying provider answers.
     const alertable = anomalies.filter((code) => (
       code !== 'observed_without_timestamp' && code !== 'fallback_without_progress' && code !== 'early_stage_regression'
+      && code !== 'provider_clock_offset'
     ));
     for (const anomalyCode of alertable) {
       captureSyncAnomaly(anomalyCode, {

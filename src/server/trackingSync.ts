@@ -1166,6 +1166,8 @@ export class TrackingSyncService {
         copies_skipped: [...matches.skipped.keys()].filter((id) => persistedIds.has(id)).length,
         atomic_with_package: true,
       });
+      // One scan from two sources on clocks a zone apart: a provider's clock the scraper should fix.
+      if ([...shared.shifted].some((id) => persistedIds.has(id))) anomalies = [...anomalies, 'provider_clock_offset'];
       await this.recordStatusObservations(eventsToPersist, sourceCarrierId, context, new Map([...matches.reused, ...matches.skipped]), [
         ...(fetched.earlierResult && fetched.earlierCarrierId
           ? localStatusObservationEvents(parcel, fetched.earlierResult, fetched.earlierCarrierId) : []),
