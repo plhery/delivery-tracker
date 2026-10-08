@@ -87,7 +87,6 @@ trap 'on_exit $?' EXIT
 print "Refreshing Peek on $DEVICE_NAME…"
 print "Keep the iPhone unlocked and connected by USB or reachable over Wi-Fi."
 print "This Personal Team build excludes push notifications, App Groups, and the Share Extension."
-print "The Lock Screen and Dynamic Island Live Activity remain available."
 print
 notify "Refresh started. Keep the iPhone unlocked and nearby."
 
@@ -149,12 +148,12 @@ if [[ -d "$APP_PATH/PlugIns/ShareExtension.appex" ]]; then
 fi
 WIDGET_PATH="$APP_PATH/PlugIns/DeliveryWidgetExtension.appex"
 if [[ ! -d "$WIDGET_PATH" ]]; then
-  print -u2 "The limited build is missing the Live Activity extension."
+  print -u2 "The limited build is missing the widget extension."
   exit 1
 fi
 WIDGET_ENTITLEMENTS="$(/usr/bin/codesign -d --entitlements :- "$WIDGET_PATH" 2>/dev/null || true)"
 if [[ "$WIDGET_ENTITLEMENTS" == *"application-groups"* ]]; then
-  print -u2 "The limited Live Activity extension unexpectedly contains an App Group entitlement."
+  print -u2 "The limited widget extension unexpectedly contains an App Group entitlement."
   exit 1
 fi
 
