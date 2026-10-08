@@ -128,6 +128,11 @@ final class DeliveryAPIClient {
         _ = try await rawRequest("/api/packages/\(id.uuidString)/share", method: "DELETE")
     }
 
+    /// What its reader says of one of the account's parcels. The answer has no body.
+    func sendFeedback(id: UUID, _ value: ParcelFeedbackRequest) async throws {
+        _ = try await rawRequest("/api/packages/\(id.uuidString)/feedback", method: "POST", body: try JSONEncoder.deliveryTracker.encode(value))
+    }
+
     func listPackages() async throws -> [Parcel] {
         let response: PackageListResponse = try await request("/api/packages?includeArchived=true")
         return response.packages

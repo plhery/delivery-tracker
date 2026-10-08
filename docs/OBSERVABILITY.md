@@ -147,6 +147,29 @@ it to `verified`. Provider answers, thin results, preserved older summaries and 
 different handoff number cannot verify a fix. Use `ignored` with a note for a case that
 needs no change; future sightings still accumulate.
 
+## Reader feedback
+
+A parcel's page asks its reader whether it is right, or who carries a parcel no carrier
+was found for. `parcel_feedback` keeps one row per answer, service-role only: the
+tracking number, the carrier, the answer (`right`, `wrong` with its reasons and note, or
+`found_elsewhere` with a carrier name or tracking page), where it was asked, and `shown`,
+what the service held about the parcel at that moment (status, last check, newest scans).
+A row names no account, link or device. A note may follow its reason within the hour and
+replaces the row; a tracking number takes twenty answers a day. Rows are deleted 90 days
+after they were given, by the scheduled sync's maintenance pass.
+
+Review what readers reported:
+
+```sql
+select id, created_at, tracking_number, carrier, answer, reasons, note, carrier_name,
+       tracking_page, asked, via, app, shown
+from public.parcel_feedback
+where answer <> 'right' and reviewed_at is null
+order by created_at desc;
+```
+
+Set `reviewed_at`, and `review_note` with the outcome, once an answer is handled.
+
 ## Unmapped wording
 
 `tracking_status_observations` collects carrier wording whose stage didn't come from a
@@ -321,6 +344,12 @@ Key JSON events:
   pass forgot, how many stopped links from accounts it purged and how many alerts of
   finished journeys it ended. `parcel_link_maintenance_failed` when it could not run.
 - `parcel_link_alerts_failed`: how many alerts of parcel links a dispatch could not send.
+- `parcel_feedback`: an answer about a parcel, with the `answer`, its `reasons`, the
+  `carrier`, where it was `asked` (`page` or `back`, on the way back from the carrier's
+  site), `via` an `account` or a `link`, the `app` and the `outcome` as
+  `parcel_feedback_total` counts it. It never has the number or the reader's words.
+  `parcel_feedback_forgotten` says how many old `answers` a maintenance pass deleted, and
+  `parcel_feedback_maintenance_failed` that it could not run.
 - `public_allowance`: an overall daily allowance without an account (`kind`: `lookup` or
   `detection`) is `running_out` at 80% or `used_up`, with `used` and `limit`.
 - `delivery_email` (by `package_id`): how one delivery email ended, with its `stage`, `outcome` and
@@ -480,6 +509,7 @@ is `no_history` rather than `indeterminate`.
 | `parcel_alert_set_total` (outcome) | Requests to turn on an alert for a link: `added`, `updated`, `full` (ten already), `finished` (journey over), `stopped`, `unavailable` |
 | `parcel_alert_sent_total` (outcome) | Batches of new scans per alert: `sent`, `skipped` (not in its preset, backfilled, known when the parcel was added, more than a day old, or the owner's own browser), `failed`, `expired` (the push service says the subscription is gone) |
 | `parcel_alert_removed_total` (reason) | Alerts ended: `asked`, `delivered` (journey over), `expired`, `failed` (three failed sends in a row) |
+| `parcel_feedback_total` (answer, via, app, outcome) | What readers say of a parcel: `right`, `wrong` or `found_elsewhere`, through an `account` or a `link`. `stored`, `replaced` (a note followed its reason), `full` (twenty answers for the number that day) or `closed` (too late to add to) |
 | `provider_input_total` (provider, step) | Whether relaying a provider's postcode request pays off: a parcel starts asking its owner (`asked`), the owner gives one (`supplied`), then each lookup made with it: `history`, `still_required`, `no_history` or `failed`. Every provider receives the postcode; supported sources can submit it |
 | `delivery_email_total` (outcome, reason) | Delivery emails: `sent`; `failed` and tried again later (`smtp`, `content`, `account`, `parcel`, `interrupted`); `skipped` for good (`no_address`, `relay_address`, `parcel_gone`, `account_cap`, `service_cap`) |
 | `public_lookup_clients` | Clients that made a lookup yesterday (UTC) |

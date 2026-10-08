@@ -6689,6 +6689,74 @@
         }
       }
     },
+    "/api/public/parcels/{linkId}/feedback": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ParcelLinkId"
+        }
+      ],
+      "post": {
+        "operationId": "sendPublicParcelFeedback",
+        "summary": "Say whether what this parcel's link shows is right, or name the carrier of a parcel none was found for",
+        "security": [],
+        "parameters": [
+          {
+            "name": "X-Parcel-Key",
+            "in": "header",
+            "required": false,
+            "description": "The owner key of the lookup. Its answer is taken after the sharing was stopped too.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParcelFeedbackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Taken. Stored with the parcel's number and what the service held about it, never with the link or its reader"
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "description": "Parcel unavailable: an unknown, forgotten, expired or malformed link, never told apart",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Parcel not shared: its sharing was stopped",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
     "/api/packages/{packageId}/share": {
       "parameters": [
         {
@@ -6766,6 +6834,44 @@
             "$ref": "#/components/responses/ApiError"
           },
           "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/api/packages/{packageId}/feedback": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/PackageId"
+        }
+      ],
+      "post": {
+        "operationId": "sendPackageFeedback",
+        "summary": "Say whether what the service shows of this parcel is right, or name the carrier of a parcel none was found for",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParcelFeedbackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Taken. Stored with the parcel's number and what the service held about it, never with the account"
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
             "$ref": "#/components/responses/ApiError"
           },
           "502": {
@@ -9542,6 +9648,89 @@
             "format": "uri",
             "pattern": "^https://",
             "maxLength": 4096
+          }
+        }
+      },
+      "ParcelFeedbackAnswer": {
+        "type": "string",
+        "enum": [
+          "right",
+          "wrong",
+          "found_elsewhere"
+        ],
+        "description": "What the reader says of the parcel: what is shown is right, something is off, or the carrier's own site shows a parcel no carrier was found for."
+      },
+      "ParcelFeedbackReason": {
+        "type": "string",
+        "enum": [
+          "arrived",
+          "status",
+          "steps",
+          "time_place",
+          "carrier",
+          "other"
+        ],
+        "description": "What is off: the parcel has arrived, the status is wrong, steps are missing, a time or place is wrong, the carrier is wrong, or something else."
+      },
+      "ParcelFeedbackRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "answer",
+          "asked",
+          "app",
+          "locale"
+        ],
+        "description": "One answer about one parcel. `right` comes alone; `wrong` with reasons, a note or both; `found_elsewhere` with the carrier's name, its tracking page or both.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made by the app for each answer. The same id sent again within an hour replaces that answer's reasons and words, so a note can follow a reason."
+          },
+          "answer": {
+            "$ref": "#/components/schemas/ParcelFeedbackAnswer"
+          },
+          "reasons": {
+            "type": "array",
+            "maxItems": 6,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/ParcelFeedbackReason"
+            }
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "carrierName": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The carrier or shop the reader names."
+          },
+          "trackingPage": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Where the reader says the parcel is shown. Kept as written and never fetched."
+          },
+          "asked": {
+            "type": "string",
+            "enum": [
+              "page",
+              "back"
+            ],
+            "description": "Where the question was asked: on the parcel's page, or on the way back from the carrier's own site."
+          },
+          "app": {
+            "type": "string",
+            "enum": [
+              "web",
+              "ios"
+            ]
+          },
+          "locale": {
+            "$ref": "#/components/schemas/NativePushLocale"
           }
         }
       },

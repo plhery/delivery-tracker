@@ -46,6 +46,18 @@ describe('what this browser notes about a link', () => {
     expect(linkNote(LINK_ID)).toEqual({});
   });
 
+  it('keeps what the browser answered about the parcel beside the rest, and reads back only a memory it can trust', () => {
+    const feedback = { at: '2026-10-08T09:00:00.000Z', scan: '3:2026-10-08T08:00:00.000Z' };
+    noteLink(LINK_ID, { alert, feedback });
+    noteLink(LINK_ID, { share });
+    expect(linkNote(LINK_ID)).toEqual({ share, alert, feedback });
+    noteLink(LINK_ID, { feedback: null });
+    expect(linkNote(LINK_ID)).toEqual({ share, alert });
+    localStorage.setItem(LINK_NOTES_STORAGE_KEY, JSON.stringify({ [LINK_ID]: { feedback: { at: 'someday', scan: 7 } }, [OTHER_LINK_ID]: { feedback: { back: 'a' } } }));
+    expect(linkNote(LINK_ID)).toEqual({});
+    expect(linkNote(OTHER_LINK_ID)).toEqual({ feedback: { back: 'a' } });
+  });
+
   it('goes with the parcel when the device forgets it', () => {
     rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView() });
     noteLink(LINK_ID, { share, alert });

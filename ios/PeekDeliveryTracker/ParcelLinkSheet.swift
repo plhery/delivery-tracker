@@ -12,6 +12,7 @@ struct ParcelLinkSheet: View {
     @State private var adding = false
     @State private var refreshing = false
     @State private var errorMessage: String?
+    @StateObject private var feedback = ParcelFeedbackModel()
 
     var body: some View {
         NavigationStack {
@@ -30,6 +31,7 @@ struct ParcelLinkSheet: View {
                     failed(failure)
                 }
             }
+            .parcelFeedback(feedback, busy: adding)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -45,6 +47,31 @@ struct ParcelLinkSheet: View {
             errorMessage = nil
             await links.load()
         }
+        .onChange(of: feedbackPage, initial: true) { _, page in
+            feedback.show(page, through: links.route.map { parcels.feedbackClient(forLink: $0.id) })
+        }
+    }
+
+    /// What the question under the history is asked about. A gift as its recipient sees it, the
+    /// sample and a link that shows no parcel ask nothing.
+    private var feedbackPage: ParcelFeedbackModel.Page? {
+        guard case .shown(let response) = links.phase, !links.isSample, let link = links.route,
+              response.gift != .wrapped, response.gift != .opened else { return nil }
+        let parcel = Parcel(shared: response.package)
+        // A build without a server reads no link: what it shows is made up.
+        var madeUp = !parcels.tracksWithoutAccount
+        #if DEBUG
+        if ParcelFeedbackPreview.variant != nil { madeUp = false }
+        #endif
+        return ParcelFeedbackModel.Page(
+            parcel: parcel, subject: .link(link.id), showsHistory: Self.showsHistory(parcel), madeUp: madeUp,
+            carrier: CarrierCatalog.shared.info(for: parcel.displayedCarrier, language: localizer.language).displayName,
+            language: localizer.language
+        )
+    }
+
+    private static func showsHistory(_ parcel: Parcel) -> Bool {
+        CarrierCatalog.shared.tracksAutomatically(parcel.activeTrackingCarrier) || parcel.hasCarrierUpdate
     }
 
     /// A gift keeps the sheet to itself; so does a link that shows nothing.
@@ -93,11 +120,12 @@ struct ParcelLinkSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     // The number and the carrier's own page would tell where a gift comes from.
                     if !wrapped {
-                        SharedParcelNumber(parcel: parcel, hint: response.package.numberHint, tint: tint)
+                        SharedParcelNumber(parcel: parcel, hint: response.package.numberHint, tint: tint) { feedback.visited($0.name) }
                     }
-                    if CarrierCatalog.shared.tracksAutomatically(parcel.activeTrackingCarrier) || parcel.hasCarrierUpdate {
+                    if Self.showsHistory(parcel) {
                         ParcelJournal(parcel: parcel, tint: tint)
                     }
+                    if feedback.standing != nil { ParcelFeedbackQuestionView(model: feedback) }
                 }
                 .padding(.horizontal, 6)
                 .padding(.top, 6)
@@ -735,6 +763,8 @@ private struct SharedParcelNumber: View {
     let parcel: Parcel
     let hint: ParcelNumberHint?
     let tint: Color
+    /// The reader leaves for a carrier's own page.
+    let onVisit: (ParcelTrackingLink) -> Void
 
     @EnvironmentObject private var localizer: Localizer
     @ObservedObject private var catalog = CarrierCatalog.shared
@@ -793,7 +823,10 @@ private struct SharedParcelNumber: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(tint)
-            .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("parcel-carrier-link") })
+            .simultaneousGesture(TapGesture().onEnded {
+                DeliveryAnalytics.shared.action("parcel-carrier-link")
+                onVisit(link)
+            })
         }
     }
 

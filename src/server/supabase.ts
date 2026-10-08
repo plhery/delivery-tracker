@@ -1471,6 +1471,26 @@ export class SupabaseServiceClient extends SupabaseClient {
   }
 
   /**
+   * Keeps what a reader said of a parcel, or replaces the words of an answer
+   * given under the same id within the hour. `full` when the parcel had its
+   * day's answers, `closed` when the id belongs to another parcel or answer.
+   */
+  async recordParcelFeedback(feedback: JsonObject): Promise<'stored' | 'replaced' | 'full' | 'closed'> {
+    const result = await this.request('/rest/v1/rpc/record_parcel_feedback', {
+      method: 'POST', body: { p_feedback: feedback },
+    });
+    if (result !== 'stored' && result !== 'replaced' && result !== 'full' && result !== 'closed') {
+      throw new SupabaseError('Supabase did not record the parcel feedback');
+    }
+    return result;
+  }
+
+  /** Deletes the answers readers gave more than 90 days ago. Returns how many. */
+  async forgetOldParcelFeedback(): Promise<number> {
+    return Number(await this.request('/rest/v1/rpc/forget_old_parcel_feedback', { method: 'POST', body: {} }) ?? 0);
+  }
+
+  /**
    * Forgets the lookups past their forget date and the one-off parcels left
    * without a link, the links from accounts stopped 30 days ago (`stopped`),
    * and the alerts of journeys that are over (`alerts`).

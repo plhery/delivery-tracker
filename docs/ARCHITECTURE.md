@@ -148,6 +148,19 @@ Key server modules:
     The browser is asked for the permission, and subscribes, only on "Turn on". It reuses
     the subscription an account or another parcel already made, so turning one alert off
     leaves the subscription in place. The calendar file is made in the browser.
+- **Reader feedback**: a parcel's page asks whether it is right, or who carries a parcel
+  no carrier was found for. An answer comes from the parcel's account
+  (`/api/packages/{id}/feedback`) or from anyone holding its link
+  (`/api/public/parcels/{linkId}/feedback`), never from a gift's recipient, who is not
+  asked and is refused like a missing link.
+  - `parcel_feedback` is service-role only. A row has the tracking number, the reader's
+    words and what the service held about the parcel, and no account, link, device or
+    address. The words are read by a person and never opened or followed.
+  - A link anyone holds cannot fill the table: a tracking number takes twenty answers a
+    day, on top of the per-client limit of the route.
+  - The browser remembers that it answered, so the question is not asked twice about the
+    same scan nor more than once a day: beside a link's other notes, or under the parcel's
+    id for an account. That memory never leaves the device.
 - **Delivery email**: sent only to the address an account signs in with, once the Auth
   server has confirmed it. `delivery_emails` is service-role only.
   - Addresses stay out of logs, metric labels and error reports.
@@ -270,6 +283,10 @@ loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
   sharing is stopped it is deleted 30 days later, by the same maintenance pass.
 - **An alert for a link** is deleted when the parcel is delivered or returned, when its
   browser unsubscribes, when its link goes and, for viewers, when sharing stops.
+- **An answer about a parcel** (whether its page is right, or who carries a parcel no
+  carrier was found for) is stored with the tracking number and what the service held
+  about the parcel, and with no account, link or device. It outlives its parcel and is
+  deleted 90 days after it was given, by the same maintenance pass.
 - **A delivery email** leaves one row per parcel and stage in `delivery_emails`: sent,
   failed or skipped, with a reason code and none of its content. The row outlives its
   parcel, so nothing is told twice.

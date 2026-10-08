@@ -5,6 +5,7 @@ import {
   claimParcelLinks,
   cleanLinkText,
   collapseGiftRows,
+  createAccountFeedback,
   createAccountShare,
   createApiLinks,
   isParcelLinkId,
@@ -16,7 +17,7 @@ import {
   parcelLinkView,
   type ParcelLinkErrorKind,
 } from './links';
-import type { ApiPublicParcelResponse } from '../generated/apiContract';
+import type { ApiParcelFeedbackRequest, ApiPublicParcelResponse } from '../generated/apiContract';
 import { testParcel, testView } from '../test/parcelLinks';
 import type { TrackingEvent } from '../types';
 
@@ -327,6 +328,22 @@ describe('the API backend', () => {
     expect(request).toHaveBeenCalledTimes(2);
   });
 
+  it('sends what a reader says of a parcel, with the owner key only when the device holds one', async () => {
+    const answer: ApiParcelFeedbackRequest = { id: '6f0e1d2c-3b4a-4c5d-8e9f-0a1b2c3d4e5f', answer: 'wrong', reasons: ['steps'], asked: 'page', app: 'web', locale: 'en' };
+    const { links, request } = api(new Response(null, { status: 204 }), new Response(null, { status: 204 }), json({ error: 'Parcel unavailable' }, 404), json({ error: 'Too many requests' }, 429));
+    await expect(links.sendFeedback(ID, answer, KEY)).resolves.toBeUndefined();
+    expect(request.mock.calls[0][0]).toBe(`/api/public/parcels/${ID}/feedback`);
+    expect(request.mock.calls[0][1]).toMatchObject({ method: 'POST', credentials: 'omit' });
+    expect(JSON.parse(String(request.mock.calls[0][1]!.body))).toEqual(answer);
+    expect(new Headers(request.mock.calls[0][1]!.headers).get('X-Parcel-Key')).toBe(KEY);
+    await links.sendFeedback(ID, answer);
+    expect(new Headers(request.mock.calls[1][1]!.headers).has('X-Parcel-Key')).toBe(false);
+    expect((await failure(links.sendFeedback(ID, answer))).kind).toBe('unavailable');
+    expect((await failure(links.sendFeedback(ID, answer))).kind).toBe('burst');
+    expect((await failure(links.sendFeedback('nope', answer))).kind).toBe('unavailable');
+    expect(request).toHaveBeenCalledTimes(4);
+  });
+
   it('asks which carrier a number belongs to, and distrusts an answer about another number', async () => {
     const { links, request } = api(
       json({ trackingNumber: '1234567899', carrier: 'dhl', asked: ['dhl'] }),
@@ -436,6 +453,31 @@ describe('sharing a parcel of an account', () => {
   });
 });
 
+describe('saying something of an account’s parcel', () => {
+  const auth = { userId: 'user-1', getAccessToken: async () => 'token' };
+  const answer: ApiParcelFeedbackRequest = { id: '6f0e1d2c-3b4a-4c5d-8e9f-0a1b2c3d4e5f', answer: 'right', asked: 'back', app: 'web', locale: 'fr' };
+
+  it('sends the answer with the signed-in bearer, and types every way it can fail', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(json({ error: 'Package not found' }, 404))
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(json({ error: 'Delivery database failed' }, 502))
+      .mockResolvedValue(json({ error: 'Authentication is required' }, 401));
+    vi.stubGlobal('fetch', fetch);
+    const send = createAccountFeedback(auth);
+    await expect(send('package/1', answer)).resolves.toBeUndefined();
+    expect(fetch.mock.calls[0][0]).toBe('/api/packages/package%2F1/feedback');
+    expect(fetch.mock.calls[0][1]).toMatchObject({ method: 'POST' });
+    expect(new Headers(fetch.mock.calls[0][1]!.headers).get('Authorization')).toBe('Bearer token');
+    expect(JSON.parse(String(fetch.mock.calls[0][1]!.body))).toEqual(answer);
+    expect((await failure(send('package-1', answer))).kind).toBe('unavailable');
+    expect((await failure(send('package-1', answer))).kind).toBe('offline');
+    expect((await failure(send('package-1', answer))).kind).toBe('server');
+    await expect(send('package-1', answer)).rejects.toBeInstanceOf(ApiAuthenticationError);
+  });
+});
+
 describe('choosing the backend', () => {
   it('uses the API in a build that has one and this browser’s demo in a build that has none', async () => {
     expect((await import('./links')).parcelLinksMode).toBe('api');
@@ -451,6 +493,7 @@ describe('choosing the backend', () => {
     expect((await demo.updateParcelLink(id, key, { gift: true })).link.gift).toBe(true);
     await demo.setParcelAlert(id, { subscription: { endpoint: 'demo:1', keys: { p256dh: 'demo', auth: 'demo' } }, preset: 'all', locale: 'en' }, key);
     await demo.removeParcelAlert(id, 'demo:1');
+    await demo.sendLinkFeedback(id, { id: crypto.randomUUID(), answer: 'right', asked: 'page', app: 'web', locale: 'en' }, key);
     await demo.forgetParcelLink(id, key);
     expect(await demo.readParcelLink(id, { key })).toBe('unavailable');
     // The demo's deliveries share through the same browser-only links; a build with an API has no such stand-in.

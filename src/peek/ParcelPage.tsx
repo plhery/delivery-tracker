@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon, ParcelIllustration } from '../components/Icon';
 import { ParcelMapSheet, useParcelRoute } from '../components/ParcelMap';
@@ -23,12 +23,15 @@ import { currentEvent, isFinal, sortEventsDesc } from '../lib/stages';
 import { useTabTitle } from '../lib/tabTitle';
 import { deviceAlert } from './alerts';
 import { linkNote, noteLink, useLinkNote } from './deviceNotes';
-import { collapseGiftRows, isWrappedGift, maskedNumber, parcelLinkErrorKey, type ParcelLinkView } from './links';
+import { collapseGiftRows, isWrappedGift, maskedNumber, parcelLinkErrorKey, sendLinkFeedback, type ParcelLinkView } from './links';
 import { Actions, type PingAction } from './parcel/Actions';
 import { AlertsSheet } from './parcel/AlertsSheet';
 import { deliveryCalendar, deliverySlot, downloadCalendar } from './parcel/calendar';
 import { CardBell, LinkCard } from './parcel/Card';
 import { carrierLinks, FreshnessLine, Notes, NumberSection, ShipmentFacts } from './parcel/Details';
+import { FeedbackOverlays, FeedbackQuestion, useParcelFeedback } from './parcel/Feedback';
+import { scanIdentity } from './parcel/feedbackModel';
+import { linkFeedbackNotes } from './parcel/feedbackNotes';
 import { ForgetDialog, ForgetFooter, forgetParcel } from './parcel/Forget';
 import { GiftNote, GiftSurprise } from './parcel/Gift';
 import { Glyph } from './parcel/glyphs';
@@ -414,6 +417,19 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const brand = carrierBrand(displayed).style;
   const summary = [headline, detail].filter(Boolean).join(' · ');
 
+  // The reader is asked whether the page is right, or who carries a parcel no carrier was found for. Not the one a
+  // gift is for, who is shown little of it; not about the sample; and not before a first answer is on the page.
+  const feedbackNotes = useMemo(() => linkFeedbackNotes(linkId), [linkId]);
+  const feedback = useParcelFeedback({
+    kind: sample || present || checking || offline || afterwards ? null
+      : !carrierKnown ? 'unknown' : automatic || moving ? 'found' : null,
+    scan: scanIdentity(parcel),
+    carrier: displayed.name,
+    busy: !!word || sharing || alerting || keepSheet || !!forgetting || mapOpen,
+    notes: feedbackNotes,
+    send: (answer) => sendLinkFeedback(linkId, answer, key),
+  });
+
   const teaser = abroad && !afterwards && !present && visitor && <PassportTeaser parcel={parcel} origin={abroad} onStart={signInToKeep} />;
   // The sample's way back to the landing: at its own address for someone signed in, whose `/` is their deliveries.
   const landingPath = signedIn ? LANDING_PATH : '/';
@@ -462,12 +478,13 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
         {!beside && teaser}
         {/* One invitation at a time: the passport's, on the day a parcel from abroad arrives, else the account's. */}
         {visitorCanKeep && !teaser && <AccountRow carrier={displayed} onSignIn={signInToKeep} />}
-        {!wrapped && <NumberSection view={view} links={links} />}
+        {!wrapped && <NumberSection view={view} links={links} onVisit={(link) => feedback.visited(link.name)} />}
         <ShipmentFacts parcel={parcel} stage={stage} />
         {carrierKnown && (automatic || moving) && <section className="peekp-journal">
           <TrackingJournal events={wrapped ? collapseGiftRows(parcel.events) : parcel.events} syncing={checking} fold />
         </section>}
         {!final && freshness.kind !== 'live' && <FreshnessLine freshness={freshness} busy={refreshing} onCheck={() => void check()} />}
+        <FeedbackQuestion feedback={feedback} />
         {/* The sample ends on the way to a parcel of one's own; any other page on the device's other parcels. */}
         {sample ? !beside && invitation
           : <OtherParcels linkId={linkId} visitor={visitor} over={afterwards} onTrackAnother={onHome} onSignIn={signInToKeep} />}
@@ -499,5 +516,6 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
       onSignIn={session.account === 'visitor' && !sample ? signInToKeep : undefined} onClose={() => setAlerting(false)} />}
     {forgetting && <ForgetDialog arrived={forgetting === 'arrived' ? { forgetLine } : undefined} onForget={forget} onCancel={() => setForgetting(false)} />}
     {mapOpen && route && <ParcelMapSheet route={route} stage={stage ?? undefined} brand={brand} onClose={() => setMapOpen(false)} />}
+    <FeedbackOverlays feedback={feedback} />
   </Shell>;
 }

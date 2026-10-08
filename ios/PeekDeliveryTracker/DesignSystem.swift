@@ -273,11 +273,19 @@ struct NoticeBanner: View {
 }
 
 struct InlineToast: View {
+    /// One of the answers a toast that asks offers.
+    struct Answer {
+        let title: String
+        let action: () -> Void
+    }
+
     let text: String
     let button: String?
     let symbol: String
     let tint: Color
     let action: (() -> Void)?
+    /// A question's answers, side by side where the one button stands.
+    let answers: [Answer]
 
     init(
         text: String,
@@ -291,24 +299,54 @@ struct InlineToast: View {
         self.symbol = symbol
         self.tint = tint
         self.action = action
+        answers = []
+    }
+
+    /// A toast that asks: each answer is a button of its own.
+    init(text: String, symbol: String, tint: Color, answers: [Answer]) {
+        self.text = text
+        button = nil
+        self.symbol = symbol
+        self.tint = tint
+        action = nil
+        self.answers = answers
     }
 
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: symbol).foregroundStyle(tint)
-            Text(text).font(.subheadline.weight(.medium)).lineLimit(2)
+            Text(text).font(.subheadline.weight(.medium)).lineLimit(answers.isEmpty ? 2 : 3)
             Spacer(minLength: 4)
             if let button, let action {
                 Button(button, action: action)
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(tint)
             }
+            if !answers.isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(Array(answers.enumerated()), id: \.offset) { _, answer in
+                        Button(action: answer.action) {
+                            Text(answer.title)
+                                .font(.subheadline.weight(.semibold))
+                                .padding(.horizontal, 14)
+                                .frame(minHeight: 36)
+                                .background(Brand.ink.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .frame(minHeight: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(TactileButtonStyle(scale: 0.96))
+                    }
+                }
+                .fixedSize()
+            }
         }
-        .padding(.horizontal, 17)
+        .padding(.leading, 17)
+        .padding(.trailing, answers.isEmpty ? 17 : 9)
         .frame(minHeight: 54)
         .foregroundStyle(.primary)
         .glassSurface(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.13), radius: 8, y: 4)
-        .accessibilityElement(children: .combine)
+        // One button is the toast's own action; two are reached one by one.
+        .accessibilityElement(children: answers.isEmpty ? .combine : .contain)
     }
 }

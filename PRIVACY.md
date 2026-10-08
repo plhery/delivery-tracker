@@ -30,6 +30,10 @@ sell personal data, serve advertising, or use advertising analytics.
   when it was sent and whether sending worked.
 - The links you make to share a parcel or to follow one without an account, and
   what each link shows.
+- What you answer when a parcel's page asks whether it is right: the answer,
+  the reasons you pick and anything you write, with the parcel's tracking
+  number and what the service showed for it. No account, link or device is
+  stored with an answer.
 - When your apps last loaded your parcels, to within five minutes. It decides
   how often the service asks carriers about them.
 - A nickname, sharing choices, invitations and connections when you turn on
@@ -242,6 +246,24 @@ where it is before it arrives.
 Your browser is asked for notifications, and creates its push subscription,
 only when you choose "Turn on". Adding a delivery to your calendar makes a
 calendar file in the browser; nothing is sent for it.
+
+## Answering whether a parcel is right
+
+A parcel's page can ask whether what it shows is right, or which carrier has a
+parcel no carrier was found for. Answering is optional. An answer is stored
+with the parcel's tracking number, its carrier, the status and latest scans the
+service held at that moment, the app and language you answered in, and what you
+write: a note, or a carrier's name and its tracking page. It is used to find
+and fix what Peek shows wrongly.
+
+An answer is stored without your account, the link you opened or anything
+about your device. It therefore cannot be found from an account, is not part of
+an export, and is not removed when the parcel or the account is deleted. Please
+leave personal details out of a note. Every answer is deleted 90 days after it
+was given. A gift's recipient is not asked.
+
+Your browser, or the iPhone app, remembers that you answered, so the question
+is not asked again about the same update. That stays on the device.
 
 ## Friends is optional
 

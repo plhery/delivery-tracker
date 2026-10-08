@@ -1,10 +1,12 @@
 import { useSyncExternalStore } from 'react';
 import { cleanLinkText, isParcelLinkId, MAX_GIFT_FROM_LENGTH, MAX_GIFT_NOTE_LENGTH, PARCEL_ALERT_PRESETS, type ParcelAlertPreset } from './linkModel';
+import { feedbackMemory, type FeedbackMemory } from './parcel/feedbackModel';
 import { SAMPLE_LINK_ID } from './sample';
 
 /**
  * What this browser keeps about a parcel link besides the parcel itself: the
- * words its sharer sends along with it, and the alert this browser turned on.
+ * words its sharer sends along with it, the alert this browser turned on, and
+ * that it answered whether the parcel is shown right.
  * Gift drafts are saved with the link when shared. Public parcel names can
  * travel after `#`; alerts are known by the browser's push address.
  */
@@ -31,6 +33,7 @@ export interface DeviceAlert {
 export interface LinkNote {
   share?: ShareWords;
   alert?: DeviceAlert;
+  feedback?: FeedbackMemory;
 }
 
 type Notes = Record<string, LinkNote>;
@@ -49,7 +52,7 @@ function stored(): string | null {
 
 function note(value: unknown): LinkNote | null {
   if (!value || typeof value !== 'object') return null;
-  const { share, alert } = value as { share?: Partial<ShareWords>; alert?: Partial<DeviceAlert> };
+  const { share, alert, feedback } = value as { share?: Partial<ShareWords>; alert?: Partial<DeviceAlert>; feedback?: unknown };
   const kept: LinkNote = {};
   if (share && typeof share === 'object') {
     kept.share = {
@@ -62,7 +65,9 @@ function note(value: unknown): LinkNote | null {
     && PARCEL_ALERT_PRESETS.includes(alert.preset as ParcelAlertPreset)) {
     kept.alert = { preset: alert.preset as ParcelAlertPreset, endpoint: alert.endpoint };
   }
-  return kept.share || kept.alert ? kept : null;
+  const answered = feedbackMemory(feedback);
+  if (answered) kept.feedback = answered;
+  return kept.share || kept.alert || kept.feedback ? kept : null;
 }
 
 function read(): Notes {
@@ -120,12 +125,13 @@ export function useLinkNote(id: string | null): LinkNote {
 }
 
 /** Changes what this browser keeps about a link. A part set to null is dropped; the newest link is kept longest. */
-export function noteLink(id: string, changes: { share?: ShareWords | null; alert?: DeviceAlert | null }): void {
+export function noteLink(id: string, changes: { share?: ShareWords | null; alert?: DeviceAlert | null; feedback?: FeedbackMemory | null }): void {
   if (!noted(id)) return;
   const { [id]: existing, ...others } = read();
   const next = note({
     share: changes.share === undefined ? existing?.share : changes.share ?? undefined,
     alert: changes.alert === undefined ? existing?.alert : changes.alert ?? undefined,
+    feedback: changes.feedback === undefined ? existing?.feedback : changes.feedback ?? undefined,
   });
   write(next ? { ...others, [id]: next } : others);
 }

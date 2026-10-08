@@ -48,6 +48,7 @@ interface PrometheusRuntime {
   parcelAlertSetTotal: Counter<'outcome'>;
   parcelAlertRemovedTotal: Counter<'reason'>;
   parcelAlertSentTotal: Counter<'outcome'>;
+  parcelFeedbackTotal: Counter<'answer' | 'via' | 'app' | 'outcome'>;
   deliveryEmailTotal: Counter<'outcome' | 'reason'>;
   providerInputTotal: Counter<'provider' | 'step'>;
   checksumRejectionTotal: Counter<'carrier' | 'rule'>;
@@ -170,6 +171,12 @@ function createRuntime(): PrometheusRuntime {
       name: 'parcel_alert_sent_total',
       help: 'Batches of new scans handled for a parcel link alert by outcome (sent, skipped, failed, expired).',
       labelNames: ['outcome'] as const,
+      registers: [registry],
+    }),
+    parcelFeedbackTotal: new Counter({
+      name: 'parcel_feedback_total',
+      help: 'What readers said of a parcel by answer (right, wrong, found_elsewhere), way in (account, link), app (web, ios) and outcome (stored, replaced, full, closed).',
+      labelNames: ['answer', 'via', 'app', 'outcome'] as const,
       registers: [registry],
     }),
     deliveryEmailTotal: new Counter({
@@ -344,6 +351,16 @@ export type ParcelAlertOutcome = 'added' | 'updated' | 'full' | 'finished' | 'st
 
 export function recordParcelAlertSet(outcome: ParcelAlertOutcome): void {
   count(runtime.parcelAlertSetTotal, 'parcel_alert_set_total', { outcome });
+}
+
+/** A reader's answer about a parcel: kept, kept in place of its first words, or refused. */
+export function recordParcelFeedback(
+  answer: 'right' | 'wrong' | 'found_elsewhere',
+  via: 'account' | 'link',
+  app: 'web' | 'ios',
+  outcome: 'stored' | 'replaced' | 'full' | 'closed',
+): void {
+  count(runtime.parcelFeedbackTotal, 'parcel_feedback_total', { answer, via, app, outcome });
 }
 
 /**

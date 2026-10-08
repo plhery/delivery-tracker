@@ -5563,6 +5563,22 @@ export interface ApiDeleteParcelAlertRequest {
   "endpoint": string;
 }
 
+export type ApiParcelFeedbackAnswer = "right" | "wrong" | "found_elsewhere";
+
+export type ApiParcelFeedbackReason = "arrived" | "status" | "steps" | "time_place" | "carrier" | "other";
+
+export interface ApiParcelFeedbackRequest {
+  "id": string;
+  "answer": ApiParcelFeedbackAnswer;
+  "reasons"?: Array<ApiParcelFeedbackReason>;
+  "note"?: string;
+  "carrierName"?: string;
+  "trackingPage"?: string;
+  "asked": "page" | "back";
+  "app": "web" | "ios";
+  "locale": ApiNativePushLocale;
+}
+
 export interface ApiParcelShare {
   "id": string;
   "showNumber": boolean;

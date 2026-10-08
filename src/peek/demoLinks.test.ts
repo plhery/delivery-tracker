@@ -118,6 +118,14 @@ describe('the device demo backend', () => {
     await expect(links.detectCarrierPublic('1234567899', cancelled)).rejects.toMatchObject({ name: 'AbortError' });
   });
 
+  it('takes what a reader says of a parcel and keeps none of it', async () => {
+    const { links } = demo();
+    const { id, key } = await links.lookupParcel({ trackingNumber: '1234567899' });
+    const before = localStorage.getItem(DEMO_LINKS_STORAGE_KEY);
+    await expect(links.sendFeedback(id, { id: crypto.randomUUID(), answer: 'wrong', note: 'A note', asked: 'page', app: 'web', locale: 'en' }, key)).resolves.toBeUndefined();
+    expect(localStorage.getItem(DEMO_LINKS_STORAGE_KEY)).toBe(before);
+  });
+
   it('detects the carrier from the number alone, without a network', async () => {
     const { links } = demo();
     expect(await links.detectCarrierPublic('99 34 111111 22222222')).toEqual({ trackingNumber: '993411111122222222', carrier: 'swiss-post' });

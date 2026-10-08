@@ -146,6 +146,7 @@ describe('a lease lost with the parcel intact', () => {
     vi.spyOn(client, 'archiveDeliveredBefore').mockResolvedValue(0);
     vi.spyOn(client, 'maintainSyncAudit').mockResolvedValue({ abandoned: 0, purged: 0 });
     vi.spyOn(client, 'forgetExpiredParcelLinks').mockResolvedValue({ links: 0, packages: 0, stopped: 0, alerts: 0 });
+    vi.spyOn(client, 'forgetOldParcelFeedback').mockResolvedValue(0);
     vi.spyOn(client, 'publicLookupUsageSummary').mockResolvedValue({ buckets: 0, p50: 0, p90: 0, max: 0, detection: { buckets: 0, p50: 0, p90: 0, max: 0 } });
     finish.mockRejectedValue(new SyncJobLeaseLost());
     await run();

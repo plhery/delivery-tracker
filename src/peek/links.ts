@@ -4,6 +4,7 @@ import type {
   ApiClaimParcelsResponse,
   ApiDeleteParcelAlertRequest,
   ApiParcelAlertRequest,
+  ApiParcelFeedbackRequest,
   ApiParcelShareResponse,
   ApiPublicLookupRequest,
   ApiPublicLookupResponse,
@@ -207,6 +208,12 @@ export function createApiLinks(request: typeof fetch = (input, init) => fetch(in
       const response = await write('DELETE', `/api/public/parcels/${id}/alerts`, body);
       if (!response.ok) throw await failure(response);
     },
+
+    async sendFeedback(id, feedback, key) {
+      if (!isParcelLinkId(id)) throw new ParcelLinkError('unavailable');
+      const response = await write('POST', `/api/public/parcels/${id}/feedback`, feedback, undefined, key);
+      if (!response.ok) throw await failure(response);
+    },
   };
 }
 
@@ -311,6 +318,32 @@ export function setParcelAlert(id: string, alert: ParcelAlertInput, key?: string
 /** Turns a browser's alerts off for a link. */
 export function removeParcelAlert(id: string, endpoint: string): Promise<void> {
   return id === SAMPLE_LINK_ID ? Promise.resolve() : client.removeParcelAlert(id, endpoint);
+}
+
+/** Says whether a link's parcel is shown right, or who carries it. The sample's answer goes nowhere. */
+export function sendLinkFeedback(id: string, feedback: ApiParcelFeedbackRequest, key?: string | null): Promise<void> {
+  return id === SAMPLE_LINK_ID ? Promise.resolve() : client.sendFeedback(id, feedback, key);
+}
+
+/**
+ * The same answer about one of the signed-in account's parcels. Always the
+ * API; it is kept without the account.
+ */
+export function createAccountFeedback(auth: ApiAuth): (packageId: string, feedback: ApiParcelFeedbackRequest) => Promise<void> {
+  return async (packageId, feedback) => {
+    let response: Response;
+    try {
+      response = await authenticatedFetch(`/api/packages/${encodeURIComponent(packageId)}/feedback`, auth, {
+        method: 'POST', body: JSON.stringify(feedback),
+      });
+    } catch (error) {
+      if (error instanceof TypeError || (error instanceof DOMException && error.name === 'TimeoutError')) {
+        throw new ParcelLinkError('offline', { cause: error });
+      }
+      throw error;
+    }
+    if (!response.ok) throw await failure(response);
+  };
 }
 
 /**

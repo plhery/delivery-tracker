@@ -342,6 +342,21 @@ export class SyncJobWorker {
             trigger: kind,
           });
         }
+        try {
+          // What readers said of a parcel is deleted 90 days after they said it.
+          const forgotten = await this.service.client.forgetOldParcelFeedback();
+          if (forgotten > 0) logOperationalEvent('parcel_feedback_forgotten', { answers: forgotten });
+        } catch (maintenanceError) {
+          logOperationalEvent('parcel_feedback_maintenance_failed', {
+            error_type: errorType(maintenanceError),
+          }, 'error');
+          captureOperationalError(maintenanceError, {
+            component: 'parcel-feedback',
+            operation: 'maintenance',
+            jobId,
+            trigger: kind,
+          });
+        }
         this.state.lastScheduledSync = Date.now() / 1_000;
         this.state.lastAutoArchived = archived;
       } else {

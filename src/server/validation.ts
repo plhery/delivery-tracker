@@ -1,5 +1,11 @@
 import { AMAZON_ACCOUNT_MESSAGE, isAmazonTrackingNumber, requiresAmazonAccount } from '../lib/amazon';
-import { CARRIER_IDS, type ApiGiftWords, type ApiParcelAlertPreset } from '../generated/apiContract';
+import {
+  CARRIER_IDS,
+  type ApiGiftWords,
+  type ApiParcelAlertPreset,
+  type ApiParcelFeedbackAnswer,
+  type ApiParcelFeedbackReason,
+} from '../generated/apiContract';
 import { validTrackingNumber } from '../lib/carriers';
 import { ALERT_PRESET_STAGES, ALL_NOTIFICATION_STAGES } from '../lib/notificationPresets';
 import { createECDH } from 'node:crypto';
@@ -457,6 +463,64 @@ export function notificationPreferencesResponse(row: JsonObject, emailAvailable:
 }
 
 /** What to change about one parcel's notifications and delivery email: one of them, or both. */
+const FEEDBACK_ANSWERS: readonly ApiParcelFeedbackAnswer[] = ['right', 'wrong', 'found_elsewhere'];
+const FEEDBACK_REASONS: readonly ApiParcelFeedbackReason[] = ['arrived', 'status', 'steps', 'time_place', 'carrier', 'other'];
+
+export interface ParcelFeedbackValues {
+  id: string;
+  answer: ApiParcelFeedbackAnswer;
+  reasons: ApiParcelFeedbackReason[];
+  note: string | null;
+  carrierName: string | null;
+  trackingPage: string | null;
+  asked: 'page' | 'back';
+  app: 'web' | 'ios';
+  locale: NativePushLocale;
+}
+
+/** Words a reader typed: trimmed, without control characters, null when nothing is left. */
+function feedbackWords(value: unknown, limit: number, label: string): string | null {
+  if (value == null) return null;
+  if (typeof value !== 'string') throw new HttpError(400, `${label} must be text`);
+  const words = value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim();
+  if (codePointLength(words) > limit) throw new HttpError(400, `${label} is limited to ${limit} characters`);
+  return words || null;
+}
+
+/**
+ * What a reader says of a parcel. Each answer carries only its own words:
+ * `right` none, `wrong` reasons or a note, `found_elsewhere` a carrier or the
+ * address of its tracking page.
+ */
+export function parcelFeedbackValues(payload: JsonObject): ParcelFeedbackValues {
+  if (typeof payload.id !== 'string') throw new HttpError(400, 'Send a valid feedback id');
+  const id = parseUuid(payload.id, 'feedback id');
+  const answer = FEEDBACK_ANSWERS.find((known) => known === payload.answer);
+  if (!answer) throw new HttpError(400, 'Choose a supported answer');
+  const given = payload.reasons ?? [];
+  if (!Array.isArray(given) || given.length > FEEDBACK_REASONS.length
+      || given.some((reason) => !FEEDBACK_REASONS.some((known) => known === reason))
+      || new Set(given).size !== given.length) {
+    throw new HttpError(400, 'Choose supported reasons');
+  }
+  const reasons = given as ApiParcelFeedbackReason[];
+  const note = feedbackWords(payload.note, 1_000, 'A note');
+  const carrierName = feedbackWords(payload.carrierName, 120, 'A carrier name');
+  const trackingPage = feedbackWords(payload.trackingPage, 500, 'A tracking page');
+  if (payload.asked !== 'page' && payload.asked !== 'back') throw new HttpError(400, 'Say where the question was asked');
+  if (payload.app !== 'web' && payload.app !== 'ios') throw new HttpError(400, 'Say which app is asking');
+  const said = reasons.length > 0 || note !== null;
+  const found = carrierName !== null || trackingPage !== null;
+  if (answer === 'right' ? said || found : answer === 'wrong' ? !said || found : said || !found) {
+    throw new HttpError(400, answer === 'right' ? 'This answer takes no words'
+      : answer === 'wrong' ? 'Say what is off' : 'Name the carrier or its tracking page');
+  }
+  return {
+    id, answer, reasons, note, carrierName, trackingPage,
+    asked: payload.asked, app: payload.app, locale: nativePushLocale(payload.locale),
+  };
+}
+
 export function packageNotificationValues(payload: JsonObject): { muted?: boolean; emailMuted?: boolean } {
   const { muted, emailMuted } = payload;
   if (muted !== undefined && typeof muted !== 'boolean') throw new HttpError(400, 'Muted must be true or false');

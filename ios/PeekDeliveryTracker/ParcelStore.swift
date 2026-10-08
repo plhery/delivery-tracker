@@ -143,6 +143,8 @@ final class ParcelStore: ObservableObject {
             cache.delete(userID: cacheOwnerID)
             // The words its links carried leave the device with the account.
             shareNotes.forgetAll()
+            // So does what it answered about its parcels.
+            ParcelFeedbackMemory().forgetAll()
             UIApplication.shared.unregisterForRemoteNotifications()
             AppDelegate.clearDeviceToken()
             UserDefaults.standard.set(true, forKey: notificationOptOutKey)
@@ -432,6 +434,28 @@ final class ParcelStore: ObservableObject {
                 try session.checkGeneration(generation)
             }
         )
+    }
+
+    /// How a parcel's page sends what its reader says of it. The demo's pages ask nothing; an
+    /// answer for one of its parcels would go nowhere.
+    func feedbackClient(for parcel: Parcel) -> ParcelFeedbackClient {
+        let id = parcel.id
+        return ParcelFeedbackClient { [self] feedback in
+            if isDemo { return }
+            if isGuest { try await device.sendFeedback(feedback, id: id); return }
+            let generation = session.generation
+            try await api.sendFeedback(id: id, feedback)
+            try session.checkGeneration(generation)
+        }
+    }
+
+    /// The same for a parcel opened through a link, which is read with or without an account.
+    func feedbackClient(forLink linkID: String) -> ParcelFeedbackClient {
+        ParcelFeedbackClient { [self] feedback in
+            // A build without a server reads no link: what it shows is made up.
+            guard tracksWithoutAccount else { return }
+            try await device.sendFeedback(feedback, linkID: linkID)
+        }
     }
 
     func rename(_ parcel: Parcel, label: String) async throws {

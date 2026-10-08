@@ -1005,6 +1005,37 @@ struct DeleteParcelAlertRequest: Codable, Equatable, Hashable, Sendable {
     var endpoint: String
 }
 
+enum ParcelFeedbackAnswer: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case right
+    case wrong
+    case foundElsewhere = "found_elsewhere"
+
+    var id: String { rawValue }
+}
+
+enum ParcelFeedbackReason: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case arrived
+    case status
+    case steps
+    case timePlace = "time_place"
+    case carrier
+    case other
+
+    var id: String { rawValue }
+}
+
+struct ParcelFeedbackRequest: Codable, Equatable, Hashable, Sendable, Identifiable {
+    var id: UUID
+    var answer: ParcelFeedbackAnswer
+    var reasons: [ParcelFeedbackReason]? = nil
+    var note: String? = nil
+    var carrierName: String? = nil
+    var trackingPage: String? = nil
+    var asked: ParcelFeedbackRequestAsked
+    var app: ParcelFeedbackRequestApp
+    var locale: NativePushLocale
+}
+
 struct ParcelShare: Codable, Equatable, Hashable, Sendable, Identifiable {
     var id: String
     var showNumber: Bool
@@ -1178,6 +1209,20 @@ enum ClaimParcelResultOutcome: String, Codable, CaseIterable, Hashable, Sendable
     case already
     case quota
     case unavailable
+
+    var id: String { rawValue }
+}
+
+enum ParcelFeedbackRequestAsked: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case page
+    case back
+
+    var id: String { rawValue }
+}
+
+enum ParcelFeedbackRequestApp: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case web
+    case ios
 
     var id: String { rawValue }
 }

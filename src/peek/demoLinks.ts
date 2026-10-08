@@ -334,6 +334,9 @@ export function createDemoLinks(
       save({ ...links, [id]: { ...link, alerts: link.alerts.filter((alert) => alert.endpoint !== endpoint) } });
     },
 
+    // The demo's parcels are invented: what is said of them stays in this browser.
+    async sendFeedback() {},
+
     accountShare: {
       async current(parcelId) {
         const live = shared(load(), parcelId);

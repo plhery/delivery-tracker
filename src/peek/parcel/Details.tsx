@@ -47,7 +47,12 @@ export function carrierLinks(view: ParcelLinkView, locale: string): ParcelTracki
  * The tracking number with a way to copy it, and the carrier's own page under it: each carrier's under its own number
  * when the parcel was handed from one to another. A viewer sees the number's two ends.
  */
-export function NumberSection({ view, links }: { view: ParcelLinkView; links: readonly ParcelTrackingLink[] }) {
+export function NumberSection({ view, links, onVisit }: {
+  view: ParcelLinkView;
+  links: readonly ParcelTrackingLink[];
+  /** The reader leaves for a carrier's own page. */
+  onVisit?: (link: ParcelTrackingLink) => void;
+}) {
   const { t, locale } = useI18n();
   const { parcel, numberHint } = view;
   const [copied, setCopied] = useState<string | null>(null);
@@ -73,7 +78,7 @@ export function NumberSection({ view, links }: { view: ParcelLinkView; links: re
     const role = own || link.role === 'active' ? null : t(link.role === 'waiting' ? 'detail.sourceWaiting' : 'detail.sourceHistory');
     const website = t('detail.carrierWebsite', { carrier: link.name });
     return <a key={`${link.role}:${link.url}`} className="peekp-number__link" href={link.url} target="_blank" rel="noopener noreferrer"
-      aria-label={role ? `${website} — ${role}` : undefined} onClick={() => trackAction('parcel-carrier-link')}>
+      aria-label={role ? `${website} — ${role}` : undefined} onClick={() => { trackAction('parcel-carrier-link'); onVisit?.(link); }}>
       <span>{website}</span><Icon name="arrow" />{role && <small>{role}</small>}
     </a>;
   });

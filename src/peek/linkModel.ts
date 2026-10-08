@@ -4,6 +4,7 @@ import type {
   ApiClaimParcelResult,
   ApiParcelAlertPreset,
   ApiParcelAlerts,
+  ApiParcelFeedbackRequest,
   ApiParcelLink,
   ApiParcelNumberHint,
   ApiParcelShare,
@@ -104,6 +105,8 @@ export interface ParcelLinksClient {
   setParcelAlert(id: string, alert: ParcelAlertInput, key?: string | null): Promise<void>;
   /** Turns a browser's alerts off. Nothing is said about whether there were any. */
   removeParcelAlert(id: string, endpoint: string): Promise<void>;
+  /** Says whether the parcel is shown right, or who carries it. Anyone with the link can; the demo sends nothing. */
+  sendFeedback(id: string, feedback: ApiParcelFeedbackRequest, key?: string | null): Promise<void>;
 }
 
 export interface ParcelLinkReadOptions {

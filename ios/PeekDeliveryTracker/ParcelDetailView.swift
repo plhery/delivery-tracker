@@ -29,6 +29,7 @@ struct ParcelDetailView: View {
     @State private var deliveryMark: CGRect?
 
     @ObservedObject private var catalog = CarrierCatalog.shared
+    @StateObject private var feedback = ParcelFeedbackModel()
 
     var body: some View {
         ZStack {
@@ -37,10 +38,12 @@ struct ParcelDetailView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         liveParcelPass(parcel)
-                        if catalog.tracksAutomatically(parcel.activeTrackingCarrier) || parcel.hasCarrierUpdate {
+                        if showsHistory(parcel) {
                             ParcelJournal(parcel: parcel, tint: identity(parcel).ink)
                         }
                         syncStatus(parcel, tint: identity(parcel).ink)
+                        // The last thing the page says of the parcel: is it right?
+                        if feedback.standing != nil { ParcelFeedbackQuestionView(model: feedback) }
                     }
                     .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: emailOffer)
                     .padding(18)
@@ -50,6 +53,10 @@ struct ParcelDetailView: View {
                     .padding(.bottom, 36)
                 }
                 .scrollIndicators(.hidden)
+                #if DEBUG
+                // The question stands where the page ends: a look at it starts there.
+                .defaultScrollAnchor(ParcelFeedbackPreview.variant == nil ? nil : .bottom)
+                #endif
             } else {
                 ContentUnavailableView(
                     localizer.text("common.parcel"),
@@ -57,6 +64,11 @@ struct ParcelDetailView: View {
                     description: Text(localizer.text("native.parcelMissing"))
                 )
             }
+        }
+        .parcelFeedback(feedback, busy: showingShare || showingAlerts || showingMap || carrierEditor != nil
+            || showingTitleEditor || showingDeleteConfirmation)
+        .onChange(of: parcel.flatMap(feedbackPage), initial: true) { _, page in
+            feedback.show(page, through: parcel.map { store.feedbackClient(for: $0) })
         }
         .navigationTitle(localizer.text("detail.label"))
         .navigationBarTitleDisplayMode(.inline)
@@ -172,6 +184,25 @@ struct ParcelDetailView: View {
     }
 
     private var parcel: Parcel? { store.parcels.first { $0.id == parcelID || $0.carrierData?.originalPackageID == parcelID } }
+
+    /// The page shows what the carrier answered: a carrier is being asked, or one has answered.
+    private func showsHistory(_ parcel: Parcel) -> Bool {
+        catalog.tracksAutomatically(parcel.activeTrackingCarrier) || parcel.hasCarrierUpdate
+    }
+
+    /// What the question at the end of the page is asked about, or nil while it asks nothing.
+    private func feedbackPage(_ parcel: Parcel) -> ParcelFeedbackModel.Page? {
+        // The demo's stories are made up: nothing is asked of them.
+        var madeUp = store.isDemo
+        #if DEBUG
+        if ParcelFeedbackPreview.variant != nil { madeUp = false }
+        #endif
+        return ParcelFeedbackModel.Page(
+            parcel: parcel, subject: .parcel(parcel.id), showsHistory: showsHistory(parcel), madeUp: madeUp,
+            carrier: catalog.info(for: parcel.displayedCarrier, language: localizer.language).displayName,
+            language: localizer.language
+        )
+    }
 
     /// The card, from its top left corner: where its map is drawn from.
     private static let cardSpace = "parcel-card"
@@ -545,7 +576,10 @@ struct ParcelDetailView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(tint)
-            .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("parcel-carrier-link") })
+            .simultaneousGesture(TapGesture().onEnded {
+                DeliveryAnalytics.shared.action("parcel-carrier-link")
+                feedback.visited(link.name)
+            })
         }
     }
 

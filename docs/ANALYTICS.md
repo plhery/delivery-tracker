@@ -47,6 +47,8 @@ are virtual names, never real URLs.
   link shows, stop sharing, turn a browser's alerts on or off, add the delivery to a
   calendar, sign in to keep, keep in the account, open the parcel already followed, forget.
   Sharing a parcel from an account counts under the same names.
+- **Parcel feedback**: an answer that a parcel's page is right or wrong, or naming the
+  carrier of a parcel none was found for. Never the reasons, the words or the parcel.
 - **Discovery**: search used (never the query), filters, sorting.
 - **Friends**: profile save, invitation create/revoke/accept/share, remove, disable.
 - **Settings**: language, appearance, notifications, widgets, export,

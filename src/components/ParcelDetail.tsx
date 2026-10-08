@@ -51,7 +51,10 @@ import { pickupPoint } from '../lib/pickupPoint';
 import type { CardOrigin } from '../lib/cardTransition';
 import { useRefreshAnimation } from '../lib/useRefreshAnimation';
 import type { ApiAuth } from '../lib/apiClient';
-import { createAccountShare, demoAccountShare } from '../peek/links';
+import { createAccountFeedback, createAccountShare, demoAccountShare } from '../peek/links';
+import { FeedbackOverlays, FeedbackQuestion, useParcelFeedback } from '../peek/parcel/Feedback';
+import { scanIdentity } from '../peek/parcel/feedbackModel';
+import { parcelFeedbackNotes } from '../peek/parcel/feedbackNotes';
 import { AccountShareSheet } from '../peek/parcel/ShareSheet';
 import { useDeliveryEmail, useNotificationPreferences } from '../store/notificationPreferences';
 import { EmailOffer } from './EmailOffer';
@@ -166,6 +169,20 @@ export function ParcelDetail({
   const shareClient = useMemo(() => apiAuth ? createAccountShare(apiAuth) : demoAccountShare, [apiAuth]);
   const canShare = !!shareClient && !parcel.archivedAt;
   const [sharing, setSharing] = useState(false);
+  // The reader is asked whether the page is right, or who carries a parcel no carrier was found for: not about an
+  // archived parcel, not before a first check, and not in the demo, whose parcels are stories.
+  const feedbackNotes = useMemo(() => parcelFeedbackNotes(parcel.id), [parcel.id]);
+  const sendFeedback = useMemo(() => apiAuth ? createAccountFeedback(apiAuth) : null, [apiAuth]);
+  const moving = parcelHasCarrierUpdate(parcel);
+  const feedback = useParcelFeedback({
+    kind: !sendFeedback || parcel.archivedAt || !parcel.lastSyncedAt ? null
+      : parcel.carrier === 'unknown' && !moving ? 'unknown' : automaticTracking || moving ? 'found' : null,
+    scan: scanIdentity(parcel),
+    carrier: displayedCarrier.name,
+    busy: sharing || alertsOpen || editingCarrier || confirmingDelete || mapOpen,
+    notes: feedbackNotes,
+    send: async (answer) => { await sendFeedback?.(parcel.id, answer); },
+  });
   const backButton = useRef<HTMLButtonElement>(null);
   const actionsMenu = useRef<HTMLDetailsElement>(null);
   const header = useRef<HTMLElement>(null);
@@ -335,7 +352,7 @@ export function ParcelDetail({
           key={`${link.role}:${link.url}`}
           className={`detail__carrier-link detail__carrier-link--${link.role}`}
           aria-label={role ? `${website} — ${role}` : undefined}
-          href={link.url} onClick={() => trackAction('parcel-carrier-link')}
+          href={link.url} onClick={() => { trackAction('parcel-carrier-link'); feedback.visited(link.name); }}
           target="_blank" rel="noopener noreferrer"
         >
           <span>{website}</span>
@@ -646,6 +663,8 @@ export function ParcelDetail({
         </div>
       </div>
 
+      <FeedbackQuestion feedback={feedback} />
+
       {parcel.archivedAt && (
         <footer className="detail__footer detail__footer--archived">
           <button
@@ -698,6 +717,8 @@ export function ParcelDetail({
       )}
 
       {sharing && shareClient && <AccountShareSheet parcel={parcel} client={shareClient} onClose={() => setSharing(false)} />}
+
+      <FeedbackOverlays feedback={feedback} />
 
       {alertsOpen && deliveryEmail && preferences && onSetEmailMuted && <ParcelAlertsSheet
         parcel={parcel}

@@ -64,6 +64,8 @@ struct DeviceParcelClient: Sendable {
     /// Changes what the link shows to others, or stops and resumes its sharing.
     var update: @Sendable (_ linkID: String, _ key: String, UpdateParcelLinkRequest) async throws -> PublicParcelResponse
     var detect: @Sendable (_ trackingNumber: String) async throws -> CarrierDetectionResponse
+    /// What a reader says of the parcel behind a link. The owner key goes along when this iPhone holds it.
+    var feedback: @Sendable (_ linkID: String, _ key: String?, ParcelFeedbackRequest) async throws -> Void = { _, _, _ in }
 
     static func api(configuration: AppConfiguration, transport: URLSession = .shared, verification: NativeVerification = .shared) -> DeviceParcelClient {
         @Sendable func send(_ path: String, method: String, key: String? = nil, body: Data? = nil) async throws -> (Data, HTTPURLResponse) {
@@ -128,6 +130,10 @@ struct DeviceParcelClient: Sendable {
                 let (data, response) = try await send("api/public/detect", method: "POST", body: body)
                 guard response.statusCode == 200 else { throw failure(data, response) }
                 return try decode(CarrierDetectionResponse.self, data)
+            },
+            feedback: { linkID, key, answer in
+                let (data, response) = try await send("api/public/parcels/\(linkID)/feedback", method: "POST", key: key, body: try JSONEncoder.deliveryTracker.encode(answer))
+                guard response.statusCode == 204 else { throw failure(data, response) }
             }
         )
     }
@@ -328,6 +334,18 @@ final class DeviceParcels {
         guard let client, let entry = entries.first(where: { $0.parcel.id == id }), let key = keys[entry.linkID] else { throw DeliveryAPIError.parcelMissing }
         let change = shared ? UpdateParcelLinkRequest(showNumber: showNumber, gift: gift, shared: true, giftWords: giftWords) : UpdateParcelLinkRequest(shared: false)
         return Self.share(try await client.update(entry.linkID, key, change).link)
+    }
+
+    /// What its reader says of a parcel this iPhone follows.
+    func sendFeedback(_ feedback: ParcelFeedbackRequest, id: UUID) async throws {
+        guard let entry = entries.first(where: { $0.parcel.id == id }) else { throw DeliveryAPIError.parcelMissing }
+        try await sendFeedback(feedback, linkID: entry.linkID)
+    }
+
+    /// The same of a parcel behind any link: someone else's goes without a key.
+    func sendFeedback(_ feedback: ParcelFeedbackRequest, linkID: String) async throws {
+        guard let client else { throw DeliveryAPIError.serviceFailed(503) }
+        try await client.feedback(linkID, keys[linkID], feedback)
     }
 
     private static func share(_ link: ParcelLink) -> ParcelShare? {

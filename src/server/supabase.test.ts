@@ -226,6 +226,21 @@ describe('one-off parcels and their links', () => {
     expect(request).toHaveBeenCalledTimes(3);
   });
 
+  it('keeps what a reader says of a parcel through a function, and deletes old answers through another', async () => {
+    const client = service();
+    const feedback = { id: '6f0e1d2c-3b4a-4c5d-8e9f-0a1b2c3d4e5f', tracking_number: 'TEST1234', answer: 'right' };
+    const request = vi.spyOn(client, 'request')
+      .mockResolvedValueOnce('stored').mockResolvedValueOnce('full').mockResolvedValueOnce({ stored: true })
+      .mockResolvedValueOnce(4).mockResolvedValueOnce(null);
+    await expect(client.recordParcelFeedback(feedback)).resolves.toBe('stored');
+    await expect(client.recordParcelFeedback(feedback)).resolves.toBe('full');
+    await expect(client.recordParcelFeedback(feedback)).rejects.toThrow('parcel feedback');
+    await expect(client.forgetOldParcelFeedback()).resolves.toBe(4);
+    await expect(client.forgetOldParcelFeedback()).resolves.toBe(0);
+    expect(request.mock.calls[0]).toEqual(['/rest/v1/rpc/record_parcel_feedback', { method: 'POST', body: { p_feedback: feedback } }]);
+    expect(request.mock.calls[3]).toEqual(['/rest/v1/rpc/forget_old_parcel_feedback', { method: 'POST', body: {} }]);
+  });
+
   it('changes a link and its alerts through functions, with ids, key hashes and endpoints in request bodies', async () => {
     const client = service();
     const hash = 'a'.repeat(64);
