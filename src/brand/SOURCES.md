@@ -50,6 +50,7 @@ and [`truck.json`](truck.json).
 | `inpost` | [inpost.pl](https://inpost.pl/) |
 | `intelcom` | [dragonflyshipping.ca](https://dragonflyshipping.ca/) (sampled from the site icon) |
 | `j-and-t` | [jtexpress.ph](https://www.jtexpress.ph/) |
+| `j-and-t-cargo` | [jtcargo.id](https://www.jtcargo.id/) |
 | `japan-post` | [post.japanpost.jp](https://www.post.japanpost.jp/) |
 | `jd-logistics` | [jingdonglogistics.com](https://www.jingdonglogistics.com/) |
 | `korea-post` | [koreapost.go.kr](https://postman.koreapost.go.kr/kpost/subIndex/4263.do) (Pantone 485 C equivalent) |
@@ -193,3 +194,4 @@ and [`truck.json`](truck.json).
 | `intelcom` | White bars rounding into a D on teal | [dragonflyshipping.ca](https://dragonflyshipping.ca/) |
 | `shipup` | Dark green S on lime | [shipup.co](https://www.shipup.co/) |
 | `heppner` | Green figure with its arms raised on blue | [heppner-group.com](https://www.heppner-group.com/) |
+| `j-and-t-cargo` | White slanted J&T, the J on its foot and the T trailing three speed lines, over a smaller CARGO on green | [jtcargo.id](https://www.jtcargo.id/) |
