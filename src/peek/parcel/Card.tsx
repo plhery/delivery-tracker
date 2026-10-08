@@ -3,7 +3,7 @@ import { AutoCarrierNotice } from '../../components/AutoCarrierNotice';
 import { CarrierMark } from '../../components/CarrierMark';
 import { Icon, PARCEL, ParcelIllustration } from '../../components/Icon';
 import type { Rect } from '../../components/map/WorldMap';
-import { useCoveredBox } from '../../components/ParcelMap';
+import { HANDOVER_ROOM, useCoveredBox } from '../../components/ParcelMap';
 import { ProgressTrack } from '../../components/ProgressTrack';
 import { useI18n } from '../../i18n';
 import { carrierBrand } from '../../lib/carrierBrand';
@@ -95,8 +95,8 @@ export function LinkCard({ parcel, stage, carrier, delivery, headline, name, det
   figure: 'map' | 'kraft' | 'hero' | 'none';
   /** What the label on Pip's side says: the number, masked for a viewer. */
   number: string | null;
-  /** The map across the top of the card, told what the card writes over it. */
-  map?: (covered: Rect | null) => ReactNode;
+  /** The map across the top of the card, told what the card writes over it and how much lower its route starts. */
+  map?: (covered: Rect | null, room: number) => ReactNode;
   /** A wrapped gift's way into the alerts, in the card's corner. */
   bell?: ReactNode;
   /** The reveal's settle beat: the newest step fills and the sparks twinkle. */
@@ -116,7 +116,7 @@ export function LinkCard({ parcel, stage, carrier, delivery, headline, name, det
   // The second mark stands over the map, which keeps clear of it.
   const [deliveryMark, deliveryMarkBox] = useCoveredBox<HTMLSpanElement>(card, figure === 'map' && !!handedOver);
   return <section ref={card} className={`peekp-card peekp-card--${figure}${carrier ? '' : ' peekp-card--neutral'}${present ? ` peekp-card--gift peekp-card--${gift}` : ''}`} aria-label={headline} data-settled={settled || undefined}>
-    {figure === 'map' && map?.(deliveryMarkBox)}
+    {figure === 'map' && map?.(deliveryMarkBox, handedOver ? HANDOVER_ROOM : 0)}
     <div className="peekp-card__top">
       {handedOver ? <span className="peekp-card__marks">
         <CarrierMark carrier={carrier} />

@@ -45,6 +45,13 @@ const pip = (stage: Stage | undefined, floor?: number): PipPlacing | null => {
   return mood && { mood, ceiling: 52, floor };
 };
 
+/**
+ * A second carrier's mark adds a line to the top of a card with a map. The card grows by two lines, and its route
+ * starts that much lower, so it keeps the room it has on any other card. Pip keeps his ceiling: beside the parcel's
+ * dot, he only keeps off the mark. The cards' CSS gives the same height.
+ */
+export const HANDOVER_ROOM = 40;
+
 /** On the opened map he keeps clear of what lies over it: the summary and the button that closes it. */
 const pipOnMap = (stage: Stage | undefined): PipPlacing | null => {
   const mood = pipMood(stage);
@@ -86,15 +93,15 @@ export function useCoveredBox<Mark extends HTMLElement>(frame: RefObject<HTMLEle
 
 /**
  * The route, drawn in the card's own ink across the top of the parcel's card, with Pip beside the parcel's place.
- * `covered` is what the card writes over the map below its top row.
+ * `covered` is what the card writes over the map below its top row; `room` is how much lower the route starts.
  */
-export function RouteEngraving({ route, stage, onOpen, covered }: { route: Route | null; stage?: Stage; onOpen: () => void; covered?: Rect | null }) {
+export function RouteEngraving({ route, stage, onOpen, covered, room = 0 }: { route: Route | null; stage?: Stage; onOpen: () => void; covered?: Rect | null; room?: number }) {
   const { languageTag } = useI18n();
   const [time] = useState(() => new Date());
   // The globe button beside the bell is the accessible way in; the drawing is a large tap target.
   return <div className="detail__engraving" onClick={onOpen} aria-hidden="true" data-card-picture="">
     {route && <WorldMap route={route} mode={defaultMode(route, stage)} time={time} look="tint" labels="ends" context={false} live={travelling(stage)} peek
-      pip={pip(stage)} languageTag={languageTag} insets={{ top: 40, right: 16, bottom: 44, left: 16 }} covered={covered} className="detail__engraving-map" />}
+      pip={pip(stage)} languageTag={languageTag} insets={{ top: 40 + room, right: 16, bottom: 44, left: 16 }} covered={covered} className="detail__engraving-map" />}
   </div>;
 }
 

@@ -334,7 +334,7 @@ test('keeps the card\u2019s map clear of a second carrier\u2019s mark', async ({
   await settled();
   const plain = {
     mark: await within(detail.locator('.detail__carrier .carrier-mark')), title: await within(detail.locator('.detail__title-row')),
-    height: (await hero.boundingBox())!.height, name: await within(name),
+    height: (await hero.boundingBox())!.height, map: await within(detail.locator('.detail__engraving')), name: await within(name),
   };
   await page.keyboard.press('Escape');
   await expect(detail).toHaveCount(0);
@@ -343,19 +343,21 @@ test('keeps the card\u2019s map clear of a second carrier\u2019s mark', async ({
   const marks = detail.getByRole('button', { name: 'Change carrier from GLS Germany. Delivery with Swiss Post' }).locator('.carrier-mark');
   await expect(marks).toHaveCount(2);
   await settled();
-  // The first mark and the name stand where they do on any card; the second mark is under the first.
+  // The first mark stands where it does on any card; the second mark is under the first.
   const [first, second] = [await within(marks.first()), await within(marks.last())];
   expect(Math.abs(first.x - plain.mark.x) + Math.abs(first.y - plain.mark.y)).toBeLessThan(.5);
   expect(second.x).toBeCloseTo(first.x, 0);
   expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
-  expect(second.y + second.height).toBeLessThan((await within(detail.locator('.detail__title-row'))).y);
-  expect((await within(detail.locator('.detail__title-row'))).y).toBeCloseTo(plain.title.y, 0);
-  // One line taller, for the words that say who delivers.
+  // The map is two lines taller, and the name two lines lower: the route starts below the marks, as large as on any card.
+  expect((await within(detail.locator('.detail__engraving'))).height - plain.map.height).toBeCloseTo(40, 0);
+  expect((await within(detail.locator('.detail__title-row'))).y - plain.title.y).toBeCloseTo(40, 0);
+  // One more line, for the words that say who delivers.
   await expect(hero.getByText('Delivery with Swiss Post')).toBeVisible();
-  expect((await hero.boundingBox())!.height - plain.height).toBeLessThan(32);
-  // On a phone the first name stood where the second mark now is: the route has moved beside the mark, with its name.
+  expect((await hero.boundingBox())!.height - plain.height).toBeLessThan(40 + 32);
+  // On a phone the first name stood where the second mark now is: the route has moved down with the room, name and all.
   if (isMobile) expect(apart(plain.name, second)).toBe(false);
   expect(apart(await within(name), second)).toBe(true);
+  expect(Math.abs((await within(name)).y - plain.name.y - 40)).toBeLessThan(1);
   const pip = hero.locator('[data-pip]');
   await expect(pip).toBeVisible();
   for (const dot of await hero.locator('.detail__engraving g[data-kind] circle').all()) expect(apart(await within(dot), second)).toBe(true);

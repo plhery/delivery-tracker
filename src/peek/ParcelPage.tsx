@@ -418,8 +418,8 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const landingPath = signedIn ? LANDING_PATH : '/';
   const toLanding = () => { if (signedIn) openLanding(); else leave(); };
   const invitation = sample && <SampleInvitation carrier={displayed} onTrack={onHome} onSignIn={visitor ? signInToKeep : undefined} />;
-  const map = (shape: 'card' | 'tile', covered?: Rect | null) =>
-    <RouteMap route={route} parcel={parcel} stage={stage} shape={shape} pip={figure === 'map' || figure === 'none'} covered={covered} onOpen={openMap} />;
+  const map = (shape: 'card' | 'tile', covered?: Rect | null, room?: number) =>
+    <RouteMap route={route} parcel={parcel} stage={stage} shape={shape} pip={figure === 'map' || figure === 'none'} covered={covered} room={room} onOpen={openMap} />;
 
   return <Shell
     onHome={onHome}
@@ -443,7 +443,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
         <LinkCard parcel={parcel} stage={stage} carrier={carrierKnown ? displayed : null} delivery={delivering}
           headline={headline} name={name} detail={detail} notes={notes} flag={flag} figure={figure} number={number} settled={entrance === 'reveal' && !checking}
           gift={wrapped ? 'wrapped' : opened ? 'opened' : link.gift ? 'own' : undefined}
-          map={figure === 'map' ? (covered) => map('card', covered) : undefined}
+          map={figure === 'map' ? (covered, room) => map('card', covered, room) : undefined}
           bell={bell} />
         <p className="sr-only" role="status">{checked}</p>
         {wrapped && <GiftSurprise />}

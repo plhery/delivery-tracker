@@ -44,7 +44,7 @@ import './ParcelDetail.css';
 import { Icon } from './Icon';
 import { ParcelStamp } from './ParcelStamp';
 import { parcelTone } from '../lib/parcelDesign';
-import { ParcelMapSheet, RouteEngraving, useCoveredBox, useParcelRoute } from './ParcelMap';
+import { HANDOVER_ROOM, ParcelMapSheet, RouteEngraving, useCoveredBox, useParcelRoute } from './ParcelMap';
 import { ProgressTrack } from './ProgressTrack';
 import { PickupPointCard } from './PickupPointCard';
 import { pickupPoint } from '../lib/pickupPoint';
@@ -435,7 +435,7 @@ export function ParcelDetail({
 
       {onExitDemo && <div className="demo-banner demo-banner--detail"><span>{t('app.demo')}</span><button type="button" onClick={onExitDemo}>{t('native.exitDemo')}<Icon name="close" /></button></div>}
       <section ref={hero} className={`detail__hero${placed ? ' detail__hero--map' : ''}${deliveryLabel ? ' detail__hero--handover' : ''}`}>
-        {placed && <RouteEngraving route={route} stage={current?.stage} onOpen={openMap} covered={deliveryMarkBox} />}
+        {placed && <RouteEngraving route={route} stage={current?.stage} onOpen={openMap} covered={deliveryMarkBox} room={deliveryLabel ? HANDOVER_ROOM : 0} />}
         <div className="detail__hero-meta">
           <button
             type="button"

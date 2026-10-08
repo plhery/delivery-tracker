@@ -354,6 +354,8 @@ private struct SharedParcelCard: View {
         // parcel's own card does.
         let delivering = parcel.deliveringCarrier
         let delivery = delivering.map { CarrierVisualIdentity.of($0, catalog: catalog, language: localizer.language) }
+        // With a second mark over its map, the card is two lines taller, all of them map.
+        let room = delivery == nil ? 0 : RouteEngraving.handoverRoom
         let deliveryLine = delivering.map {
             localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: $0, language: localizer.language).displayName])
         }
@@ -378,7 +380,7 @@ private struct SharedParcelCard: View {
             .frame(minHeight: 44)
             if placed {
                 // Room for the route engraved behind this part of the card.
-                Color.clear.frame(height: 68).allowsHitTesting(false)
+                Color.clear.frame(height: 68 + room).allowsHitTesting(false)
             }
             if arrived {
                 UnwrappingParcel(open: open, celebrating: open > 0, label: label)
@@ -433,9 +435,9 @@ private struct SharedParcelCard: View {
             // A map that keeps clear of the second mark waits to know where it stands, rather than moving once it does.
             if let atlas, let route, delivery == nil || deliveryMark != nil {
                 // The status is written over the bottom of the map, so Pip stays above it.
-                RouteEngraving(atlas: atlas, route: route, stage: parcel.currentStage, identity: identity, floor: 160,
-                               covered: delivery == nil ? nil : deliveryMark)
-                    .frame(height: 176)
+                RouteEngraving(atlas: atlas, route: route, stage: parcel.currentStage, identity: identity, floor: 160 + room,
+                               covered: delivery == nil ? nil : deliveryMark, room: room)
+                    .frame(height: 176 + room)
                     .clipShape(UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous))
                     .contentShape(Rectangle())
                     .onTapGesture { showingMap = true }

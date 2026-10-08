@@ -24,7 +24,14 @@ struct RouteEngraving: View {
     var floor: CGFloat?
     /// What the card writes over the map below its top row, such as a second carrier's mark.
     var covered: CGRect?
+    /// How much lower the route starts, below a second carrier's mark.
+    var room: CGFloat = 0
     @EnvironmentObject private var localizer: Localizer
+
+    /// A second carrier's mark adds a line to the top of a card with a map. The card grows by two lines, and its route
+    /// starts that much lower, so it keeps the room it has on any other card. Pip keeps his ceiling: beside the
+    /// parcel's dot, he only keeps off the mark.
+    static let handoverRoom: CGFloat = 40
 
     var body: some View {
         WorldMapView(
@@ -34,7 +41,8 @@ struct RouteEngraving: View {
             live: stage != .delivered && stage != .returned,
             // Pip keeps below the top row of the parcel's page, and of Next up alike, so both show the same picture.
             pip: PipMood(stage: stage).map { PipRequest(mood: $0, ceiling: 52, floor: floor) },
-            fades: true, insets: insets, covered: covered, language: localizer.language
+            fades: true, insets: EdgeInsets(top: insets.top + room, leading: insets.leading, bottom: insets.bottom, trailing: insets.trailing),
+            covered: covered, language: localizer.language
         )
         // The globe button beside the bell is the accessible way in.
         .accessibilityHidden(true)

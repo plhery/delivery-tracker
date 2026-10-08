@@ -131,6 +131,9 @@
 .peekp-map__open:focus-visible { outline-offset: -5px; }
 .peekp-map--card { position: absolute; top: 0; right: 0; left: 0; z-index: 0; height: 236px; border-radius: 24px 24px 0 0; }
 .peekp-card--map { padding-top: 236px; }
+/* A second carrier's mark adds a line to the top row: the card grows by two lines (HANDOVER_ROOM), all of it map. */
+.peekp-card--map:has(.peekp-card__marks) { padding-top: 276px; }
+.peekp-card--map:has(.peekp-card__marks) .peekp-map--card { height: 276px; }
 .peekp-card--map .peekp-card__top { position: absolute; top: 16px; right: 16px; left: 20px; z-index: 1; pointer-events: none; }
 .peekp-card--map .peekp-card__top button { pointer-events: auto; }
 .peekp-card--map .peekp-card__body { margin-top: 0; }
@@ -337,6 +340,8 @@
   .peekp-giftnote__text { font-size: 18px; }
   .peekp-card--map { padding-top: 200px; }
   .peekp-map--card { height: 200px; }
+  .peekp-card--map:has(.peekp-card__marks) { padding-top: 240px; }
+  .peekp-card--map:has(.peekp-card__marks) .peekp-map--card { height: 240px; }
   .peekp-card--map .peekp-card__top { top: 12px; right: 12px; left: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {

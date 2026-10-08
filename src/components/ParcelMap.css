@@ -4,9 +4,11 @@
 .detail__hero--map .detail__hero-meta { pointer-events: none; }
 .detail__hero--map .detail__hero-meta button { pointer-events: auto; }
 .detail--postcard .detail__hero--map .detail__title-row { margin-top: 118px; }
-/* A second carrier's mark makes the top row taller; the name stays where it is. */
-.detail--postcard .detail__hero--map.detail__hero--handover .detail__title-row { margin-top: 106px; }
 .detail__engraving { position: absolute; top: 0; right: 0; left: 0; z-index: 0; height: 176px; cursor: pointer; }
+/* A second carrier's mark makes the top row 12px taller. The card grows by two lines (HANDOVER_ROOM): the map, and the
+   room the name leaves it, so the route starts below the mark with the room it has on any other card. */
+.detail--postcard .detail__hero--map.detail__hero--handover .detail__title-row { margin-top: 146px; }
+.detail__hero--handover .detail__engraving { height: 216px; }
 .detail__hero .detail__engraving-map, .parcel-card .parcel-card__engraving-map, .card-route .card-route__map {
   --map-space: transparent; --map-ocean: transparent; --map-land: color-mix(in srgb, var(--tone) 10%, transparent);
   --map-visited: color-mix(in srgb, var(--tone) 17%, transparent); --map-border: color-mix(in srgb, var(--tone-surface) 80%, transparent);
