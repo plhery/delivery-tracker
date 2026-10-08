@@ -108,17 +108,26 @@ describe('what an alert announces', () => {
   });
 
   it('announces only the parcel\'s newest scan: a backfilled older one is handled silently', async () => {
-    pending([row({ stage: 'customs', occurred_at: '2026-09-23T15:23:40Z' })]);
-    const latest = vi.mocked(client.latestScanTimes).mockResolvedValue(new Map([['package-1', '2026-09-24T08:37:04Z']]));
+    pending([row({ stage: 'customs', occurred_at: '2026-10-02T03:23:40Z' })]);
+    const latest = vi.mocked(client.latestScanTimes).mockResolvedValue(new Map([['package-1', '2026-10-02T08:37:04Z']]));
     expect(await alerts.dispatch()).toMatchObject({ attempted: 0, sent: 0 });
     expect(latest).toHaveBeenCalledWith(['package-1']);
     expect(send).not.toHaveBeenCalled();
     expect(handled).toHaveBeenCalledExactlyOnceWith('alert-1', ['event-1']);
     // Within an hour of the newest it is news, and so it is when the lookup fails.
-    latest.mockResolvedValueOnce(new Map([['package-1', '2026-09-23T16:15:00Z']])).mockRejectedValueOnce(new Error('down'));
+    latest.mockResolvedValueOnce(new Map([['package-1', '2026-10-02T04:15:00Z']])).mockRejectedValueOnce(new Error('down'));
     await alerts.dispatch();
     await alerts.dispatch();
     expect(send).toHaveBeenCalledTimes(2);
+  });
+
+  it('handles a batch whose newest scan is more than a day old silently, as for accounts', async () => {
+    pending([row({ stage: 'customs', occurred_at: '2026-10-01T12:00:00Z' })]);
+    vi.mocked(client.latestScanTimes).mockResolvedValue(new Map([['package-1', '2026-10-01T12:00:00Z']]));
+    const counted = vi.spyOn(metrics, 'recordParcelAlertSent');
+    expect(await alerts.dispatch()).toMatchObject({ attempted: 0, sent: 0 });
+    expect(send).not.toHaveBeenCalled();
+    expect(counted).toHaveBeenCalledExactlyOnceWith('skipped');
   });
 
   it('handles what the parcel already showed when it was added silently, as for accounts', async () => {

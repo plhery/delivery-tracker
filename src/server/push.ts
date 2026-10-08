@@ -457,15 +457,19 @@ const DAY_MS = 24 * 60 * 60 * 1_000;
  *   finds the history the owner added the parcel with, whose newest scan is
  *   always the parcel's newest. A first history that only arrives later, with
  *   scans from the hours before the add, is still announced.
+ * - Stale: more than a day old when it would be announced. A leg a provider
+ *   reports days late is stored and shown, but no longer worth a
+ *   notification. A scan without a clock has no age to judge.
  */
-export function isOldNews(newest: JsonObject, { latest, joined }: ParcelTimes): boolean {
+export function isOldNews(newest: JsonObject, { latest, joined }: ParcelTimes, now: number): boolean {
   const packageId = stringField(newest, 'package_id');
   const scanned = Date.parse(stringField(newest, 'occurred_at'));
+  const clockless = newest.event_has_time === false;
+  if (!clockless && scanned < now - DAY_MS) return true;
   const parcel = Date.parse(latest.get(packageId) ?? '');
   if (Number.isFinite(scanned) && Number.isFinite(parcel) && scanned < parcel - BACKFILL_TOLERANCE_MS) return true;
   const since = Date.parse(joined.get(packageId) ?? '');
   if (!Number.isFinite(since)) return false;
-  const clockless = newest.event_has_time === false;
   const stored = Date.parse(stringField(newest, 'event_created_at'));
   if (stored < since + ADD_CHECK_MS && (clockless || scanned < since)) return true;
   return scanned + (clockless ? DAY_MS : 0) < since - DAY_MS;
@@ -493,7 +497,7 @@ export class WebPushNotificationService {
       signal?.throwIfAborted();
       const newest = [...events].sort(compareNotificationEvents)[0]!;
       const subscriptionId = stringField(newest, 'subscription_id');
-      if (isOldNews(newest, times)) {
+      if (isOldNews(newest, times, this.now())) {
         await this.client.recordPushDeliveries(subscriptionId, events.map((event) => stringField(event, 'event_id')).filter(Boolean));
         continue;
       }
@@ -636,7 +640,7 @@ export class ParcelLinkAlertService {
         if (failuresNow !== failures) await client.setParcelLinkAlertFailures(alertId, failuresNow);
       };
 
-      if (!newest || newest.account_endpoint === true || isOldNews(newest, times)) {
+      if (!newest || newest.account_endpoint === true || isOldNews(newest, times, this.web.now())) {
         await settle(failures);
         recordParcelAlertSent('skipped');
         continue;
@@ -818,7 +822,7 @@ export class NativePushNotificationService {
       signal?.throwIfAborted();
       const newest = [...events].sort(compareNotificationEvents)[0]!;
       const deviceId = stringField(newest, 'device_id');
-      if (newest.live_activity_delivered === true || isOldNews(newest, times)) {
+      if (newest.live_activity_delivered === true || isOldNews(newest, times, this.now() * 1_000)) {
         await this.client.recordNativePushDeliveries(
           deviceId,
           events.map((event) => stringField(event, 'event_id')).filter(Boolean),

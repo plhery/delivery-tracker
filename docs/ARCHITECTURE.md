@@ -64,6 +64,7 @@ Key server modules:
   So is what the parcel already showed when it joined the account: a scan from before
   that moment, stored by the check that runs as it is added or more than a day older than
   it. A first history that arrives later, from the hours before the add, is announced.
+  A batch whose newest scan is more than a day old is stored and shown without an alert.
 - `email/` tells an account by email that a parcel was delivered, when the account asked
   for it. The database hands each delivered scan out once (`claim_delivery_emails`),
   `deliveryEmails.ts` writes the email and sends it through any SMTP service, and
