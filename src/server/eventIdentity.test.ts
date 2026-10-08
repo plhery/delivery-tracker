@@ -1,5 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { sameInstantIdentities, sharedScans, withIdentities, withoutCopyDrift } from './eventIdentity';
+
+// India Post's policy names the zone it once read every clock in from the next scraper release;
+// until the app takes that version, its tests add the zone themselves.
+vi.mock('universal-parcel-scraper/app', async (importOriginal) => {
+  const scraper = await importOriginal<typeof import('universal-parcel-scraper/app')>();
+  return { ...scraper, sameInstantIdentityPolicy: (...args: Parameters<typeof scraper.sameInstantIdentityPolicy>) => {
+    const policy = scraper.sameInstantIdentityPolicy(...args);
+    return args[0] === 'india-post' && policy ? { relabelledFrom: 'Asia/Kolkata', ...policy } : policy;
+  } };
+});
 
 // New events carry the sync's ISO spelling; stored rows come back from
 // PostgREST with an explicit +00:00 offset. Both name the same instant.
@@ -211,6 +221,62 @@ describe('same-instant identity reuse', () => {
       expect(sameInstantIdentities([scan('dpd:new', occurredAt)], stored, 'dpd').size).toBe(0);
     }
     expect(sameInstantIdentities([scan('dpd:new', '2026-07-16T10:12:00+02:00')], stored, 'dpd').size).toBe(1);
+  });
+});
+
+describe('scans a source once read on one zone\'s clock', () => {
+  // La Poste's 07:50 in Paris, relayed by India Post as India's 07:50 (02:20 UTC).
+  const location = 'EXAMPLE EXCHANGE OFFICE 999001';
+  const labelled = { provider_event_id: 'india-post:labelled', occurred_at: '2026-07-14T02:20:00+00:00',
+    time: '2026-07-14T02:20:00Z', stage: 'in_transit', description: 'Item Received', location, provider_code: 'ItemReceived' };
+  const abroad = { package_id: 'package-1', provider_event_id: 'india-post:abroad', occurred_at: '2026-07-14T05:50:00.000Z',
+    stage: 'in_transit', description: 'Item received at office of exchange (Inb)', location,
+    raw_data: { time: '2026-07-14T07:50:00+02:00', provider_code: 'ItemReceived' } };
+  // The same scan stored on its own clock, and a reply that reads it as labelled again.
+  const own = { ...labelled, provider_event_id: 'india-post:own', occurred_at: '2026-07-14T05:50:00+00:00', time: '2026-07-14T07:50:00+02:00' };
+  const relabelled = { ...abroad, provider_event_id: 'india-post:relabelled', occurred_at: '2026-07-14T02:20:00.000Z',
+    raw_data: { time: '2026-07-14T02:20:00Z', provider_code: 'ItemReceived' } };
+
+  it('moves the stored row to the scan\'s own clock in place, and back, whatever the wording', () => {
+    expect([...sameInstantIdentities([abroad], [labelled], 'india-post')]).toEqual([['india-post:abroad', 'india-post:labelled']]);
+    expect([...sameInstantIdentities([relabelled], [own], 'india-post')]).toEqual([['india-post:relabelled', 'india-post:own']]);
+    // A stored row without its time string is read as labelled.
+    expect(sameInstantIdentities([abroad], [{ ...labelled, time: undefined }], 'india-post').size).toBe(1);
+    // Under a zero offset of its own too.
+    const london = { ...abroad, occurred_at: '2026-07-14T07:50:00.000Z', raw_data: { ...abroad.raw_data, time: '2026-07-14T07:50:00+00:00' } };
+    expect(sameInstantIdentities([london], [labelled], 'india-post').size).toBe(1);
+  });
+
+  it('needs the same provider code, location and wall clock, and a row no scan of the batch carries', () => {
+    for (const different of [
+      { ...labelled, provider_code: 'ItemDispatched' },
+      { ...labelled, provider_code: undefined },
+      { ...labelled, location: 'ANOTHER EXCHANGE OFFICE 999001' },
+      { ...labelled, occurred_at: '2026-07-14T02:21:00+00:00', time: '2026-07-14T02:21:00Z' },
+      { ...labelled, observed_without_provider_timestamp: true },
+      { ...labelled, provider_event_id: 'unknown:labelled' },
+    ]) expect(sameInstantIdentities([abroad], [different], 'india-post').size).toBe(0);
+    const unknownCode = { ...abroad, raw_data: { ...abroad.raw_data, provider_code: 'Unknown' } };
+    expect(sameInstantIdentities([unknownCode], [{ ...labelled, provider_code: 'Unknown' }], 'india-post').size).toBe(0);
+    expect(sameInstantIdentities([abroad, { ...labelled, package_id: 'package-1' }], [labelled], 'india-post').size).toBe(0);
+    // Two scans both labelled, 5 h 30 apart, are two scans.
+    const later = { ...relabelled, provider_event_id: 'india-post:later', occurred_at: '2026-07-14T07:50:00.000Z',
+      raw_data: { time: '2026-07-14T07:50:00Z', provider_code: 'ItemReceived' } };
+    expect(sameInstantIdentities([later], [labelled], 'india-post').size).toBe(0);
+    // An offset that is the zone's own is a label.
+    const indian = { ...abroad, occurred_at: '2026-07-14T02:20:00.000Z', raw_data: { ...abroad.raw_data, time: '2026-07-14T07:50:00+05:30' } };
+    expect(sameInstantIdentities([indian], [{ ...labelled, occurred_at: '2026-07-13T20:50:00+00:00', time: '2026-07-13T20:50:00Z' }], 'india-post').size).toBe(0);
+  });
+
+  it('keeps ambiguous scans and rows unmatched, and other sources out', () => {
+    expect(sameInstantIdentities([abroad], [labelled, { ...labelled, provider_event_id: 'india-post:twin' }], 'india-post').size).toBe(0);
+    expect(sameInstantIdentities([abroad, { ...abroad, provider_event_id: 'india-post:twin' }], [labelled], 'india-post').size).toBe(0);
+    const dpd = (row: Record<string, unknown>) => ({ ...row, provider_event_id: String(row.provider_event_id).replace('india-post', 'dpd') });
+    expect(sameInstantIdentities([dpd(abroad)], [dpd(labelled)], 'dpd').size).toBe(0);
+  });
+
+  it('leaves the same-instant match first', () => {
+    expect([...sameInstantIdentities([abroad], [labelled, own], 'india-post')]).toEqual([['india-post:abroad', 'india-post:own']]);
   });
 });
 

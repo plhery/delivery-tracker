@@ -38,6 +38,15 @@ import * as scraper from 'universal-parcel-scraper';
 
 // Keep the published plan configurable without changing the scraper's other exports.
 vi.mock(import('universal-parcel-scraper'), async importOriginal => ({ ...await importOriginal() }));
+// India Post's policy names the zone it once read every clock in from the next scraper release;
+// until the app takes that version, its tests add the zone themselves.
+vi.mock('universal-parcel-scraper/app', async (importOriginal) => {
+  const scraper = await importOriginal<typeof import('universal-parcel-scraper/app')>();
+  return { ...scraper, sameInstantIdentityPolicy: (...args: Parameters<typeof scraper.sameInstantIdentityPolicy>) => {
+    const policy = scraper.sameInstantIdentityPolicy(...args);
+    return args[0] === 'india-post' && policy ? { relabelledFrom: 'Asia/Kolkata', ...policy } : policy;
+  } };
+});
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -2670,6 +2679,7 @@ function eventStore() {
       stage: row.stage,
       description: row.description,
       location: row.location,
+      time: (row.raw_data as JsonObject | undefined)?.time,
       provider_code: (row.raw_data as JsonObject | undefined)?.provider_code,
       observed_without_provider_timestamp: (row.raw_data as JsonObject | undefined)?.observed_without_provider_timestamp,
     })),
@@ -2739,6 +2749,59 @@ it('enriches coded India Post scans sharing a clock without creating notificatio
   expect(store.rows.size).toBe(2);
   expect([...store.rows.values()].map(({ id, provider_event_id }) => ({ id, provider_event_id }))).toEqual(originals);
   expect([...store.rows.values()].map((row) => row.location)).toEqual(['Example Office 000001', 'Example Office 000001']);
+});
+
+describe('India Post scans abroad', () => {
+  // La Poste's 07:50 in Paris, first relayed as India's 07:50 (02:20 UTC).
+  const NUMBER = 'JN067614884IN';
+  const transfer = { time: '2026-07-10T08:15:00Z', stage: 'in_transit', description: 'Transferred to Office of Exchange',
+    provider_code: 'ItemTransfered', location: 'EXAMPLE FOREIGN POST OFFICE 999001' };
+  const india = (time: string, description: string, destination?: string): CarrierResult => ({
+    status: 'in_transit', current_stage: 'in_transit', last_update: time, last_status_text: description, timezone: 'Asia/Kolkata',
+    ...(destination ? { destination_country: destination } : {}),
+    events: [{ time, stage: 'in_transit', description, provider_code: 'ItemReceived', location: 'EXAMPLE EXCHANGE OFFICE 999001' }, transfer],
+  });
+  const labelled = () => india('2026-07-14T02:20:00Z', 'Item Received');
+  const abroad = (destination?: string) => india('2026-07-14T07:50:00+02:00', 'Item received at office of exchange (Inb)', destination);
+  const load = (store: ReturnType<typeof eventStore>, changes: JsonObject = {}) => ({ id: 'abroad-parcel', user_id: 'owner',
+    carrier: 'india-post', tracking_number: NUMBER, current_stage: 'in_transit', ...changes, [STORED_EVENT_IDENTITIES]: store.identities() });
+  const rows = (store: ReturnType<typeof eventStore>) => [...store.rows.values()]
+    .map(({ id, provider_event_id, occurred_at }) => ({ id, provider_event_id, occurred_at }));
+
+  it('moves a stored scan to its own clock in place, and keeps one row when a reply reads it as labelled again', async () => {
+    const store = eventStore();
+    const adapter = { fetch: vi.fn().mockResolvedValueOnce(labelled()).mockResolvedValueOnce(abroad()).mockResolvedValue(labelled()) };
+    const service = new TrackingSyncService(store.client as unknown as SupabaseServiceClient, adapter, null,
+      () => new Date('2026-07-15T12:00:00Z'));
+    await service.syncPackage(load(store));
+    const [received, transferred] = rows(store);
+    await service.syncPackage(load(store));
+    expect(rows(store)).toEqual([{ ...received, occurred_at: eventTimestamp('2026-07-14T07:50:00+02:00', 'UTC') }, transferred]);
+    expect(store.batch().map((event) => event.provider_event_id)).toEqual([received!.provider_event_id, transferred!.provider_event_id]);
+    await service.syncPackage(load(store));
+    expect(rows(store)).toEqual([received, transferred]);
+  });
+
+  it('moves the stored scan in place in the sync that hands the item to La Poste', async () => {
+    const store = eventStore();
+    const delivery: CarrierResult = { status: 'in_transit', current_stage: 'in_transit', last_update: '2026-07-14T08:30:00+02:00',
+      last_status_text: 'Votre colis est en transit.', events: [{ time: '2026-07-14T08:30:00+02:00', stage: 'in_transit',
+        description: 'Votre colis est en transit.', location: 'Example Hub' }] };
+    let origin = labelled();
+    const adapter = { fetch: vi.fn(async (carrier: string) => carrier === 'la-poste' ? delivery : origin) };
+    const service = new TrackingSyncService(store.client as unknown as SupabaseServiceClient, adapter, null,
+      () => new Date('2026-07-15T12:00:00Z'));
+    await service.syncPackage(load(store));
+    const [received, transferred] = rows(store);
+    origin = abroad('FR');
+    await service.syncPackage(load(store, { carrier_data: store.client.updatePackage.mock.calls.at(-1)![1].carrier_data }));
+    expect(adapter.fetch.mock.calls.map((call) => call[0])).toEqual(['india-post', 'india-post', 'la-poste']);
+    expect(store.client.updatePackage.mock.calls.at(-1)![1].carrier_data).toMatchObject({
+      active_tracking_carrier: 'la-poste', active_tracking_number: NUMBER, original_carrier: 'india-post' });
+    expect(rows(store).slice(0, 2)).toEqual([
+      { ...received, occurred_at: eventTimestamp('2026-07-14T07:50:00+02:00', 'UTC') }, transferred]);
+    expect(rows(store)).toHaveLength(3);
+  });
 });
 
 describe('reworded DPD scans', () => {

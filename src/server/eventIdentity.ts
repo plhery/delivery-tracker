@@ -16,13 +16,17 @@
  * - The scraper opts sources into same-instant matching and declares whether
  *   their provider codes or other scan evidence must agree. A unique matching
  *   scan takes over the stored row at its instant (`sameInstantIdentities`).
+ *   A policy that names the zone its source once read every wall clock in
+ *   lets a scan whose wall clock now carries its own offset take over the row
+ *   stored under the old label (India Post's scans abroad).
  * - A universal provider copies a carrier's scans while the carrier's own
  *   lookup is down, sometimes in a zone it misread (Ship24 keeps GOFO's Pacific
  *   offset on Eastern clocks). A universal copy of a stored scan is left out of
  *   the batch, and a carrier's scan takes over the universal copy stored while
  *   it was down (`sharedScans`).
  */
-import { sameInstantIdentityPolicy, type SameInstantScan } from 'universal-parcel-scraper/app';
+import { DateTime } from 'luxon';
+import { sameInstantIdentityPolicy, type SameInstantIdentityPolicy, type SameInstantScan } from 'universal-parcel-scraper/app';
 import { isRecord, type JsonObject } from './types';
 
 function providerCode(row: JsonObject): string {
@@ -64,6 +68,9 @@ function byInstant(rows: readonly JsonObject[]): Map<number, JsonObject[]> {
  * A required provider code can distinguish scans sharing an instant. Sources
  * without required codes or a per-scan evidence matcher still require exactly
  * one new scan and one candidate there. Ambiguous scans are inserted as before.
+ *
+ * A policy's `relabelledFrom` zone adds a second pass for the scans and rows
+ * left, matched by `relabelled`.
  */
 export function sameInstantIdentities(
   events: readonly JsonObject[],
@@ -99,7 +106,63 @@ export function sameInstantIdentities(
       reused.set(identity(scan), identity(saved));
     }
   }
+  const zone = relabelledFrom(policy);
+  if (!zone) return reused;
+  const taken = new Set(reused.values());
+  const scans = [...unmatched.values()].flat().filter((scan) => !reused.has(identity(scan)));
+  const rows = [...candidates.values()].flat().filter((row) => !taken.has(identity(row)));
+  for (const scan of scans) {
+    const matching = rows.filter((row) => relabelled(zone, scan, row));
+    if (matching.length !== 1) continue;
+    const saved = matching[0]!;
+    if (scans.filter((other) => relabelled(zone, other, saved)).length !== 1) continue;
+    reused.set(identity(scan), identity(saved));
+  }
   return reused;
+}
+
+/** The zone a policy's source once read every wall clock in. Policies from scraper releases before the field name none. */
+function relabelledFrom(policy: SameInstantIdentityPolicy): string | null {
+  const zone = (policy as { relabelledFrom?: unknown }).relabelledFrom;
+  return typeof zone === 'string' && DateTime.now().setZone(zone).isValid ? zone : null;
+}
+
+const WALL_CLOCK = "yyyy-LL-dd'T'HH:mm:ss";
+const NUMERIC_OFFSET = /[+-]\d{2}:?\d{2}$/;
+
+function timeOf(row: JsonObject): string {
+  const time = row.time ?? (isRecord(row.raw_data) ? row.raw_data.time : undefined);
+  return typeof time === 'string' ? time : '';
+}
+
+/** The wall clock a row's time shows under an offset of its own: not UTC's label, nor the zone's. */
+function ownWallClock(zone: string, row: JsonObject): string | null {
+  const time = timeOf(row);
+  if (!NUMERIC_OFFSET.test(time)) return null;
+  const shown = DateTime.fromISO(time, { setZone: true });
+  if (!shown.isValid || shown.offset === shown.setZone(zone).offset) return null;
+  return shown.toFormat(WALL_CLOCK);
+}
+
+/** The wall clock the zone shows at a row's instant, for a row labelled in it. */
+function zoneWallClock(zone: string, row: JsonObject): string | null {
+  const instant = instantOf(row);
+  if (!Number.isFinite(instant) || ownWallClock(zone, row) !== null) return null;
+  return DateTime.fromMillis(instant, { zone }).toFormat(WALL_CLOCK);
+}
+
+/**
+ * One scan read on two clocks: one row shows a wall clock under an offset of
+ * its own, the other carries the same wall clock under the zone's label. The
+ * provider code must agree, and the location too; wording may differ.
+ */
+function relabelled(zone: string, scan: JsonObject, row: JsonObject): boolean {
+  const code = providerCode(scan);
+  if (!code || code.toLowerCase() === 'unknown' || code !== providerCode(row)) return false;
+  if (String(scan.location ?? '').trim() !== String(row.location ?? '').trim()) return false;
+  const shown = ownWallClock(zone, scan);
+  const saved = ownWallClock(zone, row);
+  return (shown !== null && shown === zoneWallClock(zone, row)) || (saved !== null && saved === zoneWallClock(zone, scan));
 }
 
 const UNIVERSAL = 'unknown';

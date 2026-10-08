@@ -1010,8 +1010,15 @@ export class TrackingSyncService {
       const keepSaved = progressDisappeared || fallbackWithoutProgress;
       // A reworded scan (DPD with and without the postcode) updates its stored row in place,
       // and a scan both a carrier and a universal provider reported is stored once.
+      // A handoff's batch also carries the earlier carrier's scans, under that carrier's policy.
       const stored = storedEventIdentities(parcel);
       const reworded = sameInstantIdentities(events, stored, sourceCarrierId);
+      if (fetched.earlierResult && fetched.earlierCarrierId && fetched.earlierCarrierId !== sourceCarrierId) {
+        const taken = new Set(reworded.values());
+        for (const [id, saved] of sameInstantIdentities(events, stored, fetched.earlierCarrierId)) {
+          if (!taken.has(saved)) reworded.set(id, saved);
+        }
+      }
       const shared = sharedScans(events, stored, reworded);
       const matches = { reused: new Map([...reworded, ...shared.reused]), skipped: shared.skipped };
       // Copies a universal provider read in the wrong zone must not make a result
