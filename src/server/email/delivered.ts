@@ -5,12 +5,12 @@ import { countryTimeZone } from 'universal-parcel-scraper';
 import { sortEventsDesc } from '../../lib/stages';
 import type { ParcelWithEvents, TrackingEvent } from '../../types';
 import { carrierTimezone } from '../carriers';
-import type { DeliveredTime } from './types';
+import type { DeliveredTime, EmailStage } from './types';
 
 /**
- * When a parcel was delivered, as much as the email may say of it: the clock
- * time on the reader's own day, an older date with its time, a day alone for
- * a scan without a clock, or nothing.
+ * When a parcel was delivered, or reached its pickup point, as much as the
+ * email may say of it: the clock time on the reader's own day, an older date
+ * with its time, a day alone for a scan without a clock, or nothing.
  */
 export type DeliveredWhen =
   | { kind: 'today' | 'yesterday'; time: string }
@@ -18,9 +18,9 @@ export type DeliveredWhen =
   | { kind: 'day'; date: string }
   | { kind: 'plain' };
 
-/** The scan that says the parcel was delivered: the newest one, as the app orders scans. */
-export function deliveredScan(parcel: ParcelWithEvents): TrackingEvent | null {
-  return sortEventsDesc(parcel.events.filter((event) => event.stage === 'delivered'))[0] ?? null;
+/** The scan the email tells of, delivered or ready to collect: the newest one, as the app orders scans. */
+export function deliveredScan(parcel: ParcelWithEvents, stage: EmailStage = 'delivered'): TrackingEvent | null {
+  return sortEventsDesc(parcel.events.filter((event) => event.stage === stage))[0] ?? null;
 }
 
 /**
@@ -72,18 +72,20 @@ function guessedTime(at: DateTime, zones: readonly string[]): DeliveredTime {
 }
 
 /**
- * When the parcel was delivered, for a reader in `timezone` at `now`. `known`
- * is what the sender read in the carrier's own data; left out, the scan is
- * judged by its timestamp. A scan later than `now`, or without a readable
- * time, says nothing. Dates are written as push notifications write them.
+ * When the parcel was delivered, or reached its pickup point when `stage` says
+ * so, for a reader in `timezone` at `now`. `known` is what the sender read in
+ * the carrier's own data; left out, the scan is judged by its timestamp. A
+ * scan later than `now`, or without a readable time, says nothing. Dates are
+ * written as push notifications write them.
  */
-export function deliveredWhen(parcel: ParcelWithEvents, { known, timezone, now, languageTag }: {
+export function deliveredWhen(parcel: ParcelWithEvents, { stage = 'delivered', known, timezone, now, languageTag }: {
+  stage?: EmailStage;
   known?: DeliveredTime;
   timezone: string;
   now: Date;
   languageTag: string;
 }): DeliveredWhen {
-  const scan = deliveredScan(parcel);
+  const scan = deliveredScan(parcel, stage);
   const at = scan ? DateTime.fromISO(scan.occurredAt, { setZone: true }) : null;
   if (!scan || !at?.isValid || at.toMillis() > now.getTime()) return { kind: 'plain' };
   const zones = scanZones(parcel, scan);

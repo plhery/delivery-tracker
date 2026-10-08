@@ -24,9 +24,10 @@ sell personal data, serve advertising, or use advertising analytics.
   installation identifier, ActivityKit push-to-start and per-activity update
   tokens, delivery acknowledgements, and delivery errors when you enable the
   corresponding notification or Live Activity setting.
-- Whether you asked for an email when a parcel is delivered and when you
+- Whether you asked for an email when a parcel arrives and when you
   turned it on, the parcels you muted for it, and a record of each of these
-  emails: the parcel, when it was sent and whether sending worked.
+  emails: the parcel, whether it told a delivery or a parcel ready to collect,
+  when it was sent and whether sending worked.
 - The links you make to share a parcel or to follow one without an account, and
   what each link shows.
 - When your apps last loaded your parcels, to within five minutes. It decides
@@ -112,21 +113,23 @@ The service places scan locations on its map itself, with
 [GeoNames](https://www.geonames.org) place data (CC BY 4.0) and sorting-centre
 locations from [OpenStreetMap](https://www.openstreetmap.org/copyright)
 contributors (ODbL), kept on its own servers; no mapping service receives them.
-When you tap Directions or Show on map for a pickup point, Apple Maps or Google
-Maps receives that pickup point's name and address, and nothing else about the
-parcel.
+When you tap Directions or Show on map for a pickup point, in the app or in an
+email, Apple Maps or Google Maps receives that pickup point's name and address,
+and nothing else about the parcel.
 
 ## Emails
 
 Peek sends two kinds of email, both through Resend (Resend, Inc., United
 States): the sign-in code you ask for and, only if you turn it on, one email
-when a parcel is delivered.
+when a parcel is delivered or ready to collect, whichever comes first.
 
 The delivery email is off until you turn it on under Settings › Delivery
 updates, or accept the offer shown once after a delivery. It goes to the
 address you sign in with and contains the name you gave the parcel, the
-carrier, the delivery time and a picture of the journey with its towns. It
-never contains the tracking number. It has no tracking pixel, no tracked links
+carrier, the time and a picture of the journey with its towns. For a parcel
+ready to collect, it also names the pickup point the carrier gave, with its
+address and a link that opens it in Google Maps, as Directions or Show on map
+does. It never contains the tracking number. It has no tracking pixel, no tracked links
 and no remote images. Peek sends one per parcel and nothing else: no
 newsletter and no promotion.
 

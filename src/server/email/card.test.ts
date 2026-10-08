@@ -102,6 +102,28 @@ describe('deliveryCard', () => {
     expect(await pixel(card.png, 520, size(card.png).height - 20)).toEqual([0xec, 0xee, 0xe7, 255]);
   });
 
+  it('draws a parcel ready to collect still closed, with its last step to come, and fits a long headline', async () => {
+    const waiting = parcel([['accepted', '2026-10-01T16:48:00Z', HAMBURG], ['ready_for_pickup', '2026-10-03T12:12:00Z', ZURICH]]);
+    const bars = async (png: Uint8Array) => Promise.all([120, 920].map((x) => pixel(png, x, 723)));
+    const [first, last] = await bars((await deliveryCard(input('en', { parcel: waiting, stage: 'ready_for_pickup' }))).png);
+    expect(last).not.toEqual(first);
+    const [deliveredFirst, deliveredLast] = await bars((await deliveryCard(input('en'))).png);
+    expect(deliveredLast).toEqual(deliveredFirst);
+    // A headline longer than the card is made smaller, not cut: the right margin stays bare.
+    const plain = input('en');
+    const long: Translate = (key, variables) => key === 'stage.ready_for_pickup' ? 'Ready to collect at the pickup point down the road' : plain.t(key, variables);
+    const card = await deliveryCard({ ...plain, parcel: waiting, stage: 'ready_for_pickup', t: long });
+    expect(size(card.png)).toEqual({ width: 1040, height: 773 });
+    const margin = await Promise.all([550, 570, 590].map((y) => pixel(card.png, 1040 - 20, y)));
+    expect(new Set(margin.map(String)).size).toBe(1);
+    expect(margin[0]).toEqual(await pixel(card.png, 1040 - 20, 640));
+  });
+
+  it.each(SUPPORTED_LOCALES)('is drawn ready to collect in %s', async (locale) => {
+    const waiting = parcel([['accepted', '2026-10-01T16:48:00Z', HAMBURG], ['ready_for_pickup', '2026-10-03T12:12:00Z', ZURICH]]);
+    expect(size((await deliveryCard(input(locale, { parcel: waiting, stage: 'ready_for_pickup' }))).png)).toEqual({ width: 1040, height: 773 });
+  });
+
   it.each(SUPPORTED_LOCALES)('is drawn in %s', async (locale) => {
     const card = await deliveryCard(input(locale));
     expect(size(card.png)).toEqual({ width: 1040, height: 773 });

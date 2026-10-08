@@ -3,11 +3,13 @@ import 'server-only';
 import { geoPath } from 'd3-geo';
 import { projection, type Camera } from '../../components/map/camera';
 import { layout, mapView, shownOf, targetCamera, type Insets, type Overlay, type PipPlacing, type Rect, type Size } from '../../components/map/layout';
+import { pipMood } from '../../components/map/pipGeometry';
 import { countryPlace, defaultMode, routeFromEvents, type Route } from '../../components/map/route';
 import { countryLabel, geography, loadWorld } from '../../components/map/world';
 import { countryName } from 'universal-parcel-scraper/app';
 import type { ParcelWithEvents } from '../../types';
 import { GEIST, textWidth, writable } from '../pictureFont';
+import type { EmailStage } from './types';
 
 /** The size the app writes a place's name in, which the layout's own sums assume. */
 export const LABEL_SIZE = 11.5;
@@ -26,9 +28,10 @@ export interface JourneyMap {
 export interface Tint { tone: string; surface: string }
 
 /**
- * A delivered parcel's journey as the app's card draws it: the same route,
- * camera, names and place for Pip, from the same code, with the land as SVG
- * paths instead of a canvas. Null when no scan could be placed.
+ * A parcel's journey as the app's card draws it once the parcel is delivered,
+ * or waits at its pickup point: the same route, camera, names and place for
+ * Pip, from the same code, with the land as SVG paths instead of a canvas.
+ * Null when no scan could be placed.
  *
  * As on the app's card, Pip may stand as high as `ceiling` (the frame's top
  * unless told), and the route, its names and Pip keep off `covered`, what the
@@ -38,7 +41,7 @@ export interface Tint { tone: string; surface: string }
  * needs them.
  */
 export async function journeyMap(parcel: ParcelWithEvents, languageTag: string, size: Size, insets: Insets, tint: Tint,
-  { ceiling = insets.top, covered }: { ceiling?: number; covered?: Rect } = {}): Promise<JourneyMap | null> {
+  { ceiling = insets.top, covered, stage = 'delivered' }: { ceiling?: number; covered?: Rect; stage?: EmailStage } = {}): Promise<JourneyMap | null> {
   if (!parcel.events.some((event) => event.place)) return null;
   await loadWorld();
   // A name the picture's face cannot write is left out: the dot stays, unnamed.
@@ -50,8 +53,8 @@ export async function journeyMap(parcel: ParcelWithEvents, languageTag: string, 
   const route = routeFromEvents(events, destination, country);
   if (!route.stops.length) return null;
 
-  const mode = defaultMode(route, 'delivered');
-  const pip: PipPlacing = { mood: 'joy', ceiling };
+  const mode = defaultMode(route, stage);
+  const pip: PipPlacing = { mood: pipMood(stage) ?? 'joy', ceiling };
   const width = (text: string) => textWidth(text, LABEL_SIZE, GEIST);
   const drawn = (camera: Camera, box?: Rect) =>
     layout(route, camera, size, insets, 'rect', 'ends', false, mode, false, languageTag, pip, width, undefined, box);

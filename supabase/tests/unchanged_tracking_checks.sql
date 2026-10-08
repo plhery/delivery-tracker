@@ -16,7 +16,7 @@ begin
   assert not has_function_privilege('anon', 'public.complete_tracking_sync_attempt(uuid,jsonb,jsonb)', 'execute');
   assert not has_function_privilege('authenticated', 'public.complete_tracking_sync_attempt(uuid,jsonb,jsonb)', 'execute');
   assert has_function_privilege('service_role', 'public.complete_tracking_sync_attempt(uuid,jsonb,jsonb)', 'execute');
-  assert not has_function_privilege('authenticated', 'public.claim_delivery_emails(integer,integer,integer)', 'execute');
+  assert not has_function_privilege('authenticated', 'public.claim_delivery_emails(integer,integer,integer,text[])', 'execute');
   assert not has_table_privilege('anon', 'public.tracking_sync_health_24h', 'select');
   assert not has_table_privilege('authenticated', 'public.tracking_sync_health_24h', 'select');
   assert has_table_privilege('service_role', 'public.tracking_sync_health_24h', 'select');

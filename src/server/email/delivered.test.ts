@@ -24,6 +24,17 @@ describe('deliveredScan', () => {
     expect(deliveredScan(parcel('dhl', events))?.occurredAt).toBe('2026-10-03T12:12:00Z');
     expect(deliveredScan(parcel('dhl', [scan('2026-10-03T13:00:00Z', { stage: 'in_transit' })]))).toBeNull();
   });
+
+  it('is the newest scan of the stage it is asked for', () => {
+    const events = [
+      scan('2026-10-02T10:00:00Z', { stage: 'ready_for_pickup' }),
+      scan('2026-10-03T09:30:00Z', { stage: 'ready_for_pickup' }),
+      scan('2026-10-03T12:12:00Z'),
+    ];
+    expect(deliveredScan(parcel('dhl', events), 'ready_for_pickup')?.occurredAt).toBe('2026-10-03T09:30:00Z');
+    expect(deliveredScan(parcel('dhl', events.slice(0, 2)))).toBeNull();
+    expect(deliveredWhen(parcel('dhl', events), { ...reader, stage: 'ready_for_pickup', known: 'timed' })).toEqual({ kind: 'today', time: '11:30' });
+  });
 });
 
 describe('deliveredWhen, told what the scan knows', () => {

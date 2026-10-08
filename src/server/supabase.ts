@@ -2,7 +2,7 @@ import 'server-only';
 
 import type { ApiGiftWords } from '../generated/apiContract';
 import { ALL_NOTIFICATION_STAGES } from '../lib/notificationPresets';
-import type { DeliveredTime } from './email/types';
+import { EMAIL_STAGES, type DeliveredTime, type EmailStage } from './email/types';
 import { isRecord, type JsonObject } from './types';
 
 const REQUEST_TIMEOUT_MS = 20_000;
@@ -131,16 +131,18 @@ function parcelShare(value: unknown): ParcelShare {
   };
 }
 
-/** A delivered scan claimed for an email: what must be sent now. */
+/** A scan claimed for an email, delivered or ready to collect: what must be sent now. */
 export interface DeliveryEmailClaim {
   /** The claim, to end it with. */
   id: string;
   packageId: string;
   userId: string;
   eventId: string;
-  /** The account's time zone, which the delivery time is told in. */
+  /** What the email tells. */
+  stage: EmailStage;
+  /** The account's time zone, which the scan's time is told in. */
   timezone: string;
-  /** What the delivered scan knows of its time, as the notification queues read it. */
+  /** What the scan knows of its time, as the notification queues read it. */
   deliveredTime: DeliveredTime;
 }
 
@@ -874,10 +876,11 @@ export class SupabaseServiceClient extends SupabaseClient {
   }
 
   /**
-   * Claims the delivered scans to email now, at most `limit` of them: a claimed
-   * parcel is never handed out again, to this server or another. `perAccount`
-   * and `perDay` are the emails an account, and everyone, may get in 24 hours;
-   * what is beyond one is recorded as skipped and counted here.
+   * Claims the scans to email now, delivered or ready to collect, at most
+   * `limit` of them: a claimed parcel is never handed out again, to this
+   * server or another. `perAccount` and `perDay` are the emails an account,
+   * and everyone, may get in 24 hours; what is beyond one is recorded as
+   * skipped and counted here.
    */
   async claimDeliveryEmails(
     limit: number,
@@ -885,7 +888,7 @@ export class SupabaseServiceClient extends SupabaseClient {
     perDay: number,
   ): Promise<{ send: DeliveryEmailClaim[]; accountCap: number; serviceCap: number }> {
     const result = await this.request('/rest/v1/rpc/claim_delivery_emails', {
-      method: 'POST', body: { p_limit: limit, p_per_account: perAccount, p_per_day: perDay },
+      method: 'POST', body: { p_limit: limit, p_per_account: perAccount, p_per_day: perDay, p_stages: EMAIL_STAGES },
     });
     if (!isRecord(result) || !Array.isArray(result.send)) throw new SupabaseError('Supabase did not return the delivery emails');
     return {
@@ -894,6 +897,7 @@ export class SupabaseServiceClient extends SupabaseClient {
         packageId: String(claim.package_id),
         userId: String(claim.user_id),
         eventId: String(claim.event_id),
+        stage: claim.stage === 'ready_for_pickup' ? 'ready_for_pickup' : 'delivered',
         timezone: typeof claim.timezone === 'string' ? claim.timezone : 'Europe/Zurich',
         deliveredTime: claim.delivered_time === 'timed' || claim.delivered_time === 'date' ? claim.delivered_time : 'none',
       })),

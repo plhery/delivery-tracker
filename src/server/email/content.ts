@@ -3,6 +3,7 @@ import 'server-only';
 import { activeTrackingCarrierId, carrierInfo, deliveringCarrierId, displayedCarrierId, type CarrierInfo } from '../../lib/carriers';
 import { isLocale, type Locale } from '../../lib/locale';
 import { languageTags, translateMessage, type Translate } from '../../lib/messages';
+import { pickupPoint, pickupPointMapsUrl, type PickupPoint } from '../../lib/pickupPoint';
 import { SOURCE_URL } from '../../lib/source';
 import { capitalized } from '../../peek/parcel/summary';
 import { toParcel } from '../../store/apiRepo';
@@ -35,6 +36,20 @@ function cornerTime(when: DeliveredWhen, t: Translate, languageTag: string): str
   }
 }
 
+/** Where a parcel waits, in the app's own words; a map app is told the place, and nothing else. */
+function placeWords(place: PickupPoint, t: Translate): NonNullable<EmailWords['place']> {
+  const label = t('detail.pickupPoint');
+  const link = t(place.address ? 'detail.pickupDirections' : 'detail.pickupShowOnMap');
+  const url = pickupPointMapsUrl(place, false);
+  return {
+    label, name: place.name, address: place.address, link, url,
+    text: [
+      t('email.pickup.textLine', { label, value: [place.name, place.address].filter(Boolean).join(', ') }),
+      t('email.pickup.textLine', { label: link, value: url }),
+    ],
+  };
+}
+
 /** Draws the card. The picture's code, and the world it draws, load with the first email that needs them. */
 async function drawCard(input: DeliveryCardInput): Promise<DeliveryCard> {
   const { deliveryCard } = await import('./card');
@@ -52,20 +67,25 @@ async function emailContent(input: DeliveryEmailInput, draw = drawCard): Promise
   webAddress(input.offUrl, 'offUrl');
 
   const parcel = toParcel(input.parcel);
+  const stage = input.stage ?? 'delivered';
+  // The message's own words: the rest of the email is the same for both.
+  const told = stage === 'delivered' ? 'delivered' : 'pickup';
   // Cut like a push title, and kept on one line: the name is also the subject.
   const name = notificationText(String(input.parcel.label ?? '').replace(/\p{Cc}/gu, ' '), 80);
   const named = (carrier: CarrierInfo) => UNNAMED_CARRIERS.has(carrier.id) ? null : carrier;
-  // The sentence names who brought it to the door, even one its first carrier named and nobody followed; the card
-  // keeps the carrier the app marks the parcel with, and under it the one it was handed to, as the app's card does.
+  // The sentence names who brought it to the door or the pickup point, even one its first carrier named and nobody
+  // followed; the card keeps the carrier the app marks the parcel with, and under it the one it was handed to, as the
+  // app's card does.
   const handedTo = deliveringCarrierId(parcel);
   const deliverer = named(carrierInfo(handedTo ?? activeTrackingCarrierId(parcel), locale));
   const marked = named(carrierInfo(displayedCarrierId(parcel), locale));
   const delivery = handedTo ? named(carrierInfo(handedTo, locale)) : null;
-  const when = deliveredWhen(parcel, { known: input.deliveredTime, timezone: input.timezone, now: input.now, languageTag });
+  const when = deliveredWhen(parcel, { stage, known: input.deliveredTime, timezone: input.timezone, now: input.now, languageTag });
+  const waitsAt = stage === 'ready_for_pickup' ? pickupPoint(parcel.pickupPoint) : null;
 
   let card: DeliveryCard | null = null;
   try {
-    card = await draw({ parcel, carrier: marked, delivery, when: cornerTime(when, t, languageTag), timed: 'time' in when, t, languageTag });
+    card = await draw({ parcel, carrier: marked, delivery, when: cornerTime(when, t, languageTag), timed: 'time' in when, t, languageTag, stage });
   } catch (error) {
     // The email is worth sending without its picture.
     logOperationalEvent('delivery_email_card_failed', { package_id: parcel.id, error_type: errorType(error) }, 'warning');
@@ -73,14 +93,15 @@ async function emailContent(input: DeliveryEmailInput, draw = drawCard): Promise
 
   const words: EmailWords = {
     lang: locale,
-    subject: name ? t('email.delivered.subject', { name }) : t('email.delivered.subjectUnnamed'),
+    subject: name ? t(`email.${told}.subject`, { name }) : t(`email.${told}.subjectUnnamed`),
     brand: t('app.title'),
     tagline: t('app.tagline'),
-    title: name ? t('email.delivered.title', { name }) : t('email.delivered.titleUnnamed'),
-    sentence: t(`email.delivered.${deliverer ? 'by' : 'line'}.${when.kind}`, {
+    title: name ? t(`email.${told}.title`, { name }) : t(`email.${told}.titleUnnamed`),
+    sentence: t(`email.${told}.${deliverer ? 'by' : 'line'}.${when.kind}`, {
       carrier: deliverer?.name ?? '', time: 'time' in when ? when.time : '', date: 'date' in when ? when.date : '',
     }),
-    cardAlt: !card ? null : card.ends ? t('map.label', card.ends) : card.mapped ? t('email.delivered.cardAlt') : t('stage.delivered'),
+    place: waitsAt && placeWords(waitsAt, t),
+    cardAlt: !card ? null : card.ends ? t('map.label', card.ends) : card.mapped ? t('email.delivered.cardAlt') : t(`stage.${stage}`),
     button: t('email.delivered.button'),
     footer: t('email.delivered.footer', { setting: t('email.setting.title') }),
     footerOff: t('email.delivered.footerOff'),
@@ -103,11 +124,13 @@ async function emailContent(input: DeliveryEmailInput, draw = drawCard): Promise
 }
 
 /**
- * The email that says a parcel was delivered: subject, plain text, HTML and the map card.
+ * The email that says a parcel was delivered, or is ready to collect: subject,
+ * plain text, HTML and the map card.
  *
- * It names the parcel as its owner named it and the carrier, and says when.
- * It never carries the tracking number, the recipient, an address or a pickup
- * code, and none of the carrier's own scan text, which can hold any of them.
+ * It names the parcel as its owner named it and the carrier, and says when; a
+ * parcel ready to collect, the pickup point the carrier gave. It never carries
+ * the tracking number, the recipient, their address or a pickup code, and none
+ * of the carrier's own scan text, which can hold any of them.
  */
 export async function deliveryEmailContent(input: DeliveryEmailInput): Promise<DeliveryEmailContent> {
   return emailContent(input);

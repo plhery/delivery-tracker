@@ -496,7 +496,7 @@ describe('delivery emails', () => {
     const client = service();
     const request = vi.spyOn(client, 'request').mockResolvedValue({
       send: [
-        { id: 'claim-1', package_id: parcel, user_id: owner, event_id: 'scan-1', timezone: 'Europe/Paris', delivered_time: 'date' },
+        { id: 'claim-1', package_id: parcel, user_id: owner, event_id: 'scan-1', stage: 'ready_for_pickup', timezone: 'Europe/Paris', delivered_time: 'date' },
         { id: 'claim-2', package_id: 'parcel-2', user_id: owner, event_id: 'scan-2', timezone: null, delivered_time: 'sometime' },
       ],
       account_cap: 2,
@@ -504,15 +504,16 @@ describe('delivery emails', () => {
     });
     await expect(client.claimDeliveryEmails(20, 5, 80)).resolves.toEqual({
       send: [
-        { id: 'claim-1', packageId: parcel, userId: owner, eventId: 'scan-1', timezone: 'Europe/Paris', deliveredTime: 'date' },
-        // Without a time zone or a known kind of time, the email says less rather than something wrong.
-        { id: 'claim-2', packageId: 'parcel-2', userId: owner, eventId: 'scan-2', timezone: 'Europe/Zurich', deliveredTime: 'none' },
+        { id: 'claim-1', packageId: parcel, userId: owner, eventId: 'scan-1', stage: 'ready_for_pickup', timezone: 'Europe/Paris', deliveredTime: 'date' },
+        // A claim without a stage is a delivery, as before pickups were emailed. Without a time zone or a known kind of
+        // time, the email says less rather than something wrong.
+        { id: 'claim-2', packageId: 'parcel-2', userId: owner, eventId: 'scan-2', stage: 'delivered', timezone: 'Europe/Zurich', deliveredTime: 'none' },
       ],
       accountCap: 2,
       serviceCap: 1,
     });
     expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/claim_delivery_emails', {
-      method: 'POST', body: { p_limit: 20, p_per_account: 5, p_per_day: 80 },
+      method: 'POST', body: { p_limit: 20, p_per_account: 5, p_per_day: 80, p_stages: ['delivered', 'ready_for_pickup'] },
     });
     request.mockResolvedValue({ send: [] });
     await expect(client.claimDeliveryEmails(20, 5, 80)).resolves.toEqual({ send: [], accountCap: 0, serviceCap: 0 });

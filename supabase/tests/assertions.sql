@@ -229,8 +229,8 @@ begin
       or has_table_privilege('authenticated', 'public.delivery_emails', 'UPDATE')
       or has_table_privilege('authenticated', 'public.delivery_emails', 'DELETE')
       or has_table_privilege('anon', 'public.delivery_emails', 'SELECT')
-      or has_function_privilege('authenticated', 'public.claim_delivery_emails(integer,integer,integer)', 'EXECUTE')
-      or has_function_privilege('anon', 'public.claim_delivery_emails(integer,integer,integer)', 'EXECUTE')
+      or has_function_privilege('authenticated', 'public.claim_delivery_emails(integer,integer,integer,text[])', 'EXECUTE')
+      or has_function_privilege('anon', 'public.claim_delivery_emails(integer,integer,integer,text[])', 'EXECUTE')
       or has_function_privilege('authenticated', 'public.finish_delivery_email(uuid,text,text)', 'EXECUTE')
       or has_function_privilege('anon', 'public.finish_delivery_email(uuid,text,text)', 'EXECUTE')
       or has_function_privilege('authenticated', 'public.set_delivery_email(uuid,boolean)', 'EXECUTE')
@@ -238,7 +238,7 @@ begin
     raise exception 'public database roles can access the delivery email ledger';
   end if;
   if not has_table_privilege('service_role', 'public.delivery_emails', 'SELECT')
-      or not has_function_privilege('service_role', 'public.claim_delivery_emails(integer,integer,integer)', 'EXECUTE')
+      or not has_function_privilege('service_role', 'public.claim_delivery_emails(integer,integer,integer,text[])', 'EXECUTE')
       or not has_function_privilege('service_role', 'public.finish_delivery_email(uuid,text,text)', 'EXECUTE')
       or not has_function_privilege('service_role', 'public.set_delivery_email(uuid,boolean)', 'EXECUTE') then
     raise exception 'the service role cannot send delivery emails';

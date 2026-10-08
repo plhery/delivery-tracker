@@ -42,7 +42,7 @@ async function open(preferences: Partial<NotificationPreferences> = {}, email: s
   return { user, apiAuth };
 }
 const section = () => screen.getByRole('region', { name: /^By email/ });
-const emailSwitch = () => screen.getByRole('switch', { name: 'Email me when a parcel is delivered' });
+const emailSwitch = () => screen.getByRole('switch', { name: 'Email me when a parcel arrives' });
 
 beforeEach(() => {
   mocks.track.mockReset();
@@ -59,7 +59,7 @@ describe('the delivery email in Settings', () => {
     await open();
     expect(within(section()).getByText('New')).toBeVisible();
     expect(emailSwitch()).toHaveAttribute('aria-checked', 'false');
-    expect(emailSwitch()).toHaveAccessibleDescription('To alex@example.com, the address you sign in with. One short email per parcel.');
+    expect(emailSwitch()).toHaveAccessibleDescription('To alex@example.com, the address you sign in with. One short email per parcel, when it’s delivered or ready to collect.');
     // After "Which updates?" and its Save button, before the note on how often tracking is checked.
     const order = (first: Element, second: Element) => first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING;
     expect(order(screen.getByRole('button', { name: 'Save preferences' }), section())).toBeTruthy();
@@ -165,7 +165,7 @@ describe('the delivery email in Settings', () => {
     const apiAuth = { userId: 'user-1', getAccessToken: vi.fn().mockResolvedValue('token') };
     render(<I18nProvider initialLocale="de" initialMessages={de}><NotificationControl apiAuth={apiAuth} email="alex@example.com" /></I18nProvider>);
     await userEvent.setup().click(await screen.findByRole('button', { name: 'Benachrichtigungen aktiviert' }));
-    expect(await screen.findByRole('switch', { name: 'E-Mail, sobald ein Paket zugestellt ist' })).toHaveAttribute('aria-checked', 'true');
+    expect(await screen.findByRole('switch', { name: 'E-Mail, sobald ein Paket ankommt' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('link', { name: 'Beispiel ansehen' })).toHaveAttribute('href', '/email/example?lang=de');
     expect(screen.getByRole('link', { name: 'Datenschutz' })).toHaveAttribute('href', '/privacy.html');
   });

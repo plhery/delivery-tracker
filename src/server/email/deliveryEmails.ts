@@ -13,7 +13,7 @@ import { EmailSendError, openTransport, type EmailTransport, type OutgoingEmail 
 import { DELIVERY_CARD_CID, type DeliveryEmailContent } from './types';
 import { unsubscribeUrls } from './unsubscribe';
 
-/** Delivered scans one run claims. The rest wait for the next run, which follows every sync job. */
+/** Scans one run claims. The rest wait for the next run, which follows every sync job. */
 const CLAIMS_PER_RUN = 20;
 
 export interface DeliveryEmailSummary {
@@ -33,8 +33,9 @@ function accountLocale(stored: string | null): Locale {
 }
 
 /**
- * Tells accounts that a parcel was delivered, by email. The database decides
- * which delivered scans are news and hands each out once (see
+ * Tells accounts by email that a parcel was delivered, or is ready to collect:
+ * one email per parcel, about whichever comes first. The database decides
+ * which scans are news and hands each parcel out once (see
  * `claim_delivery_emails`); this writes the email, sends it and records how it
  * ended. An email that could not be sent is claimed again later, up to three
  * times while its scan is fresh. One email that fails never stops the others.
@@ -114,6 +115,7 @@ export class DeliveryEmailService {
       const content = await deliveryEmailContent({
         parcel: withEventPlaces(parcel) as unknown as ApiPackageRow,
         locale: accountLocale(account?.locale ?? null),
+        stage: claim.stage,
         timezone: claim.timezone,
         // What a notification opens.
         journeyUrl: `${this.settings.origin}/?parcel=${encodeURIComponent(claim.packageId)}`,
@@ -141,6 +143,7 @@ export class DeliveryEmailService {
     const error = ending.outcome === 'failed' ? ending.error : undefined;
     logOperationalEvent('delivery_email', {
       package_id: claim.packageId,
+      stage: claim.stage,
       outcome: ending.outcome,
       reason,
       ...(error === undefined ? {} : { error_type: errorType(error) }),

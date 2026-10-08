@@ -265,6 +265,90 @@ describe('deliveryEmailContent', () => {
   });
 });
 
+describe('deliveryEmailContent for a parcel ready to collect', () => {
+  // A pickup point of its own, so the recipient's address and postcode can still be looked for.
+  const KIOSK = 'Example Kiosk\nKioskweg 2, 8888 Kioskdorf';
+  const DIRECTIONS = 'https://www.google.com/maps/dir/?api=1&destination=Example%20Kiosk%2C%20Kioskweg%202%2C%208888%20Kioskdorf';
+  const waiting = (pickupPoint = KIOSK, overrides: Partial<ApiPackageRow> = {}) => input({
+    stage: 'ready_for_pickup',
+    parcel: row({
+      carrier_data: { sender_name: 'Example Shop', receiver_name: 'Alex Example', pickup_point: pickupPoint },
+      tracking_events: [event('accepted', '2026-10-01T09:00:00+00:00'), event('ready_for_pickup', '2026-10-03T12:12:00+00:00')],
+      ...overrides,
+    }),
+  });
+
+  it('says it is ready to collect, where, and the way there, and draws the parcel waiting', async () => {
+    const email = await deliveryEmailContent(waiting());
+    expect(email.subject).toBe(english('email.pickup.subject', { name: 'New sneakers' }));
+    expect(email.text.split('\n').slice(0, 5)).toEqual([
+      english('email.pickup.title', { name: 'New sneakers' }),
+      english('email.pickup.by.today', { carrier: 'DHL', time: '14:12' }),
+      english('email.pickup.textLine', { label: en['detail.pickupPoint'], value: 'Example Kiosk, Kioskweg 2, 8888 Kioskdorf' }),
+      english('email.pickup.textLine', { label: en['detail.pickupDirections'], value: DIRECTIONS }),
+      english('email.delivered.textJourney', { url: JOURNEY }),
+    ]);
+    // The place sits between the sentence and the card.
+    const html = email.html.slice(email.html.indexOf('<body'));
+    const order = [english('email.pickup.by.today', { carrier: 'DHL', time: '14:12' }), en['detail.pickupPoint'], '>Example Kiosk<', '>Kioskweg 2, 8888 Kioskdorf<', `<a href="${DIRECTIONS.replaceAll('&', '&amp;')}"`, '<img']
+      .map((part) => html.lastIndexOf(part));
+    expect(order.every((at) => at > 0)).toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+    expect(html).toContain(`>${en['detail.pickupDirections']}</a>`);
+    expect(cardInput()).toMatchObject({ stage: 'ready_for_pickup', when: 'Today, 14:12', timed: true });
+  });
+
+  it('searches for a place the carrier only names, and leaves the place out when the carrier gives none', async () => {
+    const named = await deliveryEmailContent(waiting('Example Kiosk'));
+    const search = 'https://www.google.com/maps/search/?api=1&query=Example%20Kiosk';
+    expect(named.text).toContain(english('email.pickup.textLine', { label: en['detail.pickupShowOnMap'], value: search }));
+    expect(named.html).toContain(`<a href="${search.replaceAll('&', '&amp;')}" style="color: #20251e; text-decoration: underline">${en['detail.pickupShowOnMap']}</a>`);
+    const nowhere = await deliveryEmailContent(waiting(''));
+    expect(nowhere.text.split('\n').slice(0, 3)).toEqual([
+      english('email.pickup.title', { name: 'New sneakers' }),
+      english('email.pickup.by.today', { carrier: 'DHL', time: '14:12' }),
+      english('email.delivered.textJourney', { url: JOURNEY }),
+    ]);
+    expect(nowhere.html).not.toContain(en['detail.pickupPoint']);
+  });
+
+  it('carries the pickup point, and still never the tracking number, the recipient, their address, a pickup code or the carrier’s own words', async () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const email = await deliveryEmailContent({ ...waiting(), locale });
+      const all = `${email.subject}\n${email.text}\n${email.html}`;
+      expect(all).toContain('Example Kiosk');
+      expect(all).not.toMatch(/TESTPARCEL|Alex Example|Samplestrasse|9999|4711|Example Shop|Exampletown|Signed by/);
+    }
+  });
+
+  it('links a map besides the journey, the way out, the privacy notice and the code', async () => {
+    const { html } = await deliveryEmailContent(waiting());
+    expect([...html.matchAll(/<a\b[^>]*href="([^"]*)"/g)].map(([, href]) => href.replaceAll('&amp;', '&'))).toEqual([DIRECTIONS, JOURNEY, JOURNEY, OFF, JOURNEY, PRIVACY, SOURCE]);
+  });
+
+  it.each(SUPPORTED_LOCALES)('is written in full in %s', async (locale) => {
+    const email = await deliveryEmailContent({ ...waiting(), locale, deliveredTime: 'timed', now: new Date('2026-10-08T06:00:00Z') });
+    const messages = messagesFor(locale);
+    expect(email.subject).toBe(messages['email.pickup.subject'].replace('{{name}}', 'New sneakers'));
+    for (const part of [email.subject, email.text, email.html]) {
+      expect(part).not.toContain('{{');
+      expect(part).not.toContain('undefined');
+    }
+    expect(email.text).toContain(messages['detail.pickupPoint']);
+  });
+
+  it('has a subject, a title and a sentence without a name or a carrier', async () => {
+    const email = await deliveryEmailContent({ ...waiting(KIOSK, { label: '', carrier: 'unknown' }), deliveredTime: 'none' });
+    expect(email.subject).toBe(en['email.pickup.subjectUnnamed']);
+    expect(email.text.split('\n').slice(0, 2)).toEqual([en['email.pickup.titleUnnamed'], en['email.pickup.line.plain']]);
+  });
+
+  it('describes a picture without a map by the parcel’s stage', async () => {
+    drawn.card.mockResolvedValue(card({ ends: null, mapped: false }));
+    expect((await deliveryEmailContent(waiting())).html).toContain(`alt="${en['stage.ready_for_pickup']}"`);
+  });
+});
+
 describe('exampleDeliveryEmail', () => {
   it('tells of a made-up parcel in the reader’s language, with links that lead home', async () => {
     const email = await exampleDeliveryEmail('en', 'https://peek.example.test');

@@ -8106,7 +8106,7 @@
               "boolean",
               "null"
             ],
-            "description": "Whether the account gets one email when a parcel is delivered. null: never chosen, so the one-time offer may show. A request that leaves it out, or sends null, keeps the stored choice."
+            "description": "Whether the account gets one email when a parcel is delivered or ready to collect. null: never chosen, so the one-time offer may show. A request that leaves it out, or sends null, keeps the stored choice."
           },
           "emailAvailable": {
             "type": "boolean",

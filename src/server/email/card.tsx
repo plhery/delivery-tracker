@@ -10,10 +10,11 @@ import { formatKm, type Route } from '../../components/map/route';
 import type { CarrierInfo } from '../../lib/carriers';
 import type { Translate } from '../../lib/messages';
 import { formatJourneyDuration } from '../../lib/passport';
-import { CORE_STAGES } from '../../lib/stages';
+import { CORE_STAGES, stageMeta } from '../../lib/stages';
 import type { ParcelWithEvents } from '../../types';
 import { GEIST, textWidth, writable } from '../pictureFont';
 import { journeyMap, LABEL_SIZE, type Tint } from './cardMap';
+import type { EmailStage } from './types';
 
 /** The card's width in CSS pixels: the column of the email it is shown in. Every measure below is in these. */
 const WIDTH = 456;
@@ -97,32 +98,41 @@ function secondMarkBox(carrier: CarrierInfo): Rect {
 }
 
 /**
- * Pip with his box open, as he stands on a delivered parcel's map in the app:
- * the kraft parcel's geometry in the card's ink mixed toward its surface.
+ * Pip as he stands on the parcel's map in the app: his box open once it is
+ * delivered, shut and looking up while it waits at its pickup point. The kraft
+ * parcel's geometry in the card's ink mixed toward its surface.
  */
-function pipSvg({ tone, surface }: Tint): string {
+function pipSvg({ tone, surface }: Tint, open: boolean): string {
   const toward = (amount: number) => mix(surface, tone, amount);
   const deep = mix(tone, '#000000', .18);
   const paper = mix(surface, '#ffffff', .62);
   const blush = mix(toward(.56), '#f0707e', .55);
-  const flap = (name: keyof typeof PARCEL.flaps, fill: string) => `<polygon points="${flapPoints(PARCEL.flaps[name], true)}" fill="${fill}" stroke="${tone}" stroke-opacity=".24" stroke-width=".7"/>`;
+  const flap = (name: keyof typeof PARCEL.flaps, fill: string) => `<polygon points="${flapPoints(PARCEL.flaps[name], open)}" fill="${fill}" stroke="${tone}" stroke-opacity=".24" stroke-width=".7"/>`;
   const glints = [tone, toward(.72), tone, toward(.86), toward(.72), tone];
+  // Happy, or his two eyes raised toward the dot above him and his mouth a line.
+  const face = open
+    ? `<path d="M14.25 37.5Q26.25 21 38.25 37.5M57.75 37.5Q69.75 21 81.75 37.5" stroke="${deep}" stroke-width="4.5" stroke-linecap="round"/>`
+      + [25.25, 68.75].map((x) => `<ellipse cx="${x}" cy="55.5" rx="9.75" ry="4.8" fill="${blush}" opacity=".55"/>`).join('')
+      + `<path d="M33.75 53.25Q48 78 62.25 53.25Z" fill="${deep}" stroke="${deep}" stroke-width="2.7" stroke-linejoin="round"/>`
+      + `<path d="M41.1 66Q48 61.5 54.9 66Q48 71.4 41.1 66Z" fill="${blush}"/>`
+    : [26.25, 69.75].map((x) => `<ellipse cx="${x}" cy="33" rx="15" ry="17.25" fill="${paper}"/>`
+      + `<circle cx="${x - 2.52}" cy="27.54" r="8.1" fill="${deep}"/><circle cx="${x - 5.22}" cy="24.54" r="2.4" fill="${paper}"/>`).join('')
+      + `<path d="M41.25 59.25H54.75" stroke="${deep}" stroke-width="3.6" stroke-linecap="round"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PIP_FRAME.width} ${PIP_FRAME.height}" fill="none">`
     + `<ellipse cx="150" cy="286" rx="84" ry="10" fill="${deep}" opacity=".14"/>`
     + `<path d="${PARCEL.inside}" fill="${deep}"/>`
-    + flap('backLeft', toward(.62)) + flap('backRight', toward(.4))
+    // Shut, two of the flaps are folded under the other two.
+    + (open ? flap('backLeft', toward(.62)) : '') + flap('backRight', toward(.4))
     + `<path d="${PARCEL.left}" fill="${toward(.56)}"/><path d="${PARCEL.right}" fill="${toward(.84)}"/>`
     + `<path d="${PARCEL.left}" fill="${paper}" opacity=".07"/>`
     + `<path d="${PARCEL.hairlines}" stroke="${tone}" stroke-opacity=".25" stroke-width=".8"/>`
     + `<path d="${PARCEL.edges}" stroke="${paper}" stroke-width="1" opacity=".4"/>`
-    // The face is on the side, under the front flaps: the left one is a brim over his eyes.
-    + `<g transform="${PARCEL.facePlane}">`
-    + `<path d="M14.25 37.5Q26.25 21 38.25 37.5M57.75 37.5Q69.75 21 81.75 37.5" stroke="${deep}" stroke-width="4.5" stroke-linecap="round"/>`
-    + [25.25, 68.75].map((x) => `<ellipse cx="${x}" cy="55.5" rx="9.75" ry="4.8" fill="${blush}" opacity=".55"/>`).join('')
-    + `<path d="M33.75 53.25Q48 78 62.25 53.25Z" fill="${deep}" stroke="${deep}" stroke-width="2.7" stroke-linejoin="round"/>`
-    + `<path d="M41.1 66Q48 61.5 54.9 66Q48 71.4 41.1 66Z" fill="${blush}"/></g>`
-    + flap('frontRight', toward(.5)) + flap('frontLeft', toward(.36))
-    + PARCEL.glints.map(({ x, y, size }, index) => `<path d="${PARCEL.glint}" transform="translate(${x} ${y}) scale(${size / 2})" fill="${glints[index]}"/>`).join('')
+    // The face is on the side, under the front flaps: open, the left one is a brim over his eyes.
+    + `<g transform="${PARCEL.facePlane}">${face}</g>`
+    + (open ? flap('frontRight', toward(.5)) : '') + flap('frontLeft', toward(.36))
+    + (open
+      ? PARCEL.glints.map(({ x, y, size }, index) => `<path d="${PARCEL.glint}" transform="translate(${x} ${y}) scale(${size / 2})" fill="${glints[index]}"/>`).join('')
+      : `<path d="${PARCEL.tape}" fill="${toward(.2)}"/><path d="${PARCEL.seam}" stroke="${toward(.7)}" stroke-opacity=".6" stroke-width="1" stroke-dasharray="3 3"/>`)
     + '</svg>';
 }
 
@@ -147,10 +157,12 @@ export interface DeliveryCardInput {
   delivery?: CarrierInfo | null;
   /** When it was delivered, as the email's sentence says it: "Today, 14:12". Null without a usable time. */
   when: string | null;
-  /** Whether the delivered scan carries the carrier's own clock time. */
+  /** Whether the scan it tells carries the carrier's own clock time. */
   timed: boolean;
   t: Translate;
   languageTag: string;
+  /** What the card shows: the parcel delivered, or waiting at its pickup point. Left out, delivered. */
+  stage?: EmailStage;
 }
 
 export interface DeliveryCard {
@@ -163,16 +175,17 @@ export interface DeliveryCard {
 
 /**
  * The picture in a delivery email: the parcel's card as the app shows it once
- * it has arrived. The journey on the map, with Pip and his open box beside
- * the place it ended; the carrier, with the one it handed the parcel to
- * under it, and when; "Delivered", and what the journey came to. It carries
- * no parcel name, number or address. A parcel none of whose scans could be
- * placed gets the card without the map.
+ * it has arrived. The journey on the map, with Pip beside the place it ended,
+ * his box open when it was delivered and shut while it waits to be collected;
+ * the carrier, with the one it handed the parcel to under it, and when;
+ * "Delivered" or "Ready for pickup", what the journey came to, and the track
+ * filled as far as it got. It carries no parcel name, number or address. A
+ * parcel none of whose scans could be placed gets the card without the map.
  *
  * Every word on it is checked against the picture's own face first: the
  * renderer would otherwise fetch a font for it from the web.
  */
-export async function deliveryCard({ parcel, carrier, delivery = null, when, timed, t, languageTag }: DeliveryCardInput): Promise<DeliveryCard> {
+export async function deliveryCard({ parcel, carrier, delivery = null, when, timed, t, languageTag, stage = 'delivered' }: DeliveryCardInput): Promise<DeliveryCard> {
   const palette = carrier ? carrierBrand(carrier.color, CARRIER_PALETTES[carrier.id]) : null;
   const tint: Tint = palette ? { tone: palette['ink-light'], surface: palette['surface-light'] } : NEUTRAL;
   const { tone, surface } = tint;
@@ -181,8 +194,13 @@ export async function deliveryCard({ parcel, carrier, delivery = null, when, tim
   const mapHeight = MAP.height + (second ? HANDOVER_ROOM : 0);
   // Pip keeps his ceiling: beside the parcel's dot, he only keeps off the second mark.
   const map = await journeyMap(parcel, languageTag, { width: WIDTH, height: mapHeight }, { ...MAP.insets, top: MAP.insets.top + (second ? HANDOVER_ROOM : 0) }, tint,
-    { ceiling: MAP.insets.top, covered: second ? secondMarkBox(second) : undefined });
-  const headline = writable(t('stage.delivered'), GEIST) ?? '';
+    { ceiling: MAP.insets.top, covered: second ? secondMarkBox(second) : undefined, stage });
+  const open = stage === 'delivered';
+  const headline = writable(t(`stage.${stage}`), GEIST) ?? '';
+  // A long name for the stage gets smaller, on its one line, to leave Pip his room.
+  const room = WIDTH - 40 - (map ? 0 : BESIDE.pip + BESIDE.gap);
+  const headlineSize = Math.min(28, 28 * room / Math.max(textWidth(headline, 28, GEIST) - .8 * [...headline].length, 1));
+  const reached = stageMeta(stage).progress;
   const facts = map ? journeyFacts(map.route, parcel, timed, t, languageTag) : null;
   const time = when ? writable(when, GEIST) : null;
   const from = map?.route.origin?.place.name;
@@ -204,7 +222,7 @@ export async function deliveryCard({ parcel, carrier, delivery = null, when, tim
         }}>{label.text}</div>)}
         {/* The drawing fades into the card where the words begin; Pip stands in front of the fade. */}
         <div style={{ display: 'flex', position: 'absolute', left: 0, top: 0, width: u(WIDTH), height: u(mapHeight), backgroundImage: `linear-gradient(to bottom, ${clear}0) 78%, ${surface} 100%)` }} />
-        {map.pip && <Drawing svg={pipSvg(tint)} width={map.pip.width} height={pipHeight(map.pip.width)} style={{ position: 'absolute', left: u(map.pip.x), top: u(map.pip.y) }} />}
+        {map.pip && <Drawing svg={pipSvg(tint, open)} width={map.pip.width} height={pipHeight(map.pip.width)} style={{ position: 'absolute', left: u(map.pip.x), top: u(map.pip.y) }} />}
       </div>}
       <div style={{
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', height: u(top),
@@ -218,14 +236,15 @@ export async function deliveryCard({ parcel, carrier, delivery = null, when, tim
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: `0 ${u(20)}px`, ...(map ? {} : { marginTop: u(BESIDE.gap) }) }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', fontSize: u(28), lineHeight: 1.125, letterSpacing: u(-.8), whiteSpace: 'nowrap', ...heavy(.7, INK) }}>{headline}</div>
+          <div style={{ display: 'flex', fontSize: u(headlineSize), lineHeight: `${u(HEADLINE)}px`, letterSpacing: u(-.8 * headlineSize / 28), whiteSpace: 'nowrap', ...heavy(.7, INK) }}>{headline}</div>
           {facts && <div style={{ display: 'flex', marginTop: u(8), fontSize: u(15), lineHeight: 1.5, color: tone, whiteSpace: 'nowrap', ...heavy(.2, tone) }}>{facts}</div>}
         </div>
-        {!map && <Drawing svg={pipSvg(tint)} width={BESIDE.pip} height={pipHeight(BESIDE.pip)} />}
+        {!map && <Drawing svg={pipSvg(tint, open)} width={BESIDE.pip} height={pipHeight(BESIDE.pip)} />}
       </div>
       <div style={{ display: 'flex', padding: `${u(18)}px ${u(20)}px ${u(20)}px` }}>
-        {CORE_STAGES.map((stage, index) => <div key={stage} style={{
-          display: 'flex', flex: 1, height: u(3), marginLeft: index ? u(4) : 0, borderRadius: u(1.5), background: mix(tone, surface, .45),
+        {CORE_STAGES.map((step, index) => <div key={step} style={{
+          display: 'flex', flex: 1, height: u(3), marginLeft: index ? u(4) : 0, borderRadius: u(1.5),
+          background: index <= reached ? mix(tone, surface, .45) : mix(surface, INK, .14),
         }} />)}
       </div>
     </div>,

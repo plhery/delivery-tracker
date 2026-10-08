@@ -65,8 +65,8 @@ Key server modules:
   that moment, stored by the check that runs as it is added or more than a day older than
   it. A first history that arrives later, from the hours before the add, is announced.
   A batch whose newest scan is more than a day old is stored and shown without an alert.
-- `email/` tells an account by email that a parcel was delivered, when the account asked
-  for it. The database hands each delivered scan out once (`claim_delivery_emails`),
+- `email/` tells an account by email that a parcel was delivered or is ready to collect,
+  when the account asked for it. The database hands each parcel out once (`claim_delivery_emails`),
   `deliveryEmails.ts` writes the email and sends it through any SMTP service, and
   `unsubscribe.ts` signs the link that switches it off.
 - `observability.ts` and `trackingAudit.ts` link Sentry and logs to the private audit
@@ -262,8 +262,8 @@ alive with it. An address that opens on such a screen (`/demo`, `/invite`, `/p/<
 - **An alert for a link** is deleted when the parcel is delivered or returned, when its
   browser unsubscribes, when its link goes and, for viewers, when sharing stops.
 - **A delivery email** leaves one row per parcel in `delivery_emails`: sent, failed or
-  skipped, with a reason code and none of its content. The row outlives its parcel, so a
-  delivery is never told twice.
+  skipped, with the stage it told, a reason code and none of its content. The row outlives
+  its parcel, so a parcel is never told twice.
 - **Deleting an account** removes the Auth user. Foreign-key cascades remove parcels,
   jobs, events, push registrations, Live Activity tokens, delivery email rows and audit
   rows. Other audit rows expire after 90 days.
@@ -283,12 +283,14 @@ alive with it. An address that opens on such a screen (`/demo`, `/invite`, `/p/<
   Activity pushes go first, so a successful one replaces the matching banner; if it fails,
   the banner is sent.
 - The delivery email is apart from notifications: off until the account switches it on,
-  and switched off per parcel. It is sent once per parcel, after the notifications of the
-  sync job that stored the delivered scan, on deployments without push too.
-  - A parcel that was already delivered when it joined the account is never emailed. A
-    delivered scan with a clock time must be later than that moment. One with only a day,
-    or no time, counts when an earlier check of the parcel, since it joined, answered
-    without a delivery. Keeping a looked-up parcel is joining; merging two legs is not.
+  and switched off per parcel. It is sent once per parcel, when it is delivered or ready to
+  collect, whichever comes first: a parcel told at its pickup point is not told again when
+  it is collected. It goes after the notifications of the sync job that stored the scan,
+  on deployments without push too. A retried send tells what the parcel shows by then.
+  - A parcel is never emailed for what it already showed when it joined the account. A
+    scan with a clock time must be later than that moment. One with only a day, or no
+    time, counts when an earlier check of the parcel, since it joined, answered with
+    another stage. Keeping a looked-up parcel is joining; merging two legs is not.
   - Nor is a scan stored before the email was switched on or more than 24 hours ago, or
     one that is not the parcel's newest.
   - A send that fails is tried again a quarter of an hour later, then an hour later.

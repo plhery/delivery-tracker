@@ -36,6 +36,7 @@ function claim(number: number, changes: Partial<DeliveryEmailClaim> = {}): Deliv
     packageId: `58000000-0000-4000-a000-00000000000${number}`,
     userId: alex,
     eventId: `59000000-0000-4000-a000-00000000000${number}`,
+    stage: 'delivered',
     timezone: 'Europe/Zurich',
     deliveredTime: 'timed',
     ...changes,
@@ -112,6 +113,7 @@ describe('telling an account that its parcel was delivered', () => {
     expect(input).toEqual({
       parcel: expect.objectContaining({ id: claim(1).packageId, label: 'Sneakers' }),
       locale: 'de',
+      stage: 'delivered',
       timezone: 'Europe/Zurich',
       journeyUrl: `https://peek.example.com/?parcel=${claim(1).packageId}`,
       offUrl: `https://peek.example.com/email/off#t=${token}`,
@@ -142,9 +144,16 @@ describe('telling an account that its parcel was delivered', () => {
     expect(transport.close).toHaveBeenCalledOnce();
     expect(counted).toHaveBeenCalledExactlyOnceWith('sent', 'none');
     expect(logged('delivery_email')).toEqual([expect.objectContaining({
-      level: 'info', package_id: claim(1).packageId, outcome: 'sent', reason: 'none',
+      level: 'info', package_id: claim(1).packageId, stage: 'delivered', outcome: 'sent', reason: 'none',
     })]);
     expect(reported).not.toHaveBeenCalled();
+  });
+
+  it('writes the email a parcel ready to collect gets, and says so in the log', async () => {
+    claims([claim(1, { stage: 'ready_for_pickup' })]);
+    expect(await service.dispatch()).toEqual({ sent: 1, failed: 0, skipped: 0 });
+    expect(written.content).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ stage: 'ready_for_pickup' }));
+    expect(logged('delivery_email')).toEqual([expect.objectContaining({ package_id: claim(1).packageId, stage: 'ready_for_pickup', outcome: 'sent' })]);
   });
 
   it.each(['timed', 'date', 'none'] as const)('tells the email what the delivered scan knows of its time: %s', async (deliveredTime) => {
@@ -342,7 +351,7 @@ describe('what is recorded about an email', () => {
     // Every line is made of the parcel's id, how the email ended and why.
     for (const line of logged('delivery_email')) {
       expect(Object.keys(line).sort().filter((key) => !['error_type', 'error_code', 'smtp_status'].includes(key)))
-        .toEqual(['event', 'level', 'outcome', 'package_id', 'reason', 'timestamp']);
+        .toEqual(['event', 'level', 'outcome', 'package_id', 'reason', 'stage', 'timestamp']);
     }
   });
 });

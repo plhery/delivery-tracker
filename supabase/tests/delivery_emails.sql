@@ -270,9 +270,10 @@ begin
   select * into ledger from public.delivery_emails where package_id = parcel;
   if pg_temp.sends(claim) <> array[parcel] or claim->'account_cap' <> '0' or claim->'service_cap' <> '0'
       or entry->>'id' <> ledger.id::text or entry->>'user_id' <> alex::text or entry->>'event_id' <> delivered::text
-      or entry->>'timezone' <> 'America/New_York' or entry->>'delivered_time' <> 'timed'
-      or (select count(*) from jsonb_object_keys(entry)) <> 6
+      or entry->>'timezone' <> 'America/New_York' or entry->>'delivered_time' <> 'timed' or entry->>'stage' <> 'delivered'
+      or (select count(*) from jsonb_object_keys(entry)) <> 7
       or ledger.status <> 'claimed' or ledger.attempts <> 1 or ledger.user_id <> alex or ledger.event_id <> delivered
+      or ledger.stage <> 'delivered'
       or ledger.claimed_at <> now() or ledger.sent_at is not null or ledger.reason is not null then
     raise exception 'A parcel delivered an hour after it was added was not claimed: % %', claim, ledger;
   end if;
@@ -946,6 +947,111 @@ begin
   if pg_temp.sends(claim) <> '{}' or exists (select 1 from public.delivery_emails) then
     raise exception 'A leg added already delivered was emailed after its merge: %', claim;
   end if;
+end;
+$$;
+
+-- Ready to collect: announced like a delivery when the server asks for it, and
+-- the parcel's one email. Collecting it later is not news; a failed email tried
+-- again tells what the parcel shows by then.
+do $$
+declare
+  alex constant uuid := 'e1000000-0000-4000-8000-000000000001';
+  both_stages constant text[] := array['delivered', 'ready_for_pickup'];
+  parcel uuid;
+  waiting uuid;
+  delivered uuid;
+  claim jsonb;
+  ledger public.delivery_emails;
+begin
+  perform pg_temp.fresh();
+  parcel := pg_temp.parcel(alex, 'EMAILPICKUP01', '2 days', 'ready_for_pickup');
+  perform pg_temp.scan(parcel, 'out_for_delivery', '6 hours', '5 hours');
+  waiting := pg_temp.scan(parcel, 'ready_for_pickup', '2 hours', '1 hour 50 minutes');
+  -- A server that knows only the delivery is handed none.
+  if pg_temp.sends(public.claim_delivery_emails(20, 20, 80)) <> '{}' or exists (select 1 from public.delivery_emails) then
+    raise exception 'A parcel ready to collect was claimed by a server that announces deliveries only';
+  end if;
+  if pg_temp.sends(public.claim_delivery_emails(20, 20, 80, array['delivered'])) <> '{}' then
+    raise exception 'A parcel ready to collect was claimed for its delivery';
+  end if;
+  claim := public.claim_delivery_emails(20, 20, 80, both_stages);
+  select * into ledger from public.delivery_emails where package_id = parcel;
+  if pg_temp.sends(claim) <> array[parcel] or claim#>>'{send,0,stage}' <> 'ready_for_pickup'
+      or claim#>>'{send,0,event_id}' <> waiting::text or claim#>>'{send,0,delivered_time}' <> 'timed'
+      or ledger.stage <> 'ready_for_pickup' or ledger.event_id <> waiting or ledger.status <> 'claimed' then
+    raise exception 'A parcel ready to collect was not claimed: % %', claim, ledger;
+  end if;
+  perform public.finish_delivery_email(ledger.id, 'sent');
+  -- Collected: the parcel was told already.
+  update public.packages set current_stage = 'delivered' where id = parcel;
+  perform pg_temp.scan(parcel, 'delivered', '10 minutes', '5 minutes');
+  if pg_temp.sends(public.claim_delivery_emails(20, 20, 80, both_stages)) <> '{}' then
+    raise exception 'A parcel announced ready to collect was emailed again when collected';
+  end if;
+
+  -- A newer pickup scan of a parcel that was told is not news either.
+  update public.packages set current_stage = 'ready_for_pickup' where id = parcel;
+  perform pg_temp.scan(parcel, 'ready_for_pickup', '1 minute', '1 minute');
+  if pg_temp.sends(public.claim_delivery_emails(20, 20, 80, both_stages)) <> '{}' then
+    raise exception 'A parcel moved to another pickup point was emailed twice';
+  end if;
+
+  -- An email that failed is tried again with what the parcel shows by then.
+  perform pg_temp.fresh();
+  parcel := pg_temp.parcel(alex, 'EMAILPICKUP02', '2 days', 'ready_for_pickup');
+  waiting := pg_temp.scan(parcel, 'ready_for_pickup', '3 hours', '2 hours 50 minutes');
+  claim := public.claim_delivery_emails(20, 20, 80, both_stages);
+  perform public.finish_delivery_email((claim#>>'{send,0,id}')::uuid, 'failed', 'smtp');
+  update public.delivery_emails set claimed_at = now() - interval '15 minutes';
+  update public.packages set current_stage = 'delivered' where id = parcel;
+  delivered := pg_temp.scan(parcel, 'delivered', '20 minutes', '10 minutes');
+  claim := public.claim_delivery_emails(20, 20, 80, both_stages);
+  select * into ledger from public.delivery_emails where package_id = parcel;
+  if pg_temp.sends(claim) <> array[parcel] or claim#>>'{send,0,stage}' <> 'delivered'
+      or ledger.stage <> 'delivered' or ledger.event_id <> delivered or ledger.attempts <> 2 then
+    raise exception 'A failed pickup email was not tried again as the delivery: % %', claim, ledger;
+  end if;
+
+  -- Never one that was already waiting when the parcel joined the account: its
+  -- first check found it there.
+  perform pg_temp.fresh();
+  parcel := pg_temp.parcel(alex, 'EMAILPICKUP03', '1 hour', 'ready_for_pickup');
+  perform pg_temp.checked(parcel, '59 minutes', 'ready_for_pickup');
+  perform pg_temp.scan(parcel, 'ready_for_pickup', '10 hours', '59 minutes', '{"time":"2026-10-03"}');
+  if pg_temp.sends(public.claim_delivery_emails(20, 20, 80, both_stages)) <> '{}' then
+    raise exception 'A parcel added already waiting, on a day without a time, was claimed';
+  end if;
+  -- A day without a time counts once an earlier check saw it elsewhere.
+  perform pg_temp.fresh();
+  parcel := pg_temp.parcel(alex, 'EMAILPICKUP04', '2 days', 'ready_for_pickup');
+  perform pg_temp.checked(parcel, '1 day', 'out_for_delivery', 'unchanged');
+  perform pg_temp.scan(parcel, 'ready_for_pickup', '10 hours', '1 hour', '{"time":"2026-10-03"}');
+  claim := public.claim_delivery_emails(20, 20, 80, both_stages);
+  if pg_temp.sends(claim) <> array[parcel] or claim#>>'{send,0,delivered_time}' <> 'date' then
+    raise exception 'A parcel ready to collect on a day without a time was not claimed: %', claim;
+  end if;
+
+  -- A pickup scan of a parcel that has moved on to another stage is not news.
+  perform pg_temp.fresh();
+  parcel := pg_temp.parcel(alex, 'EMAILPICKUP05', '2 days', 'returned');
+  perform pg_temp.scan(parcel, 'ready_for_pickup', '3 hours', '2 hours');
+  perform pg_temp.scan(parcel, 'returned', '1 hour', '50 minutes');
+  if pg_temp.sends(public.claim_delivery_emails(20, 20, 80, both_stages)) <> '{}' then
+    raise exception 'A returned parcel was announced ready to collect';
+  end if;
+
+  begin
+    perform public.claim_delivery_emails(20, 20, 80, array['returned']);
+    raise exception 'A claim announced a stage it has no email for' using errcode = 'P0001';
+  exception when invalid_parameter_value then null; end;
+  begin
+    perform public.claim_delivery_emails(20, 20, 80, '{}');
+    raise exception 'A claim announced no stage' using errcode = 'P0001';
+  exception when invalid_parameter_value then null; end;
+  begin
+    perform public.claim_delivery_emails(20, 20, 80, null);
+    raise exception 'A claim announced no stage' using errcode = 'P0001';
+  exception when invalid_parameter_value then null; end;
 end;
 $$;
 

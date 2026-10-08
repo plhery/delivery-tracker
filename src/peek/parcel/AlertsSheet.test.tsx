@@ -213,11 +213,11 @@ describe('the Ping me sheet', () => {
     expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
   });
 
-  it('says what signing in adds where the server emails accounts: an email when the parcel is delivered', async () => {
+  it('says what signing in adds where the server emails accounts: an email when the parcel arrives', async () => {
     stubAlertBrowser();
     const user = userEvent.setup();
     const { onSignIn, onClose, unmount } = open({ alerts: { ...SERVER, email: true } });
-    expect(screen.getByText('An email when it’s delivered')).toBeVisible();
+    expect(screen.getByText('An email when it arrives')).toBeVisible();
     expect(screen.getByText('Sign in, and Peek writes to the address you sign in with.')).toBeVisible();
     expect(screen.queryByText('Alerts on all your devices')).toBeNull();
     // The browser's own alerts are offered as before.
@@ -236,7 +236,7 @@ describe('the Ping me sheet', () => {
     noteLink(LINK_ID, { alert: { preset: 'important', endpoint: TEST_PUSH_ENDPOINT } });
     open({ alerts: { ...SERVER, email: true } });
     expect(screen.getByText('Alerts are on in this browser')).toBeVisible();
-    expect(screen.getByText('An email when it’s delivered')).toBeVisible();
+    expect(screen.getByText('An email when it arrives')).toBeVisible();
   });
 
   it('shows an iPhone outside its Home Screen app the steps there instead of a button that cannot work', async () => {

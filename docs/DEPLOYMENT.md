@@ -155,8 +155,8 @@ deploy back.
 
 ## Delivery email
 
-Optional. With mail settings, an account can ask for one email when a parcel is delivered,
-sent to the address it signs in with. Without them, nothing in the app mentions email.
+Optional. With mail settings, an account can ask for one email when a parcel is delivered
+or ready to collect, sent to the address it signs in with. Without them, nothing in the app mentions email.
 
 Set `SMTP_HOST`, `EMAIL_FROM` and `CANONICAL_ORIGIN`; [`.env.example`](../.env.example)
 lists the rest. Any SMTP service works. The connection is always encrypted: TLS from the

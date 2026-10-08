@@ -40,7 +40,7 @@ describe('the page a delivery email’s opt-out link opens', () => {
   it('asks first: opening the link sends nothing, and counts nothing', async () => {
     open(`#t=${TOKEN}`);
     expect(title()).toHaveTextContent('Turn off delivery emails?');
-    expect(screen.getByText('Peek will stop emailing you when a parcel is delivered. Your notifications stay as they are.')).toBeVisible();
+    expect(screen.getByText('Peek will stop emailing you when a parcel is delivered or ready to collect. Your notifications stay as they are.')).toBeVisible();
     expect(button('Turn off')).toBeEnabled();
     expect(screen.getByRole('link', { name: 'Open Peek' })).toHaveAttribute('href', '/');
     // A scanner that opens the link, scripts and all, changes nothing: only the button does.
@@ -66,7 +66,7 @@ describe('the page a delivery email’s opt-out link opens', () => {
     await act(async () => { answer(json({ emailOnDelivery: false })); });
 
     expect(title()).toHaveTextContent('Delivery emails are off');
-    expect(screen.getByText('Peek won’t email you when a parcel is delivered. Your notifications haven’t changed.')).toBeVisible();
+    expect(screen.getByText('Peek won’t email you when a parcel is delivered or ready to collect. Your notifications haven’t changed.')).toBeVisible();
     // The same button, now the way back: the focus has not moved.
     expect(button('Turn back on')).toHaveFocus();
     expect(document.title).toBe('Peek — Delivery emails are off');
@@ -78,7 +78,7 @@ describe('the page a delivery email’s opt-out link opens', () => {
     await user.click(button('Turn off'));
     await user.click(await screen.findByRole('button', { name: 'Turn back on' }));
     await waitFor(() => expect(title()).toHaveTextContent('Delivery emails are back on'));
-    expect(screen.getByText('You’ll get one short email when a parcel is delivered.')).toBeVisible();
+    expect(screen.getByText('You’ll get one short email when a parcel is delivered or ready to collect.')).toBeVisible();
     await user.click(button('Turn off'));
     await waitFor(() => expect(title()).toHaveTextContent('Delivery emails are off'));
     expect(posted().map(([, , body]) => body)).toEqual([{ token: TOKEN }, { token: TOKEN, enabled: true }, { token: TOKEN }]);

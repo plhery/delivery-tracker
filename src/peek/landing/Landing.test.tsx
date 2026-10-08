@@ -61,7 +61,7 @@ describe('Landing', () => {
     expect(document.body).not.toHaveTextContent(/e-?mail/i);
     unmount();
     render(<PeekSessionProvider value={{ account: 'visitor', signIn: vi.fn(), deliveryEmails: true }}><Landing onSignIn={onSignIn} /></PeekSessionProvider>);
-    expect(benefits()).toEqual(['One list, the next one on its map', 'Pings for the steps you choose', 'An email when it’s delivered', 'A passport of deliveries']);
+    expect(benefits()).toEqual(['One list, the next one on its map', 'Pings for the steps you choose', 'An email when it arrives', 'A passport of deliveries']);
     expect(screen.getByText('One short email per parcel, to the address you sign in with. Only if you turn it on.')).toBeVisible();
   });
 

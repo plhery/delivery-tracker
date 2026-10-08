@@ -12,6 +12,11 @@ export interface EmailWords {
   tagline: string;
   title: string;
   sentence: string;
+  /**
+   * Where the parcel waits, and the way there: only when it is ready to collect
+   * and the carrier says where. `text` is the same in plain text, one line each.
+   */
+  place: { label: string; name: string; address: string | null; link: string; url: string; text: string[] } | null;
   /** What the card's picture shows, for a reader who does not see it. Null when there is no picture. */
   cardAlt: string | null;
   button: string;
@@ -66,12 +71,26 @@ function footerHtml(words: EmailWords): string {
  * margins are cells of their own, so they shrink with it and the card keeps
  * as much of a small screen as it can. The button is as wide as the card.
  *
+ * A parcel ready to collect has the place it waits at under the sentence, on
+ * the ground's colour, with a link to it on a map.
+ *
  * Why the email came and how to stop it is a notice for whoever looks for it,
  * not part of the message: it sits under the panel, small, pale and centred.
  */
 export function emailHtml(words: EmailWords): string {
   const table = 'role="presentation" cellspacing="0" cellpadding="0" border="0"';
   const gutter = '<td width="6%" style="font-size: 0; line-height: 0">&nbsp;</td>';
+  const place = words.place === null ? '' : `
+<table ${table} width="100%" style="margin: 18px 0 0">
+<tr>
+<td bgcolor="${COLOR.ground}" style="padding: 14px 16px; border-radius: 16px; background-color: ${COLOR.ground}">
+<p style="margin: 0; ${type(COLOR.soft)}; font-size: 12px; line-height: 1.4">${escapeHtml(words.place.label)}</p>
+<p style="margin: 2px 0 0; ${type()}; font-size: 15px; line-height: 1.4; font-weight: 600">${escapeHtml(words.place.name)}</p>${words.place.address === null ? '' : `
+<p style="margin: 0; ${type(COLOR.soft)}; font-size: 14px; line-height: 1.4">${escapeHtml(words.place.address)}</p>`}
+<p style="margin: 8px 0 0; ${type()}; font-size: 14px; line-height: 1.4">${link(words.place.url, words.place.link, COLOR.ink)}</p>
+</td>
+</tr>
+</table>`;
   // The picture's rounded corners are cut out of it, and it leads where the button leads.
   const card = words.cardAlt === null ? '' : `
 <div style="margin: 22px 0 0"><a href="${escapeHtml(words.journeyUrl)}" style="text-decoration: none"><img src="cid:${DELIVERY_CARD_CID}" width="${CARD}" alt="${escapeHtml(words.cardAlt)}" style="display: block; width: 100%; max-width: ${CARD}px; height: auto; border: 0; outline: none; ${type(COLOR.soft)}; font-size: 13px; line-height: 1.5"></a></div>`;
@@ -101,7 +120,7 @@ ${gutter}
 <p style="margin: 0; ${type()}; font-size: 16px; line-height: 1.1; font-weight: 700; letter-spacing: -.4px">${escapeHtml(words.brand)}</p>
 <p style="margin: 2px 0 0; ${type(COLOR.soft)}; font-size: 10px; line-height: 1.1">${escapeHtml(words.tagline)}</p>
 <h1 style="margin: 26px 0 6px; ${type()}; font-size: 30px; line-height: 1.1; font-weight: 600; letter-spacing: -1px">${escapeHtml(words.title)}</h1>
-<p style="margin: 0; ${type(COLOR.soft)}; font-size: 14px; line-height: 1.5">${escapeHtml(words.sentence)}</p>${card}
+<p style="margin: 0; ${type(COLOR.soft)}; font-size: 14px; line-height: 1.5">${escapeHtml(words.sentence)}</p>${place}${card}
 <table ${table} width="100%" style="margin: 20px 0 0">
 <tr>
 <td align="center" bgcolor="${COLOR.yellow}" style="border-radius: 16px; background-color: ${COLOR.yellow}"><a href="${escapeHtml(words.journeyUrl)}" style="display: block; padding: 15px 20px; border-radius: 16px; ${type()}; font-size: 15px; line-height: 20px; font-weight: 600; text-align: center; text-decoration: none">${escapeHtml(words.button)}</a></td>
@@ -127,14 +146,15 @@ ${gutter}
 }
 
 /**
- * The same email for a client that shows no HTML: the title, the sentence and
- * the way to the journey, then why it came, how to stop it, and the two
- * addresses its last line links.
+ * The same email for a client that shows no HTML: the title, the sentence,
+ * the place it waits at, and the way to the journey, then why it came, how to
+ * stop it, and the two addresses its last line links.
  */
 export function emailText(words: EmailWords): string {
   return [
     words.title,
     words.sentence,
+    ...words.place?.text ?? [],
     words.textJourney,
     '',
     words.footer.replace('{{off}}', words.footerOff).replace('{{alerts}}', words.footerAlerts),

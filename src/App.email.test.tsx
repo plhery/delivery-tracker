@@ -51,7 +51,7 @@ describe('the delivery email in the deliveries', () => {
     await user.click(await within(detail).findByRole('button', { name: 'Alerts for this parcel' }));
     const sheet = screen.getByRole('dialog', { name: 'Alerts for Belgian chocolate 🍫' });
     expect(within(sheet).getByRole('switch', { name: 'Notifications' })).toHaveAccessibleDescription('Delivery day only, as in Settings');
-    const email = within(sheet).getByRole('switch', { name: 'Email when it’s delivered' });
+    const email = within(sheet).getByRole('switch', { name: 'Email when it arrives' });
     expect(email).toHaveAccessibleDescription('To alex@example.com');
     await user.click(email);
     await waitFor(() => expect(email).not.toBeChecked());

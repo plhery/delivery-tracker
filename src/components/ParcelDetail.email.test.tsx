@@ -107,7 +107,7 @@ describe('a parcel’s bell', () => {
     const notifications = within(sheet()).getByRole('switch', { name: 'Notifications' });
     expect(notifications).toBeChecked();
     expect(notifications).toHaveAccessibleDescription('Important only, as in Settings');
-    const email = within(sheet()).getByRole('switch', { name: 'Email when it’s delivered' });
+    const email = within(sheet()).getByRole('switch', { name: 'Email when it arrives' });
     expect(email).toBeChecked();
     expect(email).toHaveAccessibleDescription('To alex@example.com');
     expect(within(sheet()).getByText('Switching one off here only mutes this parcel. Your defaults are in Settings › Delivery updates.')).toBeVisible();
@@ -134,7 +134,7 @@ describe('a parcel’s bell', () => {
     await user.click(bell());
     let answer!: () => void;
     saves.email.mockReturnValueOnce(new Promise((resolve) => { answer = resolve; }));
-    const email = within(sheet()).getByRole('switch', { name: 'Email when it’s delivered' });
+    const email = within(sheet()).getByRole('switch', { name: 'Email when it arrives' });
     const notifications = within(sheet()).getByRole('switch', { name: 'Notifications' });
     await user.click(email);
     expect(saves.email).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: 'package-1' }), true);
@@ -162,7 +162,7 @@ describe('a parcel’s bell', () => {
     const { user } = await open();
     await user.click(bell());
     saves.email.mockRejectedValueOnce(new Error('offline'));
-    const email = within(sheet()).getByRole('switch', { name: 'Email when it’s delivered' });
+    const email = within(sheet()).getByRole('switch', { name: 'Email when it arrives' });
     await user.click(email);
     expect(await within(sheet()).findByRole('alert')).toHaveTextContent('Couldn’t save your alert settings. Try again.');
     expect(email).toBeChecked();

@@ -77,10 +77,11 @@ stops the check instead: its attempt stays `running`, and is marked `abandoned` 
 reported as above.
 
 `delivery_emails` records what was emailed: one row per parcel claimed for a delivery
-email, with the account, the delivered scan, `status` (`claimed`, `sent`, `failed`,
-`skipped`), a `reason` code, the attempts and the times. It holds no address and none of
-the email. A row outlives its parcel and goes with its account. The delivery email also
-reads the attempts above: a delivered scan without a clock time is news only when an
+email, with the account, the scan it told and its `stage` (`delivered`,
+`ready_for_pickup`), `status` (`claimed`, `sent`, `failed`, `skipped`), a `reason` code,
+the attempts and the times. It holds no address and none of the email. A row outlives its
+parcel and goes with its account. The delivery email also reads the attempts above: a
+scan without a clock time is news only when an
 earlier attempt, since the parcel joined the account, ended `updated` or `unchanged` on
 another stage.
 
@@ -299,7 +300,7 @@ Key JSON events:
 - `parcel_link_alerts_failed`: how many alerts of parcel links a dispatch could not send.
 - `public_allowance`: an overall daily allowance without an account (`kind`: `lookup` or
   `detection`) is `running_out` at 80% or `used_up`, with `used` and `limit`.
-- `delivery_email` (by `package_id`): how one delivery email ended, with its `outcome` and
+- `delivery_email` (by `package_id`): how one delivery email ended, with its `stage`, `outcome` and
   `reason`; a refusal by the mail server adds `error_code` and `smtp_status`.
   `delivery_emails_capped` when emails were skipped for a daily allowance, and
   `delivery_email_finish_failed` when an ending could not be recorded: that email stays
