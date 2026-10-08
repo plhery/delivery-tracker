@@ -1519,8 +1519,13 @@
   {
     "input": "1001921334250001000300779017972697",
     "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "confidence": "low",
+    "candidates": [
+      "fedex"
+    ],
+    "preferred": [
+      "fedex"
+    ]
   },
   {
     "input": "10084004615036",
@@ -7522,13 +7527,115 @@
     ]
   },
   {
+    "input": "9611019012345611887554",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "fedex"
+    ],
+    "asked": [
+      "austrian-post"
+    ]
+  },
+  {
+    "input": "9611019012345612345671",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "fedex"
+    ],
+    "asked": [
+      "austrian-post"
+    ]
+  },
+  {
     "input": "9611020987654312345672",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "fedex"
+    ],
+    "asked": [
+      "austrian-post"
+    ]
+  },
+  {
+    "input": "9611020987654312345673",
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
       "austrian-post",
       "usps",
       "estafeta"
+    ],
+    "asked": [
+      "austrian-post"
+    ]
+  },
+  {
+    "input": "9611804027471600040302",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "fedex"
+    ],
+    "asked": [
+      "austrian-post"
+    ]
+  },
+  {
+    "input": "9612019012345612345688",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "fedex"
+    ],
+    "asked": [
+      "austrian-post"
+    ]
+  },
+  {
+    "input": "9612804045318533301017",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "fedex"
     ],
     "asked": [
       "austrian-post"
@@ -7539,19 +7646,78 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "fedex",
       "austrian-post",
       "usps",
       "estafeta"
+    ],
+    "preferred": [
+      "fedex"
     ],
     "asked": [
       "austrian-post"
     ]
   },
   {
-    "input": "9622001900000000000000776632517510",
+    "input": "9622001560001234567100794808390594",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex"
+    ],
+    "preferred": [
+      "fedex"
+    ]
+  },
+  {
+    "input": "9622001560001234567100794808390595",
     "carrier": "unknown",
     "confidence": "none",
     "candidates": []
+  },
+  {
+    "input": "9622001900000000000000776632517510",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex"
+    ],
+    "preferred": [
+      "fedex"
+    ]
+  },
+  {
+    "input": "9632001560123456789900794808390594",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex"
+    ],
+    "preferred": [
+      "fedex"
+    ]
+  },
+  {
+    "input": "9632001960123456789400152152152158",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex"
+    ],
+    "preferred": [
+      "fedex"
+    ]
+  },
+  {
+    "input": "9632080400123456789400152152152158",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex"
+    ],
+    "preferred": [
+      "fedex"
+    ]
   },
   {
     "input": "9680012996",

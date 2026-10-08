@@ -738,6 +738,18 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low",
         "checksum": "gs1",
         "preferred": true
+      },
+      {
+        "pattern": "^96\\d{20}$",
+        "confidence": "low",
+        "checksum": "fedex-ground-96",
+        "preferred": true
+      },
+      {
+        "pattern": "^\\d{20}00\\d{12}$",
+        "confidence": "low",
+        "checksum": "fedex-1d",
+        "preferred": true
       }
     ]
   },
