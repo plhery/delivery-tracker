@@ -472,8 +472,10 @@ export function captureTrackingHealth(incident: JsonObject): string | null {
     scope.setContext('tracking_health', { ...incident, impact: message.impact, next_steps: message.nextSteps,
       suppression: 'Repeated incident notifications are limited to one per six hours.',
       runbook: 'https://github.com/plhery/peek-delivery-tracker/blob/main/ops/sentry/README.md' });
-    // Opening, reminders and recovery belong to one incident history.
-    scope.setFingerprint(['delivery-tracker', 'tracking-health', String(incident.kind), String(incident.subject)]);
+    // Opening and reminders are one issue; recovery is another, so that it neither
+    // reopens the outage once resolved nor keeps it looking active.
+    scope.setFingerprint(['delivery-tracker', 'tracking-health', String(incident.kind), String(incident.subject),
+      ...(recovered ? ['recovered'] : [])]);
     scope.setLevel(recovered ? 'info' : incident.kind === 'refresh' ? 'error' : 'warning');
     id = Sentry.captureMessage(message.title);
   });
@@ -588,7 +590,10 @@ export function beginScheduledSyncCheckIn(now = new Date()): ScheduledCheckIn | 
       value: daytime ? '*/2 8-21 * * *' : '0 0-7,22-23 * * *',
     },
     checkinMargin: daytime ? 5 : 15,
-    maxRuntime: 30,
+    // Runs never overlap: a stuck one holds the queue, no later check-in arrives, and
+    // Sentry reports it as timed out after ten minutes, far beyond a normal run.
+    // Every run's first check-in sends this configuration, replacing edits made in Sentry.
+    maxRuntime: 10,
     timezone: 'Europe/Zurich',
     failureIssueThreshold: 1,
     recoveryThreshold: 1,

@@ -1,6 +1,6 @@
 # Tracking incidents
 
-Carrier and provider outages open a single Sentry incident, and a recovery event closes it.
+Carrier and provider outages open a single Sentry issue, and their recovery opens another.
 Postgres (`record_tracking_health`) decides when, from scheduled refreshes only. Manual
 refreshes, unsupported carriers and superseded work don't count. Samples last 24 hours and
 hold only provider ids, outcome categories, HTTP statuses and opaque ids. A sample's
@@ -40,7 +40,11 @@ after the SDK flushes), and duplicates group under the same fingerprint.
 
 Events carry `component:tracking-health`, `incident_kind`, `incident_state` and `provider`
 tags, plus a `tracking_health` context with counts, impact, evidence and next steps.
-Recovery events say "recovered" but don't change the issue status.
+Opening and reminders share one issue per incident kind and provider. The recovery is an
+informational issue of its own (its fingerprint ends in `recovered`), so it neither reopens
+the outage's issue once resolved nor keeps it looking active. It doesn't resolve it either:
+resolve the outage's issue when the recovery arrives. The next outage of the same kind and
+provider then shows as a regression.
 
 **Alert rule:** match `component:tracking-health` at all levels, informational recoveries
 included. Don't add a frequency threshold, because Postgres already applied one. Keep

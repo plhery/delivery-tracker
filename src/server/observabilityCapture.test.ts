@@ -206,6 +206,13 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(incident.tags).toMatchObject({ component: 'tracking-health', incident_state: 'open' });
   expect(incident.contexts?.tracking_health?.next_steps).toContain('maintenance');
   expect(incident.fingerprint).toEqual(['delivery-tracker', 'tracking-health', 'direct', 'la-poste']);
+  // A recovery is its own issue: it neither reopens a resolved outage nor keeps it looking active.
+  const recoveryId = captureTrackingHealth({ id: 'test-recovery', kind: 'direct', subject: 'la-poste', state: 'recovered',
+    attempts: 3, failures: 0, window_hours: 24 });
+  await flushObservability();
+  const recovery = captured.events.find(event => event.event_id === recoveryId)!;
+  expect(recovery).toMatchObject({ message: 'Direct tracking recovered: la-poste', level: 'info',
+    fingerprint: ['delivery-tracker', 'tracking-health', 'direct', 'la-poste', 'recovered'] });
   // A later error-free routing event must not inherit the refusal's HTTP context,
   // and the recovery itself is only a breadcrumb on it rather than its own issue.
   const opportunity = captured.events.find((event) => event.message === 'Tracking routing: direct_support_opportunity' && event.tags?.provider === 'la-poste')!;

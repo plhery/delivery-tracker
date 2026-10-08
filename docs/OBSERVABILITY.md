@@ -325,11 +325,19 @@ project-side scrubbing still apply. Automatic lookups wrap each provider failure
   `job_id`, `request_id`, `tracking_hash`, `upstream_status` and `database_code` are
   searchable tags.
 - **Source maps** stay in the server image only, never in browser assets.
-- **Crons**: daytime and overnight schedules send check-ins; a missed or failed run alerts.
+- **Crons**: a scheduled run sends an in-progress check-in to the daytime or overnight
+  monitor, then `ok` or `error` with its duration in seconds. A run handed over at a deploy
+  keeps its check-in. The first check-in also sends the monitor's settings (schedule, 5 or
+  15 minutes of margin, 10 minutes of maximum runtime), which overwrite edits made in Sentry:
+  change them in `beginScheduledSyncCheckIn`. Runs never overlap, so a stuck run holds the
+  queue: Sentry reports it as timed out after 10 minutes, and as missed once the next run is
+  late. A run whose worker died three times is failed by the next claim, and its check-in
+  times out silently behind the next run's; each reclaim before that was reported.
 - **Alerts**: notify on new issues and regressions in `production`, and keep the Cron
   alerts. Avoid "more than 0 times in 5 minutes" rules: they fire on every failed check.
-- **Incidents**: carrier and provider outages open once, with a recovery event, from
-  thresholds computed in Postgres. See [ops/sentry](../ops/sentry/README.md).
+- **Incidents**: carrier and provider outages open once, from thresholds computed in
+  Postgres. The recovery is a separate issue, so it never reopens or prolongs the outage's.
+  See [ops/sentry](../ops/sentry/README.md).
 - **Input requirements**: requests for a postcode or other tracking input stay in logs
   and breadcrumbs without opening Sentry issues. Each lookup made with a postcode the
   owner supplied for a provider logs `provider_input_lookup` with its result.
