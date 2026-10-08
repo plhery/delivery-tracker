@@ -1784,12 +1784,12 @@
       ],
       "detectionRules": [
         {
-          "pattern": "^(?!(?:EA|EB|EC|ED|EE|CP|GI))[A-Z]{2}\\d{9}GB$",
+          "pattern": "^(?!(?:E[A-Z]|CP|GI))[A-Z]{2}\\d{9}GB$",
           "confidence": "high",
           "checksum": "s10"
         },
         {
-          "pattern": "^32\\d{11}[A-F0-9]{8}$",
+          "pattern": "^(?:32\\d{11}[A-F0-9]{8}|(?=[A-F0-9]*[A-F])[A-F0-9]{2}\\d{7}[A-F0-9]{12})$",
           "confidence": "low"
         },
         {
@@ -1809,7 +1809,7 @@
       "timezone": "UTC",
       "tracking": {
         "mode": "automatic",
-        "adapter": "universal"
+        "adapter": "royal-mail"
       },
       "linkRules": [
         {
@@ -1823,9 +1823,13 @@
       ],
       "detectionRules": [
         {
-          "pattern": "^(?:EA|EB|EC|ED|EE|CP|GI)\\d{9}GB$",
+          "pattern": "^(?:E[A-Z]|CP|GI)\\d{9}GB$",
           "confidence": "high",
           "checksum": "s10"
+        },
+        {
+          "pattern": "^PB[A-Z]{2}\\d{10}$",
+          "confidence": "high"
         }
       ],
       "trackingUrlTemplate": "https://www.royalmail.com/track-your-item#/tracking-results/{trackingNumber}",
@@ -1918,7 +1922,7 @@
           "checksum": "s10"
         }
       ],
-      "trackingUrlTemplate": "https://track.anpost.ie/",
+      "trackingUrlTemplate": "https://www.anpost.com/Post-Parcels/Track/History?item={trackingNumber}",
       "countries": [
         "IE"
       ]
@@ -2068,7 +2072,7 @@
       "displayName": "Correos Express",
       "color": "#ffcd00",
       "selectable": true,
-      "timezone": "UTC",
+      "timezone": "Europe/Madrid",
       "tracking": {
         "mode": "automatic",
         "adapter": "correos-express",
@@ -2097,7 +2101,7 @@
       "displayName": "SEUR",
       "color": "#0063b3",
       "selectable": true,
-      "timezone": "UTC",
+      "timezone": "Europe/Madrid",
       "tracking": {
         "mode": "automatic",
         "adapter": "seur",
@@ -2139,7 +2143,7 @@
       "displayName": "MRW",
       "color": "#19133b",
       "selectable": true,
-      "timezone": "UTC",
+      "timezone": "Europe/Madrid",
       "tracking": {
         "mode": "automatic",
         "adapter": "mrw"
@@ -2345,6 +2349,10 @@
         },
         {
           "pattern": "^\\d{12}$",
+          "confidence": "low"
+        },
+        {
+          "pattern": "^\\d{15}$",
           "confidence": "low"
         }
       ],
@@ -4295,6 +4303,17 @@
       ],
       "detectionRules": [
         {
+          "pattern": "^1550\\d{10}$",
+          "confidence": "low",
+          "preferred": true
+        },
+        {
+          "pattern": "^1550\\d{10}[0-9A-Z]$",
+          "confidence": "low",
+          "checksum": "dpd",
+          "preferred": true
+        },
+        {
           "pattern": "^\\d{14}$",
           "confidence": "low"
         },
@@ -4371,6 +4390,10 @@
         },
         {
           "pattern": "^\\d{16}$",
+          "confidence": "low"
+        },
+        {
+          "pattern": "^C00HHA\\d{10}$",
           "confidence": "low"
         }
       ]
@@ -4844,6 +4867,11 @@
         }
       ],
       "detectionRules": [
+        {
+          "pattern": "^6012\\d{10}$",
+          "confidence": "low",
+          "preferred": true
+        },
         {
           "pattern": "^\\d{14}$",
           "confidence": "low"

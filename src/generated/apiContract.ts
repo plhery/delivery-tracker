@@ -1779,12 +1779,12 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^(?!(?:EA|EB|EC|ED|EE|CP|GI))[A-Z]{2}\\d{9}GB$",
+        "pattern": "^(?!(?:E[A-Z]|CP|GI))[A-Z]{2}\\d{9}GB$",
         "confidence": "high",
         "checksum": "s10"
       },
       {
-        "pattern": "^32\\d{11}[A-F0-9]{8}$",
+        "pattern": "^(?:32\\d{11}[A-F0-9]{8}|(?=[A-F0-9]*[A-F])[A-F0-9]{2}\\d{7}[A-F0-9]{12})$",
         "confidence": "low"
       },
       {
@@ -1804,7 +1804,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "royal-mail"
     },
     "linkRules": [
       {
@@ -1818,9 +1818,13 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^(?:EA|EB|EC|ED|EE|CP|GI)\\d{9}GB$",
+        "pattern": "^(?:E[A-Z]|CP|GI)\\d{9}GB$",
         "confidence": "high",
         "checksum": "s10"
+      },
+      {
+        "pattern": "^PB[A-Z]{2}\\d{10}$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://www.royalmail.com/track-your-item#/tracking-results/{trackingNumber}",
@@ -1913,7 +1917,7 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       }
     ],
-    "trackingUrlTemplate": "https://track.anpost.ie/",
+    "trackingUrlTemplate": "https://www.anpost.com/Post-Parcels/Track/History?item={trackingNumber}",
     "countries": [
       "IE"
     ]
@@ -2063,7 +2067,7 @@ export const CARRIER_CAPABILITIES = {
     "displayName": "Correos Express",
     "color": "#ffcd00",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Madrid",
     "tracking": {
       "mode": "automatic",
       "adapter": "correos-express",
@@ -2092,7 +2096,7 @@ export const CARRIER_CAPABILITIES = {
     "displayName": "SEUR",
     "color": "#0063b3",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Madrid",
     "tracking": {
       "mode": "automatic",
       "adapter": "seur",
@@ -2134,7 +2138,7 @@ export const CARRIER_CAPABILITIES = {
     "displayName": "MRW",
     "color": "#19133b",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Madrid",
     "tracking": {
       "mode": "automatic",
       "adapter": "mrw"
@@ -2340,6 +2344,10 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^\\d{12}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{15}$",
         "confidence": "low"
       }
     ],
@@ -4290,6 +4298,17 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
+        "pattern": "^1550\\d{10}$",
+        "confidence": "low",
+        "preferred": true
+      },
+      {
+        "pattern": "^1550\\d{10}[0-9A-Z]$",
+        "confidence": "low",
+        "checksum": "dpd",
+        "preferred": true
+      },
+      {
         "pattern": "^\\d{14}$",
         "confidence": "low"
       },
@@ -4366,6 +4385,10 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^\\d{16}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^C00HHA\\d{10}$",
         "confidence": "low"
       }
     ]
@@ -4839,6 +4862,11 @@ export const CARRIER_CAPABILITIES = {
       }
     ],
     "detectionRules": [
+      {
+        "pattern": "^6012\\d{10}$",
+        "confidence": "low",
+        "preferred": true
+      },
       {
         "pattern": "^\\d{14}$",
         "confidence": "low"
