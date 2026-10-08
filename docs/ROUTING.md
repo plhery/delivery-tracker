@@ -12,12 +12,15 @@ provider.
 
 Both detection endpoints ask the shape-matching carriers first. If none confirms the
 number, Ship24 and ParcelsApp share a short lookup budget before browser confirmation.
-They run only after the request allowance is granted. A successful universal answer
+They run only after the request allowance is granted. Once one has dated history, the
+other gets one more second and is then cancelled; a cancelled call is not a provider
+failure and is left out of the answer, health, metrics and Sentry. Without dated history
+the check waits for both. A successful universal answer
 returns immediately; direct confirmation continues after saving. Their outcomes distinguish missing
 history, recipient input, cooldowns and service failures. Universal history proves that
-tracking is available. A single catalog carrier named with dated movement identifies
-an unknown parcel; conflicting names, bare brands and registration-only history stay
-unresolved. Direct confirmation remains necessary to replace a selected carrier. The Add button stays
+tracking is available. A single catalog carrier named with dated movement by every provider
+asked identifies an unknown parcel; conflicting names, a cancelled provider, bare brands and
+registration-only history stay unresolved. Direct confirmation remains necessary to replace a selected carrier. The Add button stays
 available while the check runs, and the saved parcel continues the full lookup chain.
 
 Concurrent anonymous checks share work until their last caller cancels. A process-wide
