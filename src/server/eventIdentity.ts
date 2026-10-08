@@ -20,9 +20,9 @@
  *   lets a scan whose wall clock now carries its own offset take over the row
  *   stored under the old label (India Post's scans abroad).
  * - A universal provider copies a carrier's scans while the carrier's own
- *   lookup is down, sometimes in a zone it misread (Ship24 keeps GOFO's Pacific
- *   offset on Eastern clocks), sometimes in its own wording as well (ParcelsApp
- *   put Paack's scans two hours early). A universal copy of a stored scan is
+ *   lookup is down, sometimes only to the minute, sometimes in a zone it
+ *   misread (Ship24 keeps GOFO's Pacific offset on Eastern clocks), sometimes
+ *   in its own wording as well (ParcelsApp put Paack's scans two hours early). A universal copy of a stored scan is
  *   left out of the batch, and a carrier's scan takes over the universal copy
  *   stored while it was down (`sharedScans`).
  */
@@ -167,7 +167,8 @@ function relabelled(zone: string, scan: JsonObject, row: JsonObject): boolean {
 }
 
 const UNIVERSAL = 'unknown';
-const QUARTER_HOUR_MS = 15 * 60 * 1_000;
+const MINUTE_MS = 60 * 1_000;
+const QUARTER_HOUR_MS = 15 * MINUTE_MS;
 const HOUR_MS = 60 * 60 * 1_000;
 const MAX_ZONE_SHIFT_MS = 14 * HOUR_MS;
 
@@ -202,6 +203,12 @@ function sameWording(left: string, right: string): boolean {
   return /[.!?]$/.test(shorter) && longer.startsWith(`${shorter} `);
 }
 
+/** Two times of one minute, one of them that minute itself: a source that keeps only minutes. */
+function sameMinute(left: number, right: number): boolean {
+  const minute = (at: number) => Math.floor(at / MINUTE_MS) * MINUTE_MS;
+  return left !== right && minute(left) === minute(right) && (left === minute(left) || right === minute(right));
+}
+
 /** Stages that can name one scan: the same, or one source left it unclassified. */
 function stagesAgree(left: string, right: string): boolean {
   return left === right || [left, right].some((stage) => stage === '' || stage === 'pending');
@@ -212,7 +219,7 @@ export interface SharedScans {
   reused: Map<string, string>;
   /** A universal scan left out of the batch → the stored identity it repeats. */
   skipped: Map<string, string>;
-  /** The scans of `reused` and `skipped` whose row stands at another instant: one source's clock is off. */
+  /** The scans of `reused` and `skipped` whose row stands at another instant, beyond the minute: one source's clock is off. */
   shifted: Set<string>;
 }
 
@@ -224,17 +231,19 @@ export interface SharedScans {
  * app's own rows, and never a scan the sync observed without a provider time.
  * A row matches a scan at the exact same instant when it is the only row there
  * with the same wording, or the only row there at all, with the same stage,
- * and the scan the only new scan there. With no row at that instant, a row a
- * whole number of quarter hours up to 14 h away, at an instant no scan of the
- * batch shows, matches with the same wording: the same scan read in the wrong
- * zone. Failing that, a carrier's row for a universal scan, or a universal row
- * for a carrier's scan, at least an hour away matches in any wording when the
- * stages agree or one is pending and the time has seconds other than zero: a
- * provider whose clock is off by a zone's offset from UTC. Times to the minute
- * fall whole quarter hours apart too often by chance, and carriers stamp some
- * scans 15 or 30 minutes after another to the second (Swiss Post sorts a
- * parcel a quarter hour after customs clear it). A row that two scans match is
- * ambiguous and stays unmatched.
+ * and the scan the only new scan there. With no row at that instant, a row at
+ * an instant no scan of the batch shows matches with the same wording when one
+ * of the two is dated to the minute the other falls in (UPS to the second, a
+ * provider to the minute), or else when it is a whole number of quarter hours
+ * up to 14 h away: the same scan read in the wrong zone. Failing that, a
+ * carrier's row for a universal scan, or a universal row for a carrier's scan,
+ * at least an hour away matches in any wording when the stages agree or one is
+ * pending and the time has seconds other than zero: a provider whose clock is
+ * off by a zone's offset from UTC. Times to the minute fall whole quarter
+ * hours apart too often by chance, and carriers stamp some scans 15 or 30
+ * minutes after another to the second (Swiss Post sorts a parcel a quarter
+ * hour after customs clear it). A row that two scans match is ambiguous and
+ * stays unmatched.
  *
  * A carrier's scan takes over the universal row it matches. A universal scan
  * that matches any row is left out, and so is one whose own identity is stored
@@ -265,7 +274,7 @@ export function sharedScans(
     if (!own) pending.push(event);
     else if (source === UNIVERSAL && instantOf(own) !== instantOf(event)) {
       shared.skipped.set(id, id);
-      shared.shifted.add(id);
+      if (!sameMinute(instantOf(own), instantOf(event))) shared.shifted.add(id);
     }
   }
   const newAt = new Map<number, number>();
@@ -281,6 +290,9 @@ export function sharedScans(
     const eligible = universal ? rows : rows.filter((row) => sourceOf(identity(row)) === UNIVERSAL);
     const exact = eligible.filter((row) => instantOf(row) === at);
     const worded = exact.filter((row) => sameWording(wordingOf(row), wording));
+    const minuted = occupied.has(at) ? [] : eligible.filter((row) => (
+      sameMinute(at, instantOf(row)) && !shown.has(instantOf(row)) && sameWording(wordingOf(row), wording)
+    ));
     const zoned = occupied.has(at) ? [] : eligible.filter((row) => {
       const shift = at - instantOf(row);
       return shift % QUARTER_HOUR_MS === 0 && Math.abs(shift) <= MAX_ZONE_SHIFT_MS && !shown.has(instantOf(row));
@@ -293,8 +305,9 @@ export function sharedScans(
     const staged = exact.length === 1 && newAt.get(at) === 1 && stageOf(event) !== '' && stageOf(exact[0]!) === stageOf(event);
     const match = worded.length === 1 ? worded[0]
       : worded.length === 0 && staged ? exact[0]
-        : shifted.length === 1 ? shifted[0]
-          : shifted.length === 0 && reclocked.length === 1 ? reclocked[0] : undefined;
+        : minuted.length > 0 ? (minuted.length === 1 ? minuted[0] : undefined)
+          : shifted.length === 1 ? shifted[0]
+            : shifted.length === 0 && reclocked.length === 1 ? reclocked[0] : undefined;
     if (match) picks.set(identity(match), [...(picks.get(identity(match)) ?? []), event]);
   }
   for (const [rowId, scans] of picks) {
@@ -302,7 +315,8 @@ export function sharedScans(
     const id = identity(scans[0]!);
     if (sourceOf(id) === UNIVERSAL) shared.skipped.set(id, rowId);
     else shared.reused.set(id, rowId);
-    if (instantOf(scans[0]!) !== instantOf(storedById.get(rowId)!)) shared.shifted.add(id);
+    const [at, rowAt] = [instantOf(scans[0]!), instantOf(storedById.get(rowId)!)];
+    if (at !== rowAt && !sameMinute(at, rowAt)) shared.shifted.add(id);
   }
   return shared;
 }

@@ -355,6 +355,45 @@ describe('scans a carrier and a universal provider both report', () => {
       [row('gofo:x', '2026-01-04T12:00:00+00:00', 'Out for Delivery.')]).skipped.size).toBe(1);
   });
 
+  it('matches the same wording dated to the minute the other scan falls in, without a clock offset', () => {
+    const precise = row('ups:label', '2026-01-02T21:25:25+00:00', 'Label Created', 'registered');
+    const late = sharedScans([scan('unknown:label', '2026-01-02T21:25:00Z', 'label created')], [precise]);
+    expect(pairs(late.skipped)).toEqual([['unknown:label', 'ups:label']]);
+    expect(late.shifted.size).toBe(0);
+    // The carrier's scan takes over the copy stored to the minute, which then keeps its second.
+    const early = sharedScans([scan('ups:label', '2026-01-02T21:25:25Z', 'Label Created')],
+      [row('unknown:label', '2026-01-02T21:25:00+00:00', 'Label Created')]);
+    expect(pairs(early.reused)).toEqual([['ups:label', 'unknown:label']]);
+    expect(early.shifted.size).toBe(0);
+    const again = sharedScans([scan('unknown:label', '2026-01-02T21:25:00Z', 'Label Created')],
+      [row('unknown:label', '2026-01-02T21:25:25+00:00', 'Label Created')]);
+    expect(pairs(again.skipped)).toEqual([['unknown:label', 'unknown:label']]);
+    expect(again.shifted.size).toBe(0);
+  });
+
+  it('leaves a minute apart, other wording, both to the second, or two rows in the minute alone', () => {
+    const matched = (at: string, description = 'Label Created', rows = [row('ups:label', '2026-01-02T21:25:25+00:00', 'Label Created')]) => {
+      const shared = sharedScans([scan('unknown:label', at, description)], rows);
+      return shared.skipped.size + shared.reused.size;
+    };
+    expect(matched('2026-01-02T21:25:00Z')).toBe(1);
+    for (const at of ['2026-01-02T21:26:00Z', '2026-01-02T21:24:00Z', '2026-01-02T21:25:40Z']) expect(matched(at), at).toBe(0);
+    expect(matched('2026-01-02T21:25:00Z', 'Picked up')).toBe(0);
+    expect(matched('2026-01-02T21:25:00Z', 'Label Created', [
+      row('ups:label', '2026-01-02T21:25:25+00:00', 'Label Created'), row('ups:again', '2026-01-02T21:25:50+00:00', 'Label Created'),
+    ])).toBe(0);
+    // A row at the scan's own instant, or one the batch shows at its own instant, is not a copy's twin.
+    expect(matched('2026-01-02T21:25:00Z', 'Label Created', [
+      row('ups:label', '2026-01-02T21:25:25+00:00', 'Label Created'), row('ups:other', '2026-01-02T21:25:00+00:00', 'Picked up'),
+    ])).toBe(0);
+    expect(sharedScans([scan('unknown:label', '2026-01-02T21:25:00Z', 'Label Created'),
+      scan('unknown:other', '2026-01-02T21:25:25Z', 'Ready')], [row('ups:label', '2026-01-02T21:25:25+00:00', 'Label Created')])
+      .skipped.has('unknown:label')).toBe(false);
+    // Two carriers' scans are not a copy.
+    expect(sharedScans([scan('dpd:label', '2026-01-02T21:25:00Z', 'Label Created')],
+      [row('ups:label', '2026-01-02T21:25:25+00:00', 'Label Created')]).reused.size).toBe(0);
+  });
+
   // A carrier's own scans, and a universal provider's own wording of them, unclassified and two hours early.
   const registered = scan('paack:registered', '2026-01-06T10:50:30Z', 'Shipment registered', 'registered');
   const accepted = scan('paack:accepted', '2026-01-06T16:38:19Z', 'Shipment accepted', 'accepted');
