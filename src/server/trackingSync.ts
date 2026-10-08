@@ -44,6 +44,7 @@ import { upuHistory } from './upuHistory';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
 import { eventTimestamp, latestResultTime, resultTimezone } from 'universal-parcel-scraper/app';
 import { trackingSupportEvidence } from './trackingSupport';
+import { carrierLookupKey, recognitionKey, SharedLookups, universalLookupKey, type ParcelLookups } from './sharedLookups';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 /** One-off parcels have no owner: a scheduled run checks this many of them, all together. */
@@ -77,6 +78,11 @@ function previousDeliveryProbe(parcel: JsonObject, carrier: string, number: stri
   if (!isRecord(stored) || typeof stored.at !== 'string' || !Number.isFinite(Date.parse(stored.at))) return null;
   if ((stored.carrier != null && stored.carrier !== carrier) || (stored.number != null && stored.number !== number)) return null;
   return { at: stored.at, origin_update: typeof stored.origin_update === 'string' ? stored.origin_update : null };
+}
+
+/** How many answers a check took from another copy of its number in the same run, when any. */
+function sharedAnswers(checks: ParcelLookups | undefined): JsonObject {
+  return checks?.shared ? { shared_answers: checks.shared } : {};
 }
 
 /** Which tiers a deferred lookup gave up on, as provider ids and failure kinds only. */
@@ -565,9 +571,12 @@ export class TrackingSyncService {
       const unwatched = await this.unwatchedPackages(now, context.signal);
       const due = (oneOff: boolean) => (parcel: JsonObject) => isScheduledTrackingSyncDue(parcel, now, unwatched.has(String(parcel.id)), oneOff);
       const accounts = fairSyncPackages((await this.client.listActivePackages()).filter(due(false)));
-      for (const parcel of [...accounts, ...await this.followedOneOffPackages(due(true), now, context.signal)]) {
+      const parcels = [...accounts, ...await this.followedOneOffPackages(due(true), now, context.signal)];
+      // Copies of one number, in several accounts or followed without one, share their lookups.
+      const lookups = new SharedLookups(parcels);
+      for (const parcel of parcels) {
         summary.checked += 1;
-        summary[await this.syncOne(parcel, context)] += 1;
+        summary[await this.syncOne(parcel, context, lookups)] += 1;
       }
       await this.linkConfirmedParcels();
       await this.dispatchNotifications(summary, context.signal);
@@ -739,7 +748,7 @@ export class TrackingSyncService {
     }
   }
 
-  private async syncOne(parcel: JsonObject, context: SyncRunContext): Promise<SyncOutcome> {
+  private async syncOne(parcel: JsonObject, context: SyncRunContext, lookups?: SharedLookups): Promise<SyncOutcome> {
     context.signal?.throwIfAborted();
     const id = String(parcel.id ?? '');
     const carrierId = String(parcel.carrier ?? '');
@@ -836,18 +845,27 @@ export class TrackingSyncService {
         earlierCarrierId?: string;
       };
       const fetchStartedAt = performance.now();
+      // The check sees the routing its number shares with the other copies in the run.
+      const checks = lookups?.for(parcel);
+      const subject = checks?.parcel ?? parcel;
+      const once = <T>(key: readonly unknown[], lookup: () => Promise<T>) => checks ? checks.once(key, lookup) : lookup();
       try {
         fetched = await audit.observeFetch(async () => this.adapter.fetchUniversal && carrierId !== 'amazon-shipping'
           ? await new TrackingRouter({
-            direct: (candidate, carrier) => this.fetchResult(candidate, carrier),
-            universal: (source, number, timeout, postcode, timezone, countryHint) => this.adapter.fetchUniversal!(source, number, timeout, postcode, timezone, countryHint),
+            direct: (candidate, carrier) => this.fetchResult(candidate, carrier, checks),
+            universal: (source, number, timeout, postcode, timezone, countryHint) => once(universalLookupKey(source, number, postcode, timezone, countryHint),
+              () => this.adapter.fetchUniversal!(source, number, timeout, postcode, timezone, countryHint)),
+            ...(checks ? { reusedUniversal: (source: UniversalSource, number: string, postcode: string | null, timezone: string | null, countryHint?: string | null) =>
+              checks.reuse<CarrierResult>(universalLookupKey(source, number, postcode, timezone, countryHint)) } : {}),
             health: this.client, now: this.now,
             takePrefetchedUniversal: takePreflightHistory, preflightInputNeeded,
-            ...(this.adapter.recognize ? { recognize: (carrier: string, number: string, context?: TrackingContext) => this.adapter.recognize!(carrier, number, context) } : {}),
-            ...(this.adapter.recognizeBrowser ? { recognizeBrowser: (carrier: string, number: string, context?: TrackingContext, previousError?: unknown) => this.adapter.recognizeBrowser!(carrier, number, context, previousError) } : {}),
+            ...(this.adapter.recognize ? { recognize: (carrier: string, number: string, context?: TrackingContext) =>
+              once(recognitionKey('http', carrier, number), () => this.adapter.recognize!(carrier, number, context)) } : {}),
+            ...(this.adapter.recognizeBrowser ? { recognizeBrowser: (carrier: string, number: string, context?: TrackingContext, previousError?: unknown) =>
+              once(recognitionKey('browser', carrier, number), () => this.adapter.recognizeBrowser!(carrier, number, context, previousError)) } : {}),
             enablePostalNinja: process.env.TRACKING_ENABLE_POSTAL_NINJA === 'true',
-          }).fetch(parcel, context.trigger === 'scheduled', context.signal, addition)
-          : await this.fetchResult(parcel, carrierId));
+          }).fetch(subject, context.trigger === 'scheduled', context.signal, addition)
+          : await this.fetchResult(subject, carrierId, checks));
       } catch (error) {
         if (carrierId === 'amazon-shipping' && error instanceof CarrierError && error.reason === 'history_expired') {
           audit.skip('normalize', 'history_expired');
@@ -868,7 +886,7 @@ export class TrackingSyncService {
           // A carrier saying the label has no scans is an answer, not a missed check.
           if (error instanceof RoutingDeferred) error.routing.consecutive_failures = 0;
           audit.record('fetch', 'succeeded', performance.now() - fetchStartedAt, {
-            disposition: 'unannounced',
+            disposition: 'unannounced', ...sharedAnswers(checks),
           });
           audit.skip('normalize', 'unannounced');
           audit.skip('persist_events', 'unannounced');
@@ -892,7 +910,7 @@ export class TrackingSyncService {
           return 'waiting';
         }
         audit.record('fetch', 'failed', performance.now() - fetchStartedAt,
-          error instanceof RoutingDeferred ? deferredFetchDetails(error) : {}, error);
+          { ...(error instanceof RoutingDeferred ? deferredFetchDetails(error) : {}), ...sharedAnswers(checks) }, error);
         throw error;
       }
 
@@ -902,6 +920,7 @@ export class TrackingSyncService {
         source_carrier: sourceCarrierId,
         swiss_post_ready: swissPostReady,
         handoff_fallback_error_type: handoffFallbackErrorType,
+        ...sharedAnswers(checks),
       });
 
       operation = 'normalize';
@@ -1208,9 +1227,17 @@ export class TrackingSyncService {
     }
   }
 
+  /** A carrier lookup, asked once per run for the same carrier, number and inputs. */
+  private fetchCarrier(checks: ParcelLookups | undefined, carrierId: string, trackingNumber: string,
+    trackingUrl: string | null, dpdPostcode: string | null): Promise<CarrierResult> {
+    const lookup = () => this.adapter.fetch(carrierId, trackingNumber, trackingUrl, dpdPostcode);
+    return checks ? checks.once(carrierLookupKey(carrierId, trackingNumber, trackingUrl, dpdPostcode), lookup) : lookup();
+  }
+
   private async fetchResult(
     parcel: JsonObject,
     carrierId: string,
+    checks?: ParcelLookups,
   ): Promise<{
     result: CarrierResult;
     sourceCarrierId: string;
@@ -1228,7 +1255,7 @@ export class TrackingSyncService {
     const activeNumber = typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : trackingNumber;
     if ((metadata.original_carrier || legacySwissReady) && hasDirectHandoffAdapter(activeCarrier, activeNumber)) {
       return {
-        result: normalizeCarrierResult(await this.adapter.fetch(activeCarrier, activeNumber, null, null)),
+        result: normalizeCarrierResult(await this.fetchCarrier(checks, activeCarrier, activeNumber, null, null)),
         sourceCarrierId: activeCarrier, swissPostReady: activeCarrier === 'swiss-post' ? true : null, handoffFallbackErrorType: null,
       };
     }
@@ -1239,7 +1266,7 @@ export class TrackingSyncService {
       let originError: unknown;
       let savedPartner: DeliveryHandoff | null = null;
       try {
-        origin = normalizeCarrierResult(await this.adapter.fetch(
+        origin = normalizeCarrierResult(await this.fetchCarrier(checks,
           carrierId, trackingNumber,
           typeof parcel.tracking_url === 'string' ? parcel.tracking_url : null,
           typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null,
@@ -1264,7 +1291,7 @@ export class TrackingSyncService {
       } else if (candidate) {
         origin.delivery_probe = { at: this.now().toISOString(), origin_update: originUpdate, carrier: candidate.carrier, number: candidate.number };
         try {
-          const delivery = normalizeCarrierResult(await this.adapter.fetch(candidate.carrier, candidate.number, null, null));
+          const delivery = normalizeCarrierResult(await this.fetchCarrier(checks, candidate.carrier, candidate.number, null, null));
           const originTime = latestResultTime(origin, carrierId);
           const watermark = Math.max(originTime, latestResultTime(metadata, carrierId),
             Date.parse(routingState(parcel).last_event_at || '') || 0);
@@ -1315,7 +1342,7 @@ export class TrackingSyncService {
     }
     const wasReady = isRecord(parcel.carrier_data) && parcel.carrier_data.swiss_post_ready === true;
     if (wasReady) {
-      const result = await this.adapter.fetch('swiss-post', trackingNumber, null, null);
+      const result = await this.fetchCarrier(checks, 'swiss-post', trackingNumber, null, null);
       return {
         result: normalizeCarrierResult(result),
         sourceCarrierId: 'swiss-post',
@@ -1326,7 +1353,7 @@ export class TrackingSyncService {
     let handoffFallbackErrorType: string | null = null;
     try {
       const swiss = normalizeCarrierResult(
-        await this.adapter.fetch('swiss-post', trackingNumber, null, null),
+        await this.fetchCarrier(checks, 'swiss-post', trackingNumber, null, null),
       );
       if (resultHasUpdate(swiss)) {
         return {
@@ -1343,7 +1370,7 @@ export class TrackingSyncService {
       });
       // Cainiao still covers the international leg if Swiss Post is not ready.
     }
-    const cainiao = await this.adapter.fetch('aliexpress', trackingNumber, null, null);
+    const cainiao = await this.fetchCarrier(checks, 'aliexpress', trackingNumber, null, null);
     return {
       result: normalizeCarrierResult(cainiao),
       sourceCarrierId: 'aliexpress',

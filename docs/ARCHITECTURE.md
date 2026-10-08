@@ -46,7 +46,8 @@ Key server modules:
   queue, and workers claim jobs with leases, so deploys, crashes and replicas never lose
   or double-run work. This is the only code path with cross-account access.
 - `trackingSync.ts` runs one refresh through the adapter registry;
-  `trackingRouting.ts` decides which source to ask ([ROUTING.md](ROUTING.md)).
+  `trackingRouting.ts` decides which source to ask ([ROUTING.md](ROUTING.md)), and
+  `sharedLookups.ts` lets the copies of a number in one scheduled run share their lookups.
 - `eventPlaces.ts` uses the scraper's place resolver to put each scan on the map,
   when the API returns a parcel ([README](https://github.com/plhery/universal-parcel-scraper/blob/main/places/README.md)).
   Lines between recorded stops are solid; approximate areas have dotted markers.

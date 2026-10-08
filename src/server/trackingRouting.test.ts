@@ -780,6 +780,22 @@ describe('persistent tracking routing', () => {
     expect(universal).toHaveBeenCalledOnce();
     expect(universal.mock.calls[0][2]).toBe(15_000);
   });
+  it('takes an answer another check of the run already has without contacting the provider', async () => {
+    const { health, universal, direct, recognize, recognizeBrowser } = setup();
+    const reusedUniversal = vi.fn((source: string) => source === 'ParcelsApp' ? Promise.resolve(history()) : undefined);
+    const router = new TrackingRouter({ direct, universal, health, recognize, recognizeBrowser, reusedUniversal, now: () => time });
+    const result = await router.fetch(parcel(), false);
+    expect(result.result).toMatchObject({ tracking_provider: 'ParcelsApp', routing: { preferred_provider: 'ParcelsApp' } });
+    expect(reusedUniversal).toHaveBeenCalledExactlyOnceWith('ParcelsApp', 'TEST1234', null, null, undefined);
+    expect(universal).not.toHaveBeenCalled();
+    expect(health.acquireTrackingProvider).not.toHaveBeenCalled();
+    expect(health.finishTrackingProvider).not.toHaveBeenCalled();
+    // A failure it reuses counts for this parcel as it did for the check that asked.
+    reusedUniversal.mockImplementation((source: string) => source === 'ParcelsApp' ? Promise.reject(new NotFoundError(source)) : undefined);
+    const next = await router.fetch(parcel(), false);
+    expect(next.result).toMatchObject({ tracking_provider: 'Ship24', routing: { failures: { ParcelsApp: { kind: 'not_found' } } } });
+    expect(health.acquireTrackingProvider).toHaveBeenCalledExactlyOnceWith('Ship24');
+  });
   it('retains provider-specific Retry-After and stops cascading on a fresh universal 429', async () => {
     const { router, universal, health } = setup();
     universal.mockRejectedValue(new UpstreamHttpError('Ship24', 429, 2 * 3_600_000));

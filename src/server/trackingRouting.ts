@@ -216,6 +216,11 @@ export class TrackingRouter {
     health: ProviderHealth;
     preflightInputNeeded?: (number: string, countryHint?: string | null) => { provider: string; field: 'dpdPostcode' } | undefined;
     takePrefetchedUniversal?: (source: UniversalSource, number: string, postcode: string | null, countryHint?: string | null) => CarrierResult | undefined;
+    /**
+     * The answer another check of the same run already got, or awaits, for
+     * exactly this lookup. Reusing it contacts nobody, so it takes no lease.
+     */
+    reusedUniversal?: (source: UniversalSource, number: string, postcode: string | null, timezone: string | null, countryHint?: string | null) => Promise<CarrierResult> | undefined;
     /** A carrier's cheap check of whether it knows a number; without it, no recognition runs. */
     recognize?: (carrier: string, number: string, context?: TrackingContext) => Promise<Recognition>;
     recognizeBrowser?: (carrier: string, number: string, context?: TrackingContext, previousError?: unknown) => Promise<Recognition>;
@@ -581,6 +586,9 @@ export class TrackingRouter {
           return { result: { ...result, tracking_provider: source }, sourceCarrierId: 'unknown', swissPostReady: null, handoffFallbackErrorType: null };
         }
       }
+      const country = [metadata.destination_country, metadata.destination_country_name, metadata.lookup_country_hint]
+        .find((value): value is string => typeof value === 'string' && Boolean(value.trim()));
+      const reused = this.options.reusedUniversal?.(source, universalNumber, postcode, zone, country);
       const acquire = async () => {
         try { return await this.options.health.acquireTrackingProvider(source); }
         catch {
@@ -589,33 +597,34 @@ export class TrackingRouter {
           return null;
         }
       };
-      let lease = await acquire();
-      for (let round = 0; lease && !lease.token && round < PACING_ROUNDS; round++) {
-        // Spacing after another check frees the provider within seconds: wait
-        // when the call keeps its full lookup budget. A cooldown is not waited for.
-        const wait = millis(lease.retry_at) - now().getTime();
-        if (!millis(lease.retry_at) || wait > PACING_WAIT_MS
-          || universalDeadline - performance.now() - Math.max(0, wait) - 5_000 < universalSourceBudget(source)) break;
-        report('provider_paced', source);
-        await (this.options.wait ?? ((ms, abort) => sleep(ms, undefined, { signal: abort })))(Math.max(250, wait), signal);
-        lease = await acquire();
+      let token: string | null = null;
+      if (!reused) {
+        let lease = await acquire();
+        for (let round = 0; lease && !lease.token && round < PACING_ROUNDS; round++) {
+          // Spacing after another check frees the provider within seconds: wait
+          // when the call keeps its full lookup budget. A cooldown is not waited for.
+          const wait = millis(lease.retry_at) - now().getTime();
+          if (!millis(lease.retry_at) || wait > PACING_WAIT_MS
+            || universalDeadline - performance.now() - Math.max(0, wait) - 5_000 < universalSourceBudget(source)) break;
+          report('provider_paced', source);
+          await (this.options.wait ?? ((ms, abort) => sleep(ms, undefined, { signal: abort })))(Math.max(250, wait), signal);
+          lease = await acquire();
+        }
+        if (!lease) return null; // Fail closed: do not flood upstreams when coordination is down.
+        if (!lease.token) {
+          state.failures[source] = { count: state.failures[source]?.count ?? 0, kind: 'rate_limited', retry_at: lease.retry_at };
+          report('provider_cooldown', source); return null;
+        }
+        token = lease.token;
       }
-      if (!lease) return null; // Fail closed: do not flood upstreams when coordination is down.
-      if (!lease.token) {
-        state.failures[source] = { count: state.failures[source]?.count ?? 0, kind: 'rate_limited', retry_at: lease.retry_at };
-        report('provider_cooldown', source); return null;
-      }
-      const { token } = lease;
       attempts++;
       const before = performance.now();
       let kind: RoutingFailureKind | null = null;
       let retryAfterMs = 0;
       try {
-        const country = [metadata.destination_country, metadata.destination_country_name, metadata.lookup_country_hint]
-          .find((value) => typeof value === 'string' && value.trim());
-        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber,
+        const result = normalizeCarrierResult(await (reused ?? this.options.universal(source, universalNumber,
           Math.max(1, Math.min(universalSourceBudget(source), Math.floor(universalDeadline - performance.now()) - 5_000)), postcode, zone,
-          ...(typeof country === 'string' ? [country] as const : [])));
+          ...(country ? [country] as const : []))));
         if (!usable(result)) throw new TypeError('No usable universal progress');
         if (foreignHistory(result, universalCarrier, parcel.created_at)) {
           report('foreign_history_rejected', source);
@@ -636,16 +645,19 @@ export class TrackingRouter {
         }
         return null;
       } finally {
-        if (providerInput) {
-          // Every provider receives the postcode; supported sources can submit it.
-          const step = kind === null ? 'history' : kind === 'input_required' ? 'still_required'
-            : kind === 'not_found' || kind === 'no_history' ? 'no_history' : 'failed';
-          recordProviderInput(source, step);
-          report('provider_input_lookup', source, step);
+        // A reused answer was counted, and its lease released, by the check that asked.
+        if (token) {
+          if (providerInput) {
+            // Every provider receives the postcode; supported sources can submit it.
+            const step = kind === null ? 'history' : kind === 'input_required' ? 'still_required'
+              : kind === 'not_found' || kind === 'no_history' ? 'no_history' : 'failed';
+            recordProviderInput(source, step);
+            report('provider_input_lookup', source, step);
+          }
+          // An answer about this number keeps the provider's circuit closed, like not-found.
+          try { await this.options.health.finishTrackingProvider(source, token, kind === 'no_history' || kind === 'input_required' ? 'not_found' : kind, retryAfterMs, performance.now() - before); }
+          catch { report('health_store_unavailable', source, 'transport'); }
         }
-        // An answer about this number keeps the provider's circuit closed, like not-found.
-        try { await this.options.health.finishTrackingProvider(source, token, kind === 'no_history' || kind === 'input_required' ? 'not_found' : kind, retryAfterMs, performance.now() - before); }
-        catch { report('health_store_unavailable', source, 'transport'); }
       }
     };
 

@@ -966,6 +966,63 @@ describe('TrackingSyncService', () => {
     expect(client.autoLinkPackages).toHaveBeenCalledExactlyOnceWith(undefined);
   });
 
+  it('asks once for the copies of a number in a run and keeps them on one route', async () => {
+    const routing = (preferred: string) => ({ version: 1, configured_carrier: 'unknown', failures: {}, probe_cursor: 0, discovery_cursor: 0,
+      preferred_provider: preferred, preferred_number: 'TEST1234', last_success_at: '2026-09-10T11:00:00Z', last_probe_at: '2026-09-10T11:00:00Z' });
+    const parcel = (id: string, user: string, label: string, synced: string, preferred: string, extra: JsonObject = {}): JsonObject => ({
+      id, user_id: user, label, carrier: 'unknown', tracking_number: 'TEST1234', current_stage: 'in_transit', created_at: '2026-09-10T08:00:00Z',
+      last_synced_at: synced, sync_status: 'ok', carrier_data: { routing: routing(preferred) }, ...extra });
+    const client = { ...fakeClient([
+      parcel('first', 'a', 'Shoes', '2026-09-10T11:00:00Z', '17TRACK'),
+      parcel('second', 'b', 'Gift', '2026-09-10T11:05:00Z', 'Ship24'),
+      // The same number with a postcode is another lookup.
+      parcel('third', 'c', 'Books', '2026-09-10T11:10:00Z', '17TRACK', { dpd_postcode: '0000' }),
+    ]),
+    acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
+    finishTrackingProvider: vi.fn().mockResolvedValue(undefined) };
+    const adapter = { fetch: vi.fn(), fetchUniversal: vi.fn().mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit',
+      last_update: '2026-09-10T11:30:00Z', events: [{ time: '2026-09-10T11:30:00Z', description: 'In transit', stage: 'in_transit' }] }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
+    await expect(service.sync()).resolves.toMatchObject({ checked: 3, updated: 3 });
+    // Both copies follow the route of the one checked last; the copy with a postcode keeps its own.
+    expect(adapter.fetchUniversal.mock.calls.map(([source, , , postcode]) => [source, postcode])).toEqual([['Ship24', null], ['17TRACK', '0000']]);
+    expect(client.acquireTrackingProvider).toHaveBeenCalledTimes(2);
+    const saved = (id: string) => client.updatePackage.mock.calls.filter(([packageId]) => packageId === id).at(-1)?.[1] as JsonObject;
+    expect(saved('first')).toMatchObject({ carrier_data: { tracking_provider: 'Ship24', routing: { preferred_provider: 'Ship24' } } });
+    expect(saved('second')).toMatchObject({ carrier_data: { tracking_provider: 'Ship24', routing: { preferred_provider: 'Ship24' } } });
+    expect(saved('third')).toMatchObject({ carrier_data: { tracking_provider: '17TRACK', routing: { preferred_provider: '17TRACK' } } });
+    // Each copy stores the scan for itself.
+    expect(client.insertEvents.mock.calls.flatMap(([events]) => events.map((event: JsonObject) => event.package_id)))
+      .toEqual(expect.arrayContaining(['first', 'second', 'third']));
+    // The copy checked second records the answer it reused.
+    const attempt = client.startSyncAttempt.mock.calls.find(([, values]) => values.package_id === 'second')?.[0];
+    expect(client.completeSyncAttempt).toHaveBeenCalledWith(attempt, expect.anything(), expect.arrayContaining([
+      expect.objectContaining({ step: 'fetch', status: 'succeeded', details: expect.objectContaining({ shared_answers: 1 }) })]));
+  });
+
+  it('gives the copies of a number one carrier answer, failures included', async () => {
+    const parcel = (id: string, user: string | null, extra: JsonObject = {}): JsonObject => ({ id, user_id: user, carrier: 'swiss-post',
+      tracking_number: 'TEST1234', current_stage: 'in_transit', created_at: '2026-09-10T08:00:00Z', last_synced_at: '2026-09-10T11:00:00Z',
+      sync_status: 'ok', ...extra });
+    const client = { ...fakeClient([parcel('owned', 'a'), parcel('kept', 'b')]),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined) };
+    client.listFollowedOneOffPackages.mockResolvedValue([parcel('lookup', null, { one_off: true })]);
+    const adapter = { fetch: vi.fn().mockRejectedValue(new UpstreamHttpError('Swiss Post', 502)),
+      fetchUniversal: vi.fn().mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit', last_update: '2026-09-10T11:30:00Z',
+        events: [{ time: '2026-09-10T11:30:00Z', description: 'In transit', stage: 'in_transit' }] }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
+    await expect(service.sync()).resolves.toMatchObject({ checked: 3, updated: 3 });
+    // One outage seen once: every copy falls back to the same provider, asked once.
+    expect(adapter.fetch).toHaveBeenCalledOnce();
+    expect(adapter.fetchUniversal).toHaveBeenCalledOnce();
+    for (const id of ['owned', 'kept', 'lookup']) {
+      expect(client.updatePackage.mock.calls.filter(([packageId]) => packageId === id).at(-1)?.[1], id).toMatchObject({
+        carrier_data: { tracking_provider: adapter.fetchUniversal.mock.calls[0][0],
+          routing: { failures: { 'swiss-post': { kind: 'transport' } } } } });
+    }
+  });
+
   it('still checks the accounts when the one-off parcels cannot be listed', async () => {
     const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
     const client = fakeClient([{ id: 'a1', user_id: 'a', carrier: 'swiss-post', tracking_number: 'TEST1234' }]);

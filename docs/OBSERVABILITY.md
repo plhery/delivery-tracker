@@ -56,7 +56,8 @@ All tables and views here are service-role only.
 - `tracking_sync_steps`: `selected`, `fetch`, `normalize`, `persist_events`,
   `persist_package`, `complete`, each with status and duration. A not-yet-announced number
   is a successful `fetch` with disposition `unannounced`, and the attempt ends as
-  `waiting`. Real failures end as `error`.
+  `waiting`. Real failures end as `error`. A `fetch` that reused answers another copy of
+  its number got earlier in the same scheduled run counts them in `shared_answers`.
 
 Completed rows are kept for 90 days. Attempts still running after 30 min are marked
 `abandoned` and reported. Deleting a package or account deletes its audit.
