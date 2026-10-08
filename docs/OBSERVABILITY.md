@@ -4,7 +4,8 @@
 without tokens, IP addresses or parcel inputs. Compare rejections and service
 failures with completed public lookups and the API's `403`/`429` rates when
 tuning protection. Client lookup failures remain in the existing parcel-lookup
-analytics event. Configuration belongs in [DEPLOYMENT.md](DEPLOYMENT.md).
+analytics event; `public_lookup` logs how each lookup ended on the server.
+Configuration belongs in [DEPLOYMENT.md](DEPLOYMENT.md).
 `lookup_proof` logs each refused proof with its `reason`: `missing` (none sent,
 as when a page asks before its verification has finished), `malformed`,
 `bad_signature` (another hostname, a changed `TURNSTILE_SECRET_KEY`, or
@@ -52,9 +53,14 @@ All tables and views here are service-role only.
 
 - `tracking_sync_attempts`: one row per check. It holds the configured and actual carrier,
   job and package, previous and selected stage, provider status, event counts, outcome,
-  error class, anomaly codes and a bounded private `status_text`.
+  error class, anomaly codes and a bounded private `status_text`. A check that stored a
+  scan for the first time or moved the parcel's stage ends `updated`; one whose carrier
+  answered with the progress already saved ends `unchanged`. `events_new` counts the scans
+  a check stored for the first time: a stored scan rewritten in place, as when its location
+  fills in, is not new. It is null for checks recorded before the column existed.
 - `tracking_sync_steps`: `selected`, `fetch`, `normalize`, `persist_events`,
-  `persist_package`, `complete`, each with status and duration. A not-yet-announced number
+  `persist_package`, `complete`, each with status and duration. `persist_events` has
+  `events_persisted`, the rows written, and `events_new`. A not-yet-announced number
   is a successful `fetch` with disposition `unannounced`, and the attempt ends as
   `waiting`. Real failures end as `error`. A `fetch` that reused answers another copy of
   its number got earlier in the same scheduled run counts them in `shared_answers`.
@@ -74,7 +80,8 @@ email, with the account, the delivered scan, `status` (`claimed`, `sent`, `faile
 `skipped`), a `reason` code, the attempts and the times. It holds no address and none of
 the email. A row outlives its parcel and goes with its account. The delivery email also
 reads the attempts above: a delivered scan without a clock time is news only when an
-earlier attempt, since the parcel joined the account, ended `updated` on another stage.
+earlier attempt, since the parcel joined the account, ended `updated` or `unchanged` on
+another stage.
 
 **Anomaly codes:**
 
@@ -181,7 +188,7 @@ took effect.
 ## First-response queries
 
 ```sql
--- Carrier health, last 24 h
+-- Carrier health, last 24 h: `updated` checks stored news, `unchanged` ones found none
 select * from public.tracking_sync_health_24h
 order by error_percent desc nulls last, attempts desc;
 
@@ -222,11 +229,17 @@ runs the app, so moving the app to another application means changing that label
 service's `alloy/config.alloy`; until then Loki receives nothing. Query the logs in
 Grafana through the "Loki (delivery tracker logs)" data source.
 Lines carry `app`, `container`, `event` and `level` labels, for example
-`{app="delivery-tracker", event="tracking_scrape"} | json | outcome != "success"`.
+`{app="delivery-tracker", event="tracking_scrape"} | json | outcome = "error"`.
 
 Key JSON events:
 
-- `tracking_sync_started`, `tracking_sync_step`, `tracking_sync_completed` (by `attempt_id`);
+- `tracking_sync_started`, `tracking_sync_step`, `tracking_sync_completed` (by `attempt_id`).
+  The completed line has the `outcome` and `events_new`;
+- `tracking_scrape` and `tracking_routing`, which include `transport_fallback`, carry the
+  `attempt_id` of the check whose lookup they belong to. Lookups outside a check, such as
+  carrier recognition, have none. A `tracking_scrape` `outcome` is `success`, `error`, or
+  an answer about the number: `not_found`, `no_history` (a provider has no scans for it
+  yet), `input_required` or `invalid_input`;
 - `tracking_sync_audit_write_failed`, `tracking_sync_audit_maintenance_failed`,
   `tracking_status_observation_write_failed`;
 - `sync_claim_failed`: the sync worker could not claim a job, with its `failure_count` and
@@ -241,7 +254,12 @@ Key JSON events:
   an audit write found its rows deleted with the parcel. Neither is a failure;
 - `http_request` (by `request_id`, matching Sentry for server errors). A failed request
   carries `error_class`; a 502 that wraps an upstream failure also names that failure's
-  class in `error_cause`;
+  class in `error_cause`. Health checks (`/health`, `/health/live`) and metric scrapes
+  (`/api/metrics`) are logged only when they fail;
+- `public_lookup` (by `request_id`): how a lookup without an account ended, as
+  `public_lookup_total` counts it, or `failed` with the `reason`, the stage it stopped at:
+  `input`, `verification` (the browser proof), `allowance`, `amazon` or `saving`. A
+  refusal adds its `status`; `error_class` names any failure. It never has the number;
 - `carrier_recognition`: how many carriers the Add sheet's recognition asked, how many
   knew the number or failed, and what it settled on (a carrier, `choice` or `none`).
 - `parcel_links_forgotten`: how many expired lookups, and parcels with them, a maintenance
@@ -319,7 +337,8 @@ by one phase when counting attempts; summing phases double-counts.
 
 **Sentry metrics**, which work with tracing off:
 - `tracking.scrape.duration` (ms) and `tracking.scrape.attempts`, tagged `carrier`,
-  `phase`, `outcome`, `error_type`;
+  `phase`, `outcome`, `error_type`. `outcome` reads as on the `tracking_scrape` line, so
+  `outcome:error` counts failures and leaves out answers about the number;
 - `tracking.scrape.fallbacks`, with `from_phase` and `to_phase`;
 - `tracking.provider_input`, tagged `provider` and `step`, as `provider_input_total` below;
 - `tracking.checksum_rejection`, tagged `carrier` and `rule`, as
@@ -337,6 +356,9 @@ addresses.
 Every deploy restarts the counters, so a new series is served at 0 on its first scrape and
 counts from the next one. `increase()` then still sees an event that happens once per
 container.
+A step or lookup `outcome`, and a fallback's `reason`, is `ok` or the scraper's error kind
+(`not_found`, `rate_limited`, `transport`…). A provider with no history for the number yet
+is `no_history` rather than `indeterminate`.
 
 | Series | Answers |
 | --- | --- |
@@ -346,7 +368,7 @@ container.
 | `carrier_fallback_total` (from_step, to_step, reason) | How often recovery is needed |
 | `carrier_status_mapping_total` (carrier, stage_source) | Share of events mapped explicitly, by wording, or not at all |
 | `carrier_detection_total` (result) | Detection confidence served to clients |
-| `carrier_refresh_total` (carrier, served_by, outcome) | Who served each refresh: `adapter`, `other_adapter`, `provider` or `none` |
+| `carrier_refresh_total` (carrier, served_by, outcome) | Who served each refresh: `adapter`, `other_adapter`, `provider` or `none`, and how it ended: `updated` (a new scan or stage), `unchanged`, `waiting`, `error` or `superseded` |
 | `carrier_checksum_rejection_total` (carrier, rule) | Parcels a carrier's own lookup first confirmed although detection had left that carrier out on a failed check digit. `rule` is the failing rule's id in the scraper's `carrier.json` |
 | `public_lookup_total` (outcome) | Lookups without an account: `created`, `reused` (the number was already stored), `limited_burst`, `limited_daily` (the client's day is used up), `limited_network` (its IPv6 /48's day), `limited_global` |
 | `public_detection_total` (outcome) | Detections without an account that needed a carrier's answer: `asked`, or refused first as `limited_burst`, `limited_daily` or `limited_global` |
@@ -369,9 +391,10 @@ Useful questions:
 - **Is the browser fallback earning its cost?**
   `carrier_lookup_total{final_step="trawl"}` over all successful lookups.
 - **Is a carrier's adapter actually serving it?**
-  `carrier_refresh_total{served_by="provider",outcome="updated"}` over all `updated`. It
-  should stay near zero for carriers with their own adapter. One direct failure benches the
-  adapter for its cooldown, so small failure rates show up amplified.
+  `carrier_refresh_total{served_by="provider",outcome=~"updated|unchanged"}` over all
+  `updated` and `unchanged`. It should stay near zero for carriers with their own adapter.
+  One direct failure benches the adapter for its cooldown, so small failure rates show up
+  amplified.
 - **Does an in-adapter retry ever help?**
   `carrier_lookup_total{final_step="retry",outcome="ok",attempts=~"[2-9]"}`.
 - **New unmapped wording?** A rising `stage_source="none"` share. See

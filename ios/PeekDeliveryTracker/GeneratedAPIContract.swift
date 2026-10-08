@@ -703,6 +703,7 @@ struct SyncJobResponse: Codable, Equatable, Hashable, Sendable, Identifiable {
 struct SyncSummary: Codable, Equatable, Hashable, Sendable {
     var checked: Int? = nil
     var updated: Int? = nil
+    var unchanged: Int? = nil
     var waiting: Int? = nil
     var errors: Int? = nil
     var unsupported: Int? = nil

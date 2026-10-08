@@ -7,9 +7,9 @@ export const runtime = 'nodejs';
 export const GET = apiRoute(async () => {
   const ok = await deliveryServiceReady();
   return json({ ok }, ok ? 200 : 503);
-}, { authenticated: false, loadService: false });
+}, { authenticated: false, loadService: false, quiet: true });
 
 export const HEAD = apiRoute(async () => {
   const ok = await deliveryServiceReady();
   return noContent(ok ? 200 : 503);
-}, { authenticated: false, loadService: false });
+}, { authenticated: false, loadService: false, quiet: true });

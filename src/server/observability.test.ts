@@ -5,9 +5,12 @@ import {
   logOperationalEvent,
   operationalErrorMetadata,
   parseSampleRate,
+  reportRoutingEvent,
   resolveSentryRelease,
   shouldReportOutage,
   shouldReportRepeatedFailure,
+  trackingAttemptId,
+  withTrackingAttempt,
 } from './observability';
 import { UpstreamHttpError } from 'universal-parcel-scraper/node';
 import { SupabaseError } from './supabase';
@@ -40,6 +43,23 @@ describe('structured operational logs', () => {
     expect(payload).toHaveProperty('status_text');
     expect(payload).toHaveProperty('tracking_url');
     expect(payload).toHaveProperty('authorization');
+  });
+});
+
+describe('the check a line belongs to', () => {
+  it('names the attempt on the routing lines of its lookups, and on no other', async () => {
+    const output = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    await Promise.all(['first', 'second'].map((attempt) => withTrackingAttempt(attempt, async () => {
+      await Promise.resolve();
+      reportRoutingEvent('fresher_provider_found', { carrier: 'dhl', provider: 'ParcelsApp' });
+    })));
+    reportRoutingEvent('fresher_provider_found', { carrier: 'dhl', provider: 'ParcelsApp' });
+    // The sync names its attempt where it reports outside the lookup.
+    reportRoutingEvent('carrier_auto_swapped', { carrier: 'dhl', provider: 'ups', attemptId: 'third' });
+    const lines = output.mock.calls.map(([line]) => JSON.parse(String(line)));
+    expect(lines.map((line) => line.attempt_id)).toEqual(['first', 'second', undefined, 'third']);
+    expect(trackingAttemptId()).toBeUndefined();
   });
 });
 

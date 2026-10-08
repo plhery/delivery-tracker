@@ -78,6 +78,11 @@ interface ApiRouteOptions {
    * guards such a route is the capability in its address, not the body's type.
    */
   anyBody?: boolean;
+  /**
+   * Machines poll the route, a health check or a metrics scrape every few
+   * seconds. Its requests are logged only when they fail.
+   */
+  quiet?: boolean;
 }
 
 type ApiHandler<Parameters extends RouteParameters> = (
@@ -381,7 +386,7 @@ export function apiRoute<Parameters extends RouteParameters = RouteParameters>(
       statusText: response.statusText,
       headers,
     });
-    logRequest(request, requestId, finalized.status, startedAt, caught);
+    if (!options.quiet || finalized.status >= 400) logRequest(request, requestId, finalized.status, startedAt, caught);
     if (caught && finalized.status >= 500) {
       captureOperationalError(caught, {
         component: 'api',

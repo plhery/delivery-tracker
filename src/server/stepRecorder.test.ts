@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { NoHistoryError } from 'universal-parcel-scraper';
 
 const metrics = { distribution: vi.fn(), count: vi.fn() };
-const observability = { initObservability: vi.fn(() => true), logOperationalEvent: vi.fn(), reportRoutingEvent: vi.fn() };
+const observability = {
+  initObservability: vi.fn(() => true), logOperationalEvent: vi.fn(), reportRoutingEvent: vi.fn(),
+  trackingAttemptId: vi.fn((): string | undefined => undefined),
+};
 
 vi.mock('@sentry/node', () => ({ metrics }));
 vi.mock('./observability', () => observability);
@@ -14,6 +18,7 @@ describe('sentryStepRecorder', () => {
     metrics.count.mockClear();
     observability.logOperationalEvent.mockClear();
     observability.reportRoutingEvent.mockClear();
+    observability.trackingAttemptId.mockReset();
   });
 
   it('keeps the historical metric names and phase labels for a plain step', () => {
@@ -47,9 +52,29 @@ describe('sentryStepRecorder', () => {
     expect(observability.logOperationalEvent).toHaveBeenCalledWith('tracking_scrape', {
       carrier: 'ups', phase: 'total', outcome: 'success', error_type: 'none', duration_ms: 3200, final_step: 'trawl', attempts: 2,
     });
-    sentryStepRecorder.lookup({ carrier: 'ups', finalStep: 'direct', outcome: 'not_found', errorType: 'NotFoundError', durationMs: 50, attempts: 1 });
-    expect(metrics.count).toHaveBeenLastCalledWith('tracking.scrape.attempts', 1, {
-      attributes: { carrier: 'ups', phase: 'total', outcome: 'error', error_type: 'NotFoundError' },
+  });
+
+  it('names the check a scrape ran for', () => {
+    observability.trackingAttemptId.mockReturnValue('attempt-1');
+    sentryStepRecorder.step({
+      carrier: 'dhl', step: 'direct', attempt: 1, outcome: 'ok', errorType: null, durationMs: 10,
+      fallbackFrom: null, fallbackReason: null, fallbackErrorType: null,
+    });
+    sentryStepRecorder.lookup({ carrier: 'dhl', finalStep: 'direct', outcome: 'ok', errorType: null, durationMs: 10, attempts: 1 });
+    expect(observability.logOperationalEvent.mock.calls.map(([, fields]) => fields.attempt_id)).toEqual(['attempt-1', 'attempt-1']);
+  });
+
+  it('tells answers about the number apart from failures', () => {
+    const record = { carrier: 'ups', finalStep: 'direct', durationMs: 50, attempts: 1 } as const;
+    sentryStepRecorder.lookup({ ...record, outcome: 'not_found', errorType: 'NotFoundError' });
+    sentryStepRecorder.lookup({ ...record, outcome: 'indeterminate', errorType: 'NoHistoryError', error: new NoHistoryError('ups', 'No scans yet') });
+    sentryStepRecorder.lookup({ ...record, outcome: 'input_required', errorType: 'InputRequiredError' });
+    sentryStepRecorder.lookup({ ...record, outcome: 'indeterminate', errorType: 'IndeterminateError' });
+    sentryStepRecorder.lookup({ ...record, outcome: 'transport', errorType: 'TimeoutError' });
+    expect(observability.logOperationalEvent.mock.calls.map(([, fields]) => fields.outcome))
+      .toEqual(['not_found', 'no_history', 'input_required', 'error', 'error']);
+    expect(metrics.count).toHaveBeenCalledWith('tracking.scrape.attempts', 1, {
+      attributes: { carrier: 'ups', phase: 'total', outcome: 'not_found', error_type: 'NotFoundError' },
     });
   });
 

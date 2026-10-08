@@ -8,6 +8,7 @@ import {
   captureSyncAnomaly,
   errorType,
   logOperationalEvent,
+  withTrackingAttempt,
 } from './observability';
 import { recordRefresh } from './metrics';
 import { observeTrackingHealth, type HealthSample } from './trackingHealth';
@@ -23,7 +24,11 @@ export type SyncStep =
   | 'persist_events'
   | 'persist_package'
   | 'complete';
-export type SyncAuditOutcome = 'updated' | 'waiting' | 'error' | 'unsupported' | 'superseded';
+/**
+ * `updated`: the check stored a new scan or moved the parcel's stage.
+ * `unchanged`: the carrier answered with the progress already saved.
+ */
+export type SyncAuditOutcome = 'updated' | 'unchanged' | 'waiting' | 'error' | 'unsupported' | 'superseded';
 export type SyncAnomalyCode =
   | 'delivered_status_conflict'
   | 'early_stage_regression'
@@ -51,6 +56,8 @@ export interface SyncAuditCompletion {
   statusText?: string | null;
   eventsReceived?: number;
   eventsNormalized?: number;
+  /** Scans stored for the first time; rewritten rows do not count. */
+  eventsNew?: number;
   anomalyCodes?: SyncAnomalyCode[];
   error?: unknown;
   /** False when no provider was contacted, so the check is not evidence of provider health. */
@@ -110,7 +117,7 @@ export class TrackingSyncAudit {
   }
 
   observeFetch<T>(operation: () => Promise<T>): Promise<T> {
-    return observeTrackingHealth(this.#healthSamples, operation);
+    return withTrackingAttempt(this.attemptId, () => observeTrackingHealth(this.#healthSamples, operation));
   }
 
   async start(): Promise<void> {
@@ -236,6 +243,7 @@ export class TrackingSyncAudit {
       status_text: completion.statusText?.slice(0, 500) || null,
       events_received: boundedCount(completion.eventsReceived),
       events_normalized: boundedCount(completion.eventsNormalized),
+      events_new: boundedCount(completion.eventsNew),
       anomaly_codes: [...new Set(completion.anomalyCodes ?? [])].slice(0, 16),
       error_type: completion.error === undefined ? null : errorType(completion.error),
       completed_at: completedAt.toISOString(),
@@ -252,7 +260,7 @@ export class TrackingSyncAudit {
       if (!completed) throw new Error('The tracking sync attempt was not running');
     });
     if (this.context.trigger === 'scheduled' && !this.context.signal?.aborted && completion.evaluateHealth !== false
-      && ['updated', 'waiting', 'error'].includes(completion.outcome)) {
+      && ['updated', 'unchanged', 'waiting', 'error'].includes(completion.outcome)) {
       const failedFetch = this.#steps.some(step => step.step === 'fetch' && step.status === 'failed');
       const samples: JsonObject[] = [...this.#healthSamples.values(), {
         kind: 'refresh', subject: this.configuredCarrier,
@@ -277,6 +285,7 @@ export class TrackingSyncAudit {
       selected_stage: completion.selectedStage ?? null,
       events_received: values.events_received,
       events_normalized: values.events_normalized,
+      events_new: values.events_new,
       anomaly_count: (completion.anomalyCodes ?? []).length,
       error_type: values.error_type,
     }, completion.outcome === 'error' ? 'error' : 'info');

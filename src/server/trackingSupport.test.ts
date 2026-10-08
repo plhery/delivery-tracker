@@ -91,8 +91,8 @@ describe('tracking support context', () => {
 });
 
 describe('tracking support evidence', () => {
-  it('verifies accepted direct progress with a source timestamp', () => {
-    expect(trackingSupportEvidence(parcel, progress, 'ups', 'updated', false)).toEqual({
+  it.each(['updated', 'unchanged'])('verifies accepted direct progress with a source timestamp when %s', (outcome) => {
+    expect(trackingSupportEvidence(parcel, progress, 'ups', outcome, false)).toEqual({
       support_lookup_number: number, support_provider: null, support_direct_progress: true,
     });
   });

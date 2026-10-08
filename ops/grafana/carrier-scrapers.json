@@ -84,7 +84,7 @@
       "description": "Per configured carrier. A carrier with its own adapter should stay near zero: every point above it is a direct failure followed by the router's cooldown. Universal-only carriers read 1; a carrier no provider served reads 0.",
       "gridPos": { "x": 0, "y": 30, "w": 12, "h": 9 },
       "targets": [
-        { "expr": "(sum by (carrier) (increase(carrier_refresh_total{served_by=\"provider\", outcome=\"updated\"}[24h])) or sum by (carrier) (increase(carrier_refresh_total{outcome=\"updated\"}[24h])) * 0) / (sum by (carrier) (increase(carrier_refresh_total{outcome=\"updated\"}[24h])) > 0)", "format": "table", "instant": true }
+        { "expr": "(sum by (carrier) (increase(carrier_refresh_total{served_by=\"provider\", outcome=~\"updated|unchanged\"}[24h])) or sum by (carrier) (increase(carrier_refresh_total{outcome=~\"updated|unchanged\"}[24h])) * 0) / (sum by (carrier) (increase(carrier_refresh_total{outcome=~\"updated|unchanged\"}[24h])) > 0)", "format": "table", "instant": true }
       ]
     },
     {
@@ -99,10 +99,10 @@
     {
       "type": "timeseries",
       "title": "Lookups lost after every step",
-      "description": "Lookups that failed once all steps were used, excluding clean not-found and missing-input answers. Each one benches that adapter for the router's cooldown and sends the parcel to a universal provider.",
+      "description": "Lookups that failed once all steps were used, excluding answers about the number: not found, no history yet, missing or invalid input. Each one benches that adapter for the router's cooldown and sends the parcel to a universal provider.",
       "gridPos": { "x": 0, "y": 39, "w": 24, "h": 8 },
       "targets": [
-        { "expr": "sum by (carrier, outcome) (increase(carrier_lookup_total{carrier=~\"$carrier\", outcome!~\"ok|not_found|input_required\"}[1h]))", "legendFormat": "{{carrier}} {{outcome}}" }
+        { "expr": "sum by (carrier, outcome) (increase(carrier_lookup_total{carrier=~\"$carrier\", outcome!~\"ok|not_found|no_history|input_required|invalid_input\"}[1h]))", "legendFormat": "{{carrier}} {{outcome}}" }
       ]
     }
   ]

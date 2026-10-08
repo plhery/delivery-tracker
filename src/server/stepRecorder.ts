@@ -4,8 +4,8 @@ import * as Sentry from '@sentry/node';
 import type { LookupRecord, StepRecord, StepRecorder } from 'universal-parcel-scraper/node';
 import { combineRecorders } from 'universal-parcel-scraper/node';
 import { healthStepRecorder } from './trackingHealth';
-import { prometheusStepRecorder } from './metrics';
-import { initObservability, logOperationalEvent, reportRoutingEvent } from './observability';
+import { prometheusStepRecorder, stepOutcome } from './metrics';
+import { initObservability, logOperationalEvent, reportRoutingEvent, trackingAttemptId } from './observability';
 
 /**
  * The host's telemetry sinks for the scraper's `StepRecorder`.
@@ -23,14 +23,19 @@ function metric(operation: () => void): void {
   } catch { /* Telemetry must never change a tracking result. */ }
 }
 
-function outcomeLabel(outcome: StepRecord['outcome']): 'success' | 'error' {
-  return outcome === 'ok' ? 'success' : 'error';
+/** Answers about the number rather than failures: the carrier or provider was reached and replied. */
+const ANSWERS = new Set(['not_found', 'no_history', 'input_required', 'invalid_input']);
+
+function outcomeLabel(record: StepRecord | LookupRecord): string {
+  if (record.outcome === 'ok') return 'success';
+  const outcome = stepOutcome(record.outcome, record.error);
+  return ANSWERS.has(outcome) ? outcome : 'error';
 }
 
 export const sentryStepRecorder: StepRecorder = {
   step(record: StepRecord) {
     const attributes = {
-      carrier: record.carrier, phase: record.step, outcome: outcomeLabel(record.outcome), error_type: record.errorType ?? 'none',
+      carrier: record.carrier, phase: record.step, outcome: outcomeLabel(record), error_type: record.errorType ?? 'none',
     };
     if (record.fallbackFrom) {
       // Report before-fallback evidence even when the recovery ultimately succeeds.
@@ -44,8 +49,11 @@ export const sentryStepRecorder: StepRecorder = {
         attributes: { carrier: record.carrier, from_phase: record.fallbackFrom!, to_phase: record.step, error_type: record.fallbackErrorType ?? 'none' },
       }));
     }
-    try { logOperationalEvent('tracking_scrape', { ...attributes, duration_ms: Math.round(record.durationMs) }); }
-    catch { /* Preserve the result even if logging fails. */ }
+    try {
+      logOperationalEvent('tracking_scrape', {
+        ...attributes, duration_ms: Math.round(record.durationMs), attempt_id: trackingAttemptId(),
+      });
+    } catch { /* Preserve the result even if logging fails. */ }
     metric(() => {
       Sentry.metrics.distribution('tracking.scrape.duration', record.durationMs, { unit: 'millisecond', attributes });
       Sentry.metrics.count('tracking.scrape.attempts', 1, { attributes });
@@ -53,11 +61,12 @@ export const sentryStepRecorder: StepRecorder = {
   },
   lookup(record: LookupRecord) {
     const attributes = {
-      carrier: record.carrier, phase: 'total', outcome: outcomeLabel(record.outcome), error_type: record.errorType ?? 'none',
+      carrier: record.carrier, phase: 'total', outcome: outcomeLabel(record), error_type: record.errorType ?? 'none',
     };
     try {
       logOperationalEvent('tracking_scrape', {
         ...attributes, duration_ms: Math.round(record.durationMs), final_step: record.finalStep ?? 'none', attempts: record.attempts,
+        attempt_id: trackingAttemptId(),
       });
     } catch { /* Preserve the result even if logging fails. */ }
     metric(() => {

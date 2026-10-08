@@ -727,11 +727,12 @@ describe('TrackingSyncService', () => {
     // Detection names UPS for the number: the parcel was filed before it could.
     expect((await sync('1Z999AA10123456784')).fetchUniversal).not.toHaveBeenCalled();
     expect(report).toHaveBeenCalledWith('carrier_auto_swapped',
-      { carrier: 'unknown', provider: 'ups', trackingNumber: '1Z999AA10123456784', category: 'detected' });
+      { carrier: 'unknown', provider: 'ups', trackingNumber: '1Z999AA10123456784', category: 'detected', attemptId: expect.any(String) });
     expect(report).not.toHaveBeenCalledWith('carrier_mismatch_confirmed', expect.anything());
     // A provider had to name the carrier: detection has a rule to gain.
     expect((await sync('TEST1234')).fetchUniversal).toHaveBeenCalledOnce();
-    expect(report).toHaveBeenCalledWith('carrier_auto_swapped', { carrier: 'unknown', provider: 'ups', trackingNumber: 'TEST1234' });
+    expect(report).toHaveBeenCalledWith('carrier_auto_swapped',
+      { carrier: 'unknown', provider: 'ups', trackingNumber: 'TEST1234', attemptId: expect.any(String) });
     expect(report).toHaveBeenCalledWith('carrier_mismatch_confirmed', expect.objectContaining({ provider: 'ups', trackingNumber: 'TEST1234' }));
   });
 
@@ -1109,7 +1110,7 @@ describe('TrackingSyncService', () => {
     client.listUnwatchedPackageIds.mockRejectedValue(failure);
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
       { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null, () => new Date('2026-09-09T10:10:00Z'));
-    await expect(service.sync()).resolves.toMatchObject({ checked: 1, updated: 1 });
+    await expect(service.sync()).resolves.toMatchObject({ checked: 1, unchanged: 1 });
     expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'tracking', operation: 'list_unwatched_packages' });
   });
 
@@ -1822,11 +1823,11 @@ describe('TrackingSyncService', () => {
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
       adapter, null, () => now);
     await expect(service.sync()).resolves.toMatchObject({ checked: 0 });
-    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1, updated: 1 });
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1, unchanged: 1 });
     now = new Date('2026-09-09T10:10:00Z');
     await expect(service.sync()).resolves.toMatchObject({ checked: 0 });
     now = new Date('2026-09-09T10:30:00Z');
-    await expect(service.sync()).resolves.toMatchObject({ checked: 1, updated: 1 });
+    await expect(service.sync()).resolves.toMatchObject({ checked: 1, unchanged: 1 });
     expect(adapter.fetch.mock.calls.filter(([carrier]) => carrier === 'spring-gds')).toHaveLength(2);
   });
 
@@ -1863,11 +1864,11 @@ describe('TrackingSyncService', () => {
     expect(adapter.fetch).toHaveBeenCalledOnce();
     now = new Date('2026-09-09T14:00:00Z');
     adapter.fetch.mockResolvedValue({ status: 'in_transit' });
-    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ checked: 1, updated: 1 });
+    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ checked: 1, unchanged: 1 });
     now = new Date('2026-09-09T14:59:59Z');
     await expect(service().syncPackage(parcel)).resolves.toMatchObject({ checked: 0 });
     now = new Date('2026-09-09T15:00:00Z');
-    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ checked: 1, updated: 1 });
+    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ checked: 1, unchanged: 1 });
     expect(adapter.fetch).toHaveBeenCalledTimes(3);
   });
 
@@ -2697,6 +2698,36 @@ it('fills in a UPS scan location without creating another notification event', a
   expect(store.rows.size).toBe(1);
   expect([...store.rows.values()][0]).toMatchObject({ id: original.id, provider_event_id: original.provider_event_id,
     location: 'Example City, France' });
+});
+
+it('tells a check that stored a scan from one that rewrote the scans it had', async () => {
+  const store = eventStore();
+  const scan = (time: string, description: string, location = '') => ({ time, stage: 'in_transit', description, location });
+  const result = (...events: ReturnType<typeof scan>[]) => ({ status: 'in_transit', current_stage: 'in_transit',
+    last_update: events.at(-1)!.time, last_status_text: events.at(-1)!.description, events });
+  const sorted = scan('2026-07-11T18:05:00Z', 'Sorted');
+  const adapter = { fetch: vi.fn()
+    .mockResolvedValueOnce(result(sorted))
+    .mockResolvedValueOnce(result({ ...sorted, location: 'Example City' }))
+    .mockResolvedValue(result({ ...sorted, location: 'Example City' }, scan('2026-07-12T08:00:00Z', 'Departed'))) };
+  const service = new TrackingSyncService(store.client as unknown as SupabaseServiceClient, adapter, null,
+    () => new Date('2026-07-12T12:00:00Z'));
+  const load = () => ({ id: 'news-parcel', user_id: 'owner', carrier: 'ups', tracking_number: '1Z0000000000000001',
+    current_stage: store.rows.size ? 'in_transit' : 'pending', [STORED_EVENT_IDENTITIES]: store.identities() });
+  const completion = () => store.client.completeSyncAttempt.mock.calls.at(-1)![1] as JsonObject;
+  const persisted = () => (store.client.completeSyncAttempt.mock.calls.at(-1)![2] as JsonObject[])
+    .find((step) => step.step === 'persist_events')!.details;
+
+  await expect(service.syncPackage(load())).resolves.toMatchObject({ updated: 1, unchanged: 0 });
+  expect(completion()).toMatchObject({ outcome: 'updated', events_new: 1 });
+  // The location fills in on the stored row: nothing to tell.
+  await expect(service.syncPackage(load())).resolves.toMatchObject({ updated: 0, unchanged: 1 });
+  expect(completion()).toMatchObject({ outcome: 'unchanged', events_new: 0 });
+  expect(persisted()).toMatchObject({ events_persisted: 1, events_new: 0 });
+  await expect(service.syncPackage(load())).resolves.toMatchObject({ updated: 1, unchanged: 0 });
+  expect(completion()).toMatchObject({ outcome: 'updated', events_new: 1 });
+  expect(persisted()).toMatchObject({ events_persisted: 2, events_new: 1 });
+  expect(store.rows.size).toBe(2);
 });
 
 it('enriches a saved flight in place instead of storing a second event for notifications', async () => {

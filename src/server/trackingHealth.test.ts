@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { NoHistoryError } from 'universal-parcel-scraper';
+import { NoHistoryError, NotFoundError, SchemaError, UpstreamHttpError } from 'universal-parcel-scraper';
 import { TrackingCaptureError } from 'universal-parcel-scraper/node';
 import { healthMessage, healthStepRecorder, observeTrackingHealth, type HealthSample } from './trackingHealth';
 import { TrackingSyncAudit } from './trackingAudit';
@@ -78,10 +78,26 @@ describe('tracking health evidence', () => {
     expect([...samples.values()]).toEqual([expect.objectContaining({ kind: 'provider', subject: 'swiss-post', healthy: false })]);
   });
 
+  it('reads an HTTP status only from a response a provider sent', async () => {
+    const samples = new Map<string, HealthSample>();
+    await observeTrackingHealth(samples, async () => {
+      // Each kind of carrier error carries a status of its own: 404 for not found, 400 for a schema.
+      healthStepRecorder.step({ ...step, carrier: 'paack', outcome: 'schema', errorType: 'SchemaError', error: new SchemaError('paack') });
+      healthStepRecorder.lookup({ carrier: 'paack', finalStep: 'direct', outcome: 'not_found', errorType: 'NotFoundError',
+        durationMs: 1, attempts: 1, error: new NotFoundError('paack') });
+      healthStepRecorder.lookup({ carrier: 'Ship24', finalStep: 'direct', outcome: 'maintenance', errorType: 'UpstreamHttpError',
+        durationMs: 1, attempts: 1, error: new Error('lookup failed', { cause: new UpstreamHttpError('Ship24', 503) }) });
+    });
+    expect([...samples.values()].map((sample) => sample.details.http_status)).toEqual([null, null, 503]);
+  });
+
   it('explains user impact, maintenance and rate-limit next steps', () => {
     expect(healthMessage({ subject: 'la-poste', kind: 'direct', state: 'open', attempts: 12, failures: 8, window_hours: 24,
       evidence: { http_status: 403 } })).toMatchObject({ title: expect.stringContaining('8/12'), nextSteps: expect.stringContaining('maintenance'), impact: expect.stringContaining('not the final shipment refresh') });
     expect(healthMessage({ subject: 'Ship24', evidence: { http_status: 429 } }).nextSteps).toContain('Retry-After');
+    // A refusal the adapter read from the page, without a status to show for it.
+    expect(healthMessage({ subject: 'Ship24', evidence: { category: 'rate_limited', http_status: null } }).nextSteps).toContain('Retry-After');
+    expect(healthMessage({ subject: 'dpd', evidence: { category: 'maintenance', http_status: null } }).nextSteps).toContain('maintenance');
     expect(healthMessage({ subject: 'ups', state: 'recovered' }).nextSteps).toContain('No action needed');
   });
 });

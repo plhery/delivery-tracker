@@ -81,7 +81,7 @@ export function trackingSupportEvidence(
   return {
     support_lookup_number: typeof number === 'string' ? number : null,
     support_provider: provider,
-    support_direct_progress: outcome === 'updated' && !preserveSummary && !provider
+    support_direct_progress: ['updated', 'unchanged'].includes(outcome) && !preserveSummary && !provider
       && directCarrier(sourceCarrier) && hasRoutingProgress(result)
       && latestResultTime(result, sourceCarrier) > 0,
   };

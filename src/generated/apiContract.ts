@@ -5286,6 +5286,7 @@ export interface ApiSyncJobResponse {
 export interface ApiSyncSummary {
   "checked"?: number;
   "updated"?: number;
+  "unchanged"?: number;
   "waiting"?: number;
   "errors"?: number;
   "unsupported"?: number;

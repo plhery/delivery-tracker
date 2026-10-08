@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TrackingSyncAudit } from './trackingAudit';
 import { SupabaseServiceClient } from './supabase';
 import { trackingSupportEvidence } from './trackingSupport';
+import { logOperationalEvent } from './observability';
+import { recordRefresh } from './metrics';
 
 vi.mock('./observability', () => ({
   captureOperationalError: vi.fn(), captureTrackingHealth: vi.fn(), captureSyncAnomaly: vi.fn(),
@@ -77,5 +79,22 @@ describe('tracking support audit persistence', () => {
         } })],
       }),
     });
+  });
+});
+
+describe('a check that found nothing new', () => {
+  it('is recorded unchanged with its count of new scans, and still speaks for its carrier', async () => {
+    const client = { completeSyncAttempt: vi.fn().mockResolvedValue(true),
+      recordTrackingHealth: vi.fn().mockResolvedValue([]), ackTrackingHealth: vi.fn() };
+    const audit = new TrackingSyncAudit(client as unknown as SupabaseServiceClient,
+      'synthetic-package', 'TEST1234', 'dpd', 'in_transit', { trigger: 'scheduled' });
+    await audit.finish({ outcome: 'unchanged', sourceCarrier: 'dpd', eventsNormalized: 3, eventsNew: 0 });
+    expect(client.completeSyncAttempt).toHaveBeenCalledWith(audit.attemptId,
+      expect.objectContaining({ outcome: 'unchanged', events_normalized: 3, events_new: 0 }), expect.any(Array));
+    expect(client.recordTrackingHealth).toHaveBeenCalledWith(audit.attemptId, 'synthetic-package',
+      [expect.objectContaining({ kind: 'refresh', subject: 'dpd', healthy: true })]);
+    expect(logOperationalEvent).toHaveBeenCalledWith('tracking_sync_completed',
+      expect.objectContaining({ outcome: 'unchanged', events_normalized: 3, events_new: 0 }), 'info');
+    expect(recordRefresh).toHaveBeenCalledWith('dpd', 'dpd', 'unchanged');
   });
 });

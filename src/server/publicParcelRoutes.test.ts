@@ -7,6 +7,7 @@ import { DELETE as forget, GET as read, PATCH as change } from '../../app/api/pu
 import { DELETE as alertOff, PUT as alertOn } from '../../app/api/public/parcels/[linkId]/alerts/route';
 import { AMAZON_ACCOUNT_MESSAGE } from '../lib/amazon';
 import * as amazon from './amazonShippingEligibility';
+import { HttpError } from './api';
 import { SupabaseAuthenticator } from './auth';
 import * as background from './background';
 import * as metrics from './metrics';
@@ -386,6 +387,30 @@ describe('looking up a parcel without an account', () => {
     expect(new Set(claim.mock.calls.map(([claimed]) => claimed.bucket)).size).toBe(1);
     expect((await lookup({ trackingNumber }, '2001:db8:0:2::1')).status).toBe(201);
     expect(claim.mock.calls.at(-1)![0].bucket).not.toBe(claim.mock.calls[0]![0].bucket);
+  });
+
+  it('logs how each lookup ended and where a failed one stopped, never with its number', async () => {
+    const logged = () => [...vi.mocked(console.log).mock.calls, ...vi.mocked(console.error).mock.calls].map(([line]) => String(line));
+    const ended = () => logged().map((line) => JSON.parse(line)).filter((line) => line.event === 'public_lookup')
+      .map(({ outcome, reason, status, error_class }) => ({ outcome, reason, status, error_class }));
+    const claim = allow();
+    const create = store();
+    expect((await lookup({ trackingNumber })).status).toBe(201);
+    expect((await lookup({ trackingNumber: '!!' })).status).toBe(400);
+    vi.spyOn(amazon, 'verifyAmazonShippingAddition').mockRejectedValueOnce(new HttpError(503, 'Amazon is unavailable'));
+    expect((await lookup({ trackingNumber })).status).toBe(503);
+    create.mockRejectedValueOnce(new SupabaseError('database down', 503));
+    expect((await lookup({ trackingNumber })).status).toBe(502);
+    claim.mockResolvedValueOnce({ allowed: false, scope: 'bucket', overallUsed: 0 });
+    expect((await lookup({ trackingNumber })).status).toBe(429);
+    expect(ended()).toEqual([
+      { outcome: 'created' },
+      { outcome: 'failed', reason: 'input', status: 400, error_class: 'HttpError' },
+      { outcome: 'failed', reason: 'amazon', status: 503, error_class: 'HttpError' },
+      { outcome: 'failed', reason: 'saving', error_class: 'SupabaseError' },
+      { outcome: 'limited_daily' },
+    ]);
+    for (const line of logged()) expect(line).not.toContain(trackingNumber);
   });
 
   it('counts every client together when the proxy headers are not trusted', async () => {

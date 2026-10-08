@@ -27,5 +27,5 @@ export const GET = apiRoute(
       headers: { 'Content-Type': metricsContentType, 'Cache-Control': 'no-store' },
     });
   },
-  { authenticated: false, loadService: false, publicRateLimit: { limit: 120, window: 60 } },
+  { authenticated: false, loadService: false, publicRateLimit: { limit: 120, window: 60 }, quiet: true },
 );

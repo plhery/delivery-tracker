@@ -3,7 +3,9 @@
 Carrier and provider outages open a single Sentry incident, and a recovery event closes it.
 Postgres (`record_tracking_health`) decides when, from scheduled refreshes only. Manual
 refreshes, unsupported carriers and superseded work don't count. Samples last 24 hours and
-hold only provider ids, outcome categories, HTTP statuses and opaque ids.
+hold only provider ids, outcome categories, HTTP statuses and opaque ids. A sample's
+`http_status` is one a provider answered with; a carrier error the adapter raised on its
+own, such as not-found, has none.
 
 Individual attempts, retries and fallbacks go to logs, metrics and Prometheus instead. A
 failure that recovers never opens an issue. See [OBSERVABILITY.md](../../docs/OBSERVABILITY.md).

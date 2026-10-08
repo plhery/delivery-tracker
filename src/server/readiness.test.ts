@@ -4,6 +4,7 @@ import * as background from './background';
 import { SupabaseServiceClient } from './supabase';
 import { GET, HEAD } from '../../app/health/route';
 import { GET as live } from '../../app/health/live/route';
+import { GET as scrape } from '../../app/api/metrics/route';
 import { deliveryServiceReady } from './readiness';
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
@@ -49,4 +50,25 @@ it('exposes process liveness separately from unavailable dependencies', async ()
   const response = await live(new NextRequest('https://delivery.test/health/live'), { params: Promise.resolve({}) });
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ ok: true });
+});
+it('logs a health check or a metrics scrape only when it fails', async () => {
+  const output = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  configure();
+  const probe = vi.spyOn(SupabaseServiceClient.prototype, 'probeReadiness').mockResolvedValue(true);
+  vi.stubEnv('METRICS_TOKEN', 'synthetic-metrics-token');
+  const authorized = { authorization: 'Bearer synthetic-metrics-token' };
+  expect((await GET(new NextRequest('https://delivery.test/health'), { params: Promise.resolve({}) })).status).toBe(200);
+  expect((await live(new NextRequest('https://delivery.test/health/live'), { params: Promise.resolve({}) })).status).toBe(200);
+  expect((await scrape(new NextRequest('https://delivery.test/api/metrics', { headers: authorized }), { params: Promise.resolve({}) })).status).toBe(200);
+  const requests = () => [...output.mock.calls, ...errors.mock.calls].map(([line]) => JSON.parse(String(line)))
+    .filter((line) => line.event === 'http_request');
+  expect(requests()).toEqual([]);
+  probe.mockResolvedValue(false);
+  expect((await GET(new NextRequest('https://delivery.test/health'), { params: Promise.resolve({}) })).status).toBe(503);
+  expect((await scrape(new NextRequest('https://delivery.test/api/metrics'), { params: Promise.resolve({}) })).status).toBe(401);
+  expect(requests()).toHaveLength(2);
+  expect(requests()).toEqual(expect.arrayContaining([
+    expect.objectContaining({ route: '/health', status: 503 }), expect.objectContaining({ route: '/api/metrics', status: 401 }),
+  ]));
 });

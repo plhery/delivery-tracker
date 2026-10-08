@@ -221,6 +221,7 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
 export interface SyncSummary extends JsonObject {
   checked: number;
   updated: number;
+  unchanged: number;
   waiting: number;
   errors: number;
   unsupported: number;
@@ -236,6 +237,7 @@ export function emptySyncSummary(): SyncSummary {
   return {
     checked: 0,
     updated: 0,
+    unchanged: 0,
     waiting: 0,
     errors: 0,
     unsupported: 0,
@@ -563,7 +565,7 @@ export function detectSyncAnomalies(
   return [...anomalies];
 }
 
-type SyncOutcome = 'updated' | 'waiting' | 'errors' | 'unsupported' | 'superseded';
+type SyncOutcome = 'updated' | 'unchanged' | 'waiting' | 'errors' | 'unsupported' | 'superseded';
 
 class SupersededTrackingSync extends Error {}
 
@@ -1142,12 +1144,17 @@ export class TrackingSyncService {
         // A rejected/older summary must not advertise a swap that was not saved.
         values.carrier_data.routing.configured_carrier = carrierId;
       }
-      const outcome = progressDisappeared ? 'error' : knownUpdate && !fallbackWithoutProgress ? 'updated' : 'waiting';
       const eventsToPersist = keepSaved || (preserveSummary && (result.tracking_provider === 'UPU' || localOnlyFallback)) ? [] : events;
       const persistedIds = new Set(eventsToPersist.map((event) => String(event.provider_event_id)));
       const persistedEvents = withIdentities(
         eventsToPersist.filter((event) => !matches.skipped.has(String(event.provider_event_id))), matches.reused,
       );
+      // A scan already stored is rewritten in place, which is no news.
+      const storedIds = new Set(stored.map((event) => String(event.provider_event_id)));
+      const eventsNew = persistedEvents.filter((event) => !storedIds.has(String(event.provider_event_id))).length;
+      const news = eventsNew > 0 || (values.current_stage !== undefined && values.current_stage !== previousStage);
+      const outcome = progressDisappeared ? 'error'
+        : !knownUpdate || fallbackWithoutProgress ? 'waiting' : news ? 'updated' : 'unchanged';
       operation = 'persist_package';
       await audit.step('persist_package', async () => {
         await persist(values, persistedEvents, keepSaved ? [] : deleteDescriptions);
@@ -1157,11 +1164,12 @@ export class TrackingSyncService {
       }));
       // A correction to the carrier detection names is expected: it is logged without an issue.
       if (values.carrier) reportRoutingEvent('carrier_auto_swapped', {
-        carrier: carrierId, provider: String(values.carrier), trackingNumber: String(parcel.tracking_number ?? ''),
+        carrier: carrierId, provider: String(values.carrier), trackingNumber: String(parcel.tracking_number ?? ''), attemptId: audit.attemptId,
         ...(detectionNames(String(parcel.tracking_number ?? ''), String(values.carrier)) ? { category: 'detected' } : {}),
       });
       audit.record('persist_events', 'succeeded', 0, {
         events_persisted: persistedEvents.length,
+        events_new: eventsNew,
         identities_reused: [...matches.reused.keys()].filter((id) => persistedIds.has(id)).length,
         copies_skipped: [...matches.skipped.keys()].filter((id) => persistedIds.has(id)).length,
         atomic_with_package: true,
@@ -1182,6 +1190,7 @@ export class TrackingSyncService {
         statusText: result.last_status_text,
         eventsReceived: result.events?.length ?? 0,
         eventsNormalized: events.length,
+        eventsNew,
         anomalyCodes: anomalies,
         supportEvidence: trackingSupportEvidence(parcel, result, sourceCarrierId, outcome, preserveSummary),
       } as const;

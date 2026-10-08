@@ -1,9 +1,21 @@
 import 'server-only';
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import * as Sentry from '@sentry/node';
 import { healthMessage } from './trackingHealth';
 import type { JsonObject } from './types';
 import { UpstreamHttpError, type UpstreamHttpDiagnostics } from 'universal-parcel-scraper/node';
+
+/** The tracking check whose lookups are running, so their scrape and routing lines name its attempt. */
+const trackingAttempts = new AsyncLocalStorage<string>();
+
+export function withTrackingAttempt<T>(attemptId: string, operation: () => T): T {
+  return trackingAttempts.run(attemptId, operation);
+}
+
+export function trackingAttemptId(): string | undefined {
+  return trackingAttempts.getStore();
+}
 
 /**
  * The build puts this module in more than one server bundle (instrumentation
@@ -280,10 +292,12 @@ function applyUpstreamHttpContext(scope: Sentry.Scope, metadata: OperationalErro
 /** Fixed grouping plus bounded HTTP diagnostics, captured before fallback. */
 export function reportRoutingEvent(code: string, context: {
   carrier: string; provider: string; category?: string; trackingNumber?: string; errorClass?: string; error?: unknown;
+  attemptId?: string;
 }): void {
   try {
     const metadata = operationalErrorMetadata(context.error);
     logOperationalEvent('tracking_routing', {
+      attempt_id: context.attemptId ?? trackingAttemptId(),
       decision: code, carrier: context.carrier, provider: context.provider,
       category: context.category ?? null, tracking_number: context.trackingNumber ?? null,
       error_type: context.errorClass ?? null,

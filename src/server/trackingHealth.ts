@@ -1,6 +1,6 @@
 import 'server-only';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { CarrierError, NoHistoryError } from 'universal-parcel-scraper';
+import { CarrierError, NoHistoryError, UpstreamHttpError } from 'universal-parcel-scraper';
 import type { LookupRecord, StepRecord } from 'universal-parcel-scraper/node';
 import type { JsonObject } from './types';
 
@@ -33,12 +33,16 @@ function category(record: StepRecord | LookupRecord): string {
   }
   return outcome;
 }
+/**
+ * The status of the HTTP response a provider rejected. Other carrier errors
+ * carry an HTTP-like `status` of their own (404 for not found, 400 for a
+ * number a parser refuses), which no server sent.
+ */
 function details(record: StepRecord | LookupRecord, outcome: string): JsonObject {
   let status: number | null = null;
   let current = record.error;
   for (let depth = 0; current instanceof Error && depth < 8; depth++, current = current.cause) {
-    const value = (current as Error & { status?: unknown }).status;
-    if (typeof value === 'number' && value >= 100 && value <= 599) status = value;
+    if (current instanceof UpstreamHttpError && current.status >= 100 && current.status <= 599) status = current.status;
   }
   return { error_type: record.errorType, category: outcome, http_status: status,
     step: 'step' in record ? record.step : record.finalStep };
@@ -74,12 +78,12 @@ export function healthMessage(incident: JsonObject): { title: string; nextSteps:
   const title = recovered ? `${scope} recovered: ${subject}`
     : `${scope} repeatedly failing: ${subject} (${incident.failures}/${incident.attempts} in ${incident.window_hours}h${incident.consecutive_failures ? '; 3 consecutive checks failed for a parcel' : ''})`;
   let nextSteps = 'Inspect the carrier scraper dashboard and the latest error type. Check the provider response and adapter parsing; retain the working fallback and scheduled backoff.';
-  if (evidence?.http_status === 429) nextSteps = 'Honor Retry-After and inspect provider cooldowns. Reduce request frequency; do not increase retries or browser parallelism.';
+  if (evidence?.http_status === 429 || evidence?.category === 'rate_limited') nextSteps = 'Honor Retry-After and inspect provider cooldowns. Reduce request frequency; do not increase retries or browser parallelism.';
   else if (['input_required','not_found'].includes(String(evidence?.category))) nextSteps = 'Check whether the shipment has been announced and whether its required postcode or tracking credentials were supplied. Do not retry invalid inputs immediately.';
   else if (evidence?.http_status === 403 || evidence?.category === 'challenge') nextSteps = 'Check for carrier maintenance or a verification challenge. Use the browser or alternate provider, keep the cooldown, and inspect the direct adapter if the refusal persists.';
   else if (subject === 'ups' && incident.kind === 'direct') nextSteps = 'Plain HTTP runs only without a browser service and Akamai holds its status call open until the timeout. Configure FLARESOLVERR_URL so the status reply is read from the browser page.';
   else if (['trawl','browser','page'].includes(String(evidence?.step))) nextSteps = 'Check TRAWL health, container memory/OOM events and browser availability. A closed browser needs replacement before retrying; keep concurrency bounded.';
-  else if (Number(evidence?.http_status) >= 500) nextSteps = 'Check the upstream service for maintenance. Inspect the bounded retry and fallback results; allow scheduled backoff rather than adding more retries.';
+  else if (Number(evidence?.http_status) >= 500 || evidence?.category === 'maintenance') nextSteps = 'Check the upstream service for maintenance. Inspect the bounded retry and fallback results; allow scheduled backoff rather than adding more retries.';
   return { title, nextSteps: recovered ? 'Three recent checks succeeded. No action needed; threshold monitoring remains active.' : nextSteps,
     impact: refresh ? recovered ? 'Scheduled shipment refreshes are succeeding again.' : 'Scheduled shipment refreshes failed after routing and fallback. Previous saved progress is retained.'
       : 'This describes one provider or direct transport, not the final shipment refresh. Check refresh incidents to determine user impact.' };

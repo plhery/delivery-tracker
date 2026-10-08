@@ -8534,7 +8534,12 @@
             "type": "integer"
           },
           "updated": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Checks that stored a new scan or moved a parcel's stage."
+          },
+          "unchanged": {
+            "type": "integer",
+            "description": "Checks whose carrier answered with nothing new."
           },
           "waiting": {
             "type": "integer"

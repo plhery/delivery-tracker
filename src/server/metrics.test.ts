@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { IndeterminateError, NoHistoryError } from 'universal-parcel-scraper';
 
 const sentry = vi.hoisted(() => ({ count: vi.fn(), newTraces: 0, initialized: false }));
 vi.mock('@sentry/node', async (importOriginal) => ({
@@ -37,6 +38,29 @@ describe('prometheus carrier metrics', () => {
     expect(text).toContain('carrier_status_mapping_total{carrier="ups",stage_source="carrier_map"} 1');
     expect(text).toContain('carrier_detection_total{result="high"} 1');
     expect(text).toContain('carrier_step_duration_seconds_bucket{le="0.25",carrier="ups",step="direct",outcome="challenge"} 1');
+  });
+
+  it('tells a provider with no history yet apart from an indeterminate failure', async () => {
+    // A provider's own subclass, as 17TRACK has.
+    const empty = new (class SeventeenTrackNoHistoryError extends NoHistoryError {})('17track');
+    metrics.prometheusStepRecorder.step({
+      carrier: 'india-post', step: 'direct', attempt: 1, outcome: 'indeterminate', errorType: 'SeventeenTrackNoHistoryError',
+      durationMs: 300, fallbackFrom: null, fallbackReason: null, fallbackErrorType: null, error: new Error('wrapped', { cause: empty }),
+    });
+    metrics.prometheusStepRecorder.step({
+      carrier: 'india-post', step: 'provider', attempt: 2, outcome: 'indeterminate', errorType: 'IndeterminateError', durationMs: 300,
+      fallbackFrom: 'direct', fallbackReason: 'indeterminate', fallbackErrorType: 'SeventeenTrackNoHistoryError', fallbackError: empty,
+      error: new IndeterminateError('ship24'),
+    });
+    metrics.prometheusStepRecorder.lookup({
+      carrier: 'india-post', finalStep: 'direct', outcome: 'indeterminate', errorType: 'NoHistoryError', durationMs: 600, attempts: 2,
+      error: new NoHistoryError('india-post'),
+    });
+    const text = await scraped();
+    expect(text).toContain('carrier_step_total{carrier="india-post",step="direct",outcome="no_history",error_type="SeventeenTrackNoHistoryError"} 1');
+    expect(text).toContain('carrier_step_total{carrier="india-post",step="provider",outcome="indeterminate",error_type="IndeterminateError"} 1');
+    expect(text).toContain('carrier_fallback_total{carrier="india-post",from_step="direct",to_step="provider",reason="no_history"} 1');
+    expect(text).toContain('carrier_lookup_total{carrier="india-post",final_step="direct",outcome="no_history",attempts="2"} 1');
   });
 
   it('serves what another bundled copy of the module recorded', async () => {

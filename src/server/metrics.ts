@@ -2,7 +2,8 @@ import 'server-only';
 
 import * as Sentry from '@sentry/node';
 import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics, type LabelValues } from '@prometheus-io/client';
-import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from 'universal-parcel-scraper/node';
+import { CarrierError, NoHistoryError } from 'universal-parcel-scraper';
+import { METRICS, type LookupRecord, type StepOutcome, type StepRecord, type StepRecorder } from 'universal-parcel-scraper/node';
 import { initObservability } from './observability';
 
 /**
@@ -242,21 +243,36 @@ function count<L extends string>(counter: Counter<L>, name: string, labels: Labe
   afterFirstScrape(name + JSON.stringify(labels), () => counter.inc(labels, 0), () => counter.inc(labels));
 }
 
+/**
+ * A step's outcome as the telemetry names it: the scraper's error kind, except
+ * that a provider with no history for a number yet has answered, so it is told
+ * apart from the indeterminate failures its kind files it under.
+ */
+export function stepOutcome(outcome: StepOutcome, error: unknown): string {
+  if (outcome !== 'indeterminate') return outcome;
+  let current = error;
+  for (let depth = 0; current instanceof Error && depth < 8; depth++, current = current.cause) {
+    if (current instanceof CarrierError) return current instanceof NoHistoryError ? 'no_history' : outcome;
+  }
+  return outcome;
+}
+
 export const prometheusStepRecorder: StepRecorder = {
   step(record: StepRecord) {
-    const timing = { carrier: record.carrier, step: record.step, outcome: record.outcome };
+    const timing = { carrier: record.carrier, step: record.step, outcome: stepOutcome(record.outcome, record.error) };
     afterFirstScrape(METRICS.stepDuration + JSON.stringify(timing), () => runtime.stepDuration.zero(timing),
       () => runtime.stepDuration.observe(timing, record.durationMs / 1000));
     count(runtime.stepTotal, METRICS.stepTotal, { ...timing, error_type: record.errorType ?? 'none' });
     if (record.fallbackFrom) {
       count(runtime.fallbackTotal, METRICS.fallbackTotal, {
-        carrier: record.carrier, from_step: record.fallbackFrom, to_step: record.step, reason: record.fallbackReason ?? 'error',
+        carrier: record.carrier, from_step: record.fallbackFrom, to_step: record.step,
+        reason: record.fallbackReason ? stepOutcome(record.fallbackReason, record.fallbackError) : 'error',
       });
     }
   },
   lookup(record: LookupRecord) {
     count(runtime.lookupTotal, METRICS.lookupTotal, {
-      carrier: record.carrier, final_step: record.finalStep ?? 'none', outcome: record.outcome,
+      carrier: record.carrier, final_step: record.finalStep ?? 'none', outcome: stepOutcome(record.outcome, record.error),
       attempts: String(Math.min(Math.max(Math.trunc(record.attempts) || 0, 0), 9)),
     });
   },
