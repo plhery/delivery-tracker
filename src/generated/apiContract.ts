@@ -39,7 +39,8 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "CH",
       "LI"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.post.ch/de/empfangen/sendung-verfolgen"
   },
   "swiss-post-cargo": {
     "displayName": "Swiss Post Cargo",
@@ -77,7 +78,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "CH"
-    ]
+    ],
+    "trackingSearchUrl": "https://apv.swisspost-cargo.com/public/trackandtrace/"
   },
   "quickpac": {
     "displayName": "Quickpac",
@@ -116,7 +118,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "CH"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.planzer-paket.ch/de/"
   },
   "planzer": {
     "displayName": "Planzer",
@@ -172,7 +175,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "CH"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.planzer-paket.ch/de/"
   },
   "aliexpress": {
     "displayName": "AliExpress / Cainiao",
@@ -212,6 +216,12 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^LP\\d{14}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}TY$",
+        "confidence": "low",
+        "checksum": "s10",
+        "preferred": true
       }
     ],
     "aliases": [
@@ -220,7 +230,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "CN"
-    ]
+    ],
+    "trackingSearchUrl": "https://global.cainiao.com/detail.htm"
   },
   "sunyou": {
     "displayName": "SunYou",
@@ -258,7 +269,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "CN"
-    ]
+    ],
+    "trackingSearchUrl": "https://sypost.net/search"
   },
   "hermes": {
     "displayName": "Hermes Einrichtungs-Service",
@@ -278,7 +290,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "DE"
-    ]
+    ],
+    "trackingSearchUrl": "https://myhes.de/"
   },
   "spring-gds": {
     "displayName": "PostNL",
@@ -337,7 +350,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "NL"
-    ]
+    ],
+    "trackingSearchUrl": "https://postnl.post/track"
   },
   "postlogistics": {
     "displayName": "PostLogistics",
@@ -371,7 +385,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://apv.swisspost-cargo.com/public/trackandtrace/{trackingNumber}",
     "countries": [
       "CH"
-    ]
+    ],
+    "trackingSearchUrl": "https://apv.swisspost-cargo.com/public/trackandtrace/"
   },
   "dachser": {
     "displayName": "Dachser",
@@ -428,6 +443,7 @@ export const CARRIER_CAPABILITIES = {
         "domains": [
           "dhl.com"
         ],
+        "pathPattern": "^/(?![a-z]+-[a-z]+/(?:home/our-divisions|ecommerce)(?:[/.]|$))",
         "params": [
           "tracking-id",
           "trackingId",
@@ -490,7 +506,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "DE"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html"
   },
   "dhl-ecommerce": {
     "displayName": "DHL eCommerce",
@@ -554,7 +571,8 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "DE",
       "US"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.dhl.com/ch-en/home/tracking.html"
   },
   "ups": {
     "displayName": "UPS",
@@ -594,7 +612,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "aliases": [
       "United Parcel Service"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.ups.com/track"
   },
   "amazon-logistics": {
     "displayName": "Amazon Logistics",
@@ -719,7 +738,8 @@ export const CARRIER_CAPABILITIES = {
       "LI",
       "TR",
       "US"
-    ]
+    ],
+    "trackingSearchUrl": "https://track.amazon.fr/"
   },
   "fedex": {
     "displayName": "FedEx",
@@ -768,7 +788,8 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "fedex-1d",
         "preferred": true
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://www.fedex.com/en-ch/tracking.html"
   },
   "gls-ch": {
     "displayName": "GLS Switzerland",
@@ -834,7 +855,8 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "CH",
       "LI"
-    ]
+    ],
+    "trackingSearchUrl": "https://gls-group.eu/EU/en/parcel-tracking"
   },
   "dpd": {
     "displayName": "DPD Switzerland",
@@ -895,7 +917,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "CH"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.dpd.com/ch/de/"
   },
   "dpd-fr": {
     "displayName": "DPD France",
@@ -941,7 +964,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "FR"
-    ]
+    ],
+    "trackingSearchUrl": "https://trace.dpd.fr/fr/trace"
   },
   "mondial-relay": {
     "displayName": "Mondial Relay",
@@ -997,7 +1021,8 @@ export const CARRIER_CAPABILITIES = {
       "ES",
       "LU",
       "PT"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.mondialrelay.fr/suivi-de-colis/"
   },
   "relais-colis": {
     "displayName": "Relais Colis",
@@ -1042,7 +1067,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "FR"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.relaiscolis.com/colis/suivre"
   },
   "la-poste": {
     "displayName": "La Poste / Colissimo",
@@ -1105,7 +1131,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "FR"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.laposte.fr/outils/suivre-vos-envois"
   },
   "chronopost": {
     "displayName": "Chronopost",
@@ -1157,7 +1184,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "FR"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.chronopost.fr/fr/suivi-colis"
   },
   "gls-fr": {
     "displayName": "GLS France",
@@ -1215,7 +1243,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "FR"
-    ]
+    ],
+    "trackingSearchUrl": "https://gls-group.com/FR/fr/suivi-colis"
   },
   "colis-prive": {
     "displayName": "Colis Privé",
@@ -1256,7 +1285,8 @@ export const CARRIER_CAPABILITIES = {
       "FR",
       "BE",
       "LU"
-    ]
+    ],
+    "trackingSearchUrl": "https://colisprive.com/moncolis/pages/DetailColis.aspx"
   },
   "geodis": {
     "displayName": "GEODIS",
@@ -1288,7 +1318,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "FR"
-    ]
+    ],
+    "trackingSearchUrl": "https://espace-client.geodis.com/services/destinataires/"
   },
   "colisweb": {
     "displayName": "Colisweb",
@@ -1319,7 +1350,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "FR"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.colisweb.com/suivi-livraison"
   },
   "c-chez-vous": {
     "displayName": "C Chez Vous",
@@ -1350,7 +1382,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "FR"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.cchezvous.fr/suivi-colis/"
   },
   "heppner": {
     "displayName": "Heppner",
@@ -1389,7 +1422,8 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "FR",
       "CH"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.heppner-group.com/destinataire-suivez-votre-marchandise/"
   },
   "ciblex": {
     "displayName": "Ciblex",
@@ -1472,7 +1506,8 @@ export const CARRIER_CAPABILITIES = {
       "PT",
       "FR",
       "GB"
-    ]
+    ],
+    "trackingSearchUrl": "https://mydeliveries.paack.app/tracking"
   },
   "asendia": {
     "displayName": "Asendia",
@@ -1527,7 +1562,8 @@ export const CARRIER_CAPABILITIES = {
       "GB",
       "DE",
       "US"
-    ]
+    ],
+    "trackingSearchUrl": "https://track.asendia.com/track/"
   },
   "shipup": {
     "displayName": "ShipUp",
@@ -1576,7 +1612,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "IN"
-    ]
+    ],
+    "trackingSearchUrl": "https://myspeedpost.com/track"
   },
   "hermes-de": {
     "displayName": "Hermes Germany",
@@ -1623,7 +1660,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "DE"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.myhermes.de/empfangen/sendungsverfolgung/"
   },
   "gls-de": {
     "displayName": "GLS Germany",
@@ -1693,7 +1731,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "DE"
-    ]
+    ],
+    "trackingSearchUrl": "https://gls-group.eu/DE/de/paketverfolgung"
   },
   "delivengo": {
     "displayName": "Delivengo",
@@ -1712,7 +1751,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "FR"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.laposte.fr/outils/suivre-vos-envois"
   },
   "intl-post": {
     "displayName": "Unknown postal carrier",
@@ -1741,7 +1781,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://t.17track.net/en"
   },
   "unknown": {
     "displayName": "Unknown carrier",
@@ -1782,7 +1823,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [],
     "trackingSiteName": "17TRACK",
-    "trackingUrlTemplate": "https://t.17track.net/en#nums={trackingNumber}"
+    "trackingUrlTemplate": "https://t.17track.net/en#nums={trackingNumber}",
+    "trackingSearchUrl": "https://t.17track.net/en"
   },
   "royal-mail": {
     "displayName": "Royal Mail",
@@ -1822,7 +1864,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.royalmail.com/portal/rm/track?trackNumber={trackingNumber}",
     "countries": [
       "GB"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.royalmail.com/portal/rm/track"
   },
   "parcelforce": {
     "displayName": "Parcelforce Worldwide",
@@ -1857,7 +1900,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.royalmail.com/track-your-item#/tracking-results/{trackingNumber}",
     "countries": [
       "GB"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.royalmail.com/track-your-item"
   },
   "evri": {
     "displayName": "Evri",
@@ -1883,7 +1927,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "GB"
-    ]
+    ],
+    "trackingSearchUrl": "https://globaleco.app/track"
   },
   "inpost": {
     "displayName": "InPost",
@@ -1925,7 +1970,8 @@ export const CARRIER_CAPABILITIES = {
       "IT",
       "PT",
       "GB"
-    ]
+    ],
+    "trackingSearchUrl": "https://inpost.pl/sledzenie-przesylek"
   },
   "an-post": {
     "displayName": "An Post",
@@ -1958,7 +2004,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.anpost.com/Post-Parcels/Track/History?item={trackingNumber}",
     "countries": [
       "IE"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.anpost.com/Post-Parcels/Track/Search"
   },
   "bpost": {
     "displayName": "bpost",
@@ -1994,7 +2041,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://track.bpost.cloud/",
     "countries": [
       "BE"
-    ]
+    ],
+    "trackingSearchUrl": "https://track.bpost.cloud/"
   },
   "austrian-post": {
     "displayName": "Austrian Post",
@@ -2021,7 +2069,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.post.at/en/s/track-and-trace-search",
     "countries": [
       "AT"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.post.at/en/s/track-and-trace-search"
   },
   "postnord": {
     "displayName": "PostNord",
@@ -2030,7 +2079,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "postnord"
+      "adapter": "postnord",
+      "recognitionRank": 7
     },
     "linkRules": [
       {
@@ -2071,7 +2121,8 @@ export const CARRIER_CAPABILITIES = {
       "DK",
       "NO",
       "FI"
-    ]
+    ],
+    "trackingSearchUrl": "https://tracking.postnord.com/en/"
   },
   "posti": {
     "displayName": "Posti",
@@ -2112,7 +2163,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.posti.fi/en/tracking/{trackingNumber}",
     "countries": [
       "FI"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.posti.fi/en/tracking/"
   },
   "correos-express": {
     "displayName": "Correos Express",
@@ -2141,7 +2193,8 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "ES",
       "PT"
-    ]
+    ],
+    "trackingSearchUrl": "https://s.correosexpress.com/"
   },
   "seur": {
     "displayName": "SEUR",
@@ -2159,7 +2212,7 @@ export const CARRIER_CAPABILITIES = {
           "www.seur.com",
           "seur.com"
         ],
-        "path": "^/miseur/mis-envios(?:/.*)?$",
+        "pathPattern": "^/(?:(?:[a-z]{2}/?)?$|(?:[a-z]{2}/)?miseur/mis-envios(?:/|$)|livetracking(?:/|$))",
         "params": [
           "tracking"
         ]
@@ -2183,7 +2236,8 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "ES",
       "PT"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.seur.com/miseur/mis-envios"
   },
   "mrw": {
     "displayName": "MRW",
@@ -2209,7 +2263,8 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "ES",
       "PT"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.mrw.es/seguimiento"
   },
   "nacex": {
     "displayName": "NACEX",
@@ -2227,7 +2282,7 @@ export const CARRIER_CAPABILITIES = {
           "www.nacex.es",
           "nacex.es"
         ],
-        "path": "^/seguimientoFormularioExterno\\.do$",
+        "pathPattern": "^/(?:$|(?:irHome|(?:ir)?seguimiento[a-z]*)\\.do(?:;|$))",
         "params": [
           "intcli"
         ]
@@ -2244,7 +2299,8 @@ export const CARRIER_CAPABILITIES = {
       "ES",
       "PT",
       "AD"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.nacex.es/irSeguimiento.do"
   },
   "ctt": {
     "displayName": "CTT Portugal",
@@ -2279,7 +2335,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "PT"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.ctt.pt/feapl_2/app/open/objectSearch/objectSearch.jspx"
   },
   "ctt-express": {
     "displayName": "CTT Express",
@@ -2319,7 +2376,8 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "ES",
       "PT"
-    ]
+    ],
+    "trackingSearchUrl": "https://shipping-tracking.production.cloud2.cttexpress.com/"
   },
   "poste-italiane": {
     "displayName": "Poste Italiane",
@@ -2365,7 +2423,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "IT"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.poste.it/cerca/index.html"
   },
   "brt": {
     "displayName": "BRT",
@@ -2382,7 +2441,7 @@ export const CARRIER_CAPABILITIES = {
         "domains": [
           "vas.brt.it"
         ],
-        "path": "^/vas/sped_det_new\\.htm$",
+        "pathPattern": "^/(?:$|vas/sped_)",
         "params": [
           "brtCode"
         ]
@@ -2405,7 +2464,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://vas.brt.it/vas/sped_det_new.htm?brtCode={trackingNumber}&lang=en",
     "countries": [
       "IT"
-    ]
+    ],
+    "trackingSearchUrl": "https://services.brt.it/en/tracking"
   },
   "ecoscooting": {
     "displayName": "Ecoscooting",
@@ -2438,7 +2498,8 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "ES",
       "PT"
-    ]
+    ],
+    "trackingSearchUrl": "https://ecoscooting.com/"
   },
   "tipsa": {
     "displayName": "TIPSA",
@@ -2455,7 +2516,7 @@ export const CARRIER_CAPABILITIES = {
         "domains": [
           "tip-sa.com"
         ],
-        "path": "^/cliente/datos(?:_prestashop|_env)?\\.php$",
+        "pathPattern": "^/(?:$|cliente/datos(?:_prestashop|_env)?\\.php$)",
         "params": [
           "id"
         ]
@@ -2477,7 +2538,8 @@ export const CARRIER_CAPABILITIES = {
       "ES",
       "PT",
       "AD"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.tip-sa.com/es/localizacion-envios"
   },
   "ukrposhta": {
     "displayName": "Ukrposhta",
@@ -2486,7 +2548,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "ukrposhta"
+      "adapter": "ukrposhta",
+      "recognitionRank": 5
     },
     "linkRules": [
       {
@@ -2503,12 +2566,19 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{13}$",
         "confidence": "low",
         "checksum": "ukrposhta"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}UA$",
+        "confidence": "low",
+        "checksum": "s10",
+        "preferred": true
       }
     ],
     "trackingUrlTemplate": "https://track.ukrposhta.ua/en/?barcode={trackingNumber}",
     "countries": [
       "UA"
-    ]
+    ],
+    "trackingSearchUrl": "https://track.ukrposhta.ua/en/"
   },
   "usps": {
     "displayName": "USPS",
@@ -2552,6 +2622,11 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       },
       {
+        "pattern": "^420\\d{5}(?:(?!9[2-4])\\d{4})?(?!9[23]61)(?:91\\d{2}9\\d{17}|92\\d{3}9\\d{16}|93\\d{3}[0-8]\\d{16}|9[45]\\d{20})$",
+        "confidence": "high",
+        "checksum": "usps"
+      },
+      {
         "pattern": "^420(?:\\d{5}9[1-5]\\d{20}(?:\\d{4})?|\\d{9}9[1-5]\\d{20})$",
         "confidence": "low",
         "checksum": "usps",
@@ -2570,7 +2645,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "US"
-    ]
+    ],
+    "trackingSearchUrl": "https://tools.usps.com/go/TrackConfirmAction"
   },
   "canada-post": {
     "displayName": "Canada Post",
@@ -2608,7 +2684,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.canadapost-postescanada.ca/track-reperage/en/search?searchFor={trackingNumber}",
     "countries": [
       "CA"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.canadapost-postescanada.ca/track-reperage/en/search"
   },
   "purolator": {
     "displayName": "Purolator",
@@ -2646,7 +2723,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.purolator.com/en/shipping/tracker?pins={trackingNumber}",
     "countries": [
       "CA"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.purolator.com/en/shipping/tracker"
   },
   "canpar": {
     "displayName": "Canpar",
@@ -2678,7 +2756,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.canpar.com/en/tracking/track.htm?barcode={trackingNumber}",
     "countries": [
       "CA"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.canpar.com/en/tracking/track.htm"
   },
   "ontrac": {
     "displayName": "OnTrac",
@@ -2727,7 +2806,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.ontrac.com/tracking/?number={trackingNumber}",
     "countries": [
       "US"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.ontrac.com/tracking/"
   },
   "speedx": {
     "displayName": "SpeedX",
@@ -2759,7 +2839,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://tracking.speedx.io/{trackingNumber}",
     "countries": [
       "US"
-    ]
+    ],
+    "trackingSearchUrl": "https://tracking.speedx.io/"
   },
   "uniuni": {
     "displayName": "UniUni",
@@ -2811,7 +2892,8 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "CA",
       "US"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.uniuni.com/tracking/"
   },
   "landmark-global": {
     "displayName": "Landmark Global",
@@ -2840,7 +2922,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://track.landmarkglobal.com/?search={trackingNumber}"
+    "trackingUrlTemplate": "https://track.landmarkglobal.com/?search={trackingNumber}",
+    "trackingSearchUrl": "https://track.landmarkglobal.com/"
   },
   "old-dominion": {
     "displayName": "Old Dominion",
@@ -2864,11 +2947,13 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^(?:072|777|778|780)\\d{8}$",
-        "confidence": "high"
+        "confidence": "high",
+        "checksum": "luhn"
       },
       {
         "pattern": "^80\\d{9}$",
-        "confidence": "high"
+        "confidence": "high",
+        "checksum": "luhn"
       },
       {
         "pattern": "^\\d{11}$",
@@ -2879,7 +2964,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.odfl.com/us/en/tools/trace-track-ltl-freight.html?proNumbers={trackingNumber}",
     "countries": [
       "US"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.odfl.com/us/en/tools/trace-track-ltl-freight.html"
   },
   "spee-dee": {
     "displayName": "Spee-Dee",
@@ -2913,7 +2999,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.speedeedelivery.com/track/?tracking={trackingNumber}",
     "countries": [
       "US"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.speedeedelivery.com/track/"
   },
   "gofo": {
     "displayName": "GOFO Express",
@@ -2960,7 +3047,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.gofo.com/us/track?searchID={trackingNumber}",
     "countries": [
       "US"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.gofo.com/us/track"
   },
   "estafeta": {
     "displayName": "Estafeta",
@@ -2976,7 +3064,7 @@ export const CARRIER_CAPABILITIES = {
         "domains": [
           "cs.estafeta.com"
         ],
-        "path": "^/es/Tracking/searchByGet/?$",
+        "pathPattern": "^/(?:$|(?:[a-z]{2}/)?Tracking/searchByGet/?$)",
         "params": [
           "wayBill"
         ]
@@ -2999,7 +3087,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://cs.estafeta.com/es/Tracking/searchByGet?wayBill={trackingNumber}&isShipmentDetail=True",
     "countries": [
       "MX"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.estafeta.com/rastrear-envio"
   },
   "correios-br": {
     "displayName": "Correios Brazil",
@@ -3030,7 +3119,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://rastreamento.correios.com.br/app/index.php?objetos={trackingNumber}",
     "countries": [
       "BR"
-    ]
+    ],
+    "trackingSearchUrl": "https://rastreamento.correios.com.br/app/index.php"
   },
   "correos-chile": {
     "displayName": "Correos de Chile",
@@ -3056,7 +3146,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.correos.cl/seguimiento-en-linea",
     "countries": [
       "CL"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.correos.cl/seguimiento-en-linea"
   },
   "yunexpress": {
     "displayName": "YunExpress",
@@ -3094,7 +3185,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.yuntrack.com/parcelTracking?id={trackingNumber}",
     "countries": [
       "CN"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.yuntrack.com/"
   },
   "four-px": {
     "displayName": "4PX",
@@ -3128,7 +3220,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://track.4px.com/#/result/0/{trackingNumber}",
     "countries": [
       "CN"
-    ]
+    ],
+    "trackingSearchUrl": "https://track.4px.com/"
   },
   "blue-dart": {
     "displayName": "Blue Dart",
@@ -3159,7 +3252,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.bluedart.com/trackdartresultthirdparty?trackFor=0&trackNo={trackingNumber}",
     "countries": [
       "IN"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.bluedart.com/tracking"
   },
   "delhivery": {
     "displayName": "Delhivery",
@@ -3181,7 +3275,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.delhivery.com/tracking",
     "countries": [
       "IN"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.delhivery.com/tracking"
   },
   "nz-post": {
     "displayName": "NZ Post",
@@ -3217,7 +3312,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.nzpost.co.nz/tools/tracking?trackid={trackingNumber}",
     "countries": [
       "NZ"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.nzpost.co.nz/tools/tracking"
   },
   "singapore-post": {
     "displayName": "Singapore Post",
@@ -3249,7 +3345,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.singpost.com/track-items?tracknumber={trackingNumber}",
     "countries": [
       "SG"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.singpost.com/track-items"
   },
   "japan-post": {
     "displayName": "Japan Post",
@@ -3291,7 +3388,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://trackings.post.japanpost.jp/services/srv/search/direct?reqCodeNo1={trackingNumber}&locale=en",
     "countries": [
       "JP"
-    ]
+    ],
+    "trackingSearchUrl": "https://trackings.post.japanpost.jp/services/srv/search/input?locale=en"
   },
   "sf-express": {
     "displayName": "SF Express",
@@ -3342,7 +3440,8 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "CN",
       "HK"
-    ]
+    ],
+    "trackingSearchUrl": "https://htm.sf-express.com/tw/en/dynamic_function/waybill/"
   },
   "sto": {
     "displayName": "STO Express",
@@ -3369,7 +3468,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.sto.cn/",
     "countries": [
       "CN"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.sto.cn/"
   },
   "yunda": {
     "displayName": "Yunda Express",
@@ -3399,7 +3499,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://web.yundaex.com/infoInquiry?nav_id=262&cid=0&homeWaybill={trackingNumber}",
     "countries": [
       "CN"
-    ]
+    ],
+    "trackingSearchUrl": "https://web.yundaex.com/infoInquiry"
   },
   "yto": {
     "displayName": "YTO Express",
@@ -3434,7 +3535,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.yto.net.cn/ytoExpress/waybill/search",
     "countries": [
       "CN"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.yto.net.cn/ytoExpress/waybill/search"
   },
   "zto": {
     "displayName": "ZTO Express",
@@ -3455,7 +3557,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.zto.com/",
     "countries": [
       "CN"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.zto.com/check"
   },
   "jd-logistics": {
     "displayName": "JD Logistics",
@@ -3489,7 +3592,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.jingdonglogistics.com/Tracking?waybillCodes={trackingNumber}",
     "countries": [
       "CN"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.jingdonglogistics.com/Tracking"
   },
   "yamato": {
     "displayName": "Yamato Transport",
@@ -3522,7 +3626,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://toi.kuronekoyamato.co.jp/cgi-bin/tneko",
     "countries": [
       "JP"
-    ]
+    ],
+    "trackingSearchUrl": "https://toi.kuronekoyamato.co.jp/cgi-bin/tneko"
   },
   "korea-post": {
     "displayName": "Korea Post",
@@ -3569,7 +3674,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://trace.epost.go.kr/xtts/servlet/kpl.tts.common.svl.SttSVL?target_command=kpl.tts.tt.epost.cmd.RetrieveEmsTraceEngCmd&JspURI=%2Fxtts%2Ftt%2Fepost%2Fems%2FEmsSearchResultEng.jsp&POST_CODE={trackingNumber}",
     "countries": [
       "KR"
-    ]
+    ],
+    "trackingSearchUrl": "https://trace.epost.go.kr/xtts/tt/epost/ems/ems_eng.jsp"
   },
   "thailand-post": {
     "displayName": "Thailand Post",
@@ -3600,7 +3706,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://track.thailandpost.co.th/?trackNumber={trackingNumber}",
     "countries": [
       "TH"
-    ]
+    ],
+    "trackingSearchUrl": "https://international.thailandpost.com/track-status/?lang=en"
   },
   "dtdc": {
     "displayName": "DTDC",
@@ -3642,7 +3749,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://web.mydtdc.in/",
     "countries": [
       "IN"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.dtdc.com/track-your-shipment/"
   },
   "australia-post": {
     "displayName": "Australia Post",
@@ -3651,7 +3759,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "australia-post"
+      "adapter": "australia-post",
+      "recognitionRank": 6
     },
     "linkRules": [
       {
@@ -3676,13 +3785,30 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^\\d{2}(?!\\d{3})[A-Z0-9]{3}\\d{7}$",
+        "confidence": "low",
+        "preferred": true
+      },
+      {
+        "pattern": "^(?![A-Z]{2}\\d)(?!\\d{3})[A-Z0-9]{3}\\d{7}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^0[0-3]\\d{20}$",
+        "confidence": "low",
+        "checksum": "gs1"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}AU$",
+        "confidence": "low",
+        "checksum": "s10",
+        "preferred": true
       }
     ],
     "trackingUrlTemplate": "https://auspost.com.au/mypost/track/details/{trackingNumber}",
     "countries": [
       "AU"
-    ]
+    ],
+    "trackingSearchUrl": "https://auspost.com.au/mypost/track/details/"
   },
   "hongkong-post": {
     "displayName": "Hongkong Post",
@@ -3704,7 +3830,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://webapp.hongkongpost.hk/en/mail_tracking2/index.html",
     "countries": [
       "HK"
-    ]
+    ],
+    "trackingSearchUrl": "https://webapp.hongkongpost.hk/en/mail_tracking2/index.html"
   },
   "pos-malaysia": {
     "displayName": "Pos Malaysia",
@@ -3741,7 +3868,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "MY"
-    ]
+    ],
+    "trackingSearchUrl": "https://tracking.pos.com.my/tracking/"
   },
   "ninja-van": {
     "displayName": "Ninja Van",
@@ -3785,7 +3913,8 @@ export const CARRIER_CAPABILITIES = {
       "ID",
       "TH",
       "VN"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.ninjavan.co/en-my/tracking"
   },
   "china-post": {
     "displayName": "China Post",
@@ -3807,7 +3936,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://www.ems.com.cn/mailtracking/you_jian_cha_xun.html",
     "countries": [
       "CN"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.ems.com.cn/mailtracking/you_jian_cha_xun.html"
   },
   "packeta": {
     "displayName": "Packeta",
@@ -3854,7 +3984,8 @@ export const CARRIER_CAPABILITIES = {
       "HU",
       "RO",
       "PL"
-    ]
+    ],
+    "trackingSearchUrl": "https://tracking.packeta.com/en/"
   },
   "poczta-polska": {
     "displayName": "Poczta Polska",
@@ -3901,7 +4032,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://emonitoring.poczta-polska.pl/?lang=en&numer={trackingNumber}",
     "countries": [
       "PL"
-    ]
+    ],
+    "trackingSearchUrl": "https://emonitoring.poczta-polska.pl/?lang=en"
   },
   "bring-posten": {
     "displayName": "Bring",
@@ -3977,7 +4109,8 @@ export const CARRIER_CAPABILITIES = {
       "SE",
       "DK",
       "FI"
-    ]
+    ],
+    "trackingSearchUrl": "https://sporing.bring.no/sporing/?lang=en"
   },
   "aramex": {
     "displayName": "Aramex",
@@ -4011,7 +4144,8 @@ export const CARRIER_CAPABILITIES = {
       "SA",
       "EG",
       "JO"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.aramex.com/us/en/track/shipments"
   },
   "tnt": {
     "displayName": "TNT",
@@ -4036,7 +4170,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.tnt.com/express/en_gb/site/shipping-tools/tracking.html?searchType=con&cons={trackingNumber}"
+    "trackingUrlTemplate": "https://www.tnt.com/express/en_gb/site/shipping-tools/tracking.html?searchType=con&cons={trackingNumber}",
+    "trackingSearchUrl": "https://www.tnt.com/express/en_gb/site/shipping-tools/tracking.html"
   },
   "correos-spain": {
     "displayName": "Correos",
@@ -4087,7 +4222,8 @@ export const CARRIER_CAPABILITIES = {
     ],
     "countries": [
       "ES"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.correos.es/es/es/herramientas/localizador/envios/detalle"
   },
   "yanwen": {
     "displayName": "Yanwen",
@@ -4117,12 +4253,17 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^[A-Z]{2}\\d{9}YP$",
         "confidence": "high",
         "checksum": "s10"
+      },
+      {
+        "pattern": "^YW[A-Z]{3}\\d{12}$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://track.yw56.com.cn/en/index",
     "countries": [
       "CN"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.yw56.com.cn/en/"
   },
   "the-courier-guy": {
     "displayName": "The Courier Guy",
@@ -4140,7 +4281,7 @@ export const CARRIER_CAPABILITIES = {
           "portal.thecourierguy.co.za",
           "track.thecourierguy.co.za"
         ],
-        "path": "^/track/?$",
+        "pathPattern": "^/(?:track/?)?$",
         "params": [
           "ref"
         ]
@@ -4155,7 +4296,8 @@ export const CARRIER_CAPABILITIES = {
     "trackingUrlTemplate": "https://portal.thecourierguy.co.za/track?ref={trackingNumber}",
     "countries": [
       "ZA"
-    ]
+    ],
+    "trackingSearchUrl": "https://portal.thecourierguy.co.za/track"
   },
   "j-and-t": {
     "displayName": "J&T Express",
@@ -4211,7 +4353,8 @@ export const CARRIER_CAPABILITIES = {
       "TH",
       "VN",
       "SG"
-    ]
+    ],
+    "trackingSearchUrl": "https://www.jtexpress.ph/track-and-trace"
   },
   "ems": {
     "displayName": "EMS",
@@ -4238,7 +4381,8 @@ export const CARRIER_CAPABILITIES = {
     "aliases": [
       "Express Mail Service",
       "EMS Post"
-    ]
+    ],
+    "trackingSearchUrl": "https://items.ems.post/"
   },
   "omgo": {
     "displayName": "OMGO",
@@ -4262,7 +4406,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^OMGO\\d{13}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://omgoexpress.cn/"
   },
   "dhl-express": {
     "displayName": "DHL Express",
@@ -4295,7 +4440,8 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "dhl-express",
         "preferred": true
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://www.dhl.com/gb-en/home/tracking.html"
   },
   "cne": {
     "displayName": "CNE Express",
@@ -4329,7 +4475,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^3A5V\\d{9}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://www.cne.com/en/track"
   },
   "dpd-de": {
     "displayName": "DPD Germany",
@@ -4389,7 +4536,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low",
         "checksum": "dpd"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://www.dpd.com/de/en/empfangen/sendungsverfolgung-und-live-tracking/"
   },
   "dpd-uk": {
     "displayName": "DPD UK",
@@ -4440,7 +4588,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low",
         "checksum": "dpd"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://track.dpd.co.uk/"
   },
   "ekart": {
     "displayName": "Ekart",
@@ -4471,7 +4620,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^(?!PB)[A-Z]{3}[CPR]\\d{10}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://www.ekartlogistics.in/track-order"
   },
   "evri-uk": {
     "displayName": "Evri UK",
@@ -4514,7 +4664,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^C00HHA\\d{10}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://www.evri.com/track-a-parcel"
   },
   "intelcom": {
     "displayName": "Intelcom / Dragonfly",
@@ -4558,7 +4709,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^INTLCM[A-Z]\\d{9}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://dragonflyshipping.ca/en/track-your-package/"
   },
   "lbc-express": {
     "displayName": "LBC Express",
@@ -4623,7 +4775,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^(?:(?:20[4678]|590|595)\\d{11}|(?:21|51)\\d{12})$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://novaposhta.ua/en/tracking/"
   },
   "sagawa": {
     "displayName": "Sagawa Express",
@@ -4657,7 +4810,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low",
         "checksum": "mod7"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://k2k.sagawa-exp.co.jp/p/sagawa/web/okurijoinput.jsp"
   },
   "speedpak": {
     "displayName": "SpeedPAK",
@@ -4693,7 +4847,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^E[ES][A-Z0-9]{26}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://www.orangeconnex.com/tracking"
   },
   "spx-ph": {
     "displayName": "SPX Express Philippines",
@@ -4759,7 +4914,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^PH\\d{12,14}[A-Z]?$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://spx.ph/track"
   },
   "xpressbees": {
     "displayName": "Xpressbees",
@@ -4799,7 +4955,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^[19]\\d{13}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://shipmentv2.xpressbees.com/orders/tracking/"
   },
   "j-and-t-cargo": {
     "displayName": "J&T Cargo",
@@ -4833,7 +4990,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^20\\d{10}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://www.jtcargo.id/networkQuery"
   },
   "dhl-ecommerce-es": {
     "displayName": "DHL eCommerce Iberia",
@@ -4873,7 +5031,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^[A-Z]{2}\\d{7}0$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://clientesparcel.dhl.es/LiveTracking/"
   },
   "dhl-ecommerce-nl": {
     "displayName": "DHL eCommerce Netherlands",
@@ -4919,7 +5078,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^3S[A-Z]{2,3}\\d{7,12}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://my.dhlecommerce.nl/home/tracktrace/"
   },
   "dhl-ecommerce-pl": {
     "displayName": "DHL eCommerce Poland",
@@ -4963,7 +5123,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{11}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://mojdhl.pl/tracking"
   },
   "dhl-ecommerce-uk": {
     "displayName": "DHL eCommerce UK",
@@ -5006,7 +5167,50 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{14}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingSearchUrl": "https://track.dhlecommerce.co.uk/"
+  },
+  "dpd-pl": {
+    "displayName": "DPD Poland",
+    "aliases": [
+      "DPD Polska"
+    ],
+    "countries": [
+      "PL"
+    ],
+    "color": "#dc0032",
+    "selectable": true,
+    "timezone": "Europe/Warsaw",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "dpd-pl",
+      "recognitionRank": 8
+    },
+    "trackingUrlTemplate": "https://tracktrace.dpd.com.pl/EN/parcelDetails?typ=1&p1={trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "tracktrace.dpd.com.pl",
+          "tt.dpd.com.pl"
+        ],
+        "pathPattern": "^/(?:EN/)?parcelDetails$",
+        "params": [
+          "p1"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{13}[A-Z]$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^13\\d{12}$",
+        "confidence": "low",
+        "preferred": true
+      }
+    ],
+    "trackingSearchUrl": "https://tracktrace.dpd.com.pl/EN/findParcel"
   }
 } as const;
 
@@ -5166,7 +5370,8 @@ export const CARRIER_IDS = [
   "dhl-ecommerce-es",
   "dhl-ecommerce-nl",
   "dhl-ecommerce-pl",
-  "dhl-ecommerce-uk"
+  "dhl-ecommerce-uk",
+  "dpd-pl"
 ] as const;
 export type ApiCarrierId = (typeof CARRIER_IDS)[number];
 
