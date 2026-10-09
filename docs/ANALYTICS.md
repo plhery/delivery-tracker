@@ -73,7 +73,9 @@ postcodes, invitation codes, errors, search
 terms, query strings or referrers. A parcel page is the `parcel-link` screen, whatever its address; the sample parcel's is in `demo` mode. Umami still
 sees the IP, user agent, basic device data and language.
 
-The web sends nothing under DNT, GPC or `umami.disabled=1`. Both clients also read a
+The web sends nothing under DNT, GPC or `umami.disabled=1`, nor from a browser driven by
+automation (`navigator.webdriver`), such as a headless crawler, which still gets the same
+page. Both clients also read a
 stored preference (`sdt.analytics.enabled`) that turns collection off; no screen sets
 it. Retention is described in the public privacy notice.
 

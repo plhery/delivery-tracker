@@ -23,10 +23,16 @@ export function setAnalyticsEnabled(enabled: boolean) {
   if (!enabled) { queue = []; cache = undefined; }
   else { startup = undefined; disabled = false; lastView = ''; void startAnalytics().then(() => trackScreen(screen)); }
 }
+/**
+ * Nothing is counted for a reader who asked not to be, nor for a browser driven by a program
+ * (a headless crawler, a test run): it is no visitor. This decides only what is counted; the
+ * page reads and draws the same for everyone.
+ */
 function optedOut() {
   try {
     return !analyticsEnabled() || navigator.doNotTrack === '1'
       || (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true
+      || navigator.webdriver === true
       || localStorage.getItem('umami.disabled') === '1';
   } catch { return true; }
 }

@@ -58,9 +58,9 @@ describe('safe analytics collection', () => {
     expect(urls).toEqual(['/guides/fr', `/guides/fr/${id}`, `/guides/fr/${id}`]); // two views, then app-open on the second
   });
 
-  it.each(['opt-out', 'dnt', 'gpc'])('honors %s without fetching configuration', async (kind) => {
+  it.each(['opt-out', 'dnt', 'gpc', 'webdriver'])('honors %s without fetching configuration', async (kind) => {
     if (kind === 'opt-out') localStorage.setItem('sdt.analytics.enabled', 'false');
-    else vi.stubGlobal('navigator', kind === 'dnt' ? { doNotTrack: '1' } : { globalPrivacyControl: true });
+    else vi.stubGlobal('navigator', kind === 'dnt' ? { doNotTrack: '1' } : kind === 'gpc' ? { globalPrivacyControl: true } : { webdriver: true });
     const a = await import('./analytics');
     a.trackScreen('welcome'); await a.startAnalytics(); a.trackAction('app-open'); await settle();
     expect(requests).toEqual([]);
