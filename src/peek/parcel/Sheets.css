@@ -114,6 +114,7 @@
 /* The row that opens a sheet, before the sentence about what follows it. */
 .sheet__heading + .peeks-account { margin-top: 0; }
 .peeks-account + .peeks__intro { margin-top: 18px; }
+.peeks-account + .home-steps__safari { margin-top: 10px; }
 .peeks-account button { flex: 0 0 auto; min-height: 44px; padding: 0; background: none; font-size: 12.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .peeks-on { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 13px 14px; border-radius: 14px; background: var(--green-soft); }
 .peeks-on > span:nth-of-type(1) { color: var(--green); }

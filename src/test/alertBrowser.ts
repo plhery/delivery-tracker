@@ -9,6 +9,14 @@ export const TEST_PUSH_KEY = `B${'A'.repeat(86)}`;
 export const IPHONE_SAFARI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 /** Safari 27, whose bar keeps Share inside its page menu. */
 export const IPHONE_SAFARI_27 = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1';
+/** Chrome on iPhone, whose Share button sits in its address bar. */
+export const IPHONE_CHROME = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/140.0.7339.101 Mobile/15E148 Safari/604.1';
+/** LinkedIn's own browser, which can put nothing on the Home Screen but lets a page out to Safari. */
+export const IPHONE_LINKEDIN = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [LinkedInApp]/9.31.1';
+/** Facebook's own browser, which lets a page out to Safari only through a window opened on a tap. */
+export const IPHONE_FACEBOOK = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Safari/604.1 [FBAN/FBIOS;FBAV/530.0.0.47.106;FBDV/iPhone16,2;FBMD/iPhone;FBSN/iOS;FBSV/26.0;FBLC/en_US]';
+/** X's own browser, which lets no page out. */
+export const IPHONE_X = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Twitter for iPhone/11.20';
 
 /**
  * A browser's notifications and push as a test sees them: what it allows,

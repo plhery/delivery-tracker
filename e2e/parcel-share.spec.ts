@@ -324,12 +324,31 @@ test('alerts: an iPhone outside its Home Screen app gets the steps there, not a 
   await show(page, phone, page.url());
   await phone.getByRole('button', { name: 'Notify me', exact: true }).click();
   const sheet = phone.getByRole('dialog', { name: 'Notifications on iPhone' });
-  await expect(sheet.getByText('Safari only sends notifications from sites on your Home Screen.')).toBeVisible();
+  await expect(sheet.getByText('iPhone only sends notifications from sites on your Home Screen.')).toBeVisible();
   // Safari 27 keeps Share in the page menu of its address bar, which the first step draws.
   await expect(sheet.getByRole('listitem')).toHaveText([
     /^1Tap Page Menu in Safari’s address bar/, '2Tap Share', '3Tap View More, then Add to Home Screen', '4Open Peek from your Home Screen and tap Notify me',
   ]);
   await expect(sheet.getByRole('button', { name: 'Turn on' })).toHaveCount(0);
+  await expect(sheet.getByRole('button', { name: 'Sign in for notifications on all your devices' })).toBeVisible();
+  expect(await fits(phone)).toBe(true);
+  expect(errors.get(phone)).toEqual([]);
+  await context.close();
+});
+
+test('alerts: an app’s own browser is told notifications need Safari, and given the way there', async ({ browser, page }) => {
+  await track(page, 'DEMOGLS20260009');
+  await expect(status(page)).toHaveText('In transit');
+  const { context, page: phone } = await anotherBrowser(browser, {
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 400.0.0.38.95 (iPhone16,2; iOS 18_7; en_US; en; scale=3.00; 1179x2556; 812345678)',
+  });
+  await show(page, phone, page.url());
+  await phone.getByRole('button', { name: 'Notify me', exact: true }).click();
+  const sheet = phone.getByRole('dialog', { name: 'Notifications on iPhone' });
+  await expect(sheet.getByText('Notifications need Safari.')).toBeVisible();
+  await expect(sheet.getByRole('listitem')).toHaveCount(0);
+  // Instagram lets a page out only through its own address for the browser.
+  await expect(sheet.getByRole('link', { name: 'Open in Safari' })).toHaveAttribute('href', `instagram://extbrowser/?url=${encodeURIComponent(phone.url())}`);
   await expect(sheet.getByRole('button', { name: 'Sign in for notifications on all your devices' })).toBeVisible();
   expect(await fits(phone)).toBe(true);
   expect(errors.get(phone)).toEqual([]);

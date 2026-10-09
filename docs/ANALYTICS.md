@@ -57,6 +57,9 @@ are virtual names, never real URLs.
   delivery to a calendar, sign in (and apart from it, sign in for the email), keep in the
   account, open the parcel already followed, forget. Sharing a parcel from an account
   counts under the same names.
+- **Safari from an app's browser**: where notifications need the Home Screen but an app's
+  own browser has no way to it, a tap on "Open in Safari" (`started`, then `error` if the
+  page is still in sight a moment later) and copying the link for Safari.
 - **Parcel feedback**: an answer that a parcel's page is right or wrong, or naming the
   carrier of a parcel none was found for. Never the reasons, the words or the parcel.
 - **Discovery**: search used (never the query), filters, sorting.

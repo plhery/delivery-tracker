@@ -3,6 +3,7 @@ import { HomeScreenSteps } from '../../components/HomeScreenSteps';
 import { Icon } from '../../components/Icon';
 import { useI18n, type MessageKey } from '../../i18n';
 import { trackAction } from '../../lib/analytics';
+import { homeScreenPath } from '../../lib/homeScreen';
 import { AlertError, alertSupport, deviceAlert, turnOffAlert, turnOnAlert, type AlertSupport } from '../alerts';
 import { useLinkNote } from '../deviceNotes';
 import { PARCEL_ALERT_PRESETS, ParcelLinkError, parcelLinkErrorKey, type ParcelAlertPreset, type ParcelAlerts } from '../links';
@@ -47,7 +48,8 @@ function Presets({ value, disabled, onChange }: { value: ParcelAlertPreset; disa
  * window as a calendar file. The browser is asked for nothing until someone
  * chooses "Turn on". An iPhone outside a Home Screen app gets the steps to
  * put Peek there, instead of a button that cannot work, after the email that
- * signing in brings, which needs no Home Screen.
+ * signing in brings, which needs no Home Screen. An app's own browser, which
+ * has no way to the Home Screen, gets the way to Safari instead of the steps.
  */
 export function AlertsSheet({ linkId, ownerKey, alerts, initialPreset, calendar, onCalendar, onSignIn, onClose }: {
   linkId: string;
@@ -141,8 +143,10 @@ export function AlertsSheet({ linkId, ownerKey, alerts, initialPreset, calendar,
     // The email needs no Home Screen: where signing in brings it, it is offered before the steps.
     const emailFirst = emails && !!onSignIn;
     const signIn = !emailFirst && onSignIn;
-    return <Sheet title={t('alerts.iphone.title')} intro={emailFirst ? undefined : t('alerts.iphone.body')} className="peeks-alerts" onClose={onClose}>{(dismiss) => <>
-      {emailFirst && <>{account(dismiss)}<p className="peeks__intro">{t('alerts.iphone.body')}</p></>}
+    // An app's own browser gets one line about Safari in place of the steps, and nothing before it.
+    const intro = homeScreenPath() === 'safari' ? undefined : t('alerts.iphone.body');
+    return <Sheet title={t('alerts.iphone.title')} intro={emailFirst ? undefined : intro} className="peeks-alerts" onClose={onClose}>{(dismiss) => <>
+      {emailFirst && <>{account(dismiss)}{intro && <p className="peeks__intro">{intro}</p>}</>}
       <HomeScreenSteps then="ping" cards />
       {feedback}
       {(calendar || signIn) && <div className="peeks__actions">

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dismissNotificationInvitation, notificationInvitationDismissed } from '../lib/notificationInvitation';
 import { enablePushNotifications, inspectPushState, type PushState } from '../lib/pushNotifications';
-import { IPHONE_SAFARI_27 } from '../test/alertBrowser';
+import { IPHONE_LINKEDIN, IPHONE_SAFARI_27 } from '../test/alertBrowser';
 import { NotificationPrompt } from './NotificationPrompt';
 
 vi.mock('../lib/pushNotifications', () => ({
@@ -150,6 +150,17 @@ describe('NotificationPrompt', () => {
       '3Tap View More, then Add to Home Screen',
       '4Open Peek from your Home Screen and turn on notifications',
     ]);
+  });
+
+  it('sends an app’s own browser to Safari instead of steps it cannot follow', async () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(IPHONE_LINKEDIN);
+    vi.mocked(inspectPushState).mockResolvedValue({ kind: 'install' });
+    const user = userEvent.setup();
+    render(<NotificationPrompt apiAuth={apiAuth} eligible />);
+    await user.click(await screen.findByRole('button', { name: 'Show me how' }));
+    expect(screen.getByText('Notifications need Safari.')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Open in Safari' })).toHaveAttribute('href', `x-safari-${window.location.href}`);
+    expect(screen.queryByRole('listitem')).toBeNull();
   });
 
   it('rechecks permission on returning to the page and ignores stale results', async () => {

@@ -1,7 +1,9 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { IPHONE_SAFARI, IPHONE_SAFARI_27, restoreAlertBrowser, stubAlertBrowser, TEST_PUSH_ENDPOINT, TEST_PUSH_KEY } from '../../test/alertBrowser';
+import {
+  IPHONE_CHROME, IPHONE_FACEBOOK, IPHONE_LINKEDIN, IPHONE_SAFARI, IPHONE_SAFARI_27, IPHONE_X, restoreAlertBrowser, stubAlertBrowser, TEST_PUSH_ENDPOINT, TEST_PUSH_KEY,
+} from '../../test/alertBrowser';
 import { LINK_ID, OWNER_KEY } from '../../test/parcelLinks';
 import { forgetAllLinkNotes, linkNote, noteLink } from '../deviceNotes';
 import { ParcelLinkError, type ParcelAlerts } from '../links';
@@ -245,7 +247,7 @@ describe('the Notify me sheet', () => {
     const user = userEvent.setup();
     const { onCalendar, onSignIn } = open();
     const sheet = screen.getByRole('dialog', { name: 'Notifications on iPhone' });
-    expect(within(sheet).getByText('Safari only sends notifications from sites on your Home Screen.')).toBeVisible();
+    expect(within(sheet).getByText('iPhone only sends notifications from sites on your Home Screen.')).toBeVisible();
     expect(within(sheet).getAllByRole('listitem').map((step) => step.textContent))
       .toEqual(['1Open your browser’s Share menu', '2Choose Add to Home Screen', '3Open Peek from your Home Screen and tap Notify me']);
     expect(screen.queryByRole('button', { name: 'Turn on' })).toBeNull();
@@ -264,7 +266,7 @@ describe('the Notify me sheet', () => {
     const sheet = screen.getByRole('dialog', { name: 'Notifications on iPhone' });
     const after = (first: Element, second: Element) => first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING;
     const email = within(sheet).getByText('An email when it arrives');
-    const safari = within(sheet).getByText('Safari only sends notifications from sites on your Home Screen.');
+    const safari = within(sheet).getByText('iPhone only sends notifications from sites on your Home Screen.');
     expect(within(sheet).getByText('Sign in, and Peek writes to the address you sign in with.')).toBeVisible();
     expect(after(email, safari)).toBeTruthy();
     expect(after(safari, within(sheet).getByRole('list'))).toBeTruthy();
@@ -278,7 +280,7 @@ describe('the Notify me sheet', () => {
     unmount();
     // Someone signed in gets the steps alone.
     open({ alerts: { ...SERVER, email: true }, onSignIn: undefined, calendar: null });
-    expect(screen.getByText('Safari only sends notifications from sites on your Home Screen.')).toBeVisible();
+    expect(screen.getByText('iPhone only sends notifications from sites on your Home Screen.')).toBeVisible();
     expect(document.body).not.toHaveTextContent(/e-?mail/i);
     expect(screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Close']);
   });
@@ -295,6 +297,105 @@ describe('the Notify me sheet', () => {
     ]);
     // The drawing repeats what the sentence says, so it is kept from screen readers.
     expect(within(steps[0]).getByText(window.location.hostname).closest('[aria-hidden="true"]')).not.toBeNull();
+  });
+
+  it('starts Chrome from the Share button of its address bar, and names no Safari there', () => {
+    stubAlertBrowser({ userAgent: IPHONE_CHROME });
+    open();
+    const sheet = screen.getByRole('dialog', { name: 'Notifications on iPhone' });
+    expect(within(sheet).getByText('iPhone only sends notifications from sites on your Home Screen.')).toBeVisible();
+    expect(within(sheet).getAllByRole('listitem').map((step) => step.textContent))
+      .toEqual(['1Tap Share in the address bar', '2Choose Add to Home Screen', '3Open Peek from your Home Screen and tap Notify me']);
+    expect(sheet).not.toHaveTextContent(/Safari/);
+  });
+
+  describe('in an app’s own browser, which has no way to the Home Screen', () => {
+    // A link followed in a test would leave the page.
+    const stay = (event: Event) => event.preventDefault();
+    let writeText: ReturnType<typeof vi.fn>;
+    beforeEach(() => {
+      document.addEventListener('click', stay, true);
+      writeText = vi.fn(async () => undefined);
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    });
+    afterEach(() => {
+      document.removeEventListener('click', stay, true);
+      Reflect.deleteProperty(navigator, 'clipboard');
+      vi.useRealTimers();
+    });
+
+    it('says notifications need Safari and opens the page there, in place of the steps', () => {
+      const { requestPermission } = stubAlertBrowser({ userAgent: IPHONE_LINKEDIN });
+      const { onCalendar, onSignIn } = open();
+      const sheet = screen.getByRole('dialog', { name: 'Notifications on iPhone' });
+      expect(within(sheet).getByText('Notifications need Safari.')).toBeVisible();
+      expect(within(sheet).queryByText('iPhone only sends notifications from sites on your Home Screen.')).toBeNull();
+      expect(within(sheet).queryByRole('list')).toBeNull();
+      const safari = within(sheet).getByRole('link', { name: 'Open in Safari' });
+      expect(safari).toHaveAttribute('href', `x-safari-${window.location.href}`);
+      vi.useFakeTimers();
+      fireEvent.click(safari);
+      expect(mocks.track).toHaveBeenCalledExactlyOnceWith('safari-open', 'started');
+      // Safari came up: this app went to the background, and nothing changes here.
+      fireEvent.blur(window);
+      act(() => { vi.advanceTimersByTime(5_000); });
+      expect(within(sheet).getByRole('link', { name: 'Open in Safari' })).toBeVisible();
+      expect(mocks.track).toHaveBeenCalledTimes(1);
+      // The email and the calendar stay.
+      fireEvent.click(screen.getByRole('button', { name: 'Or add to calendar' }));
+      expect(onCalendar).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole('button', { name: 'Sign in for notifications on all your devices' }));
+      expect(onSignIn).toHaveBeenCalledExactlyOnceWith(false);
+      expect(requestPermission).not.toHaveBeenCalled();
+    });
+
+    it('offers the link to copy when the page is still in sight after the tap', async () => {
+      stubAlertBrowser({ userAgent: IPHONE_LINKEDIN });
+      open();
+      vi.useFakeTimers();
+      fireEvent.click(screen.getByRole('link', { name: 'Open in Safari' }));
+      act(() => { vi.advanceTimersByTime(2_000); });
+      expect(screen.getByRole('link', { name: 'Open in Safari' })).toBeVisible();
+      act(() => { vi.advanceTimersByTime(1_000); });
+      expect(mocks.track).toHaveBeenLastCalledWith('safari-open', 'error');
+      expect(screen.queryByRole('link', { name: 'Open in Safari' })).toBeNull();
+      vi.useRealTimers();
+      fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
+      expect(await screen.findByText('Link copied. Paste it in Safari.')).toBeVisible();
+      expect(writeText).toHaveBeenCalledExactlyOnceWith(window.location.href);
+      expect(mocks.track).toHaveBeenLastCalledWith('safari-link-copy', 'success');
+    });
+
+    it('opens a window for Safari in Facebook, which follows no link there', () => {
+      stubAlertBrowser({ userAgent: IPHONE_FACEBOOK });
+      const opened = vi.spyOn(window, 'open').mockReturnValue(null);
+      open();
+      const safari = screen.getByRole('link', { name: 'Open in Safari' });
+      // The sheet itself keeps the link from being followed.
+      document.removeEventListener('click', stay, true);
+      expect(fireEvent.click(safari)).toBe(false);
+      expect(opened).toHaveBeenCalledExactlyOnceWith(`x-safari-${window.location.href}`, '_blank');
+    });
+
+    it('offers the link to copy at once in an app that lets no page out, and says where else to look when it cannot', async () => {
+      stubAlertBrowser({ userAgent: IPHONE_X });
+      writeText.mockRejectedValue(new DOMException('Not allowed', 'NotAllowedError'));
+      open();
+      expect(screen.queryByRole('link', { name: 'Open in Safari' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
+      expect(await screen.findByText('Open this page in Safari from the app’s menu.')).toBeVisible();
+      expect(mocks.track).toHaveBeenCalledExactlyOnceWith('safari-link-copy', 'error');
+    });
+
+    it('still offers the email first, then Safari', () => {
+      stubAlertBrowser({ userAgent: IPHONE_LINKEDIN });
+      open({ alerts: { ...SERVER, email: true } });
+      const sheet = screen.getByRole('dialog', { name: 'Notifications on iPhone' });
+      const email = within(sheet).getByText('An email when it arrives');
+      expect(email.compareDocumentPosition(within(sheet).getByText('Notifications need Safari.')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(within(sheet).queryByText('iPhone only sends notifications from sites on your Home Screen.')).toBeNull();
+      expect(within(sheet).getByRole('link', { name: 'Open in Safari' })).toBeVisible();
+    });
   });
 
   it('in the demo says that nothing is sent, before and after turning on', async () => {

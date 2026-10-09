@@ -32,6 +32,14 @@
 .home-steps--cards .home-steps__bar { padding-left: 40px; }
 .home-steps--cards .home-steps__app { margin-top: 1px; }
 
+/* An app's own browser: one line, and the way to Safari. */
+.home-steps__safari { display: grid; gap: 12px; color: var(--ink); font-size: 13px; line-height: 1.45; }
+.home-steps__safari p { margin: 0; }
+.home-steps__safari .button svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.home-steps__safari--card { padding: 16px 14px 14px; border-radius: 14px; background: var(--paper); font-size: 13.5px; }
+.home-steps__said { min-height: 0; color: var(--green); font-size: 12.5px; font-weight: 550; text-align: center; }
+.home-steps__said:empty { margin-top: -12px; }
+
 @media (prefers-reduced-motion: reduce) {
   .home-steps__target::after { animation: none; transform: scale(1.08); opacity: .5; }
 }
