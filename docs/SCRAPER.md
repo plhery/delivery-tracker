@@ -24,6 +24,13 @@ The app supplies its browser service and telemetry recorder through `AdapterEnvi
 delegates to `trackCarrier`; the app's router chooses providers and saves their outcomes.
 Commercial universal providers are explicitly enabled by the app.
 
+DPD Germany and DPD Switzerland read through a session that takes tens of seconds to open.
+A production server with `CANONICAL_ORIGIN` calls `warmDpdSession` with the same
+environment at start ([`instrumentation-node.ts`](../instrumentation-node.ts)), so the
+session opens in the background and the scraper keeps one open, instead of the first DPD
+lookup after a deploy waiting for it. The production servers CI starts have no canonical
+origin, so they send DPD nothing.
+
 The scraper calls a carrier's postcode input `postcode`. The app's API, database and
 clients call it `dpdPostcode`, so the app renames it wherever the scraper hands it over:
 the requirements and checked inputs ([`lib/carriers.ts`](../src/lib/carriers.ts),
