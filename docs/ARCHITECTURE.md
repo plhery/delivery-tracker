@@ -68,7 +68,10 @@ Key server modules:
   it. A first history that arrives later, from the hours before the add, is announced.
   A batch whose newest scan is more than a day old is stored and shown without an alert.
   A handoff's relay copy that reaches the parcel after the scan it repeats is never the one
-  announced ([ROUTING.md](ROUTING.md#handoffs-two-carriers)).
+  announced ([ROUTING.md](ROUTING.md#handoffs-two-carriers)). A scheduled run sends a
+  parcel's notifications right after its check, without waiting for the parcels after it.
+  Once it has checked a parcel it may merge with another carrier's leg in the same
+  account, it holds the rest of its notifications until the merge.
 - `email/` tells an account by email that a parcel was delivered or is ready for pickup,
   when the account asked for it. The database hands each parcel out once per stage (`claim_delivery_emails`),
   `deliveryEmails.ts` writes the email and sends it through any SMTP service, and
@@ -353,8 +356,8 @@ usage count.
   is told once when it is ready for pickup and once when it is delivered, so one picked
   up from a pickup point gets both: the second says it was picked up, when its last
   movement before the delivery made it ready for pickup, as
-  the apps' pickup point does. Each goes after the notifications of the sync job that stored the scan, on
-  deployments without push too.
+  the apps' pickup point does. Each goes after the notifications of the check that stored
+  the scan, on deployments without push too.
   - A parcel is never emailed for what it already showed when it joined the account. A
     scan with a clock time must be later than that moment. One with only a day, or no
     time, counts when an earlier check of the parcel, since it joined, answered with

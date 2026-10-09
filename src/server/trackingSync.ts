@@ -714,12 +714,23 @@ export class TrackingSyncService {
       const parcels = [...accounts, ...await this.followedOneOffPackages(due(true), now, context.signal)];
       // Copies of one number, in several accounts or followed without one, share their lookups.
       const lookups = new SharedLookups(parcels);
-      for (const parcel of parcels) {
+      let legs: Set<string> | null | undefined;
+      let announceAtEnd = false;
+      for (const [index, parcel] of parcels.entries()) {
         // At shutdown the run stops between checks; its job goes back to the queue, and the
         // replacement checks the parcels still due.
         if (context.stopping?.aborted) throw context.stopping.reason;
         summary.checked += 1;
-        summary[await this.syncOne(parcel, context, lookups)] += 1;
+        const outcome = await this.syncOne(parcel, context, lookups);
+        summary[outcome] += 1;
+        // A parcel's news goes out once it is stored, not after the slowest check of the
+        // run; the last parcel's goes with the run's own dispatch. A leg the reconciliation
+        // below may merge waits for it, so the merged parcel announces its newest scan
+        // once, and so does every parcel checked after one, as a dispatch sends all news.
+        if (announceAtEnd || outcome !== 'updated' || index === parcels.length - 1) continue;
+        if (legs === undefined) legs = await this.mergeableLegs(parcels, context.signal);
+        announceAtEnd = legs === null || parcels.slice(0, index + 1).some((checked) => legs!.has(String(checked.id)));
+        if (!announceAtEnd) await this.dispatchNotifications(summary, context.signal);
       }
       await this.linkConfirmedParcels();
       await this.dispatchNotifications(summary, context.signal);
@@ -797,6 +808,22 @@ export class TrackingSyncService {
     }
   }
 
+  /**
+   * The parcels of the run's accounts that the run's reconciliation may merge, read when
+   * a parcel's news could go out early, or null when they cannot be read.
+   */
+  private async mergeableLegs(parcels: readonly JsonObject[], signal?: AbortSignal): Promise<Set<string> | null> {
+    const owners = [...new Set(parcels.flatMap((parcel) => typeof parcel.user_id === 'string' ? [parcel.user_id] : []))];
+    if (owners.length === 0) return new Set();
+    try {
+      return mergeableLegs(await this.client.unarchivedParcelLegs(owners));
+    } catch (error) {
+      signal?.throwIfAborted();
+      captureOperationalError(error, { component: 'tracking', operation: 'list_parcel_legs' });
+      return null;
+    }
+  }
+
   private async linkConfirmedParcels(userId?: string): Promise<void> {
     try { await this.client.autoLinkPackages(userId); }
     catch (error) {
@@ -818,7 +845,10 @@ export class TrackingSyncService {
     }
   }
 
-  /** Tells what the job found: notifications first, then the delivery emails, which need no push channel. */
+  /**
+   * Tells what the job found so far: notifications first, then the delivery emails, which
+   * need no push channel. A run may dispatch several times, so the counts add up.
+   */
   private async dispatchNotifications(summary: SyncSummary, signal?: AbortSignal): Promise<void> {
     await this.dispatchPush(summary, signal);
     await this.dispatchEmails(summary, signal);
@@ -829,8 +859,8 @@ export class TrackingSyncService {
     if (!this.emails) return;
     try {
       const emails = await this.emails.dispatch(signal);
-      summary.emails_sent = emails.sent;
-      summary.email_errors = emails.failed;
+      summary.emails_sent += emails.sent;
+      summary.email_errors += emails.failed;
     } catch (error) {
       signal?.throwIfAborted();
       // The job's tracking work is done: an email run that could not start is tried by the next job.
@@ -844,9 +874,9 @@ export class TrackingSyncService {
     if (!this.notifier) return;
     try {
       const push = await this.notifier.dispatch(signal);
-      summary.notifications_sent = push.sent;
-      summary.notification_errors = push.failed;
-      summary.subscriptions_expired = push.expired;
+      summary.notifications_sent += push.sent;
+      summary.notification_errors += push.failed;
+      summary.subscriptions_expired += push.expired;
       if (push.failed > 0) {
         captureOperationalError(new Error('Push dispatch returned failed deliveries'), {
           component: 'push',
@@ -857,9 +887,9 @@ export class TrackingSyncService {
     } catch (error) {
       signal?.throwIfAborted();
       if (error instanceof PushDispatchError) {
-        summary.notifications_sent = error.summary.sent;
-        summary.notification_errors = error.summary.failed;
-        summary.subscriptions_expired = error.summary.expired;
+        summary.notifications_sent += error.summary.sent;
+        summary.notification_errors += error.summary.failed;
+        summary.subscriptions_expired += error.summary.expired;
       }
       summary.notification_errors += 1;
       captureOperationalError(error, { component: 'push', operation: 'dispatch' });
@@ -1593,6 +1623,30 @@ export class TrackingSyncService {
 function storedEventIdentities(parcel: JsonObject): JsonObject[] {
   const stored = parcel[STORED_EVENT_IDENTITIES];
   return Array.isArray(stored) ? stored.filter(isRecord) : [];
+}
+
+/**
+ * The parcels `auto_link_package_tracking` may merge into one, an earlier carrier's leg
+ * and Swiss Post's delivery leg in one account: those of accounts holding both kinds.
+ * It leaves out the stage and number checks, which a check can change.
+ */
+export function mergeableLegs(parcels: readonly JsonObject[]): Set<string> {
+  const legs = new Map<string, { origins: string[]; deliveries: string[] }>();
+  for (const parcel of parcels) {
+    if (typeof parcel.user_id !== 'string' || parcel.archived_at != null) continue;
+    const data = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
+    const owner = legs.get(parcel.user_id) ?? { origins: [], deliveries: [] };
+    legs.set(parcel.user_id, owner);
+    if (parcel.carrier === 'swiss-post') {
+      if (!('original_carrier' in data)) owner.deliveries.push(String(parcel.id));
+    } else if (!('original_package_id' in data)
+      && (!('original_carrier' in data) || data.original_carrier === parcel.carrier)) {
+      owner.origins.push(String(parcel.id));
+    }
+  }
+  return new Set([...legs.values()]
+    .filter((owner) => owner.origins.length > 0 && owner.deliveries.length > 0)
+    .flatMap((owner) => [...owner.origins, ...owner.deliveries]));
 }
 
 export function fairSyncPackages(

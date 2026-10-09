@@ -752,6 +752,23 @@ describe('notification reads', () => {
     expect(pages[0]!.get('select')).toBe('package_id,parcel_link_alerts!inner(id)');
   });
 
+  it('reads the unarchived parcels of accounts, with what tells which legs may be merged', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const request = vi.spyOn(client, 'request').mockResolvedValue([
+      { id: 'origin', user_id: 'owner', carrier: 'gls-de', original_carrier: null, original_package_id: null },
+      { id: 'delivery', user_id: 'owner', carrier: 'swiss-post', original_carrier: 'gls-de', original_package_id: 'merged' },
+    ]);
+    await expect(client.unarchivedParcelLegs(['owner', 'owner'])).resolves.toEqual([
+      { id: 'origin', user_id: 'owner', carrier: 'gls-de', carrier_data: {} },
+      { id: 'delivery', user_id: 'owner', carrier: 'swiss-post', carrier_data: { original_carrier: 'gls-de', original_package_id: 'merged' } },
+    ]);
+    const page = new URL(`https://database.example${String(request.mock.calls[0]![0])}`).searchParams;
+    expect(String(request.mock.calls[0]![0])).toMatch(/^\/rest\/v1\/packages\?/);
+    expect(page.get('user_id')).toBe('in.(owner)');
+    expect(page.get('archived_at')).toBe('is.null');
+    expect(page.get('select')).toBe('id,user_id,carrier,original_carrier:carrier_data->original_carrier,original_package_id:carrier_data->original_package_id');
+  });
+
   it('reads the DPD app sessions DPD has not refused from the last week, and saves one under its token', async () => {
     vi.useFakeTimers({ now: new Date('2026-10-09T18:00:00Z'), toFake: ['Date'] });
     try {

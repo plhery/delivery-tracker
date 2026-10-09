@@ -697,6 +697,27 @@ export class SupabaseClient {
   }
 
   /**
+   * The unarchived parcels of these accounts, at any stage, with the parts of
+   * their carrier data that tell `auto_link_package_tracking` which legs it may merge.
+   */
+  async unarchivedParcelLegs(userIds: string[]): Promise<JsonObject[]> {
+    const ids = [...new Set(userIds)];
+    const pages = Array.from({ length: Math.ceil(ids.length / 100) }, (_, page) => ids.slice(page * 100, page * 100 + 100));
+    const found = await Promise.all(pages.map(async (page) => rows(await this.request(`/rest/v1/packages?${query([
+      ['user_id', `in.(${page.join(',')})`],
+      ['archived_at', 'is.null'],
+      ['select', 'id,user_id,carrier,original_carrier:carrier_data->original_carrier,original_package_id:carrier_data->original_package_id'],
+    ])}`))));
+    return found.flat().map(({ original_carrier: originalCarrier, original_package_id: originalPackageId, ...parcel }) => ({
+      ...parcel,
+      carrier_data: {
+        ...(originalCarrier == null ? {} : { original_carrier: originalCarrier }),
+        ...(originalPackageId == null ? {} : { original_package_id: originalPackageId }),
+      },
+    }));
+  }
+
+  /**
    * The packages among these with a link shared with someone who turned its
    * alerts on: alerts a lookup's owner turned on are left out.
    */

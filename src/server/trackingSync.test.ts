@@ -19,6 +19,7 @@ import {
   detectSyncAnomalies,
   fairSyncPackages,
   inferStage,
+  mergeableLegs,
   MAX_STATUS_OBSERVATIONS_PER_SYNC,
   isOpenedParcelSyncDue,
   isTrackingSyncDue,
@@ -334,6 +335,21 @@ describe('tracking event normalization', () => {
 });
 
 describe('fair scheduling', () => {
+  it('names the legs a reconciliation may merge, in accounts holding both kinds', () => {
+    expect([...mergeableLegs([
+      { id: 'origin', user_id: 'a', carrier: 'gls-de', carrier_data: {} },
+      { id: 'corrected', user_id: 'a', carrier: 'dpd-de', carrier_data: { original_carrier: 'dpd-de' } },
+      { id: 'delivery', user_id: 'a', carrier: 'swiss-post' },
+      { id: 'archived', user_id: 'a', carrier: 'la-poste', archived_at: '2026-10-01T00:00:00Z' },
+      { id: 'merged', user_id: 'a', carrier: 'gls-ch', carrier_data: { original_package_id: 'gone' } },
+      { id: 'swapped', user_id: 'a', carrier: 'gls-fr', carrier_data: { original_carrier: 'unknown' } },
+      { id: 'linked', user_id: 'a', carrier: 'swiss-post', carrier_data: { original_carrier: 'gls-de' } },
+      { id: 'alone', user_id: 'b', carrier: 'gls-de' },
+      { id: 'local', user_id: 'c', carrier: 'swiss-post' },
+      { id: 'one-off', user_id: null, carrier: 'gls-de' },
+    ])].sort()).toEqual(['corrected', 'delivery', 'origin']);
+  });
+
   it('round-robins owners and caps each account', () => {
     const packages = [
       { id: 'a1', user_id: 'a' },
@@ -676,6 +692,8 @@ function fakeClient(packages: JsonObject[] = []) {
     listUnwatchedPackageIds: vi.fn().mockResolvedValue([]),
     sharedAlertPackageIds: vi.fn().mockResolvedValue(new Set()),
     autoLinkPackages: vi.fn().mockResolvedValue(0),
+    unarchivedParcelLegs: vi.fn().mockResolvedValue(
+      packages.filter((parcel) => typeof parcel.user_id === 'string' && parcel.archived_at == null)),
     updatePackage: vi.fn().mockResolvedValue(undefined),
     insertEvents: vi.fn().mockResolvedValue(undefined),
     deleteEventsByDescriptions: vi.fn().mockResolvedValue(undefined),
@@ -1014,6 +1032,96 @@ describe('TrackingSyncService', () => {
       expect(client.autoLinkPackages).toHaveBeenCalledOnce();
       expect(client.autoLinkPackages.mock.invocationCallOrder[0]).toBeGreaterThan(client.completeSyncAttempt.mock.invocationCallOrder.at(-1)!);
     }
+  });
+
+  it('sends a parcel’s notifications right after its check, without waiting for a slow one', async () => {
+    let answer!: (result: JsonObject) => void;
+    const adapter = { fetch: vi.fn(async (_carrier: string, number: string) => number === 'TEST0001'
+      ? { status: 'in_transit' }
+      : await new Promise<JsonObject>((resolve) => { answer = resolve; })) };
+    const notifier = { dispatch: vi.fn().mockResolvedValue({ sent: 1, failed: 0, expired: 0 }) };
+    const emails = { dispatch: vi.fn().mockResolvedValue({ sent: 1, failed: 0, skipped: 0 }) };
+    const client = fakeClient([
+      { id: 'quick', user_id: 'first', carrier: 'ctt', tracking_number: 'TEST0001' },
+      { id: 'slow', user_id: 'second', carrier: 'la-poste', tracking_number: 'TEST0002' },
+    ]);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, notifier as never, undefined, emails as never);
+    const running = service.sync();
+    await vi.waitFor(() => expect(emails.dispatch).toHaveBeenCalledOnce());
+    expect(notifier.dispatch).toHaveBeenCalledOnce();
+    expect(adapter.fetch).toHaveBeenCalledTimes(2);
+    expect(client.unarchivedParcelLegs).toHaveBeenCalledExactlyOnceWith(['first', 'second']);
+    answer({ status: 'in_transit' });
+    // The run's own dispatch follows the reconciliation, and the counts add up.
+    await expect(running).resolves.toMatchObject({ checked: 2, updated: 2, notifications_sent: 2, emails_sent: 2 });
+    expect(notifier.dispatch).toHaveBeenCalledTimes(2);
+    expect(notifier.dispatch.mock.invocationCallOrder[1]).toBeGreaterThan(client.autoLinkPackages.mock.invocationCallOrder[0]!);
+    expect(client.unarchivedParcelLegs).toHaveBeenCalledOnce();
+  });
+
+  it('holds the run’s notifications for the merge once it has checked a leg it may merge', async () => {
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    const notifier = { dispatch: vi.fn().mockResolvedValue({ sent: 0, failed: 0, expired: 0 }) };
+    const other = { id: 'other', user_id: 'neighbour', carrier: 'ctt', tracking_number: 'TEST0003' };
+    const legs = [
+      { id: 'origin', user_id: 'owner', carrier: 'gls-de', tracking_number: 'TEST0001' },
+      { id: 'local', user_id: 'owner', carrier: 'swiss-post', tracking_number: 'TEST0002' },
+    ];
+    // The other account's parcel comes first: its news goes out before the legs are checked.
+    const before = fakeClient([other, ...legs]);
+    await new TrackingSyncService(before as unknown as SupabaseServiceClient, adapter, notifier as never).sync();
+    expect(notifier.dispatch).toHaveBeenCalledTimes(2);
+    expect(notifier.dispatch.mock.invocationCallOrder[0]).toBeLessThan(before.completeSyncAttempt.mock.invocationCallOrder[1]!);
+    // A leg comes first: the other account's news waits for the merge with it.
+    notifier.dispatch.mockClear();
+    const after = fakeClient([...legs, other]);
+    await expect(new TrackingSyncService(after as unknown as SupabaseServiceClient, adapter, notifier as never).sync())
+      .resolves.toMatchObject({ checked: 3, updated: 3 });
+    expect(notifier.dispatch).toHaveBeenCalledOnce();
+    expect(notifier.dispatch.mock.invocationCallOrder[0]).toBeGreaterThan(after.autoLinkPackages.mock.invocationCallOrder[0]!);
+    // A delivered leg is not in the run, but the account's other parcels are read whatever their stage.
+    notifier.dispatch.mockClear();
+    const delivered = fakeClient([legs[0]!, other]);
+    delivered.unarchivedParcelLegs.mockResolvedValue([...legs, other]);
+    await new TrackingSyncService(delivered as unknown as SupabaseServiceClient, adapter, notifier as never).sync();
+    expect(notifier.dispatch).toHaveBeenCalledOnce();
+  });
+
+  it('holds the run’s notifications for the merge when the legs cannot be read', async () => {
+    const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const failure = new Error('parcels unavailable');
+    const client = fakeClient([
+      { id: 'first', user_id: 'owner', carrier: 'ctt', tracking_number: 'TEST0001' },
+      { id: 'second', user_id: 'neighbour', carrier: 'ctt', tracking_number: 'TEST0002' },
+      { id: 'third', user_id: 'other', carrier: 'ctt', tracking_number: 'TEST0003' },
+    ]);
+    client.unarchivedParcelLegs.mockRejectedValue(failure);
+    const notifier = { dispatch: vi.fn().mockResolvedValue({ sent: 0, failed: 0, expired: 0 }) };
+    await new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, notifier as never).sync();
+    expect(notifier.dispatch).toHaveBeenCalledOnce();
+    expect(client.unarchivedParcelLegs).toHaveBeenCalledOnce();
+    expect(report).toHaveBeenCalledExactlyOnceWith(failure, { component: 'tracking', operation: 'list_parcel_legs' });
+  });
+
+  it('reads no legs for a run of parcels without an account, nor for one with no news', async () => {
+    const notifier = { dispatch: vi.fn().mockResolvedValue({ sent: 0, failed: 0, expired: 0 }) };
+    const client = fakeClient();
+    client.listFollowedOneOffPackages.mockResolvedValue([
+      { id: 'first', user_id: null, one_off: true, carrier: 'ctt', tracking_number: 'TEST0001' },
+      { id: 'second', user_id: null, one_off: true, carrier: 'ctt', tracking_number: 'TEST0002' },
+    ]);
+    await new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, notifier as never).sync();
+    expect(notifier.dispatch).toHaveBeenCalledTimes(2);
+    const quiet = fakeClient([
+      { id: 'first', user_id: 'owner', carrier: 'ctt', tracking_number: 'TEST0001' },
+      { id: 'second', user_id: 'owner', carrier: 'ctt', tracking_number: 'TEST0002' },
+    ]);
+    await new TrackingSyncService(quiet as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockRejectedValue(new Error('carrier unavailable')) }, notifier as never).sync();
+    expect(quiet.unarchivedParcelLegs).not.toHaveBeenCalled();
+    expect(notifier.dispatch).toHaveBeenCalledTimes(3);
   });
 
   it('reconciles a manual refresh within its owner’s account', async () => {
