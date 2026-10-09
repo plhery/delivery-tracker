@@ -275,6 +275,42 @@ function Universal() {
   </>;
 }
 
+/** Snowflakes: where each falls, and how big; the small ones are further off. */
+const SNOW = [[34, 34, 3.5], [92, 196, 2.5], [128, 22, 2.5], [226, 40, 3.5], [244, 120, 2.5], [300, 70, 3], [348, 26, 2.5],
+  [392, 104, 3.5], [430, 44, 2.5], [470, 140, 2.5], [486, 18, 3], [560, 60, 3.5], [606, 112, 2.5], [612, 26, 2.5], [232, 196, 2]] as const;
+
+function Christmas() {
+  return <>
+    {/* Snow is white in any light. */}
+    {SNOW.map(([cx, cy, r]) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={r} fill="#FFFFFF" opacity={r > 3 ? .95 : .75} />)}
+    <path d="M40 248H600" stroke={line} strokeWidth="4" strokeLinecap="round" />
+    {/* December, with the last day to send circled and the days after it fading. */}
+    <Sheet x={48} y={40} width={150} height={124} rx={14}>
+      <rect width="150" height="28" rx="14" fill="var(--rose)" />
+      <rect y="14" width="150" height="14" fill="var(--rose)" />
+      {[0, 1, 2, 3].flatMap((row) => [0, 1, 2, 3, 4, 5].map((column) => {
+        const day = row * 6 + column;
+        return <rect key={day} x={14 + column * 21} y={40 + row * 19} width="14" height="11" rx="3"
+          fill={day === 15 ? 'var(--rose)' : 'var(--control)'} opacity={day > 15 ? .45 : 1} />;
+      }))}
+      <circle cx="84" cy="83.5" r="12.5" stroke="var(--rose)" strokeWidth="2.6" />
+    </Sheet>
+    {/* The van in a hurry, a parcel tied with a ribbon on its roof. */}
+    <g stroke={soft} strokeWidth="3" strokeLinecap="round" opacity=".6">
+      <path d="M196 206h34M210 222h22M202 238h26" />
+    </g>
+    <Truck x={244} y={184} tone="green" scale={3.4} />
+    <g transform="translate(262 156)">
+      <rect width="44" height="36" rx="4" fill="#DDBD96" />
+      <path d="M0 9h44" stroke="#C9A47B" strokeWidth="2" />
+      <rect x="19" width="7" height="36" fill="var(--rose)" />
+      <rect y="15" width="44" height="7" fill="var(--rose)" />
+      <path d="M22.5 0c-4-9-15-10-14-3 1 5 9 4 14 3Zm0 0c4-9 15-10 14-3-1 5-9 4-14 3Z" fill="var(--rose)" />
+    </g>
+    <Pip x={520} ground={262} width={196} mood="eager" side={-1} />
+  </>;
+}
+
 const SCENES: Record<string, { tone: string; draw: () => ReactNode }> = {
   'tracking-number-formats': { tone: 'blue', draw: Formats },
   'tracking-statuses': { tone: 'green', draw: Statuses },
@@ -284,6 +320,7 @@ const SCENES: Record<string, { tone: string; draw: () => ReactNode }> = {
   'tracking-from-china': { tone: 'blue', draw: FromChina },
   'find-tracking-number': { tone: 'ochre', draw: FindNumber },
   'universal-tracker': { tone: 'green', draw: Universal },
+  'christmas-posting-dates': { tone: 'blue', draw: Christmas },
 };
 
 /** The ids that have a picture of their own. Every guide must. */

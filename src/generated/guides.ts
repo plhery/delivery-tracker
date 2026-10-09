@@ -45,6 +45,11 @@ export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = {
       "id": "universal-tracker",
       "slug": "universal-parcel-tracking",
       "title": "Universal parcel tracking: all your parcels in one place"
+    },
+    {
+      "id": "christmas-posting-dates",
+      "slug": "christmas-posting-dates",
+      "title": "Last posting dates for Christmas and shipping deadlines"
     }
   ],
   "de": [
@@ -87,6 +92,11 @@ export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = {
       "id": "universal-tracker",
       "slug": "paketverfolgung-aller-anbieter",
       "title": "Paketverfolgung aller Anbieter: alle Pakete an einem Ort"
+    },
+    {
+      "id": "christmas-posting-dates",
+      "slug": "weihnachten-paket-letzter-termin",
+      "title": "Weihnachtspost: letzter Termin für Pakete und Briefe"
     }
   ],
   "fr": [
@@ -129,6 +139,11 @@ export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = {
       "id": "universal-tracker",
       "slug": "suivi-colis-universel-tous-transporteurs",
       "title": "Suivi de colis universel\u00a0: tous tes colis au même endroit"
+    },
+    {
+      "id": "christmas-posting-dates",
+      "slug": "date-limite-envoi-colis-noel",
+      "title": "Date limite d'envoi des colis de Noël\u00a0: La Poste, Colissimo"
     }
   ],
   "it": [
@@ -171,6 +186,11 @@ export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = {
       "id": "universal-tracker",
       "slug": "tracking-universale-pacchi",
       "title": "Tracking universale: tutti i pacchi in un posto solo"
+    },
+    {
+      "id": "christmas-posting-dates",
+      "slug": "spedire-pacco-per-natale-ultimo-giorno",
+      "title": "Spedire un pacco per Natale: ultimo giorno e scadenze"
     }
   ],
   "es": [
@@ -213,6 +233,11 @@ export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = {
       "id": "universal-tracker",
       "slug": "seguimiento-universal-de-paquetes",
       "title": "Seguimiento universal de paquetes: todos en un solo sitio"
+    },
+    {
+      "id": "christmas-posting-dates",
+      "slug": "fecha-limite-envio-paquetes-navidad",
+      "title": "Fecha límite de envío en Navidad: Correos, GLS, SEUR y MRW"
     }
   ],
   "pt": [
@@ -255,6 +280,11 @@ export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = {
       "id": "universal-tracker",
       "slug": "seguir-todas-as-encomendas",
       "title": "Como seguir todas as encomendas num só lugar"
+    },
+    {
+      "id": "christmas-posting-dates",
+      "slug": "prazos-envio-encomendas-natal",
+      "title": "Prazos de envio no Natal: datas limite dos CTT, DPD e GLS"
     }
   ],
   "pl": [
@@ -297,6 +327,11 @@ export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = {
       "id": "universal-tracker",
       "slug": "sledzenie-przesylek-wszystkich-firm",
       "title": "Śledzenie przesyłek wszystkich firm w jednym miejscu"
+    },
+    {
+      "id": "christmas-posting-dates",
+      "slug": "do-kiedy-wyslac-paczke-przed-swietami",
+      "title": "Do kiedy wysłać paczkę przed świętami: terminy przewoźników"
     }
   ]
 };
