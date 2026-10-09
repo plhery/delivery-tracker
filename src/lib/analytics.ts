@@ -1,5 +1,5 @@
 import catalog from '../../shared/analytics.json';
-import { SUPPORTED_LOCALES } from './locale';
+import { isLocale, SUPPORTED_LOCALES } from './locale';
 
 export type AnalyticsOutcome = 'success' | 'error' | 'started' | 'accepted';
 type Configuration = { endpoint: string; hostname: string; webWebsite: string; iosWebsite: string };
@@ -13,6 +13,50 @@ let cache: string | undefined;
 let queue: Event[] = [];
 let sending = false;
 let disabled = false;
+
+/** The campaign keys a landing address may carry to analytics. Any other query can hold a tracking number, and stays. */
+const CAMPAIGN_KEYS = ['utm_source', 'utm_medium', 'utm_campaign'] as const;
+
+/**
+ * The site that linked to this page, as its origin and path, or nothing when it is this
+ * site or none. Its query and fragment are its own business. An Android app that opened
+ * the page names itself as `android-app://<package>/`.
+ */
+function outsideReferrer(referrer: string, hostname: string): string | undefined {
+  try {
+    const from = new URL(referrer);
+    if (!['http:', 'https:', 'android-app:'].includes(from.protocol) || !from.host) return undefined;
+    const site = (host: string) => host.toLowerCase().replace(/^www\./, '');
+    if (site(from.hostname) === site(hostname)) return undefined;
+    return `${from.protocol}//${from.host}${from.pathname}`;
+  } catch { return undefined; }
+}
+
+/** The landing address's campaign, as a query Umami reads: only the campaign keys, each shortened. */
+function campaignQuery(search: string): string {
+  const given = new URLSearchParams(search);
+  const kept = new URLSearchParams();
+  for (const key of CAMPAIGN_KEYS) {
+    const value = given.get(key)?.trim().slice(0, 100);
+    if (value) kept.set(key, value);
+  }
+  const query = kept.toString();
+  return query ? `?${query}` : '';
+}
+
+/**
+ * Where this page load came from, read once as the page starts, before the app can
+ * change its address. Umami counts sources from page views alone, so it rides on the
+ * load's first view.
+ */
+let arrival: { referrer?: string; campaign: string } | null = typeof window === 'undefined' ? null
+  : { referrer: outsideReferrer(document.referrer, location.hostname), campaign: campaignQuery(location.search) };
+
+/** The app's language as the page declares it (`pt-PT` is `pt`), when it is one Peek speaks. */
+function appLocale(): string | undefined {
+  const language = document.documentElement.lang.toLowerCase().split('-')[0];
+  return isLocale(language) ? language : undefined;
+}
 
 export const analyticsPreferenceKey = 'sdt.analytics.enabled';
 export function analyticsEnabled() {
@@ -70,17 +114,21 @@ async function flush() {
     while (queue.length && config) {
       const event = queue.shift()!;
       if (optedOut()) { queue = []; break; }
+      const source = !event.name ? arrival : null;
+      if (source) arrival = null;
+      const locale = appLocale();
       try {
         const response = await fetch(config.endpoint, {
           method: 'POST', credentials: 'omit', referrerPolicy: 'no-referrer', keepalive: true,
           signal: AbortSignal.timeout(5_000),
           headers: { 'Content-Type': 'application/json', ...(cache ? { 'x-umami-cache': cache } : {}) },
           body: JSON.stringify({ type: 'event', payload: {
-            website: config.webWebsite, hostname: config.hostname, url: `/${event.screen}`, title: event.screen,
+            website: config.webWebsite, hostname: config.hostname, url: `/${event.screen}${source?.campaign ?? ''}`, title: event.screen,
+            ...(source?.referrer ? { referrer: source.referrer } : {}),
             language: navigator.language, screen: `${window.screen.width}x${window.screen.height}`,
             ...(event.name ? { name: event.name } : {}),
             data: { platform: window.matchMedia?.('(display-mode: standalone)').matches ? 'pwa' : 'web',
-              mode: event.mode, ...(event.outcome ? { outcome: event.outcome } : {}) },
+              mode: event.mode, ...(locale ? { locale } : {}), ...(event.outcome ? { outcome: event.outcome } : {}) },
           } }),
         });
         if (response.ok) {

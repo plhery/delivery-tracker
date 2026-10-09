@@ -71,8 +71,14 @@ Demo actions never count as account API successes.
 Never sent: emails, account or parcel ids, parcel link ids or owner keys, the token of an
 email's opt-out link, labels and names, gift notes, push addresses, tracking numbers,
 postcodes, invitation codes, errors, search
-terms, query strings or referrers. A parcel page is the `parcel-link` screen, whatever its address; the sample parcel's is in `demo` mode. Umami still
+terms, or any query string but the campaign below. A parcel page is the `parcel-link` screen, whatever its address; the sample parcel's is in `demo` mode. Umami still
 sees the IP, user agent, basic device data and language.
+
+On the web, every event carries the app's language (`locale`) when the page declares one.
+A page load's first page view also says where the visitor came from, since Umami counts
+sources from page views only: the `referrer`, as origin and path without query or fragment,
+when it is another site (or an Android app), and the landing address's `utm_source`,
+`utm_medium` and `utm_campaign` as the view's query.
 
 The web sends nothing under DNT, GPC or `umami.disabled=1`, nor from a browser driven by
 automation (`navigator.webdriver`), such as a headless crawler, which still gets the same

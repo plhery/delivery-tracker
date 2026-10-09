@@ -101,6 +101,62 @@ describe('safe analytics collection', () => {
   });
 });
 
+describe('where a page load came from', () => {
+  const arriveFrom = (referrer: string) => Object.defineProperty(document, 'referrer', { configurable: true, get: () => referrer });
+  const payloads = () => requests.filter((r) => r.url === config.endpoint).map((r) => JSON.parse(r.init!.body as string).payload);
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'referrer');
+    document.documentElement.lang = '';
+    history.replaceState(null, '', '/');
+  });
+
+  it('tells the first view the other site and the campaign, and every event the app’s language', async () => {
+    history.replaceState(null, '', '/de?parcel=RR123456785CH&utm_source=newsletter&utm_medium=email&utm_campaign=autumn&utm_content=private#name');
+    arriveFrom('https://www.example.org/posts/peek?id=7#comments');
+    document.documentElement.lang = 'pt-PT';
+    const a = await import('./analytics');
+    a.trackAction('search');
+    a.trackScreen('front-door');
+    a.trackScreen('parcel-link');
+    await a.startAnalytics(); await settle();
+    const sent = payloads();
+    expect(sent.map((payload) => [payload.name ?? 'view', payload.url, payload.referrer])).toEqual([
+      ['search', '/welcome', undefined],
+      ['view', '/front-door?utm_source=newsletter&utm_medium=email&utm_campaign=autumn', 'https://www.example.org/posts/peek'],
+      ['view', '/parcel-link', undefined],
+      ['app-open', '/parcel-link', undefined],
+    ]);
+    expect(sent.map((payload) => payload.data.locale)).toEqual(['pt', 'pt', 'pt', 'pt']);
+    for (const request of requests) expect(String(request.init?.body ?? '')).not.toMatch(/RR123456785CH|private|id=7|comments|#name/);
+  });
+
+  it.each([
+    ['this site', 'https://delivery.example/fr', undefined],
+    ['this site under www', 'https://www.delivery.example/', undefined],
+    ['no page', '', undefined],
+    ['a page that is no site', 'about:blank', undefined],
+    ['an Android app', 'android-app://com.google.android.gm/', 'android-app://com.google.android.gm/'],
+    ['a search engine', 'https://www.google.com/', 'https://www.google.com/'],
+  ])('from %s sends %s', async (_, referrer, sent) => {
+    arriveFrom(referrer);
+    const a = await import('./analytics');
+    a.trackScreen('front-door');
+    await a.startAnalytics(); await settle();
+    expect(payloads()[0]).toMatchObject({ url: '/front-door' });
+    expect(payloads()[0].referrer).toBe(sent);
+  });
+
+  it('sends no language the page does not declare, or one Peek does not speak', async () => {
+    document.documentElement.lang = 'nl';
+    const a = await import('./analytics');
+    a.trackScreen('front-door');
+    await a.startAnalytics(); await settle();
+    expect(payloads().map((payload) => payload.data)).toEqual([
+      { platform: 'web', mode: 'anonymous' }, { platform: 'web', mode: 'anonymous' },
+    ]);
+  });
+});
+
 describe('action mapping shared with native', () => {
   it('maps every declared API action, excludes polling, and never returns private input', async () => {
     const { apiAnalyticsEvent } = await import('./analytics');

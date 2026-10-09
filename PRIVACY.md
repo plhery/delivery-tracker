@@ -1,6 +1,6 @@
 # Peek privacy notice
 
-Effective: 8 October 2026
+Effective: 9 October 2026
 
 Peek follows parcels, on the web and in its iPhone app. This notice says what
 the official service at peektracker.com processes to do that. Peek does not
@@ -158,12 +158,16 @@ The official public web service and connected iPhone app send screen views and
 named feature actions (including success/failure) to our self-hosted Umami at
 `u.plhery.com`. This helps us understand which features work and where actions
 fail. Events include the platform, demo/account/anonymous mode, language, and
-basic browser/device information. Umami processes IP address and user agent to
-derive approximate location and rotating visitor/session identifiers. We do not
-send account IDs, email addresses, parcel labels, tracking numbers, delivery
-postcodes, invitation codes, search text, full URLs, referrers, or error
-messages. No analytics cookies or persistent analytics device identifiers are
-created. Events are not linked to your Peek account.
+basic browser/device information. When you come to the website from another
+site or app, its first screen view also names the page that sent you, without
+the part of its address after a question mark or `#`, and the source, medium
+and campaign the link you followed was tagged with, if any. Umami processes IP
+address and user agent to derive approximate location and rotating
+visitor/session identifiers. We do not send account IDs, email addresses,
+parcel labels, tracking numbers, delivery postcodes, invitation codes, search
+text, any other part of an address, or error messages. No analytics cookies or
+persistent analytics device identifiers are created. Events are not linked to
+your Peek account.
 
 The website sends nothing when your browser asks not to be tracked (Do Not
 Track or Global Privacy Control) or when Umami's local opt-out is set. The
