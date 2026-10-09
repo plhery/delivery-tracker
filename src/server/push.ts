@@ -484,13 +484,9 @@ const DAY_MS = 24 * 60 * 60 * 1_000;
  * - Stale: more than a day old when it would be announced. A leg a provider
  *   reports days late is stored and shown, but no longer worth a
  *   notification. A scan without a clock has no age to judge.
- * - Archived: its account put the parcel away. The daily check that follows
- *   it there updates it silently, to its owner and to its links' alerts, and
- *   bringing the parcel back does not announce what was recorded meanwhile.
  */
-export function isOldNews(newest: JsonObject, { latest, joined, archived }: ParcelTimes, now: number): boolean {
+export function isOldNews(newest: JsonObject, { latest, joined }: ParcelTimes, now: number): boolean {
   const packageId = stringField(newest, 'package_id');
-  if (archived.has(packageId)) return true;
   const scanned = Date.parse(stringField(newest, 'occurred_at'));
   const clockless = newest.event_has_time === false;
   if (!clockless && scanned < now - DAY_MS) return true;
@@ -501,6 +497,16 @@ export function isOldNews(newest: JsonObject, { latest, joined, archived }: Parc
   const stored = Date.parse(stringField(newest, 'event_created_at'));
   if (stored < since + ADD_CHECK_MS && (clockless || scanned < since)) return true;
   return scanned + (clockless ? DAY_MS : 0) < since - DAY_MS;
+}
+
+/**
+ * Whether the parcel's account put it away, which its owner is not told about:
+ * the daily check that follows it there updates it silently, and bringing it
+ * back does not announce what was recorded meanwhile. Someone it was shared
+ * with still gets their link's alerts.
+ */
+function putAway(newest: JsonObject, { archived }: ParcelTimes): boolean {
+  return archived.has(stringField(newest, 'package_id'));
 }
 
 export class WebPushNotificationService {
@@ -525,7 +531,7 @@ export class WebPushNotificationService {
       signal?.throwIfAborted();
       const newest = announcedScan(events, times);
       const subscriptionId = stringField(events[0]!, 'subscription_id');
-      if (!newest || isOldNews(newest, times, this.now())) {
+      if (!newest || putAway(newest, times) || isOldNews(newest, times, this.now())) {
         await this.client.recordPushDeliveries(subscriptionId, events.map((event) => stringField(event, 'event_id')).filter(Boolean));
         continue;
       }
@@ -626,7 +632,8 @@ const FINISHED_STAGES = new Set(['delivered', 'returned']);
  * carries the parcel's name or number.
  *
  * - A batch of new scans announces its newest covered one, unless that is not
- *   news (`isOldNews`), as for accounts.
+ *   news (`isOldNews`), as for accounts. A parcel its account archived is
+ *   still announced to the people it was shared with, not to its owner.
  * - A gift on its way is announced as one: without the place of a scan, and
  *   without the scans its page leaves out.
  * - An alert on a browser the parcel's owner gets account notifications on is
@@ -668,7 +675,8 @@ export class ParcelLinkAlertService {
         if (failuresNow !== failures) await client.setParcelLinkAlertFailures(alertId, failuresNow);
       };
 
-      if (!newest || newest.account_endpoint === true || isOldNews(newest, times, this.web.now())) {
+      if (!newest || newest.account_endpoint === true || (newest.owner === true && putAway(newest, times))
+        || isOldNews(newest, times, this.web.now())) {
         await settle(failures);
         recordParcelAlertSent('skipped');
         continue;
@@ -850,7 +858,8 @@ export class NativePushNotificationService {
       signal?.throwIfAborted();
       const newest = announcedScan(events, times);
       const deviceId = stringField(events[0]!, 'device_id');
-      if (!newest || newest.live_activity_delivered === true || isOldNews(newest, times, this.now() * 1_000)) {
+      if (!newest || newest.live_activity_delivered === true || putAway(newest, times)
+        || isOldNews(newest, times, this.now() * 1_000)) {
         await this.client.recordNativePushDeliveries(
           deviceId,
           events.map((event) => stringField(event, 'event_id')).filter(Boolean),

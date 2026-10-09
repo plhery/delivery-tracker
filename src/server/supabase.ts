@@ -696,6 +696,22 @@ export class SupabaseClient {
   }
 
   /**
+   * The packages among these with a link shared with someone who turned its
+   * alerts on: alerts a lookup's owner turned on are left out.
+   */
+  async sharedAlertPackageIds(packageIds: string[]): Promise<Set<string>> {
+    const ids = [...new Set(packageIds)];
+    const pages = Array.from({ length: Math.ceil(ids.length / 100) }, (_, page) => ids.slice(page * 100, page * 100 + 100));
+    const found = await Promise.all(pages.map(async (page) => rows(await this.request(`/rest/v1/parcel_links?${query([
+      ['package_id', `in.(${page.join(',')})`],
+      ['shared', 'is.true'],
+      ['parcel_link_alerts.owner', 'is.false'],
+      ['select', 'package_id,parcel_link_alerts!inner(id)'],
+    ])}`))));
+    return new Set(found.flat().flatMap((row) => typeof row.package_id === 'string' ? [row.package_id] : []));
+  }
+
+  /**
    * The packages handed over from one carrier to another, each with its
    * carriers and its stored scans, saying when each was stored, so a relay copy
    * can be told from news (relayCopies.ts). A package of one carrier is left out.

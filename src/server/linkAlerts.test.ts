@@ -158,8 +158,16 @@ describe('what an alert announces', () => {
     expect(counted).toHaveBeenCalledExactlyOnceWith('skipped');
   });
 
-  it('handles the scans of a parcel its owner archived silently, as for accounts', async () => {
+  it('tells someone a parcel was shared with of its scans after its owner archived it', async () => {
     pending([row({ stage: 'ready_for_pickup', package_stage: 'ready_for_pickup' })]);
+    vi.mocked(client.archivedPackageIds).mockResolvedValue(new Set(['package-1']));
+    expect(await alerts.dispatch()).toMatchObject({ attempted: 1, sent: 1 });
+    expect(send).toHaveBeenCalledOnce();
+    expect(handled).toHaveBeenCalledExactlyOnceWith('alert-1', ['event-1']);
+  });
+
+  it('handles the scans of a parcel its owner archived silently on the owner\'s own alert, as for accounts', async () => {
+    pending([row({ owner: true, stage: 'ready_for_pickup', package_stage: 'ready_for_pickup' })]);
     vi.mocked(client.archivedPackageIds).mockResolvedValue(new Set(['package-1']));
     const counted = vi.spyOn(metrics, 'recordParcelAlertSent');
     expect(await alerts.dispatch()).toMatchObject({ attempted: 0, sent: 0 });

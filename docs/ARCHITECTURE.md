@@ -320,9 +320,11 @@ loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
   failed attempt, pickup readiness or a return, and whenever they are in the past.
 - An `exception` means the carrier reported a problem that is neither a missed delivery
   nor a return. The parcel keeps its place and keeps refreshing.
-- An archived parcel is never announced. Its new scans are recorded as handled without a
-  browser or phone notification or a link alert, so bringing it back does not announce
-  them either. No Live Activity starts for it, and the delivery email leaves it out.
+- An archived parcel is never announced to its owner. Its new scans are recorded as
+  handled without a browser or phone notification, or an alert the owner turned on for a
+  lookup, so bringing it back does not announce them either. No Live Activity starts for
+  it, and the delivery email leaves it out. Someone it was shared with still gets their
+  link's alerts.
 - A Live Activity starts only at `out_for_delivery`. It ends on delivery, failed attempt,
   problem, pickup, return, archive, sign-out or opt-out. At most two run at once. Live
   Activity pushes go first, so a successful one replaces the matching banner; if it fails,

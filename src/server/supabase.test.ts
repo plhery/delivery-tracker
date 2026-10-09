@@ -736,6 +736,22 @@ describe('notification reads', () => {
     expect(pages[0]!.get('select')).toBe('id');
   });
 
+  it('reads which parcels someone they were shared with gets alerts for, a page of ids at a time', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const ids = Array.from({ length: 101 }, (_, index) => `package-${index}`);
+    const request = vi.spyOn(client, 'request')
+      .mockResolvedValueOnce([{ package_id: 'package-1', parcel_link_alerts: [{ id: 'alert' }] }, { package_id: 7 }])
+      .mockResolvedValueOnce([{ package_id: 'package-100', parcel_link_alerts: [{ id: 'alert' }] }]);
+    await expect(client.sharedAlertPackageIds([...ids, 'package-0'])).resolves.toEqual(new Set(['package-1', 'package-100']));
+    const pages = request.mock.calls.map(([path]) => new URL(`https://database.example${String(path)}`).searchParams);
+    expect(pages.map((page) => page.get('package_id')!.slice(4, -1).split(',').length)).toEqual([100, 1]);
+    expect(String(request.mock.calls[0]![0])).toMatch(/^\/rest\/v1\/parcel_links\?/);
+    // A shared link, with an alert someone other than a lookup's owner turned on.
+    expect(pages[0]!.get('shared')).toBe('is.true');
+    expect(pages[0]!.get('parcel_link_alerts.owner')).toBe('is.false');
+    expect(pages[0]!.get('select')).toBe('package_id,parcel_link_alerts!inner(id)');
+  });
+
   it('reads the scans of handed-over parcels, with their carriers, for relay copies', async () => {
     const client = new SupabaseServiceClient('https://database.example', 'service-key');
     const scan = { id: 'scan', stage: 'in_transit', occurred_at: '2026-09-09T14:16:00Z', created_at: '2026-09-09T15:30:01Z', provider_event_id: 'dhl:a' };

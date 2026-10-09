@@ -188,17 +188,19 @@ interface ScheduleContext {
   unwatched?: boolean;
   /** A lookup without an account, which leaves the schedule when nobody has seen its number for hours. */
   oneOff?: boolean;
+  /** Someone the parcel was shared with gets its link's alerts, so archiving it keeps the regular cadence. */
+  sharedAlerts?: boolean;
 }
 
 function isScheduledTrackingSyncDue(
   parcel: JsonObject,
   now: Date,
-  { unwatched = false, oneOff = false }: ScheduleContext = {},
+  { unwatched = false, oneOff = false, sharedAlerts = false }: ScheduleContext = {},
 ): boolean {
   if (!isTrackingSyncDue(parcel, now)) return false;
   const unseen = unseenFor(parcel, now);
   if (oneOff && unseen !== null && unseen >= UNSEEN_HOURLY_MS) return false;
-  const archived = parcel.archived_at != null;
+  const archived = parcel.archived_at != null && !sharedAlerts;
   if (archived) {
     const activity = lastActivity(parcel);
     if (activity === null || now.getTime() - activity >= ARCHIVED_FOLLOWED_MS) return false;
@@ -696,10 +698,12 @@ export class TrackingSyncService {
       const summary = emptySyncSummary();
       const now = this.now();
       const unwatched = await this.unwatchedPackages(now, context.signal);
+      const active = await this.client.listActivePackages();
+      const shared = await this.sharedAlertPackages(active, context.signal);
       const due = (oneOff: boolean) => (parcel: JsonObject) => isScheduledTrackingSyncDue(parcel, now, {
-        unwatched: unwatched.has(String(parcel.id)), oneOff,
+        unwatched: unwatched.has(String(parcel.id)), oneOff, sharedAlerts: shared.has(String(parcel.id)),
       });
-      const accounts = fairSyncPackages((await this.client.listActivePackages()).filter(due(false)));
+      const accounts = fairSyncPackages(active.filter(due(false)));
       const parcels = [...accounts, ...await this.followedOneOffPackages(due(true), now, context.signal)];
       // Copies of one number, in several accounts or followed without one, share their lookups.
       const lookups = new SharedLookups(parcels);
@@ -745,6 +749,22 @@ export class TrackingSyncService {
     } catch (error) {
       signal?.throwIfAborted();
       captureOperationalError(error, { component: 'tracking', operation: 'list_unwatched_packages' });
+      return new Set();
+    }
+  }
+
+  /**
+   * The archived parcels among these that someone they were shared with gets
+   * alerts for. When they cannot be read, every archived parcel is checked daily.
+   */
+  private async sharedAlertPackages(parcels: readonly JsonObject[], signal?: AbortSignal): Promise<Set<string>> {
+    const archived = parcels.filter((parcel) => parcel.archived_at != null).map((parcel) => String(parcel.id));
+    if (archived.length === 0) return new Set();
+    try {
+      return await this.client.sharedAlertPackageIds(archived);
+    } catch (error) {
+      signal?.throwIfAborted();
+      captureOperationalError(error, { component: 'tracking', operation: 'list_shared_alert_packages' });
       return new Set();
     }
   }

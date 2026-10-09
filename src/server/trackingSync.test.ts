@@ -626,6 +626,7 @@ function fakeClient(packages: JsonObject[] = []) {
     listActivePackages: vi.fn().mockResolvedValue(packages),
     listFollowedOneOffPackages: vi.fn().mockResolvedValue([]),
     listUnwatchedPackageIds: vi.fn().mockResolvedValue([]),
+    sharedAlertPackageIds: vi.fn().mockResolvedValue(new Set()),
     autoLinkPackages: vi.fn().mockResolvedValue(0),
     updatePackage: vi.fn().mockResolvedValue(undefined),
     insertEvents: vi.fn().mockResolvedValue(undefined),
@@ -1380,6 +1381,36 @@ describe('TrackingSyncService', () => {
     // Archived, it waits for tomorrow's check; on the list again, for the next ten minutes.
     await expect(checked('2026-09-09T09:00:00Z')).resolves.toBe(0);
     await expect(checked(null)).resolves.toBe(1);
+  });
+
+  it('checks an archived parcel at the regular cadence while someone it was shared with gets its alerts', async () => {
+    const parcel = { id: 'shared', user_id: 'a', carrier: 'swiss-post', current_stage: 'ready_for_pickup', tracking_number: 'TEST1234',
+      created_at: '2026-07-01T08:00:00Z', archived_at: '2026-09-09T09:00:00Z', last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok',
+      carrier_data: { routing: { version: 1, configured_carrier: 'swiss-post', last_event_at: '2026-07-02T09:00:00Z' } } };
+    const checked = async (shared: () => Promise<Set<string>>) => {
+      const client = fakeClient([parcel, { ...parcel, id: 'alone' }]);
+      client.sharedAlertPackageIds.mockImplementation(shared);
+      const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'ready_for_pickup' }) };
+      const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-09T11:00:00Z'));
+      const summary = await service.sync();
+      expect(client.sharedAlertPackageIds).toHaveBeenCalledExactlyOnceWith(['shared', 'alone']);
+      return summary.checked;
+    };
+    // Without news for two months, the archived parcel alone has left the schedule; the shared one has not.
+    await expect(checked(async () => new Set(['shared']))).resolves.toBe(1);
+    // When the alerts cannot be read, archived parcels keep their daily check.
+    const capture = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    await expect(checked(async () => { throw new Error('down'); })).resolves.toBe(0);
+    expect(capture).toHaveBeenCalledWith(expect.any(Error), { component: 'tracking', operation: 'list_shared_alert_packages' });
+  });
+
+  it('asks for shared alerts only when an archived parcel is among the candidates', async () => {
+    const client = fakeClient([{ id: 'listed', user_id: 'a', carrier: 'swiss-post', current_stage: 'in_transit', tracking_number: 'TEST1234',
+      created_at: '2026-09-09T08:00:00Z', archived_at: null, last_synced_at: null, sync_status: 'ok' }]);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null, () => new Date('2026-09-09T10:10:00Z'));
+    await service.sync();
+    expect(client.sharedAlertPackageIds).not.toHaveBeenCalled();
   });
 
   it.each([

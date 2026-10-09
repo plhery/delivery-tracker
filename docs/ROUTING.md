@@ -144,7 +144,7 @@ Daytime is 08:00–22:00 Europe/Zurich. Overnight, everything is checked hourly.
 | No new event for 48 h (from when it was added) | hourly around the clock; manual refresh still allowed |
 | Nobody waiting for it | hourly around the clock; manual refresh still allowed |
 | Number no carrier or provider has seen (no carrier identified, no history, no input asked) | hourly for 6 h after it was added, then every 6 h, daily after 48 h, around the clock; manual refresh still allowed |
-| Archived, with a new event in the last 30 days (from when it was added) | daily around the clock; manual refresh still allowed |
+| Archived, with a new event in the last 30 days (from when it was added), and no alert on a link shared with someone | daily around the clock; manual refresh still allowed |
 
 Cooldowns use the persisted `last_synced_at` and `sync_status`, so restarts and repeated
 Refresh taps don't bypass them. New or reconfigured parcels are checked at once. A scheduled
@@ -176,8 +176,9 @@ window whose zone is unknown (UTC in the catalog), is not waited for.
 **Archived parcels** stay on the schedule until they have gone 30 days without a new
 carrier event, so one put away while it waits at a pickup point still shows its collection.
 They go through the same scheduled run, routing and cooldowns as the others, and their
-checks tell nobody ([ARCHITECTURE.md](ARCHITECTURE.md)). One brought back to the list takes
-its regular cadence again. Archived or not, a delivered or returned parcel is not checked.
+checks tell their owner nothing ([ARCHITECTURE.md](ARCHITECTURE.md)). One shared with
+someone who turned its link's alerts on keeps its regular cadence, as does one brought back
+to the list. Archived or not, a delivered or returned parcel is not checked.
 
 **Parcels followed without an account** are checked only while one of their links was
 opened in the last 24 hours or has an alert on. Otherwise a parcel waits until a link is
