@@ -140,8 +140,9 @@ describe('ParcelPage', () => {
     expect(document.querySelector('.parcel-illustration__label-number')).toHaveTextContent('••• 99');
     expect(document.body).not.toHaveTextContent('1234567899');
     expect(screen.queryByRole('button', { name: 'Copy tracking number' })).toBeNull();
-    const site = screen.getByRole('link', { name: 'Open the DHL website' });
-    expect(site.getAttribute('href')).not.toMatch(/[?#]|99/);
+    // The carrier's page for typing a number in, not the parcel's own.
+    expect(screen.getByRole('link', { name: 'Open the DHL website' }))
+      .toHaveAttribute('href', 'https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html');
     expect(screen.queryByRole('button', { name: 'Forget it now' })).toBeNull();
     // A masked number cannot be kept: the header's button is the one way to an account.
     expect(screen.queryByRole('button', { name: /Create an account/ })).toBeNull();
@@ -150,6 +151,14 @@ describe('ParcelPage', () => {
     // A name is the device's own: a viewer can give one too.
     expect(screen.getByRole('button', { name: 'Edit parcel name' })).toBeVisible();
     expect(mocks.read).toHaveBeenCalledWith(LINK_ID, expect.objectContaining({ key: undefined }));
+  });
+
+  it('shows a viewer no carrier link when the carrier has no page to type the number in', async () => {
+    mocks.read.mockResolvedValue(testView({ owner: false, parcel: { carrier: 'ciblex' } }));
+    open();
+    expect(await screen.findByText('Tracking number')).toBeVisible();
+    expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('••• 99');
+    expect(screen.queryByRole('link', { name: /^Open the .+ website$/ })).toBeNull();
   });
 
   it('says a forgotten link is gone the same way as one that never existed, and leads back to the front door', async () => {

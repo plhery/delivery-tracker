@@ -8,6 +8,7 @@ import {
   carrierInfo,
   carrierTrackingHintKey,
   formatTrackingNumber,
+  localizedCarrierUrl,
   parcelTrackingLinks,
   parcelTrackingNumbers,
   trackingLinksByNumber,
@@ -25,22 +26,16 @@ import type { Freshness } from './summary';
 
 /**
  * Where the carrier shows the parcel. A link that masks the number leads to
- * the carrier's tracking page without it, never to the parcel itself.
+ * the carrier's page for typing one in, never to the parcel itself, and
+ * nowhere when the carrier has no such page.
  */
 export function carrierLinks(view: ParcelLinkView, locale: string): ParcelTrackingLink[] {
   const { parcel } = view;
   if (parcel.trackingNumber) return parcelTrackingLinks(parcel, locale);
   const carrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
-  const template = carrier.trackingUrl?.('');
-  if (!template) return [];
-  try {
-    const home = new URL(template);
-    home.search = '';
-    home.hash = '';
-    return [{ carrier, name: carrier.trackingSiteName ?? carrier.name, url: home.href, active: true, ready: true, role: 'active' }];
-  } catch {
-    return [];
-  }
+  if (!carrier.trackingSearchUrl) return [];
+  const url = localizedCarrierUrl(carrier.id, carrier.trackingSearchUrl, locale);
+  return [{ carrier, name: carrier.trackingSiteName ?? carrier.name, url, active: true, ready: true, role: 'active' }];
 }
 
 /**
