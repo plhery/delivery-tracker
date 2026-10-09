@@ -202,6 +202,10 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       },
       {
+        "pattern": "^CNFR\\d{13}HD$",
+        "confidence": "high"
+      },
+      {
         "pattern": "^CNG\\d{14}$",
         "confidence": "low"
       },
@@ -319,8 +323,12 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       },
       {
-        "pattern": "^(?=.{13}$|.{15}$)3S[A-Z]{1,4}\\d+$",
+        "pattern": "^3S[A-Z]{4}(?:\\d{7}|\\d{9})$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^(?=.{13}$|.{15}$)3S[A-Z]{1,3}\\d+$",
+        "confidence": "low"
       }
     ],
     "aliases": [
@@ -446,8 +454,12 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       },
       {
-        "pattern": "^JJD[A-Z0-9]{8,}$",
+        "pattern": "^JJD(?!\\d{16}$)[A-Z0-9]{8,}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^JJD\\d{16}$",
+        "confidence": "low"
       },
       {
         "pattern": "^\\d{10}$",
@@ -465,6 +477,11 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^0034043[345]\\d{12}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{12}$",
+        "confidence": "low",
+        "checksum": "identcode"
       }
     ],
     "aliases": [
@@ -504,7 +521,7 @@ export const CARRIER_CAPABILITIES = {
         "domains": [
           "dhl.com"
         ],
-        "pathPattern": "/home/tracking[.]html$",
+        "pathPattern": "/home/tracking(?:/tracking-ecommerce)?[.]html$",
         "params": [
           "tracking-id",
           "trackingId"
@@ -1224,7 +1241,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^[A-Z0-9]{12}(?:(?:0[1-9]|[1-8]\\d|9[0-5]|97|98)\\d{3}|[BL][1-9]\\d{3})$",
+        "pattern": "^(?!YW[A-Z]{3}\\d{12}$)[A-Z0-9]{12}(?:(?:0[1-9]|[1-8]\\d|9[0-5]|97|98)\\d{3}|[BL][1-9]\\d{3})$",
         "confidence": "low"
       },
       {
@@ -1720,7 +1737,7 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XR|XT|XU|XW|XY))[A-Z]{2}\\d{9}(?!CA$|CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$|TS$|JF$|JB$|RV$|VF$|CL$)[A-Z]{2}$",
+        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XR|XT|XU|XW|XY))[A-Z]{2}\\d{9}(?!CA$|CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$|TS$|JF$|JB$|RV$|VF$|TY$|MI$|YW$|CS$|CL$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }
@@ -2026,8 +2043,15 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       },
       {
+        "pattern": "^00(?!373)\\d(?:57|73)\\d{15}$",
+        "confidence": "low",
+        "checksum": "sscc",
+        "preferred": true
+      },
+      {
         "pattern": "^00\\d(?:57|73|70|64)\\d{15}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "sscc"
       }
     ],
     "trackingUrlTemplate": "https://tracking.postnord.com/en/?id={trackingNumber}",
@@ -2066,6 +2090,12 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^JJFI\\d{17}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^00\\d64\\d{15}$",
+        "confidence": "low",
+        "checksum": "sscc",
+        "preferred": true
       }
     ],
     "trackingUrlTemplate": "https://www.posti.fi/en/tracking/{trackingNumber}",
@@ -2262,15 +2292,15 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^000010\\d{16}$",
+        "pattern": "^00001000\\d{14}$",
         "confidence": "low"
       },
       {
-        "pattern": "^00\\d{20}$",
+        "pattern": "^00\\d{4}00\\d{14}$",
         "confidence": "high"
       },
       {
-        "pattern": "^00\\d{20}001$",
+        "pattern": "^00\\d{4}00\\d{14}001$",
         "confidence": "high"
       }
     ],
@@ -2515,6 +2545,12 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low",
         "checksum": "usps",
         "preferred": true
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}US$",
+        "confidence": "low",
+        "checksum": "s10",
+        "preferred": true
       }
     ],
     "trackingUrlTemplate": "https://tools.usps.com/go/TrackConfirmAction?tLabels={trackingNumber}",
@@ -2655,6 +2691,11 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
+        "pattern": "^(?:C1\\d|D10)\\d{12}$",
+        "confidence": "high",
+        "checksum": "ontrac"
+      },
+      {
         "pattern": "^[CD]\\d{14}$",
         "confidence": "low",
         "checksum": "ontrac"
@@ -2749,6 +2790,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^U(?!9999)\\d{15}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{2}CAA0[A-Z]\\d{9}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://www.uniuni.com/tracking/?no={trackingNumber}",
@@ -2813,6 +2858,11 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^80\\d{9}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^\\d{11}$",
+        "confidence": "low",
+        "checksum": "luhn"
       }
     ],
     "trackingUrlTemplate": "https://www.odfl.com/us/en/tools/trace-track-ltl-freight/trace.html?proNumbers={trackingNumber}",
@@ -2876,7 +2926,7 @@ export const CARRIER_CAPABILITIES = {
         "domains": [
           "gofo.com"
         ],
-        "path": "^/us/track/?$",
+        "pathPattern": "^/(?:$|us(?:/|$))",
         "params": [
           "searchID"
         ]
@@ -3493,6 +3543,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^6\\d{12}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^[1-5]\\d{12}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://trace.epost.go.kr/xtts/servlet/kpl.tts.common.svl.SttSVL?target_command=kpl.tts.tt.epost.cmd.RetrieveEmsTraceEngCmd&JspURI=%2Fxtts%2Ftt%2Fepost%2Fems%2FEmsSearchResultEng.jsp&POST_CODE={trackingNumber}",
@@ -3589,7 +3643,16 @@ export const CARRIER_CAPABILITIES = {
         "path": "^/mypost/track/details/([^/?#]+)/?$"
       }
     ],
-    "detectionRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^(?:\\d{2})?[A-Z0-9]{3}\\d{9}000\\d{6}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^\\d{2}(?!\\d{3})[A-Z0-9]{3}\\d{7}$",
+        "confidence": "low"
+      }
+    ],
     "trackingUrlTemplate": "https://auspost.com.au/mypost/track/details/{trackingNumber}",
     "countries": [
       "AU"
@@ -3801,6 +3864,12 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^PX\\d{10}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}PL$",
+        "confidence": "low",
+        "checksum": "s10",
+        "preferred": true
       }
     ],
     "trackingUrlTemplate": "https://emonitoring.poczta-polska.pl/?lang=en&numer={trackingNumber}",
@@ -4814,6 +4883,14 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^JVGL[A-Z0-9]{8,}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^3S[A-Z]{3}\\d{8,10}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^3S[A-Z]{2,3}\\d{7,12}$",
+        "confidence": "low"
       }
     ]
   },

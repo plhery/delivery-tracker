@@ -71,6 +71,19 @@
     ]
   },
   {
+    "input": "0001006070398164630998",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "asked": [
+      "austrian-post"
+    ]
+  },
+  {
     "input": "000123450000000027",
     "carrier": "unknown",
     "confidence": "low",
@@ -87,14 +100,17 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "swiss-post-cargo",
       "postnord",
+      "swiss-post-cargo",
       "usps",
       "nz-post"
     ],
+    "preferred": [
+      "postnord"
+    ],
     "asked": [
-      "nz-post",
-      "swiss-post-cargo"
+      "swiss-post-cargo",
+      "nz-post"
     ]
   },
   {
@@ -163,8 +179,8 @@
     ],
     "asked": [
       "poczta-polska",
-      "nz-post",
-      "swiss-post-cargo"
+      "swiss-post-cargo",
+      "nz-post"
     ]
   },
   {
@@ -199,14 +215,19 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "posti",
       "swiss-post-cargo",
       "postnord",
       "usps",
       "nz-post"
     ],
+    "preferred": [
+      "posti"
+    ],
     "asked": [
-      "nz-post",
-      "swiss-post-cargo"
+      "posti",
+      "swiss-post-cargo",
+      "nz-post"
     ]
   },
   {
@@ -273,8 +294,8 @@
       "nz-post"
     ],
     "asked": [
-      "nz-post",
-      "swiss-post-cargo"
+      "swiss-post-cargo",
+      "nz-post"
     ]
   },
   {
@@ -306,14 +327,17 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "swiss-post-cargo",
       "postnord",
+      "swiss-post-cargo",
       "usps",
       "nz-post"
     ],
+    "preferred": [
+      "postnord"
+    ],
     "asked": [
-      "nz-post",
-      "swiss-post-cargo"
+      "swiss-post-cargo",
+      "nz-post"
     ]
   },
   {
@@ -331,8 +355,8 @@
       "bring-posten"
     ],
     "asked": [
-      "nz-post",
-      "swiss-post-cargo"
+      "swiss-post-cargo",
+      "nz-post"
     ]
   },
   {
@@ -377,11 +401,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -389,14 +413,17 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "swiss-post-cargo",
       "postnord",
+      "swiss-post-cargo",
       "usps",
       "nz-post"
     ],
+    "preferred": [
+      "postnord"
+    ],
     "asked": [
-      "nz-post",
-      "swiss-post-cargo"
+      "swiss-post-cargo",
+      "nz-post"
     ]
   },
   {
@@ -404,14 +431,17 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "swiss-post-cargo",
       "postnord",
+      "swiss-post-cargo",
       "usps",
       "nz-post"
     ],
+    "preferred": [
+      "postnord"
+    ],
     "asked": [
-      "nz-post",
-      "swiss-post-cargo"
+      "swiss-post-cargo",
+      "nz-post"
     ]
   },
   {
@@ -464,10 +494,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -480,8 +510,8 @@
       "nz-post"
     ],
     "asked": [
-      "nz-post",
-      "swiss-post-cargo"
+      "swiss-post-cargo",
+      "nz-post"
     ]
   },
   {
@@ -654,8 +684,8 @@
       "nz-post"
     ],
     "asked": [
-      "nz-post",
-      "swiss-post-cargo"
+      "swiss-post-cargo",
+      "nz-post"
     ]
   },
   {
@@ -687,11 +717,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -789,10 +819,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -830,11 +860,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -1011,11 +1041,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -1023,6 +1053,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "dhl",
       "dpd-fr",
       "mondial-relay",
       "colis-prive",
@@ -1098,11 +1129,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -1142,11 +1173,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -1167,11 +1198,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -1192,11 +1223,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -1217,11 +1248,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -1864,6 +1895,26 @@
     ]
   },
   {
+    "input": "07109160247",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "old-dominion",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
     "input": "07209562763",
     "carrier": "old-dominion",
     "confidence": "high",
@@ -2214,7 +2265,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -2315,10 +2367,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -2526,6 +2578,42 @@
     ]
   },
   {
+    "input": "1101572400",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dhl",
+      "mondial-relay",
+      "relais-colis",
+      "tipsa",
+      "estafeta",
+      "dhl-ecommerce-es"
+    ],
+    "asked": [
+      "relais-colis",
+      "tipsa",
+      "dhl-ecommerce-es"
+    ]
+  },
+  {
+    "input": "1108920020",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dhl",
+      "mondial-relay",
+      "relais-colis",
+      "tipsa",
+      "estafeta",
+      "dhl-ecommerce-es"
+    ],
+    "asked": [
+      "relais-colis",
+      "tipsa",
+      "dhl-ecommerce-es"
+    ]
+  },
+  {
     "input": "1112503377517",
     "carrier": "unknown",
     "confidence": "low",
@@ -2534,7 +2622,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -2560,11 +2649,28 @@
       "xpressbees"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
+    ]
+  },
+  {
+    "input": "1138809408298",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dpd-fr",
+      "la-poste",
+      "correos-chile",
+      "delhivery",
+      "yunda",
+      "korea-post"
+    ],
+    "asked": [
+      "la-poste",
+      "delhivery"
     ]
   },
   {
@@ -2576,7 +2682,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -2701,6 +2808,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "dhl",
       "gls-ch",
       "dpd-fr",
       "mondial-relay",
@@ -2720,8 +2828,8 @@
       "gls-fr",
       "gls-ch",
       "gls-de",
-      "brt",
-      "colis-prive"
+      "purolator",
+      "brt"
     ]
   },
   {
@@ -2751,6 +2859,7 @@
       "gls-ch",
       "gls-fr",
       "gls-de",
+      "old-dominion",
       "dhl-ecommerce-pl"
     ],
     "asked": [
@@ -2950,10 +3059,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -3164,6 +3273,7 @@
       "gls-ch",
       "gls-fr",
       "gls-de",
+      "old-dominion",
       "dhl-ecommerce-pl"
     ],
     "asked": [
@@ -3586,9 +3696,9 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "seur",
       "brt",
-      "hermes-de",
       "relais-colis",
       "ciblex"
     ]
@@ -3647,7 +3757,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -3673,11 +3784,11 @@
       "xpressbees"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -3742,11 +3853,33 @@
       "ukrposhta",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
       "delhivery"
+    ]
+  },
+  {
+    "input": "174004181161",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dpd-fr",
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "brt",
+      "sf-express",
+      "sto",
+      "zto",
+      "j-and-t",
+      "lbc-express"
+    ],
+    "asked": [
+      "brt",
+      "colis-prive"
     ]
   },
   {
@@ -3783,9 +3916,9 @@
       "fedex"
     ],
     "asked": [
+      "purolator",
       "brt",
-      "colis-prive",
-      "purolator"
+      "colis-prive"
     ]
   },
   {
@@ -4542,6 +4675,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "dhl",
       "mondial-relay",
       "colis-prive",
       "mrw",
@@ -4597,9 +4731,9 @@
       "lbc-express"
     ],
     "asked": [
+      "purolator",
       "brt",
-      "colis-prive",
-      "purolator"
+      "colis-prive"
     ]
   },
   {
@@ -4670,6 +4804,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "dhl",
       "mondial-relay",
       "colis-prive",
       "mrw",
@@ -4722,10 +4857,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -4813,10 +4948,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -4938,11 +5073,11 @@
       "nova-poshta"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -4963,11 +5098,11 @@
       "nova-poshta"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -5049,11 +5184,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -5061,6 +5196,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "dhl",
       "mondial-relay",
       "colis-prive",
       "mrw",
@@ -5176,10 +5312,10 @@
       "dpd-fr"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -5258,6 +5394,26 @@
     ]
   },
   {
+    "input": "26008766342",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "old-dominion",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
     "input": "263823775762",
     "carrier": "unknown",
     "confidence": "low",
@@ -5285,6 +5441,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "dhl",
       "mondial-relay",
       "colis-prive",
       "mrw",
@@ -5300,9 +5457,9 @@
       "sagawa"
     ],
     "asked": [
+      "purolator",
       "brt",
-      "colis-prive",
-      "purolator"
+      "colis-prive"
     ]
   },
   {
@@ -5479,7 +5636,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -5494,7 +5652,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -5509,7 +5668,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -5524,7 +5684,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -5539,7 +5700,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -5628,6 +5790,26 @@
     ]
   },
   {
+    "input": "28702118895",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "old-dominion",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
     "input": "287809468872",
     "carrier": "unknown",
     "confidence": "low",
@@ -5648,9 +5830,9 @@
       "fedex"
     ],
     "asked": [
+      "purolator",
       "brt",
-      "colis-prive",
-      "purolator"
+      "colis-prive"
     ]
   },
   {
@@ -5708,7 +5890,8 @@
       "ukrposhta",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -5805,11 +5988,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -5941,7 +6124,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -5977,6 +6161,22 @@
     ]
   },
   {
+    "input": "3140705000286",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "la-poste",
+      "correos-chile",
+      "delhivery",
+      "yunda",
+      "korea-post"
+    ],
+    "asked": [
+      "la-poste",
+      "delhivery"
+    ]
+  },
+  {
     "input": "3147258001162",
     "carrier": "unknown",
     "confidence": "low",
@@ -5984,7 +6184,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -6116,9 +6317,9 @@
       "lbc-express"
     ],
     "asked": [
+      "purolator",
       "brt",
-      "colis-prive",
-      "purolator"
+      "colis-prive"
     ]
   },
   {
@@ -6156,10 +6357,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -6174,10 +6375,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -6192,10 +6393,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -6210,10 +6411,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -6387,10 +6588,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -6410,9 +6611,9 @@
       "lbc-express"
     ],
     "asked": [
+      "purolator",
       "brt",
-      "colis-prive",
-      "purolator"
+      "colis-prive"
     ]
   },
   {
@@ -6439,6 +6640,46 @@
     ]
   },
   {
+    "input": "33501604137",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "old-dominion",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
+    "input": "33503896889",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "old-dominion",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
     "input": "335681489381",
     "carrier": "unknown",
     "confidence": "low",
@@ -6455,9 +6696,9 @@
       "lbc-express"
     ],
     "asked": [
+      "purolator",
       "brt",
-      "colis-prive",
-      "purolator"
+      "colis-prive"
     ]
   },
   {
@@ -6527,9 +6768,11 @@
   },
   {
     "input": "33QAG752421901000931500",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "australia-post",
+    "confidence": "high",
+    "candidates": [
+      "australia-post"
+    ]
   },
   {
     "input": "3408372365",
@@ -6575,6 +6818,18 @@
       "seur",
       "brt",
       "relais-colis"
+    ]
+  },
+  {
+    "input": "343AY5090159",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "colis-prive",
+      "australia-post"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -6699,6 +6954,7 @@
       "gls-ch",
       "gls-fr",
       "gls-de",
+      "old-dominion",
       "dhl-ecommerce-pl"
     ],
     "asked": [
@@ -6707,6 +6963,14 @@
       "gls-de",
       "postlogistics",
       "dhl-ecommerce-pl"
+    ]
+  },
+  {
+    "input": "36GMB353861501000935107",
+    "carrier": "australia-post",
+    "confidence": "high",
+    "candidates": [
+      "australia-post"
     ]
   },
   {
@@ -7053,6 +7317,18 @@
     ]
   },
   {
+    "input": "38RUP5218413",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "colis-prive",
+      "australia-post"
+    ],
+    "asked": [
+      "colis-prive"
+    ]
+  },
+  {
     "input": "3900/11331774",
     "carrier": "nacex",
     "confidence": "high",
@@ -7077,11 +7353,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -7176,26 +7452,30 @@
   },
   {
     "input": "3SA5210528875",
-    "carrier": "spring-gds",
-    "confidence": "high",
+    "carrier": "unknown",
+    "confidence": "low",
     "candidates": [
       "spring-gds"
     ]
   },
   {
     "input": "3SAB83691658823",
-    "carrier": "spring-gds",
-    "confidence": "high",
+    "carrier": "unknown",
+    "confidence": "low",
     "candidates": [
-      "spring-gds"
+      "spring-gds",
+      "dhl-ecommerce-nl"
+    ],
+    "asked": [
+      "dhl-ecommerce-nl"
     ]
   },
   {
     "input": "3SABC19149187",
-    "carrier": "spring-gds",
+    "carrier": "dhl-ecommerce-nl",
     "confidence": "high",
     "candidates": [
-      "spring-gds"
+      "dhl-ecommerce-nl"
     ]
   },
   {
@@ -7232,9 +7512,19 @@
   },
   {
     "input": "3SBCC000123456",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "dhl-ecommerce-nl",
+    "confidence": "high",
+    "candidates": [
+      "dhl-ecommerce-nl"
+    ]
+  },
+  {
+    "input": "3SBCC002474377",
+    "carrier": "dhl-ecommerce-nl",
+    "confidence": "high",
+    "candidates": [
+      "dhl-ecommerce-nl"
+    ]
   },
   {
     "input": "3SIJVT016274357",
@@ -7258,6 +7548,22 @@
     "confidence": "high",
     "candidates": [
       "spring-gds"
+    ]
+  },
+  {
+    "input": "3SLDL0011670399",
+    "carrier": "dhl-ecommerce-nl",
+    "confidence": "high",
+    "candidates": [
+      "dhl-ecommerce-nl"
+    ]
+  },
+  {
+    "input": "3SMOP10072829",
+    "carrier": "dhl-ecommerce-nl",
+    "confidence": "high",
+    "candidates": [
+      "dhl-ecommerce-nl"
     ]
   },
   {
@@ -7304,10 +7610,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -7322,10 +7628,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -7340,10 +7646,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -7414,11 +7720,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -7587,6 +7893,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "dhl",
       "mondial-relay",
       "colis-prive",
       "mrw",
@@ -8334,11 +8641,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -8439,6 +8746,23 @@
     ]
   },
   {
+    "input": "5119102006866",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "la-poste",
+      "ukrposhta",
+      "correos-chile",
+      "delhivery",
+      "yunda",
+      "korea-post"
+    ],
+    "asked": [
+      "la-poste",
+      "delhivery"
+    ]
+  },
+  {
     "input": "5126149092",
     "carrier": "unknown",
     "confidence": "low",
@@ -8481,9 +8805,9 @@
       "sagawa"
     ],
     "asked": [
+      "purolator",
       "brt",
-      "colis-prive",
-      "purolator"
+      "colis-prive"
     ]
   },
   {
@@ -8565,6 +8889,7 @@
       "gls-ch",
       "gls-fr",
       "gls-de",
+      "old-dominion",
       "blue-dart",
       "japan-post",
       "aramex",
@@ -8583,6 +8908,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "dhl",
       "mondial-relay",
       "colis-prive",
       "mrw",
@@ -8595,9 +8921,9 @@
       "lbc-express"
     ],
     "asked": [
+      "purolator",
       "brt",
-      "colis-prive",
-      "purolator"
+      "colis-prive"
     ]
   },
   {
@@ -8649,6 +8975,7 @@
       "gls-ch",
       "gls-fr",
       "gls-de",
+      "old-dominion",
       "blue-dart",
       "japan-post",
       "aramex",
@@ -8912,8 +9239,8 @@
       "gls-fr",
       "gls-ch",
       "gls-de",
-      "brt",
-      "colis-prive"
+      "purolator",
+      "brt"
     ]
   },
   {
@@ -8924,7 +9251,8 @@
       "la-poste",
       "correos-chile",
       "delhivery",
-      "yunda"
+      "yunda",
+      "korea-post"
     ],
     "asked": [
       "la-poste",
@@ -9140,10 +9468,10 @@
     ],
     "asked": [
       "dhl-ecommerce-uk",
+      "hermes-de",
       "dpd",
       "dpd-de",
-      "seur",
-      "brt"
+      "seur"
     ]
   },
   {
@@ -9346,10 +9674,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -9494,6 +9822,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "dhl",
       "gls-ch",
       "mondial-relay",
       "gls-fr",
@@ -9739,10 +10068,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -9757,10 +10086,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -9926,10 +10255,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -10000,10 +10329,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -10157,6 +10486,14 @@
     ]
   },
   {
+    "input": "77772306922",
+    "carrier": "old-dominion",
+    "confidence": "high",
+    "candidates": [
+      "old-dominion"
+    ]
+  },
+  {
     "input": "7777777770",
     "carrier": "unknown",
     "confidence": "low",
@@ -10192,6 +10529,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "dhl",
       "mondial-relay",
       "colis-prive",
       "mrw",
@@ -10234,6 +10572,7 @@
       "gls-ch",
       "gls-fr",
       "gls-de",
+      "old-dominion",
       "blue-dart",
       "japan-post",
       "aramex",
@@ -10307,10 +10646,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -10325,10 +10664,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -10349,9 +10688,11 @@
   },
   {
     "input": "7T2514965601000935102",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "australia-post",
+    "confidence": "high",
+    "candidates": [
+      "australia-post"
+    ]
   },
   {
     "input": "80003280379",
@@ -10408,6 +10749,25 @@
     ]
   },
   {
+    "input": "81111072343",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
+    ]
+  },
+  {
     "input": "81161149667426",
     "carrier": "unknown",
     "confidence": "low",
@@ -10424,11 +10784,11 @@
       "dpd-uk"
     ],
     "asked": [
+      "hermes-de",
       "dpd",
       "dpd-de",
       "seur",
-      "brt",
-      "hermes-de"
+      "brt"
     ]
   },
   {
@@ -10545,10 +10905,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -10594,10 +10954,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -10963,6 +11323,7 @@
       "gls-ch",
       "gls-fr",
       "gls-de",
+      "old-dominion",
       "blue-dart",
       "japan-post",
       "aramex",
@@ -11010,10 +11371,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -11448,10 +11809,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -12047,6 +12408,22 @@
     ]
   },
   {
+    "input": "99722999536301000830908",
+    "carrier": "australia-post",
+    "confidence": "high",
+    "candidates": [
+      "australia-post"
+    ]
+  },
+  {
+    "input": "997960806374515094",
+    "carrier": "swiss-post",
+    "confidence": "high",
+    "candidates": [
+      "swiss-post"
+    ]
+  },
+  {
     "input": "9983000762577663",
     "carrier": "unknown",
     "confidence": "low",
@@ -12058,10 +12435,10 @@
       "evri-uk"
     ],
     "asked": [
-      "tnt",
       "correos-express",
-      "dhl-ecommerce",
-      "canada-post"
+      "canada-post",
+      "tnt",
+      "dhl-ecommerce"
     ]
   },
   {
@@ -12070,6 +12447,25 @@
     "confidence": "high",
     "candidates": [
       "planzer"
+    ]
+  },
+  {
+    "input": "99951469863",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "dhl-ecommerce-pl"
+    ],
+    "asked": [
+      "gls-fr",
+      "gls-ch",
+      "gls-de",
+      "postlogistics",
+      "dhl-ecommerce-pl"
     ]
   },
   {
@@ -12113,6 +12509,7 @@
       "gls-ch",
       "gls-fr",
       "gls-de",
+      "old-dominion",
       "dhl-ecommerce-pl"
     ],
     "asked": [
@@ -12128,6 +12525,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "dhl",
       "mondial-relay",
       "colis-prive",
       "mrw",
@@ -12419,34 +12817,25 @@
   },
   {
     "input": "C11031500001879",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "ontrac",
+    "confidence": "high",
     "candidates": [
-      "ontrac"
-    ],
-    "asked": [
       "ontrac"
     ]
   },
   {
     "input": "C11121552953069",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "ontrac",
+    "confidence": "high",
     "candidates": [
-      "ontrac"
-    ],
-    "asked": [
       "ontrac"
     ]
   },
   {
     "input": "C12042142509047",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "ontrac",
+    "confidence": "high",
     "candidates": [
-      "ontrac"
-    ],
-    "asked": [
       "ontrac"
     ]
   },
@@ -12928,11 +13317,39 @@
     ]
   },
   {
+    "input": "CNBR00121186607",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
     "input": "CNESP00000123400000000001",
     "carrier": "ecoscooting",
     "confidence": "high",
     "candidates": [
       "ecoscooting"
+    ]
+  },
+  {
+    "input": "CNFR000000000001HD",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
+    "input": "CNFR9010496456407HD",
+    "carrier": "aliexpress",
+    "confidence": "high",
+    "candidates": [
+      "aliexpress"
+    ]
+  },
+  {
+    "input": "CNFR9010497138847HD",
+    "carrier": "aliexpress",
+    "confidence": "high",
+    "candidates": [
+      "aliexpress"
     ]
   },
   {
@@ -12949,6 +13366,12 @@
     ]
   },
   {
+    "input": "CNMEX1040292876",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
     "input": "CNPRT00000001234000000001",
     "carrier": "ecoscooting",
     "confidence": "high",
@@ -12962,6 +13385,17 @@
     "confidence": "high",
     "candidates": [
       "ecoscooting"
+    ]
+  },
+  {
+    "input": "CNUSUP00037458234",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "colis-prive"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -13022,6 +13456,7 @@
       "intl-post"
     ],
     "asked": [
+      "poczta-polska",
       "chronopost"
     ]
   },
@@ -13169,45 +13604,33 @@
   },
   {
     "input": "D10011345983010",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "ontrac",
+    "confidence": "high",
     "candidates": [
-      "ontrac"
-    ],
-    "asked": [
       "ontrac"
     ]
   },
   {
     "input": "D10011354453707",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "ontrac",
+    "confidence": "high",
     "candidates": [
-      "ontrac"
-    ],
-    "asked": [
       "ontrac"
     ]
   },
   {
     "input": "D10017707101224",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "ontrac",
+    "confidence": "high",
     "candidates": [
-      "ontrac"
-    ],
-    "asked": [
       "ontrac"
     ]
   },
   {
     "input": "D10017744663378",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "ontrac",
+    "confidence": "high",
     "candidates": [
-      "ontrac"
-    ],
-    "asked": [
       "ontrac"
     ]
   },
@@ -13988,6 +14411,28 @@
     "candidates": []
   },
   {
+    "input": "GV25CAA0U033926004",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "uniuni"
+    ],
+    "asked": [
+      "uniuni"
+    ]
+  },
+  {
+    "input": "GV26CAA0U027724478",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "uniuni"
+    ],
+    "asked": [
+      "uniuni"
+    ]
+  },
+  {
     "input": "GV883319471GB",
     "carrier": "royal-mail",
     "confidence": "high",
@@ -14453,18 +14898,26 @@
   },
   {
     "input": "JJD0002123456789012",
-    "carrier": "dhl",
-    "confidence": "high",
+    "carrier": "unknown",
+    "confidence": "low",
     "candidates": [
-      "dhl"
+      "dhl",
+      "inpost"
+    ],
+    "asked": [
+      "inpost"
     ]
   },
   {
     "input": "JJD0002233564270287",
-    "carrier": "dhl",
-    "confidence": "high",
+    "carrier": "unknown",
+    "confidence": "low",
     "candidates": [
-      "dhl"
+      "dhl",
+      "inpost"
+    ],
+    "asked": [
+      "inpost"
     ]
   },
   {
@@ -14763,16 +15216,59 @@
     ]
   },
   {
+    "input": "JY25CAA0D002430567",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "uniuni"
+    ],
+    "asked": [
+      "uniuni"
+    ]
+  },
+  {
+    "input": "JY25CAA0T043167214",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "uniuni"
+    ],
+    "asked": [
+      "uniuni"
+    ]
+  },
+  {
+    "input": "JY25CAA0U024161162",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "uniuni"
+    ],
+    "asked": [
+      "uniuni"
+    ]
+  },
+  {
     "input": "JY26CAA0D001077787",
     "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "confidence": "low",
+    "candidates": [
+      "uniuni"
+    ],
+    "asked": [
+      "uniuni"
+    ]
   },
   {
     "input": "JY26CAA0T066574883",
     "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "confidence": "low",
+    "candidates": [
+      "uniuni"
+    ],
+    "asked": [
+      "uniuni"
+    ]
   },
   {
     "input": "K1506235620",
@@ -15248,6 +15744,22 @@
     ]
   },
   {
+    "input": "LR290372649NL",
+    "carrier": "spring-gds",
+    "confidence": "high",
+    "candidates": [
+      "spring-gds"
+    ]
+  },
+  {
+    "input": "LR291479085NL",
+    "carrier": "spring-gds",
+    "confidence": "high",
+    "candidates": [
+      "spring-gds"
+    ]
+  },
+  {
     "input": "LR616917539NL",
     "carrier": "spring-gds",
     "confidence": "high",
@@ -15265,6 +15777,14 @@
   },
   {
     "input": "LS232735825CH",
+    "carrier": "swiss-post",
+    "confidence": "high",
+    "candidates": [
+      "swiss-post"
+    ]
+  },
+  {
+    "input": "LS242332049CH",
     "carrier": "swiss-post",
     "confidence": "high",
     "candidates": [
@@ -15476,6 +15996,14 @@
     ],
     "asked": [
       "chronopost"
+    ]
+  },
+  {
+    "input": "LX038154718NL",
+    "carrier": "spring-gds",
+    "confidence": "high",
+    "candidates": [
+      "spring-gds"
     ]
   },
   {
@@ -16685,10 +17213,54 @@
     ]
   },
   {
+    "input": "RR123456785CS",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "chronopost"
+    ],
+    "asked": [
+      "chronopost"
+    ]
+  },
+  {
+    "input": "RR123456785MI",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "chronopost"
+    ],
+    "asked": [
+      "chronopost"
+    ]
+  },
+  {
     "input": "RR123456785TS",
     "carrier": "chronopost",
     "confidence": "high",
     "candidates": [
+      "chronopost"
+    ]
+  },
+  {
+    "input": "RR123456785TY",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "chronopost"
+    ],
+    "asked": [
+      "chronopost"
+    ]
+  },
+  {
+    "input": "RR123456785YW",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "chronopost"
+    ],
+    "asked": [
       "chronopost"
     ]
   },
@@ -17135,6 +17707,14 @@
     "confidence": "high",
     "candidates": [
       "ekart"
+    ]
+  },
+  {
+    "input": "ST2273888401000960300",
+    "carrier": "australia-post",
+    "confidence": "high",
+    "candidates": [
+      "australia-post"
     ]
   },
   {
@@ -18207,6 +18787,18 @@
       "gls-ch",
       "gls-de"
     ]
+  },
+  {
+    "input": "YWLAS010024580083",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
+    "input": "YWSTL010022557186",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
   },
   {
     "input": "Z 216 5782 938",
