@@ -58,6 +58,14 @@ describe('safe analytics collection', () => {
     expect(urls).toEqual(['/guides/fr', `/guides/fr/${id}`, `/guides/fr/${id}`]); // two views, then app-open on the second
   });
 
+  it('counts no app open for a page that is not the app', async () => {
+    const a = await import('./analytics');
+    a.trackScreen('guides/fr', 'account');
+    await a.startAnalytics({ open: false }); await settle();
+    const sent = requests.filter((r) => r.url === config.endpoint).map((r) => JSON.parse(r.init!.body as string).payload);
+    expect(sent.map((payload) => [payload.url, payload.name, payload.data.mode])).toEqual([['/guides/fr', undefined, 'account']]);
+  });
+
   it.each(['opt-out', 'dnt', 'gpc', 'webdriver'])('honors %s without fetching configuration', async (kind) => {
     if (kind === 'opt-out') localStorage.setItem('sdt.analytics.enabled', 'false');
     else vi.stubGlobal('navigator', kind === 'dnt' ? { doNotTrack: '1' } : kind === 'gpc' ? { globalPrivacyControl: true } : { webdriver: true });

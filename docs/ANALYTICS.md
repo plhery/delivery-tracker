@@ -41,8 +41,9 @@ are virtual names, never real URLs.
 - **Navigation**: welcome, front-door, sign-in, deliveries, passport, friends, parcel,
   parcel-link, invitation, account, add-parcel, notifications.
 - **Guides** (web): a guides page counts as a screen named by its language and the guide's
-  id, never its address (`guides/fr`, `guides/fr/<id>`); opening the list of guides from
-  the landing's foot is an action.
+  id, never its address (`guides/fr`, `guides/fr/<id>`), and not as an app open. Its mode is
+  `account` when the browser holds a saved sign-in. Opening the list of guides from the
+  landing's foot is an action.
 - **Auth**: sign-in attempts and results, sign-out, demo entry/exit.
 - **Parcels**: add, rename, change carrier, archive, restore, delete, mute, refresh, copy,
   open carrier link, paste, scan, share-in.

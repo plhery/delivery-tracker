@@ -37,7 +37,8 @@ function optedOut() {
   } catch { return true; }
 }
 
-export function startAnalytics(): Promise<void> {
+/** Starts collection once per page load. `open: false` is a page that is not the app, a guide: its load is no app open. */
+export function startAnalytics({ open = true }: { open?: boolean } = {}): Promise<void> {
   if (typeof window === 'undefined' || optedOut()) return Promise.resolve();
   return startup ??= (async () => {
     try {
@@ -48,7 +49,7 @@ export function startAnalytics(): Promise<void> {
       if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password || endpoint.pathname !== '/api/send'
         || endpoint.search || endpoint.hash || !/^[0-9a-f-]{36}$/i.test(value.webWebsite)) return;
       config = value;
-      if (queue.length < 30) queue.push({ screen, mode, name: 'app-open' });
+      if (open && queue.length < 30) queue.push({ screen, mode, name: 'app-open' });
     } catch { /* Analytics must never affect the app. */ }
     finally { if (!config) { disabled = true; queue = []; } else void flush(); }
   })();

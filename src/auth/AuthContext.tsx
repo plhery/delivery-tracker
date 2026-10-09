@@ -16,7 +16,8 @@ import { abortable } from '../lib/apiClient';
 import { whenIdle } from '../lib/idle';
 import { rememberRequestedParcel } from '../lib/requestedParcel';
 import { browserStorage, clearApiCache } from '../store/apiRepo';
-import { holdsSignIn, SessionStorage } from './sessionStorage';
+import { holdsSignIn } from './savedSignIn';
+import { SessionStorage } from './sessionStorage';
 
 export interface AuthConfig {
   url: string;

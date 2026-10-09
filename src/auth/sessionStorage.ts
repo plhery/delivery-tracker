@@ -1,16 +1,5 @@
 import { browserStorage } from '../store/apiRepo';
 
-/** A sign-in saved in this browser, as the entry hint reads it. */
-export function holdsSignIn(): boolean {
-  try {
-    for (let index = 0; index < localStorage.length; index++) {
-      const key = localStorage.key(index);
-      if (key && /^sb-.+-auth-token$/.test(key) && localStorage.getItem(key) && localStorage.getItem(`${key}.signed-out`) !== 'true') return true;
-    }
-  } catch { /* Without storage there is no sign-in to restore. */ }
-  return false;
-}
-
 /** A local logout must survive an offline/expired-token SDK refresh and reloads. */
 export class SessionStorage {
   private readonly memory = new Map<string, string>();

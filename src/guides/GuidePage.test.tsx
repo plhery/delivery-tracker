@@ -146,11 +146,26 @@ describe('what stands around a guides page', () => {
     expect(languages.filter((link) => link.getAttribute('aria-current') === 'page').map((link) => link.textContent)).toEqual(['Français']);
   });
 
-  it('counts the visit under the page’s own name, and leads an English reader to `/`', () => {
+  it('counts the visit under the page’s own name, as no app open, and leads an English reader to `/`', () => {
     render(<GuideFrame locale="en" t={t('en', en)} addresses={addresses} languageNames={names} screen="guides/en/customs"><p>The page</p></GuideFrame>);
     expect(within(screen.getByRole('banner')).getByRole('link', { name: 'Track your parcel' })).toHaveAttribute('href', '/');
-    expect(analytics.trackScreen).toHaveBeenCalledWith('guides/en/customs');
-    expect(analytics.startAnalytics).toHaveBeenCalled();
+    expect(analytics.trackScreen).toHaveBeenCalledWith('guides/en/customs', 'anonymous');
+    expect(analytics.startAnalytics).toHaveBeenCalledWith({ open: false });
+  });
+
+  it('counts a reader signed in on this browser as an account, and one who signed out as anonymous', () => {
+    localStorage.setItem('sb-peek-auth-token', '{"access_token":"x"}');
+    try {
+      const frame = <GuideFrame locale="en" t={t('en', en)} addresses={addresses} languageNames={names} screen="guides/en"><p>The page</p></GuideFrame>;
+      const { unmount } = render(frame);
+      expect(analytics.trackScreen).toHaveBeenLastCalledWith('guides/en', 'account');
+      unmount();
+      localStorage.setItem('sb-peek-auth-token.signed-out', 'true');
+      render(frame);
+      expect(analytics.trackScreen).toHaveBeenLastCalledWith('guides/en', 'anonymous');
+    } finally {
+      localStorage.clear();
+    }
   });
 });
 

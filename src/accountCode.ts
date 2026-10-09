@@ -1,4 +1,4 @@
-import { holdsSignIn } from './auth/sessionStorage';
+import { holdsSignIn } from './auth/savedSignIn';
 import { ENTRY_HINT_ATTRIBUTE } from './lib/entryHintConfig';
 import { laterCode } from './lib/laterCode';
 
