@@ -590,12 +590,18 @@ struct ParcelDetailView: View {
 
     private func syncStatus(_ parcel: Parcel, tint: Color) -> some View {
         HStack(spacing: 7) {
-            if let next = parcel.carrierData?.routing?.nextCheckAt.flatMap(DateParser.date), !parcel.isArchived {
-                Text(localizer.text("detail.nextCheckAfter", ["date": next.formatted(date: .abbreviated, time: .shortened)]))
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            if let lastSyncedAt = parcel.lastSyncedAt {
-                Text(localizer.text("detail.lastChecked", ["date": localizer.relativeTime(from: lastSyncedAt)]))
+            // When the carrier was last asked and last said something, as the web says them.
+            VStack(alignment: .leading, spacing: 3) {
+                if let next = parcel.carrierData?.routing?.nextCheckAt.flatMap(DateParser.date), !parcel.isArchived {
+                    Text(localizer.text("detail.nextCheckAfter", ["date": next.formatted(date: .abbreviated, time: .shortened)]))
+                        .font(.caption)
+                }
+                if let lastSyncedAt = parcel.lastSyncedAt {
+                    Text(localizer.text("detail.lastChecked", ["date": localizer.relativeTime(from: lastSyncedAt)]))
+                }
+                if let current = parcel.currentEvent, current.stage != .pending {
+                    Text(localizer.text("detail.lastUpdate", ["date": localizer.relativeTime(from: current.occurredAt)]))
+                }
             }
 
             if !parcel.isArchived && catalog.tracksAutomatically(parcel.activeTrackingCarrier) {

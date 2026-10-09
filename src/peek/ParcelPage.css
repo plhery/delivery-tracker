@@ -105,8 +105,8 @@
 .peekp-bell[data-on] svg { fill: currentColor; }
 
 /* When the carrier was last asked, said quietly under the journal. */
-.peekp-fresh { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 6px; color: var(--ink-soft); font-size: 11px; }
-.peekp-fresh button { display: grid; place-items: center; width: 44px; height: 44px; margin-inline-end: -12px; padding: 0; border-radius: 50%; background: none; color: var(--tone); }
+.peekp-fresh { display: flex; align-items: center; margin: 0 6px; color: var(--ink-soft); font-size: 11px; }
+.peekp-fresh button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 50%; background: none; color: var(--tone); }
 .peekp-fresh button svg { width: 18px; height: 18px; }
 .peekp-fresh button[aria-busy=true] { opacity: .6; }
 

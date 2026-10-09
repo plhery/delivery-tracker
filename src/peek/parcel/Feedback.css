@@ -1,17 +1,17 @@
 /* The question a parcel's page asks its reader, and the sheets that take the words. */
 .peekfb { margin-top: 4px; }
-.peekfb-question { margin: 0; font-size: 13px; font-weight: 550; line-height: 1.4; }
+.peekfb-question { margin: 0; font-size: 13px; font-weight: 600; line-height: 1.4; }
 .peekfb-say { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-width: 0; }
 .peekfb-answers { display: flex; flex: 0 0 auto; gap: 6px; }
 .peekfb-pill {
   position: relative; min-height: 36px; padding: 7px 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink);
-  background: var(--paper); font-size: 12.5px; font-weight: 550; white-space: nowrap; transition: scale .18s var(--spring), background .18s;
+  background: var(--paper); font-size: 12.5px; font-weight: 500; white-space: nowrap; transition: scale .18s var(--spring), background .18s;
 }
 /* 44 px to the touch. */
 .peekfb-pill::before { content: ''; position: absolute; inset: -4px 0; }
 .peekfb-pill:active { scale: .96; }
 .peekfb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.peekfb-said { display: flex; align-items: center; gap: 7px; min-height: 36px; margin: 0; color: var(--green); font-size: 13px; font-weight: 550; line-height: 1.4; }
+.peekfb-said { display: flex; align-items: center; gap: 7px; min-height: 36px; margin: 0; color: var(--green); font-size: 13px; font-weight: 600; line-height: 1.4; }
 .peekfb-said svg { width: 16px; height: 16px; flex: 0 0 auto; stroke-width: 2.2; stroke-dasharray: 20; }
 .peekfb-beside {
   flex: 0 0 auto; min-height: 36px; padding: 0 6px 0 0; background: none; color: var(--ink-soft); font-size: 12px; text-decoration: underline;
@@ -37,8 +37,8 @@
 .peekfb-pip[data-mood=happy] .parcel-illustration__eye { opacity: 0; }
 .peekfb-pip[data-mood=happy] .parcel-illustration__happy-eye { opacity: 1; }
 
-/* In an account's detail, below the page, on the ground it lies on. */
-.detail--postcard .peekfb { position: relative; margin-top: -6px; padding: 52px 24px 8px; background: var(--canvas); box-shadow: 0 50vh 0 50vh var(--canvas); }
+/* In an account's detail, below the page, on the ground it lies on; the page's rounded end comes up close under its last line. */
+.detail--postcard .peekfb { position: relative; margin-top: -28px; padding: 52px 24px 8px; background: var(--canvas); box-shadow: 0 50vh 0 50vh var(--canvas); }
 .detail--postcard .peekfb::before { content: ''; position: absolute; inset: 0 0 auto; height: 26px; border-radius: 0 0 26px 26px; background: var(--paper); }
 @media (max-width: 480px) { .detail--postcard .peekfb { padding-inline: 16px; } }
 
@@ -71,7 +71,7 @@
 .peekfb-sheet .sheet__heading { margin-bottom: 16px; }
 .peekfb-chip {
   min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--paper);
-  font-size: 13px; font-weight: 550; transition: scale .18s var(--spring), background .18s, border-color .18s, box-shadow .18s;
+  font-size: 13px; font-weight: 500; transition: scale .18s var(--spring), background .18s, border-color .18s, box-shadow .18s;
 }
 .peekfb-chip:active { scale: .97; }
 .peekfb-chip[aria-pressed=true] { border-color: var(--ochre); background: var(--yellow-soft); box-shadow: inset 0 0 0 .5px var(--ochre); }

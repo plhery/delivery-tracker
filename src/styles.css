@@ -383,9 +383,13 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .detail__tracking-help { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 16px; font-size: 12px; }
 .detail__tracking-help p { color: var(--ink-soft); }
 .detail__tracking-help .button { font-size: 12px; min-height: 42px; }
-.detail__freshness { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 14px; }
-.detail__freshness-times { display: grid; gap: 3px; font-size: 10px; color: var(--ink-soft); }
-.detail__refresh { width: 36px; height: 36px; padding: 8px; color: var(--tone); }
+/* When the carrier was last asked and last said something, and beside it the way to ask again.
+   It stands over the rounded end of the page that Pip's question draws below. */
+.detail__freshness { position: relative; z-index: 1; display: flex; align-items: center; gap: 2px; padding-top: 14px; }
+.detail__freshness-times { display: grid; gap: 3px; font-size: 12px; font-weight: 500; line-height: 1.35; color: var(--ink-soft); }
+/* 36 px to the touch, as tall as a line to the layout. */
+.detail__refresh { width: 36px; height: 36px; margin-block: -8px; padding: 8px; color: var(--tone); }
+.detail__refresh svg { width: 19px; height: 19px; stroke-width: 1.6; }
 .detail__sync-error, .detail__check-error, .detail__copy-error, .detail__title-error { font-size: 12px; color: var(--orange-text); margin: 12px 0 0; }
 .detail__check-notice { color: var(--tone); font-size: 12px; margin: 12px 0 0; }
 .detail__timeline { margin: 32px 30px; }
