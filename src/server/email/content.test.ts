@@ -396,6 +396,13 @@ describe('deliveryEmailContent for a parcel collected from its pickup point', ()
     }
   });
 
+  it('is delivered, by its carrier, for a parcel taken back out for delivery after it waited', async () => {
+    const email = await deliveryEmailContent(collected({}, { tracking_events: [event('ready_for_pickup', '2026-10-02T10:00:00+00:00'),
+      event('out_for_delivery', '2026-10-03T07:00:00+00:00'), event('delivered', '2026-10-03T12:12:00+00:00')] }));
+    expect(email.subject).toBe(english('email.delivered.subject', { name: 'New sneakers' }));
+    expect(sentence(email.text)).toBe(english('email.delivered.by.today', { carrier: 'DHL', time: '14:12' }));
+  });
+
   it('is delivered, as before, for a parcel that never waited at its pickup point', async () => {
     // The carrier may name a pickup point for a parcel it brought to the door.
     expect(row().carrier_data).toHaveProperty('pickup_point');

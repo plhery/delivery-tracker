@@ -4,6 +4,7 @@ import { activeTrackingCarrierId, carrierInfo, deliveringCarrierId, displayedCar
 import { isLocale, type Locale } from '../../lib/locale';
 import { languageTags, translateMessage, type Translate } from '../../lib/messages';
 import { pickupPoint, pickupPointMapsUrl, type PickupPoint } from '../../lib/pickupPoint';
+import { collectedFromPickupPoint } from '../../lib/stages';
 import { SOURCE_URL } from '../../lib/source';
 import { capitalized } from '../../peek/parcel/summary';
 import { toParcel } from '../../store/apiRepo';
@@ -68,10 +69,9 @@ async function emailContent(input: DeliveryEmailInput, draw = drawCard): Promise
 
   const parcel = toParcel(input.parcel);
   const stage = input.stage ?? 'delivered';
-  // The message's own words: the rest of the email is the same for all three. A delivered parcel that waited at a
-  // pickup point was collected there.
-  const told = stage === 'ready_for_pickup' ? 'pickup'
-    : parcel.events.some((event) => event.stage === 'ready_for_pickup') ? 'collected' : 'delivered';
+  // The message's own words: the rest of the email is the same for all three. A delivered parcel whose last movement
+  // made it ready for pickup was collected there, as the app says; one taken back out for delivery was brought to the door.
+  const told = stage === 'ready_for_pickup' ? 'pickup' : collectedFromPickupPoint(parcel.events) ? 'collected' : 'delivered';
   // Cut like a push title, and kept on one line: the name is also the subject.
   const name = notificationText(String(input.parcel.label ?? '').replace(/\p{Cc}/gu, ' '), 80);
   const named = (carrier: CarrierInfo) => UNNAMED_CARRIERS.has(carrier.id) ? null : carrier;

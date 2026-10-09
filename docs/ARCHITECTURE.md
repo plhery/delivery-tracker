@@ -274,6 +274,16 @@ loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
   under that scan ([handoffs](ROUTING.md#handoffs-two-carriers)).
   `src/server/eventPlaces.ts` applies this to every parcel and link the API serves; the
   account export keeps every stored row.
+- **A pickup point** is named by most carriers only while the parcel waits there. A
+  delivered parcel keeps the point it was collected from once the carrier stops naming it,
+  so the apps and its links still say where: its last movement before the delivery made
+  it ready for pickup (notices and problem reports are not movements), or, with no scan
+  that moved it, its saved stage was ready for pickup. One taken back out for delivery,
+  sent on or returned keeps none. The point stays only while the same carrier delivers:
+  the one that named it, or the handoff partner that did, even through a universal
+  provider. A partner reached since, or a carrier the owner or a correction chose instead,
+  never shows it. A point the carrier names later replaces it
+  ([`collectedPickupPoint.ts`](../src/server/collectedPickupPoint.ts)).
 - **Archiving** keeps the parcel and its history, still checked daily for a while
   ([ROUTING.md](ROUTING.md)).
 - **A lookup without an account** stores the number once per carrier and inputs, with one
@@ -319,7 +329,8 @@ loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
 - The delivery email is apart from notifications: off until the account switches it on,
   and switched off per parcel. A parcel is told once when it is ready to collect and once
   when it is delivered, so one collected from a pickup point gets both: the second says it
-  was collected. Each goes after the notifications of the sync job that stored the scan, on
+  was collected, when its last movement before the delivery made it ready for pickup, as
+  the apps' pickup point does. Each goes after the notifications of the sync job that stored the scan, on
   deployments without push too.
   - A parcel is never emailed for what it already showed when it joined the account. A
     scan with a clock time must be later than that moment. One with only a day, or no

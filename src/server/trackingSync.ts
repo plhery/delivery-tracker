@@ -42,6 +42,7 @@ import { UniversalTracker } from 'universal-parcel-scraper/node';
 import type { UniversalSource } from 'universal-parcel-scraper';
 import { detectionNames, directCarrier, freshnessWindow, hasRoutingProgress, RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 import { upuHistory } from './upuHistory';
+import { collectedPickupPoint } from './collectedPickupPoint';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
 import { eventTimestamp, latestResultTime, resultTimezone } from 'universal-parcel-scraper/app';
 import { trackingSupportEvidence } from './trackingSupport';
@@ -1264,6 +1265,10 @@ export class TrackingSyncService {
           values.current_stage = fetched.correction ? selectedStage : stageToSave(previousStage, selectedStage);
           if (values.current_stage !== selectedStage) anomalies = [...anomalies, 'early_stage_regression'];
         }
+        // A parcel collected from its pickup point keeps the point once the carrier stops naming it.
+        const collectedAt = collectedPickupPoint(parcel, carrierData, String(values.current_stage ?? previousStage),
+          fetched.correction?.carrier ?? carrierId, [...stored, ...events]);
+        if (collectedAt) carrierData.pickup_point = collectedAt;
       }
       if (preserveSummary && postalHistory) {
         values.carrier_data = {

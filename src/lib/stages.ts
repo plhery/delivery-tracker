@@ -61,8 +61,11 @@ export function stageMeta(stage: Stage): StageMeta {
 export const EVENT_STAGE_ORDER: readonly string[] = ['pending', 'registered', 'accepted', 'in_transit', 'customs',
   'exception', 'out_for_delivery', 'failed_attempt', 'ready_for_pickup', 'delivered', 'returned'];
 
+/** What ordering a scan needs: the server's rows and the apps' events both have it. */
+type OrderedScan = Pick<TrackingEvent, 'id' | 'stage' | 'occurredAt'>;
+
 /** Newest first, then delivery progress, then stable event identity. */
-export function sortEventsDesc(events: TrackingEvent[]): TrackingEvent[] {
+export function sortEventsDesc<T extends OrderedScan>(events: readonly T[]): T[] {
   return [...events].sort((a, b) => {
     const timestamp = (value: string) => Date.parse(value) || 0;
     return timestamp(b.occurredAt) - timestamp(a.occurredAt)
@@ -101,6 +104,21 @@ export function currentEvent(events: TrackingEvent[]): TrackingEvent | null {
     if (EARLY_STAGES.indexOf(event.stage) > EARLY_STAGES.indexOf(current.stage)) current = event;
   }
   return current;
+}
+
+/** Stages that move a parcel: notices (announced, posted), problem reports and a delivery itself do not. */
+const MOVEMENTS: ReadonlySet<Stage> = new Set<Stage>([...MOVING_STAGES, 'returned']);
+
+/**
+ * Whether a delivered parcel was collected from its pickup point: its last
+ * movement before the delivery made it ready for pickup. Notices, problem
+ * reports and further delivery scans moved nothing. A parcel taken back out
+ * for delivery after it waited was brought to the door; one sent on or
+ * returned was not collected there either. Null when no scan moved it.
+ */
+export function collectedFromPickupPoint(events: readonly OrderedScan[]): boolean | null {
+  const moved = sortEventsDesc(events).find((event) => MOVEMENTS.has(event.stage));
+  return moved ? moved.stage === 'ready_for_pickup' : null;
 }
 
 export function currentStage(events: TrackingEvent[]): Stage | null {

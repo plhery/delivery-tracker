@@ -3325,3 +3325,103 @@ describe('scans a carrier and a universal provider both report', () => {
     expect(store.rows.size).toBe(3);
   });
 });
+
+describe('the pickup point a parcel was collected from', () => {
+  const POINT = 'Example Kiosk\nExample Street 1, 9999 Sampleville';
+  const OTHER = 'Example Locker\nSample Road 2, 9999 Sampleville';
+  const NUMBER = 'CW123456785FR';
+  const scan = (time: string, stage: string, description: string = stage) => ({ time, stage, description });
+  const arrived = scan('2026-10-02T08:00:00Z', 'in_transit', 'Arrived at the local depot');
+  const waiting = scan('2026-10-02T14:00:00Z', 'ready_for_pickup', 'Ready for pickup');
+  const reminder = scan('2026-10-03T09:00:00Z', 'pending', 'We reminded the recipient by email');
+  const collected = scan('2026-10-04T16:00:00Z', 'delivered', 'Delivered');
+  const answer = (stage: string, events: ReturnType<typeof scan>[], extra: JsonObject = {}): CarrierResult => ({
+    status: stage === 'delivered' ? 'delivered' : 'in_transit', current_stage: stage, last_update: events.at(-1)!.time,
+    last_status_text: events.at(-1)!.description, events, ...extra,
+  });
+
+  /** Checks the parcel once per answer, each check from what the one before saved, with its stored scans. */
+  async function follow(parcel: JsonObject, ...answers: CarrierResult[]) {
+    const store = eventStore();
+    const adapter = { fetch: vi.fn() };
+    for (const next of answers) adapter.fetch.mockResolvedValueOnce(next);
+    const service = new TrackingSyncService(store.client as unknown as SupabaseServiceClient, adapter, null,
+      () => new Date('2026-10-05T12:00:00Z'));
+    let saved: JsonObject = { user_id: 'owner', tracking_number: NUMBER, current_stage: 'in_transit', ...parcel };
+    const checks: JsonObject[] = [];
+    for (let check = 0; check < answers.length && adapter.fetch.mock.calls.length < answers.length; check += 1) {
+      await service.syncPackage({ ...saved, [STORED_EVENT_IDENTITIES]: store.identities() });
+      saved = { ...saved, ...store.client.updatePackage.mock.calls.at(-1)![1] as JsonObject };
+      checks.push(saved);
+    }
+    const point = (index: number) => (checks.at(index)!.carrier_data as JsonObject).pickup_point;
+    return { checks, point, adapter };
+  }
+
+  it('keeps the point once the carrier stops naming it, through notices and later checks', async () => {
+    const { checks, point } = await follow({ id: 'collected', carrier: 'la-poste' },
+      answer('ready_for_pickup', [arrived, waiting], { pickup_point: POINT }),
+      // The delivered answer only has its last scan: the stored ones tell where it waited.
+      answer('delivered', [reminder, collected]),
+      answer('delivered', [arrived, waiting, reminder, collected], { pickup_point: '' }));
+    expect(checks.map((check) => check.current_stage)).toEqual(['ready_for_pickup', 'delivered', 'delivered']);
+    expect([point(0), point(1), point(2)]).toEqual([POINT, POINT, POINT]);
+  });
+
+  it('keeps it by the saved stage when no scan says the parcel moved', async () => {
+    const { point } = await follow({ id: 'undated', carrier: 'la-poste', current_stage: 'ready_for_pickup',
+      carrier_data: { pickup_point: POINT } }, { status: 'delivered', current_stage: 'delivered', last_status_text: 'Delivered' });
+    expect(point(-1)).toBe(POINT);
+  });
+
+  it('drops it for a parcel taken back out for delivery after it waited, or returned', async () => {
+    const out = scan('2026-10-04T07:00:00Z', 'out_for_delivery', 'Out for delivery');
+    const door = await follow({ id: 'door', carrier: 'la-poste' },
+      answer('ready_for_pickup', [arrived, waiting], { pickup_point: POINT }),
+      answer('delivered', [arrived, waiting, out, collected]));
+    expect(door.checks.at(-1)!.current_stage).toBe('delivered');
+    expect(door.point(-1)).toBeUndefined();
+
+    const back = await follow({ id: 'returned', carrier: 'la-poste' },
+      answer('ready_for_pickup', [arrived, waiting], { pickup_point: POINT }),
+      answer('returned', [arrived, waiting, scan('2026-10-12T09:00:00Z', 'returned', 'Returned to the sender')]));
+    expect(back.checks.at(-1)!.current_stage).toBe('returned');
+    expect(back.point(-1)).toBeUndefined();
+  });
+
+  it('takes a point the carrier names later instead', async () => {
+    const moved = scan('2026-10-03T10:00:00Z', 'ready_for_pickup', 'Moved to another pickup point');
+    const { point } = await follow({ id: 'moved', carrier: 'la-poste' },
+      answer('ready_for_pickup', [arrived, waiting], { pickup_point: POINT }),
+      answer('ready_for_pickup', [arrived, waiting, moved], { pickup_point: OTHER }),
+      answer('delivered', [arrived, waiting, moved, collected]),
+      answer('delivered', [arrived, waiting, moved, collected], { pickup_point: POINT }));
+    expect([point(1), point(2), point(3)]).toEqual([OTHER, OTHER, POINT]);
+  });
+
+  it('keeps a delivery partner’s point, and never hands one carrier’s point to another', async () => {
+    // Followed on La Poste, which names Posti, whose own lookup then follows the parcel.
+    const handed = scan('2026-10-02T06:00:00Z', 'in_transit', 'Handed to the delivery partner');
+    const partner = await follow({ id: 'partner', carrier: 'la-poste' },
+      answer('in_transit', [handed], { delivery_carrier: 'posti', destination_country: 'FI' }),
+      answer('ready_for_pickup', [arrived, waiting], { pickup_point: POINT }),
+      answer('delivered', [collected]));
+    expect(partner.adapter.fetch.mock.calls.map((call) => call[0])).toEqual(['la-poste', 'posti', 'posti']);
+    expect(partner.checks.at(-1)).toMatchObject({ current_stage: 'delivered',
+      carrier_data: { original_carrier: 'la-poste', active_tracking_carrier: 'posti', pickup_point: POINT } });
+
+    // La Poste said where the parcel waited; Posti, reached only now, delivers it without a point.
+    const origin = await follow({ id: 'origin', carrier: 'la-poste' },
+      answer('ready_for_pickup', [arrived, waiting], { pickup_point: POINT }),
+      answer('ready_for_pickup', [arrived, waiting], { pickup_point: POINT, delivery_carrier: 'posti', destination_country: 'FI' }),
+      answer('delivered', [collected]));
+    expect(origin.checks.at(-1)).toMatchObject({ current_stage: 'delivered', carrier_data: { active_tracking_carrier: 'posti' } });
+    expect(origin.point(-1)).toBeUndefined();
+
+    // The owner changed the carrier: the one the point came from no longer delivers.
+    const changed = await follow({ id: 'changed', carrier: 'la-poste', current_stage: 'ready_for_pickup',
+      carrier_data: { pickup_point: POINT, routing: { version: 1, configured_carrier: 'chronopost' } } },
+    answer('delivered', [waiting, collected]));
+    expect(changed.point(-1)).toBeUndefined();
+  });
+});

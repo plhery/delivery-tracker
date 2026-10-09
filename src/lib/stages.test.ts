@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TrackingEvent } from '../types';
 import {
+  collectedFromPickupPoint,
   CORE_STAGES,
   currentEvent,
   currentStage,
@@ -173,5 +174,30 @@ describe('isDelivered / isFinal', () => {
     expect(isFinal('returned')).toBe(true);
     expect(isFinal('out_for_delivery')).toBe(false);
     expect(isFinal('ready_for_pickup')).toBe(false);
+  });
+});
+
+describe('collectedFromPickupPoint', () => {
+  const journey = (...stages: TrackingEvent['stage'][]) => stages.map((stage, index) =>
+    makeEvent({ id: `e${index}`, stage, occurredAt: new Date(Date.UTC(2026, 5, 1, 8 + index)).toISOString() }));
+
+  it('is true when the last movement before the delivery made the parcel ready for pickup', () => {
+    expect(collectedFromPickupPoint(journey('accepted', 'in_transit', 'ready_for_pickup', 'delivered'))).toBe(true);
+    // Notices, problem reports and further delivery scans move nothing.
+    expect(collectedFromPickupPoint(journey('in_transit', 'ready_for_pickup', 'registered', 'exception', 'pending', 'delivered', 'delivered'))).toBe(true);
+    // The order is the scans' own, not the order they arrive in.
+    expect(collectedFromPickupPoint(journey('in_transit', 'ready_for_pickup', 'delivered').reverse())).toBe(true);
+  });
+
+  it('is false for a parcel taken back out for delivery, sent on or returned after it waited', () => {
+    expect(collectedFromPickupPoint(journey('ready_for_pickup', 'out_for_delivery', 'delivered'))).toBe(false);
+    expect(collectedFromPickupPoint(journey('failed_attempt', 'ready_for_pickup', 'in_transit', 'delivered'))).toBe(false);
+    expect(collectedFromPickupPoint(journey('ready_for_pickup', 'returned', 'delivered'))).toBe(false);
+    expect(collectedFromPickupPoint(journey('in_transit', 'out_for_delivery', 'delivered'))).toBe(false);
+  });
+
+  it('is null when no scan moved the parcel', () => {
+    expect(collectedFromPickupPoint([])).toBeNull();
+    expect(collectedFromPickupPoint(journey('pending', 'registered', 'delivered'))).toBeNull();
   });
 });
