@@ -27,9 +27,18 @@ Commercial universal providers are explicitly enabled by the app.
 DPD Germany and DPD Switzerland read through a session that takes tens of seconds to open.
 A production server with `CANONICAL_ORIGIN` calls `warmDpdSession` with the same
 environment at start ([`instrumentation-node.ts`](../instrumentation-node.ts)), so the
-session opens in the background and the scraper keeps one open, instead of the first DPD
-lookup after a deploy waiting for it. The production servers CI starts have no canonical
-origin, so they send DPD nothing.
+scraper keeps a session open in the background instead of the first DPD lookup after a
+deploy waiting for it. The production servers CI starts have no canonical origin, so they
+send DPD nothing.
+
+The server also gives it a store in `dpd_app_sessions`
+([`dpdSessions.ts`](../src/server/dpdSessions.ts)), service-role only. A deploy takes up
+the newest saved session while it is under eight hours old, the age at which the scraper
+opens the next. The scraper checks each session it stopped using once an hour until DPD
+refuses it twice in a row, which tells how long DPD really accepts a session
+([how to read it](OBSERVABILITY.md#dpd-app-sessions)). A token is an anonymous session of
+DPD's public app and names no account, parcel or person. Without the table, or when the
+database fails, the scraper opens a session as it did before.
 
 The scraper calls a carrier's postcode input `postcode`. The app's API, database and
 clients call it `dpdPostcode`, so the app renames it wherever the scraper hands it over:

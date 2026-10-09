@@ -1,5 +1,6 @@
 import 'server-only';
 
+import type { DpdSession } from 'universal-parcel-scraper/node';
 import type { ApiGiftWords } from '../generated/apiContract';
 import { ALL_NOTIFICATION_STAGES } from '../lib/notificationPresets';
 import { EMAIL_STAGES, type DeliveredTime, type EmailStage } from './email/types';
@@ -1525,6 +1526,36 @@ export class SupabaseServiceClient extends SupabaseClient {
   /** Deletes the answers readers gave more than 90 days ago. Returns how many. */
   async forgetOldParcelFeedback(): Promise<number> {
     return Number(await this.request('/rest/v1/rpc/forget_old_parcel_feedback', { method: 'POST', body: {} }) ?? 0);
+  }
+
+  /**
+   * The DPD app sessions saved in the last week that DPD has not refused, newest
+   * first: the scraper takes up the newest and checks the others.
+   */
+  async dpdAppSessions(): Promise<DpdSession[]> {
+    const since = new Date(Date.now() - 7 * 24 * 3_600_000).toISOString();
+    return rows(await this.request(`/rest/v1/dpd_app_sessions?${query([
+      ['select', 'token,opened_at,checked_at'],
+      ['refused_at', 'is.null'],
+      ['opened_at', `gt.${since}`],
+      ['order', 'opened_at.desc'],
+      ['limit', '50'],
+    ])}`)).flatMap((row) => {
+      const openedAt = Date.parse(String(row.opened_at));
+      const checkedAt = typeof row.checked_at === 'string' ? Date.parse(row.checked_at) : Number.NaN;
+      if (typeof row.token !== 'string' || !Number.isFinite(openedAt)) return [];
+      return [{ token: row.token, openedAt, ...(Number.isFinite(checkedAt) ? { checkedAt } : {}) }];
+    });
+  }
+
+  /** Saves a DPD app session, replacing what was saved under its token. */
+  async saveDpdAppSession(session: DpdSession): Promise<void> {
+    const time = (ms: number | undefined) => ms === undefined ? null : new Date(ms).toISOString();
+    await this.request(`/rest/v1/dpd_app_sessions?${query({ on_conflict: 'token' })}`, {
+      method: 'POST',
+      body: [{ token: session.token, opened_at: time(session.openedAt), checked_at: time(session.checkedAt), refused_at: time(session.refusedAt) }],
+      prefer: 'resolution=merge-duplicates,return=minimal',
+    });
   }
 
   /**

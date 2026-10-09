@@ -170,6 +170,28 @@ order by created_at desc;
 
 Set `reviewed_at`, and `review_note` with the outcome, once an answer is handled.
 
+## DPD app sessions
+
+DPD Germany and DPD Switzerland read through a session of DPD's app service, which takes
+tens of seconds to open. `dpd_app_sessions` keeps them across deploys, service-role only:
+the `token`, `opened_at`, `checked_at` (the last time an hourly check found DPD accepting
+a session the server no longer uses) and `refused_at` (when DPD began refusing it, once
+the next check repeated the refusal). The server opens the next session when the current
+one is eight hours old. Checks stop a week after a session opened.
+
+How long DPD accepted each session, and how long the ones it still accepts have lasted:
+
+```sql
+select opened_at, refused_at - opened_at as accepted_for,
+       checked_at - opened_at as last_accepted_after
+from public.dpd_app_sessions
+order by opened_at desc
+limit 30;
+```
+
+If `accepted_for` stays well above eight hours, sessions can be kept longer before
+opening the next; if it falls below, lookups meet refused sessions and wait for a new one.
+
 ## Unmapped wording
 
 `tracking_status_observations` collects carrier wording whose stage didn't come from a
@@ -315,6 +337,11 @@ Key JSON events:
   yet), `input_required` or `invalid_input`;
 - `tracking_sync_audit_write_failed`, `tracking_sync_audit_maintenance_failed`,
   `tracking_status_observation_write_failed`;
+- `dpd_app_session_refused`: DPD refused a session the server no longer used, with
+  `accepted_ms`, how long after it opened DPD began refusing it, and `last_accepted_ms`,
+  when a check last found it accepted. `dpd_app_session_store_failed` (warning, with the
+  `operation`, `load` or `save`, and `error_type`) when `dpd_app_sessions` could not be
+  read or written; the scraper then carries on without it;
 - `review_queues_replayed`: the review queue replay of a `version`, with
   `cases_replayed` and `cases_fixed` for the support backlog, and
   `observations_replayed`, `observations_mapped` and `observations_ignored` for the

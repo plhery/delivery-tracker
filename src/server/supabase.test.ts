@@ -752,6 +752,36 @@ describe('notification reads', () => {
     expect(pages[0]!.get('select')).toBe('package_id,parcel_link_alerts!inner(id)');
   });
 
+  it('reads the DPD app sessions DPD has not refused from the last week, and saves one under its token', async () => {
+    vi.useFakeTimers({ now: new Date('2026-10-09T18:00:00Z'), toFake: ['Date'] });
+    try {
+      const client = new SupabaseServiceClient('https://database.example', 'service-key');
+      const request = vi.spyOn(client, 'request').mockResolvedValueOnce([
+        { token: 'U0VTU0lPTl9PTkU=', opened_at: '2026-10-09T08:00:00+00:00', checked_at: null },
+        { token: 'U0VTU0lPTl9UV08=', opened_at: '2026-10-08T08:00:00+00:00', checked_at: '2026-10-09T07:00:00+00:00' },
+        { token: 42, opened_at: '2026-10-08T08:00:00+00:00' },
+        { token: 'U0VTU0lPTl9USFJFRQ==', opened_at: 'not a time' },
+      ]).mockResolvedValueOnce(null);
+      await expect(client.dpdAppSessions()).resolves.toEqual([
+        { token: 'U0VTU0lPTl9PTkU=', openedAt: Date.parse('2026-10-09T08:00:00Z') },
+        { token: 'U0VTU0lPTl9UV08=', openedAt: Date.parse('2026-10-08T08:00:00Z'), checkedAt: Date.parse('2026-10-09T07:00:00Z') },
+      ]);
+      const read = new URL(`https://database.example${String(request.mock.calls[0]![0])}`);
+      expect(read.pathname).toBe('/rest/v1/dpd_app_sessions');
+      expect(Object.fromEntries(read.searchParams)).toEqual({
+        select: 'token,opened_at,checked_at', refused_at: 'is.null', opened_at: 'gt.2026-10-02T18:00:00.000Z', order: 'opened_at.desc', limit: '50',
+      });
+      await client.saveDpdAppSession({ token: 'U0VTU0lPTl9PTkU=', openedAt: Date.parse('2026-10-09T08:00:00Z'), refusedAt: Date.parse('2026-10-10T08:00:00Z') });
+      expect(request.mock.calls[1]).toEqual(['/rest/v1/dpd_app_sessions?on_conflict=token', {
+        method: 'POST',
+        body: [{ token: 'U0VTU0lPTl9PTkU=', opened_at: '2026-10-09T08:00:00.000Z', checked_at: null, refused_at: '2026-10-10T08:00:00.000Z' }],
+        prefer: 'resolution=merge-duplicates,return=minimal',
+      }]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('reads the scans of handed-over parcels, with their carriers, for relay copies', async () => {
     const client = new SupabaseServiceClient('https://database.example', 'service-key');
     const scan = { id: 'scan', stage: 'in_transit', occurred_at: '2026-09-09T14:16:00Z', created_at: '2026-09-09T15:30:01Z', provider_event_id: 'dhl:a' };

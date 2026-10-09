@@ -3,6 +3,8 @@ import { emailSettings } from './src/server/email/config';
 import { warmDpdSession } from 'universal-parcel-scraper/node';
 import { preloadPlaces } from 'universal-parcel-scraper/places';
 import { hostAdapterEnvironment } from './src/server/adapterRegistry';
+import { dpdSessionStore } from './src/server/dpdSessions';
+import { serviceClient } from './src/server/runtime';
 import { installShutdownHandlers } from './src/server/shutdown';
 import { canonicalOrigin, siteHosts } from './src/server/siteHosts';
 import { turnstileSettings } from './src/server/lookupVerification';
@@ -26,9 +28,13 @@ if (process.env.NODE_ENV === 'production' && !globalRuntime.__deliveryShutdownIn
   globalRuntime.__deliveryShutdownInstalled = true;
 }
 // DPD Germany and DPD Switzerland read through a session that takes tens of seconds to
-// open. On a public site it opens now, in the background, and the scraper keeps one open
-// from then on. The production servers CI starts have no canonical origin and send DPD nothing.
-if (process.env.NODE_ENV === 'production' && canonicalOrigin()) warmDpdSession(hostAdapterEnvironment());
+// open. On a public site the scraper keeps one open from now on, in the background, and
+// the database keeps it across deploys. The production servers CI starts have no
+// canonical origin and send DPD nothing.
+if (process.env.NODE_ENV === 'production' && canonicalOrigin()) {
+  const client = serviceClient();
+  warmDpdSession(hostAdapterEnvironment(), client ? { store: dpdSessionStore(client) } : {});
+}
 // Half a second of parsing belongs before the first parcel list, not in it.
 if (process.env.NODE_ENV === 'production') setTimeout(() => {
   try {
