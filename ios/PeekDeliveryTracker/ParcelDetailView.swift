@@ -593,7 +593,7 @@ struct ParcelDetailView: View {
             // When the carrier was last asked and last said something, as the web says them.
             VStack(alignment: .leading, spacing: 3) {
                 if let next = parcel.carrierData?.routing?.nextCheckAt.flatMap(DateParser.date), !parcel.isArchived {
-                    Text(localizer.text("detail.nextCheckAfter", ["date": next.formatted(date: .abbreviated, time: .shortened)]))
+                    Text(localizer.text("detail.nextCheckAfter", ["date": next.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(localizer.language.locale))]))
                         .font(.caption)
                 }
                 if let lastSyncedAt = parcel.lastSyncedAt {

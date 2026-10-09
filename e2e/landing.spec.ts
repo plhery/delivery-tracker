@@ -84,9 +84,9 @@ test('asks four questions in order, with the field first and the name, the code 
     'Where’s my parcel?', 'Will I know when it moves?', 'Following more than one?', 'Who’s behind Peek?',
   ]);
   await expect(page.getByRole('link', { name: 'Open source 3,500+ carriers' })).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Works with Swiss Post, DHL, UPS, DPD Switzerland, GLS and 100 more carriers' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Works with Swiss Post, DHL, UPS, DPD Switzerland, GLS and thousands more carriers' })).toBeVisible();
   const moves = page.getByRole('region', { name: 'Will I know when it moves?' });
-  await expect(moves.getByRole('listitem')).toHaveText(['Checked every 10 min', 'Every 2 min on the last mile']);
+  await expect(moves.getByRole('listitem')).toHaveText(['Checked up to every 10 min', 'Up to every 2 min on the last mile']);
 
   // The heavy parts arrive when their sections come near: the journey on the app's own map, the list in the app's own cards.
   await journey(page).scrollIntoViewIfNeeded();
@@ -286,7 +286,7 @@ test('fits a 320 px phone in every language, from the field to the foot of the p
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 320, height: 700 });
   for (const [locale, question] of [
-    ['en', 'Where’s my parcel?'], ['de', 'Wo ist mein Paket?'], ['fr', 'Où est mon colis ?'], ['it', 'Dov’è il mio pacco?'],
+    ['en', 'Where’s my parcel?'], ['de', 'Wo ist mein Paket?'], ['fr', 'Où est mon colis\u202f?'], ['it', 'Dov’è il mio pacco?'],
     ['es', '¿Dónde está mi paquete?'], ['pt', 'Onde está a minha encomenda?'], ['pl', 'Gdzie jest moja paczka?'],
   ]) {
     // Chosen before the page loads: reloading a page that is still fetching makes WebKit log the cancelled requests.

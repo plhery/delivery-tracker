@@ -241,9 +241,7 @@ export function AddParcelSheet({
   const carrierHint = carrier
     ? shippingConfirmed ? t(currentVerification?.amazonShippingStatus === 'expired' ? 'add.amazonHistoryExpired' : 'add.amazonShippingConfirmed') : requiresCarrierConfirmation
       ? t('add.confirmCarrier', {
-        carriers: parsedTracking.candidates
-          .map((candidate) => carrierInfo(candidate, locale).name)
-          .join(` ${t('auth.or')} `),
+        carriers: carrierNameList(parsedTracking.candidates, locale, languageTag, 'disjunction'),
       })
       : t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })
     : '';

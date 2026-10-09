@@ -21,6 +21,10 @@ export function validateLocalizationCatalogs(catalogs) {
       if (variables(catalog[key]) !== variables(catalogs.en[key])) {
         throw new Error(`${locale}.${key} must preserve the English interpolation variables`);
       }
+      // French sets ? ! : ; » and « apart with no-break spaces, so a line never starts with the mark.
+      if (locale === 'fr' && /\u0020[?!:;»]|«\u0020/.test(catalog[key])) {
+        throw new Error(`fr.${key} needs a no-break space before ? ! : ; » and after «`);
+      }
     }
   }
 }

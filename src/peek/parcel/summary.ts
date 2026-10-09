@@ -45,7 +45,7 @@ export function momentLabel(iso: string, { t, languageTag, now = Date.now() }: W
     : `${localizedDeliveryDate(date, t, languageTag, now)}, ${clock(date, languageTag)}`;
 }
 
-/** An estimate the way the card writes it: "Today, 13:00–17:00" for a day close by, "Expected: Fri 2 oct" otherwise. */
+/** An estimate the way the card writes it: "Today, 13:00–17:00" for a day close by, "Expected: Fri 2 Oct" otherwise. */
 function estimateLine(parcel: ParcelWithEvents, estimate: string, wording: Wording): string {
   const { t, languageTag, now = Date.now() } = wording;
   const text = localizedDeliveryWindow(parcel.expectedDeliveryFrom, estimate, t, languageTag, now);
@@ -115,8 +115,11 @@ export function forgetDate(forgetAt: string | null, languageTag: string): string
   const date = forgetAt ? new Date(forgetAt) : null;
   if (!date || Number.isNaN(date.getTime())) return null;
   const parts = new Intl.DateTimeFormat(new Intl.Locale(languageTag).language, { day: 'numeric', month: 'short' }).formatToParts(date);
-  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((entry) => entry.type === type)!.value.replaceAll('.', '');
-  return `${part('day')} ${part('month').toLocaleLowerCase(languageTag)}`;
+  const index = (type: Intl.DateTimeFormatPartTypes) => parts.findIndex((entry) => entry.type === type);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts[index(type)]!.value.replaceAll('.', '');
+  // German writes "30. Okt"; names keep the language's own case.
+  const dayPeriod = parts[index('day') + 1]?.value.startsWith('.') ? '.' : '';
+  return `${part('day')}${dayPeriod} ${part('month')}`;
 }
 
 export interface Freshness {

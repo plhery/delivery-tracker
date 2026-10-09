@@ -256,7 +256,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   const deliveringId = deliveringCarrierId(parcel);
   const delivering = carrierKnown && deliveringId ? carrierInfo(deliveringId, locale) : null;
   const deliveryNote = delivering ? t('parcel.deliveryCarrier', { carrier: delivering.name }) : null;
-  const notes = present ? (deliveryNote ? [deliveryNote] : []) : !carrierKnown ? [t('link.unknown.body', { number: number ?? t('common.parcel') })] : [
+  const notes = present ? (deliveryNote ? [deliveryNote] : []) : !carrierKnown ? [number ? t('link.unknown.body', { number }) : t('link.unknown.bodyNoNumber')] : [
     previousEstimateLine(previousEstimate, parcel, wording),
     deliveryNote,
     !checking && (parcelIsUnannounced(parcel) || stage === 'registered') ? t('link.notScanned', { carrier: displayed.name }) : null,

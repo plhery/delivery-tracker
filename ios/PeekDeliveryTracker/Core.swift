@@ -339,12 +339,28 @@ final class Localizer: ObservableObject {
         return shortDate(date)
     }
 
+    /// Compact dates with explicit weekdays and months: "Sat 12 Sep", "Sa 12. Sept", "sam 12 sept". Names keep the
+    /// language's own case, since the date often sits mid-sentence, and the day keeps the period German writes after it.
     func shortDate(_ date: Date) -> String {
         let weekday = formatter("EEE", gregorian: true).string(from: date).replacingOccurrences(of: ".", with: "")
         let day = formatter("d", gregorian: true).string(from: date)
-        let month = formatter("MMM", gregorian: true).string(from: date)
-            .replacingOccurrences(of: ".", with: "").lowercased(with: language.locale)
-        return "\(weekday.prefix(1).uppercased(with: language.locale))\(weekday.dropFirst()) \(day) \(month)"
+        let month = formatter("MMM", gregorian: true).string(from: date).replacingOccurrences(of: ".", with: "")
+        return "\(weekday) \(day)\(dayPeriod) \(month)"
+    }
+
+    /// The period the language's own day-and-month pattern puts after the day, as German "12. Sept" does.
+    private var dayPeriod: String {
+        let key = "\(language.rawValue)|template|dMMM"
+        let template: DateFormatter
+        if let cached = formatters[key] {
+            template = cached
+        } else {
+            template = DateFormatter()
+            template.locale = language.locale
+            template.setLocalizedDateFormatFromTemplate("dMMM")
+            formatters[key] = template
+        }
+        return template.dateFormat.contains("d.") ? "." : ""
     }
 
     func dateTime(_ value: String) -> String {

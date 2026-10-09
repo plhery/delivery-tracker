@@ -82,8 +82,9 @@ describe('formatExpectedDelivery', () => {
 
 describe('readable localized calendar dates', () => {
   it.each([
-    ['en-CH', 'Sat 12 sep'], ['de-CH', 'Sa 12 sept'],
-    ['fr-CH', 'Sam 12 sept'], ['it-CH', 'Sab 12 set'],
+    ['en-CH', 'Sat 12 Sep'], ['de-CH', 'Sa 12. Sept'],
+    ['fr-CH', 'sam 12 sept'], ['it-CH', 'sab 12 set'],
+    ['es-ES', 'sáb 12 sept'], ['pt-PT', 'sáb 12 set'], ['pl-PL', 'sob 12 wrz'],
   ])('formats dates and times in %s', (locale, expected) => {
     const date = new Date(2026, 8, 12, 14, 5);
     expect(localizedCalendarDate(date, locale)).toBe(expected);

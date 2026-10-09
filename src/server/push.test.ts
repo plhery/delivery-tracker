@@ -73,7 +73,7 @@ describe('friendly parcel notifications', () => {
     ['it', 'Coffee beans · consegnato alle 14:32'],
     ['es-ES', 'Coffee beans · entregado a las 14:32'],
     ['pt-PT', 'Coffee beans · entregue às 14:32'],
-    ['pl-PL', 'Coffee beans · dostarczona o 14:32'],
+    ['pl-PL', 'Coffee beans · dostarczono o 14:32'],
   ])('localizes delivery sentences for %s devices', (locale, body) => {
     expect(alert(native.eventPayload({ ...delivered, locale })).body).toBe(body);
   });
@@ -147,7 +147,7 @@ describe('friendly parcel notifications', () => {
 
   it.each([
     ['de', 'kommt morgen', 'kommt am 11. September', 'neuer Liefertermin: 11. September'],
-    ['fr', 'arrive demain', 'arrive le 11 septembre', 'arrive finalement le 11 septembre'],
+    ['fr', 'arrive demain', 'arrive le 11 septembre', 'arrive désormais le 11 septembre'],
     ['it', 'arriva domani', 'arrivo previsto: 11 settembre', 'nuova data prevista: 11 settembre'],
     ['es', 'llega mañana', 'llega el 11 de septiembre', 'ahora llega el 11 de septiembre'],
     ['pt', 'chega amanhã', 'chega a 11 de setembro', 'afinal chega a 11 de setembro'],

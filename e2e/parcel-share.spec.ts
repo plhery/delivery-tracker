@@ -279,7 +279,7 @@ test('alerts: a browser that refuses notifications gets plain guidance and the c
   await actions(page).getByRole('button', { name: /^Ping me/ }).click();
   const sheet = page.getByRole('dialog', { name: 'Ping me when it arrives' });
   await sheet.getByRole('button', { name: 'Turn on' }).click();
-  await expect(sheet.getByRole('alert')).toHaveText('Notifications are blocked for this site. Allow them in your browser’s site settings, then turn on again.');
+  await expect(sheet.getByRole('alert')).toHaveText('Notifications are blocked for this site. Allow them in your browser’s site settings, then choose Turn on again.');
   await expect(sheet.getByRole('radio', { name: /^Notifications in this browser/ })).toBeDisabled();
   await expect(sheet.getByRole('button', { name: 'Turn on' })).toHaveCount(0);
   await expect(sheet.getByRole('radio', { name: /^Add the delivery window to my calendar/ })).toBeChecked();

@@ -1,0 +1,2 @@
+/* Generated from shared/locales by npm run ios:resources. */
+"NSCameraUsageDescription" = "Peek usa la fotocamera per scansionare i codici a barre di tracciamento, così puoi aggiungere i pacchi senza digitare.";

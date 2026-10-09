@@ -33,7 +33,7 @@ const DESCRIPTION =
   'Private parcel tracking, with alerts and history synced across your devices.';
 const LANDING_TITLE = 'Peek — Where’s my parcel? Universal Parcel Tracker';
 const LANDING_DESCRIPTION =
-  'Track any parcel in one place: paste a tracking number, a carrier link or a shipping email. 3,500+ carriers, checked every 10 minutes. Open source, no account needed.';
+  'Track any parcel in one place: paste a tracking number, a carrier link or a shipping email. 3,500+ carriers, checked up to every 10 minutes. Open source, no account needed.';
 /** The page of a language's address, as the router finds it. */
 const languagePage = (language: string) => import(`../app/${language}/page.tsx`) as Promise<{ default: () => ReactElement; generateMetadata: () => Promise<Metadata> }>;
 /** The landing in every language, as each of its addresses names them. */

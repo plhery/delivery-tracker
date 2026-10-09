@@ -115,7 +115,7 @@ describe('the Ping me sheet', () => {
     const user = userEvent.setup();
     const first = open();
     await user.click(screen.getByRole('button', { name: 'Turn on' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Notifications are blocked for this site. Allow them in your browser’s site settings, then turn on again.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Notifications are blocked for this site. Allow them in your browser’s site settings, then choose Turn on again.');
     // Blocked now: the way is no longer offered, and the calendar is what remains.
     expect(way(/^Notifications in this browser/)).toBeDisabled();
     expect(way(/^Add the delivery window to my calendar/)).toBeChecked();
@@ -136,7 +136,7 @@ describe('the Ping me sheet', () => {
     stubAlertBrowser({ permission: 'denied' });
     const blocked = open();
     expect(way(/^Notifications in this browser/)).toBeDisabled();
-    expect(screen.getByText('Notifications are blocked for this site. Allow them in your browser’s site settings, then turn on again.')).toBeVisible();
+    expect(screen.getByText('Notifications are blocked for this site. Allow them in your browser’s site settings, then choose Turn on again.')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Add to calendar' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Turn on' })).toBeNull();
     blocked.unmount();

@@ -204,9 +204,11 @@ export function carrierCheck({ applies, settled, answer, failed = false }: {
   return { status: 'none', asked: answered };
 }
 
-/** Carrier names as one phrase in the reader's language: "DHL, UPS and DPD". */
-export function carrierNameList(ids: readonly CarrierId[], locale: string, languageTag: string): string {
-  return new Intl.ListFormat(languageTag, { type: 'conjunction' }).format(ids.map((id) => carrierInfo(id, locale).name));
+/** Carrier names as one phrase in the reader's language: "DHL, UPS and DPD", or "DHL, UPS or DPD". */
+export function carrierNameList(
+  ids: readonly CarrierId[], locale: string, languageTag: string, type: 'conjunction' | 'disjunction' = 'conjunction',
+): string {
+  return new Intl.ListFormat(languageTag, { type }).format(ids.map((id) => carrierInfo(id, locale).name));
 }
 
 /** The carrier a number's shape names with certainty. An unknown postal carrier is not one. */

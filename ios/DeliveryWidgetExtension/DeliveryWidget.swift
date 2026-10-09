@@ -12,7 +12,7 @@ private struct DeliveryWidgetEntry: TimelineEntry {
 private struct DeliveryWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> DeliveryWidgetEntry {
         let languageCode = preferredLanguageCode
-        let copy = DeliveryWidgetLocalizer(languageCode: languageCode)
+        let copy = ExtensionLocalizer(languageCode: languageCode)
         return DeliveryWidgetEntry(
             date: Date(),
             enabled: true,
@@ -75,8 +75,8 @@ private struct DeliveryWidgetView: View {
     @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: DeliveryWidgetEntry
 
-    private var copy: DeliveryWidgetLocalizer {
-        DeliveryWidgetLocalizer(languageCode: entry.languageCode)
+    private var copy: ExtensionLocalizer {
+        ExtensionLocalizer(languageCode: entry.languageCode)
     }
 
     private var parcels: [DeliveryWidgetParcel] {
@@ -213,25 +213,6 @@ private struct DeliveryWidgetView: View {
     }
 }
 
-private struct DeliveryWidgetLocalizer {
-    let languageCode: String
-
-    private static let dictionaries: [String: [String: String]] = {
-        guard let url = Bundle.main.url(forResource: "Localization", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let values = try? JSONDecoder().decode([String: [String: String]].self, from: data) else {
-            return [:]
-        }
-        return values
-    }()
-
-    func text(_ key: String) -> String {
-        Self.dictionaries[languageCode]?[key]
-            ?? Self.dictionaries["en"]?[key]
-            ?? key
-    }
-}
-
 private enum WidgetPalette {
     static let accent = Color(red: 0.96, green: 0.73, blue: 0.13)
     static let accentBright = Color(red: 1.0, green: 0.84, blue: 0.34)
@@ -243,7 +224,7 @@ struct NextDeliveryWidget: Widget {
         let store = DeliveryWidgetSharedStore(
             appGroupIdentifier: DeliveryWidgetSharedStore.appGroupIdentifier()
         )
-        let copy = DeliveryWidgetLocalizer(languageCode: store?.languageCode ?? "en")
+        let copy = ExtensionLocalizer(languageCode: store?.languageCode ?? "en")
         return StaticConfiguration(
             kind: DeliveryWidgetSharedStore.kind,
             provider: DeliveryWidgetProvider()

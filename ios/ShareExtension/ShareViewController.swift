@@ -9,6 +9,8 @@ final class ShareViewController: UIViewController {
     private let openButton = UIButton(type: .system)
     private var parcelLabel = ""
     private var trackingInput = ""
+    // The app saves its language to the App Group whenever it is set.
+    private let copy = ExtensionLocalizer(savedLanguageCode: ShareInbox.defaults?.string(forKey: "deliveryTrackerLocale"))
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -25,18 +27,18 @@ final class ShareViewController: UIViewController {
         mark.translatesAutoresizingMaskIntoConstraints = false
 
         let title = UILabel()
-        title.text = ShareCopy.text("title")
+        title.text = copy.text("shareExtension.title")
         title.font = .preferredFont(forTextStyle: .title2).withWeight(.bold)
         title.textAlignment = .center
 
-        statusLabel.text = ShareCopy.text("reading")
+        statusLabel.text = copy.text("shareExtension.reading")
         statusLabel.font = .preferredFont(forTextStyle: .subheadline)
         statusLabel.textColor = .secondaryLabel
         statusLabel.numberOfLines = 0
         statusLabel.textAlignment = .center
 
         var openConfiguration = UIButton.Configuration.filled()
-        openConfiguration.title = ShareCopy.text("save")
+        openConfiguration.title = copy.text("shareExtension.save")
         openConfiguration.image = UIImage(systemName: "tray.and.arrow.down")
         openConfiguration.imagePadding = 8
         openConfiguration.cornerStyle = .large
@@ -46,7 +48,7 @@ final class ShareViewController: UIViewController {
         openButton.isEnabled = false
         openButton.addTarget(self, action: #selector(saveShare), for: .touchUpInside)
 
-        cancelButton.setTitle(ShareCopy.text("cancel"), for: .normal)
+        cancelButton.setTitle(copy.text("common.cancel"), for: .normal)
         cancelButton.addTarget(self, action: #selector(cancelShare), for: .touchUpInside)
 
         let stack = UIStackView(arrangedSubviews: [mark, title, statusLabel, openButton, cancelButton])
@@ -84,16 +86,15 @@ final class ShareViewController: UIViewController {
             return nil
         }
         guard !candidates.isEmpty || !itemText.isEmpty else {
-            statusLabel.text = ShareCopy.text("notFound")
+            statusLabel.text = copy.text("shareExtension.notFound")
             return
         }
 
         var loaded = Array<String?>(repeating: nil, count: candidates.count)
-        var lastError: Error?
         let group = DispatchGroup()
         for (index, candidate) in candidates.enumerated() {
             group.enter()
-            candidate.0.loadItem(forTypeIdentifier: candidate.1) { value, error in
+            candidate.0.loadItem(forTypeIdentifier: candidate.1) { value, _ in
                 let text: String?
                 if let url = value as? URL { text = url.absoluteString }
                 else if let textValue = value as? String { text = textValue }
@@ -101,7 +102,6 @@ final class ShareViewController: UIViewController {
                 else { text = nil }
                 DispatchQueue.main.async {
                     loaded[index] = text?.trimmed.nonEmpty
-                    if let error { lastError = error }
                     group.leave()
                 }
             }
@@ -113,9 +113,9 @@ final class ShareViewController: UIViewController {
             }
             self.trackingInput = String(parts.joined(separator: "\n").prefix(10_000))
             if self.trackingInput.isEmpty {
-                self.statusLabel.text = lastError?.localizedDescription ?? ShareCopy.text("notFound")
+                self.statusLabel.text = self.copy.text("shareExtension.notFound")
             } else {
-                self.statusLabel.text = ShareCopy.text("ready")
+                self.statusLabel.text = self.copy.text("shareExtension.ready")
                 self.openButton.isEnabled = true
             }
         }
@@ -124,13 +124,13 @@ final class ShareViewController: UIViewController {
     @objc private func saveShare() {
         guard !finished, !saved, !trackingInput.isEmpty else { return }
         guard ShareInbox.save(SharedParcelDraft(label: parcelLabel, trackingInput: trackingInput)) else {
-            statusLabel.text = ShareCopy.text("saveFailed")
+            statusLabel.text = copy.text("shareExtension.saveFailed")
             return
         }
         saved = true
-        statusLabel.text = ShareCopy.text("saved")
+        statusLabel.text = copy.text("shareExtension.saved")
         openButton.isHidden = true
-        cancelButton.setTitle(ShareCopy.text("done"), for: .normal)
+        cancelButton.setTitle(copy.text("native.done"), for: .normal)
     }
 
     @objc private func cancelShare() {
@@ -142,64 +142,6 @@ final class ShareViewController: UIViewController {
         }
     }
 
-}
-
-private enum ShareCopy {
-    private static let catalogs: [String: [String: String]] = [
-        "en": [
-            "title": "Add to Peek",
-            "reading": "Reading the shared tracking information…",
-            "save": "Save tracking details",
-            "saved": "Saved. Open Peek within 10 minutes to review and add your parcel.",
-            "done": "Done",
-            "saveFailed": "Could not save. Please paste the tracking information directly in the app.",
-            "cancel": "Cancel",
-            "notFound": "Share a tracking number or link, or paste it directly in the app.",
-            "ready": "Save these tracking details, then open Peek to add your parcel.",
-        ],
-        "de": [
-            "title": "Zu Peek hinzufügen",
-            "reading": "Geteilte Sendungsinformationen werden gelesen…",
-            "save": "Sendungsangaben speichern",
-            "saved": "Gespeichert. Öffne Peek innerhalb von 10 Minuten, um dein Paket zu prüfen und hinzuzufügen.",
-            "done": "Fertig",
-            "saveFailed": "Speichern fehlgeschlagen. Bitte füge die Sendungsangaben direkt in der App ein.",
-            "cancel": "Abbrechen",
-            "notFound": "Teile eine Sendungsnummer oder einen Link oder füge sie direkt in der App ein.",
-            "ready": "Speichere die Sendungsangaben und öffne dann Peek, um dein Paket hinzuzufügen.",
-        ],
-        "fr": [
-            "title": "Ajouter à Peek",
-            "reading": "Lecture des informations de suivi partagées…",
-            "save": "Enregistrer le suivi",
-            "saved": "Enregistré. Ouvrez Peek dans les 10 minutes pour vérifier et ajouter votre colis.",
-            "done": "Terminé",
-            "saveFailed": "Échec de l’enregistrement. Collez les informations de suivi directement dans l’app.",
-            "cancel": "Annuler",
-            "notFound": "Partagez un numéro ou un lien de suivi, ou collez-le directement dans l’app.",
-            "ready": "Enregistrez le suivi, puis ouvrez Peek pour ajouter votre colis.",
-        ],
-        "it": [
-            "title": "Aggiungi a Peek",
-            "reading": "Lettura delle informazioni di tracciamento condivise…",
-            "save": "Salva il tracciamento",
-            "saved": "Salvato. Apri Peek entro 10 minuti per verificare e aggiungere il pacco.",
-            "done": "Fine",
-            "saveFailed": "Salvataggio non riuscito. Incolla il tracciamento direttamente nell’app.",
-            "cancel": "Annulla",
-            "notFound": "Condividi un numero o un link di tracciamento, oppure incollalo direttamente nell’app.",
-            "ready": "Salva il tracciamento, poi apri Peek per aggiungere il pacco.",
-        ],
-    ]
-
-    static func text(_ key: String) -> String {
-        let group = Bundle.main.object(forInfoDictionaryKey: "SDTAppGroupIdentifier") as? String
-            ?? "group.com.plhery.SwissDeliveryTracker"
-        let saved = UserDefaults(suiteName: group)?.string(forKey: "deliveryTrackerLocale")
-        let preferred = Locale.preferredLanguages.map { $0.split(separator: "-").first.map(String.init) ?? "" }
-        let language = ([saved].compactMap { $0 } + preferred).first { catalogs[$0] != nil } ?? "en"
-        return catalogs[language]?[key] ?? catalogs["en"]?[key] ?? key
-    }
 }
 
 private extension UIFont {

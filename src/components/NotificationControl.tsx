@@ -325,7 +325,7 @@ function copyFor(state: PushState | null, hasError: boolean, t: Translate): stri
     case 'install':
     case 'unsupported': return t('notifications.state.unsupported');
     case 'unavailable': return t('notifications.state.unavailable');
-    case 'blocked': return t('notifications.state.blocked');
+    case 'blocked': return t('notifications.state.blockedBrowser');
     case 'prompt': return t('notifications.state.prompt');
     default: return t('notifications.state.checking');
   }

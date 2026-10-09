@@ -76,9 +76,9 @@ describe('localization', () => {
   it('shows delivery windows and ignores missing, reversed or invalid starts', () => {
     const now = new Date(2026, 8, 9, 12).getTime();
     const t: Translate = (key, variables) => translate('en', key, variables);
-    expect(localizedDeliveryWindow('2026-09-10', '2026-09-11', t, 'en-CH', now)).toBe('tomorrow – Fri 11 sep');
+    expect(localizedDeliveryWindow('2026-09-10', '2026-09-11', t, 'en-CH', now)).toBe('tomorrow – Fri 11 Sep');
     for (const from of [undefined, 'invalid', '2026-09-12', '2026-09-11']) {
-      expect(localizedDeliveryWindow(from, '2026-09-11', t, 'en-CH', now)).toBe('Fri 11 sep');
+      expect(localizedDeliveryWindow(from, '2026-09-11', t, 'en-CH', now)).toBe('Fri 11 Sep');
     }
   });
   it('detects all supported Swiss languages and falls back to English', () => {
@@ -254,10 +254,10 @@ describe('localization', () => {
     const update = new Date(2025, 11, 20, 12);
 
     expect(localizedExpectedDelivery('2026-12-31', t, 'en-CH', now)).toBe(
-      'Thu 31 dec',
+      'Thu 31 Dec',
     );
     expect(localizedRelativeTime(update.toISOString(), t, 'it-CH', now)).toBe(
-      'Sab 20 dic',
+      'sab 20 dic',
     );
   });
 });
@@ -333,7 +333,7 @@ describe('relative delivery dates', () => {
     [new Date(2026, 2, 30, 0, 5), new Date(2026, 2, 29, 0, 5), 'yesterday'],
     [new Date(2026, 9, 25, 0, 5), new Date(2026, 9, 26, 0, 5), 'tomorrow'],
     [new Date(2026, 8, 9, 23, 55), new Date(2026, 8, 9, 0, 5), 'today'],
-    [new Date(2026, 8, 9, 23, 55), new Date(2026, 8, 11, 0, 5), 'Fri 11 sep'],
+    [new Date(2026, 8, 9, 23, 55), new Date(2026, 8, 11, 0, 5), 'Fri 11 Sep'],
   ])('uses calendar days from %s to %s', (now, date, expected) => {
     expect(localizedDeliveryDate(date, (key) => en[key], 'en-CH', now.getTime())).toBe(expected);
   });

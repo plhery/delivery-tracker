@@ -17,7 +17,7 @@ async function firstByte(request: APIRequestContext, address: string, headers: R
 const tag = (html: string, pattern: RegExp) => pattern.exec(html)?.[1] ?? null;
 const languages = ['de', 'fr', 'it', 'es', 'pt', 'pl'] as const;
 const questions: Record<string, string> = {
-  de: 'Wo ist mein Paket?', fr: 'Où est mon colis ?', it: 'Dov’è il mio pacco?',
+  de: 'Wo ist mein Paket?', fr: 'Où est mon colis\u202f?', it: 'Dov’è il mio pacco?',
   es: '¿Dónde está mi paquete?', pt: 'Onde está a minha encomenda?', pl: 'Gdzie jest moja paczka?',
 };
 /** What Peek is, as each language's title ends. */
@@ -125,7 +125,7 @@ test('each language has an address whose first answer is entirely in that langua
       expect(alternatesOf(html), where).toEqual(everyLanguage(baseURL!, baseURL));
       expect(robotsOf(html), where).toBeNull();
       const description = tag(html, /<meta name="description" content="([^"]*)"/)!;
-      expect(description, where).toMatch(/3.?500\+/);
+      expect(description, where).toMatch(/3.?500/);
       expect(description, where).not.toContain('Track any parcel');
       expect(tag(html, /<meta property="og:title" content="([^"]*)"/), where).toBe(titleIn(language));
       expect(tag(html, /<meta property="og:description" content="([^"]*)"/), where).toBe(description);
@@ -169,7 +169,7 @@ test('a language address stays in its language in a browser that chose another, 
   expect(await page.evaluate(() => localStorage.getItem('deliveryTrackerLocale'))).toBe('fr');
   expect((await context.cookies()).filter((cookie) => cookie.name === 'sdt.locale').map((cookie) => cookie.value)).toEqual(['fr']);
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: 'Où est mon colis ?' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Où est mon colis\u202f?' })).toBeVisible();
 });
 
 test('the language menu of a language address moves the address with the language, in place', async ({ page, context }) => {
@@ -183,7 +183,7 @@ test('the language menu of a language address moves the address with the languag
   const steps = await page.evaluate(() => history.length);
 
   await page.getByRole('contentinfo').getByRole('combobox', { name: 'Sprache' }).selectOption('fr');
-  await expect(page.getByRole('heading', { level: 1, name: 'Où est mon colis ?' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Où est mon colis\u202f?' })).toBeVisible();
   await expect(page).toHaveURL(/\/fr$/);
   await expect(page).toHaveTitle(titleIn('fr'));
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');

@@ -92,14 +92,19 @@ export function formatExpectedDelivery(
   return `${pad(expected.getDate())}.${pad(expected.getMonth() + 1)}.${expected.getFullYear()}`;
 }
 
-/** Compact calendar dates with explicit weekdays and months: "Sat 12 sep". */
+/**
+ * Compact calendar dates with explicit weekdays and months: "Sat 12 Sep", "Sa 12. Sept", "sam 12 sept".
+ * Names keep the language's own case, since the date often sits mid-sentence ("Livré le sam 12 sept"),
+ * and the day keeps the period German writes after it.
+ */
 export function localizedCalendarDate(date: Date, languageTag: string): string {
   const parts = new Intl.DateTimeFormat(new Intl.Locale(languageTag).language, {
     weekday: 'short', day: 'numeric', month: 'short',
   }).formatToParts(date);
-  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((entry) => entry.type === type)!.value.replaceAll('.', '');
-  const weekday = part('weekday');
-  return `${weekday[0].toLocaleUpperCase(languageTag)}${weekday.slice(1)} ${part('day')} ${part('month').toLocaleLowerCase(languageTag)}`;
+  const index = (type: Intl.DateTimeFormatPartTypes) => parts.findIndex((entry) => entry.type === type);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts[index(type)]!.value.replaceAll('.', '');
+  const dayPeriod = parts[index('day') + 1]?.value.startsWith('.') ? '.' : '';
+  return `${part('weekday')} ${part('day')}${dayPeriod} ${part('month')}`;
 }
 
 export function localizedCalendarDateTime(date: Date, languageTag: string): string {

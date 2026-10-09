@@ -19,7 +19,7 @@ describe('TrackingJournal', () => {
     expect(container.querySelector('details')).toHaveAttribute('open');
     expect(screen.getByText('4 updates')).toBeInTheDocument();
     const groups = within(screen.getByRole('list', { name: 'Tracking history' })).getAllByRole('heading');
-    expect(groups.map(group => group.textContent)).toEqual(['Mon 9 sep 2024', 'Sun 8 sep 2024', 'Sat 7 sep 2024']);
+    expect(groups.map(group => group.textContent)).toEqual(['Mon 9 Sep 2024', 'Sun 8 Sep 2024', 'Sat 7 Sep 2024']);
     expect([...container.querySelectorAll('.tracking-journal__events p')].map(el => el.textContent))
       .toEqual(['With courier', 'Departed sorting center', 'Arrived at sorting center', 'Collected']);
     expect(container.querySelector('.tracking-journal__location')).toHaveTextContent(/^🇩🇪Germany$/u);
@@ -84,7 +84,7 @@ describe('TrackingJournal', () => {
     const { container, rerender } = render(<TrackingJournal events={events} fold />);
     expect(screen.getByText('15 updates')).toBeInTheDocument();
     const folded = [...container.querySelectorAll<HTMLDetailsElement>('.tracking-journal__day')];
-    expect(folded.map((entry) => entry.querySelector('summary')!.textContent)).toEqual(['Sat 7 sep 20243 updates', 'Fri 6 sep 20244 updates', 'Thu 5 sep 20242 updates']);
+    expect(folded.map((entry) => entry.querySelector('summary')!.textContent)).toEqual(['Sat 7 Sep 20243 updates', 'Fri 6 Sep 20244 updates', 'Thu 5 Sep 20242 updates']);
     expect(folded.every((entry) => !entry.open)).toBe(true);
     // The open days show their scans; the oldest are not in the page yet.
     expect(screen.getByText('Scan 9.0')).toBeVisible();

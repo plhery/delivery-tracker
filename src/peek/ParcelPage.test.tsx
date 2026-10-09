@@ -218,7 +218,7 @@ describe('ParcelPage', () => {
     await waitFor(() => expect(document.querySelector('.peekp-pip')).toHaveClass('peekp-pip--hero', 'peekp-pip--open'));
     // The open box keeps its carrier's label: the front flap rests above it.
     expect(document.querySelector('.peekp-pip .parcel-illustration__label-name')).toHaveTextContent('DHL');
-    expect(screen.getByText('Peek forgets this parcel on 30 dec.')).toBeVisible();
+    expect(screen.getByText('Peek forgets this parcel on 30 Dec.')).toBeVisible();
   });
 
   it('says “No new updates” when a check finds nothing', async () => {
@@ -326,7 +326,7 @@ describe('ParcelPage stages and troubles', () => {
 
   it('says so when the carrier cannot be followed automatically', async () => {
     await shown(view([scan('pending', 1, 'Tracking added')], { carrier: 'amazon-logistics', trackingNumber: 'TBA000000000009', syncStatus: 'unsupported' }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Check tracking website' })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 1, name: 'Check the carrier’s website' })).toBeVisible();
     expect(screen.getByRole('note')).toHaveTextContent('Amazon Logistics deliveries are usually tracked in Your Orders on Amazon.');
   });
 
@@ -369,7 +369,7 @@ describe('ParcelPage stages and troubles', () => {
   it('tells the estimate the carrier gave before it changed it', async () => {
     rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: view(journey, { expectedDelivery: '2099-01-05' }) });
     await shown(view(journey, { expectedDelivery: '2099-01-06' }));
-    expect(await within(card()).findByText(/^Was: .*5 jan/)).toBeVisible();
+    expect(await within(card()).findByText(/^Was: .*5 Jan/)).toBeVisible();
   });
 
   it('shows what the carrier told about the shipment', async () => {
@@ -416,7 +416,7 @@ describe('ParcelPage stages and troubles', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Delivered' })).toBeVisible();
     // No card about forgetting: the day is a line of the footer, beside the way to forget the parcel at once.
     const foot = within(document.querySelector('footer')!);
-    expect(foot.getByText('Peek forgets this parcel on 30 dec.')).toBeVisible();
+    expect(foot.getByText('Peek forgets this parcel on 30 Dec.')).toBeVisible();
     expect(foot.getByRole('button', { name: 'Forget it now' })).toBeVisible();
     expect(screen.getAllByRole('button', { name: 'Forget it now' })).toHaveLength(1);
     expect(screen.queryByText('The link stops working and the number is deleted. Nothing to sign out of.')).toBeNull();

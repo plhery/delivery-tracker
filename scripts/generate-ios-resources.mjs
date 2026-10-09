@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readBrandData, renderBrandJson } from './generate-brand.mjs';
-import { nativeLocalizationReferences } from './native-localization.mjs';
+import { infoPlistStrings, nativeLocalizationReferences, nativeSwiftSources } from './native-localization.mjs';
 import { readLocalizationCatalogs } from './localization-catalog.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
@@ -21,12 +21,7 @@ for (const key of Object.values(trackingMessages.failures)) {
   if (!languages.en[key]) throw new Error(`Missing tracking failure translation: ${key}`);
 }
 
-const swiftSources = ['PeekDeliveryTracker', 'DeliveryWidgetExtension']
-  .flatMap((directory) => fs.readdirSync(path.join(root, 'ios', directory))
-    .filter((name) => name.endsWith('.swift'))
-    .map((name) => fs.readFileSync(path.join(root, 'ios', directory, name), 'utf8')))
-  .join('\n');
-const referencedKeys = nativeLocalizationReferences(swiftSources, Object.keys(languages.en));
+const referencedKeys = nativeLocalizationReferences(nativeSwiftSources(path.join(root, 'ios')), Object.keys(languages.en));
 const missingNativeReferences = [...referencedKeys].filter((key) => !(key in languages.en));
 if (missingNativeReferences.length) {
   throw new Error(
@@ -85,10 +80,13 @@ const outputs = new Map([
   ['World.json', fs.readFileSync(path.join(root, 'src', 'components', 'map', 'world.json'), 'utf8')],
   ['WorldDetail.pack', worldDetailPack()],
 ]);
+const files = new Map([
+  ...[...outputs].map(([name, contents]) => [path.join(resources, name), contents]),
+  ...infoPlistStrings(languages).map(([name, contents]) => [path.join(root, 'ios', name), contents]),
+]);
 
 if (process.argv.includes('--check')) {
-  const stale = [...outputs].flatMap(([name, expected]) => {
-    const target = path.join(resources, name);
+  const stale = [...files].flatMap(([target, expected]) => {
     const current = fs.existsSync(target) ? fs.readFileSync(target) : Buffer.alloc(0);
     return current.equals(Buffer.from(expected)) ? [] : [path.relative(root, target)];
   });
@@ -97,9 +95,9 @@ if (process.argv.includes('--check')) {
   }
   console.log('Generated iOS resources are current.');
 } else {
-  fs.mkdirSync(resources, { recursive: true });
-  for (const [name, contents] of outputs) {
-    fs.writeFileSync(path.join(resources, name), contents);
+  for (const [target, contents] of files) {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, contents);
   }
   console.log(`Generated iOS resources for ${Object.keys(languages).length} languages and ${Object.keys(contract['x-carriers']).length} carriers.`);
 }

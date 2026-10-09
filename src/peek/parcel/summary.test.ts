@@ -39,9 +39,9 @@ describe('what the card says under the headline', () => {
   it('writes a nearby estimate as it is said, and a later one after “Expected”', () => {
     expect(parcelDetail(moving({ expectedDelivery: '2026-10-02 13:00-17:00' }), wording)).toBe('Today, 13:00–17:00');
     expect(parcelDetail(moving({ expectedDelivery: '2026-10-03' }), wording)).toBe('Tomorrow');
-    expect(parcelDetail(moving({ expectedDelivery: '2026-10-06' }), wording)).toBe('Expected: Tue 6 oct');
+    expect(parcelDetail(moving({ expectedDelivery: '2026-10-06' }), wording)).toBe('Expected: Tue 6 Oct');
     expect(parcelDetail(moving({ expectedDelivery: '2026-10-02 13:00-17:00' }), german)).toBe('Heute, 13:00–17:00');
-    expect(parcelDetail(moving({ expectedDelivery: '2026-10-06' }), german)).toBe('Erwartet: Di 6 okt');
+    expect(parcelDetail(moving({ expectedDelivery: '2026-10-06' }), german)).toBe('Erwartet: Di 6. Okt');
   });
 
   it('says there is no date yet while the parcel travels without one, and nothing once it waits or failed', () => {
@@ -58,7 +58,7 @@ describe('what the card says under the headline', () => {
     const delivered = parcel([['in_transit', at(1, 9)], ['delivered', at(2, 9, 12)]]);
     expect(parcelDetail(delivered, wording)).toBe('Today, 09:12');
     expect(parcelDetail(delivered, wording, false)).toBe('Today');
-    expect(parcelDetail(parcel([['delivered', at(1, 14, 12)]]), { ...wording, now: NOW + 20 * 86_400_000 })).toBe('Thu 1 oct, 14:12');
+    expect(parcelDetail(parcel([['delivered', at(1, 14, 12)]]), { ...wording, now: NOW + 20 * 86_400_000 })).toBe('Thu 1 Oct, 14:12');
     expect(parcelDetail(parcel([['returned', at(1, 9)]]), wording)).toBe('On its way back since yesterday');
     expect(parcelDetail({ ...delivered, events: [{ ...delivered.events[1], occurredAt: 'not a date' }] }, wording)).toBeNull();
   });
@@ -88,8 +88,8 @@ describe('what the card says under the headline', () => {
   });
 
   it('writes the forget date as the app writes its dates', () => {
-    expect(forgetDate(new Date(2026, 9, 30, 12).toISOString(), 'en-CH')).toBe('30 oct');
-    expect(forgetDate(new Date(2026, 9, 30, 12).toISOString(), 'de-CH')).toBe('30 okt');
+    expect(forgetDate(new Date(2026, 9, 30, 12).toISOString(), 'en-CH')).toBe('30 Oct');
+    expect(forgetDate(new Date(2026, 9, 30, 12).toISOString(), 'de-CH')).toBe('30. Okt');
     expect(forgetDate(null, 'en-CH')).toBeNull();
     expect(forgetDate('never', 'en-CH')).toBeNull();
   });
@@ -175,7 +175,7 @@ describe('the tab’s title and the link preview', () => {
 
   it('says of a gift when it arrives and when it arrived, in the reader’s language', () => {
     expect(giftArrival(moving({ expectedDelivery: '2026-10-02 13:00-17:00' }), wording)).toBe('Arrives today, 13:00–17:00');
-    expect(giftArrival(moving({ expectedDelivery: '2026-10-06' }), wording)).toBe('Arrives Tue 6 oct');
+    expect(giftArrival(moving({ expectedDelivery: '2026-10-06' }), wording)).toBe('Arrives Tue 6 Oct');
     expect(giftArrival(moving({ expectedDelivery: '2026-10-03' }), german)).toBe('Kommt morgen');
     expect(giftArrival(moving(), wording)).toBeNull();
     const delivered = parcel([['in_transit', at(1, 8)], ['delivered', at(2, 9, 12)]]);

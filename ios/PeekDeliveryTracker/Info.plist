@@ -48,7 +48,7 @@
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Scan parcel tracking barcodes to add deliveries faster.</string>
+	<string>Peek uses the camera to scan tracking barcodes, so you can add parcels without typing.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>SDTAPIBaseURL</key>

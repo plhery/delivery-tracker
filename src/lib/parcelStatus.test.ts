@@ -79,7 +79,7 @@ describe('parcelDisplayStatus', () => {
     const delivered = parcel('ok', 'in_transit');
     delivered.events[0].stage = 'delivered';
     delivered.events[0].occurredAt = '2026-07-16T10:00:00Z';
-    expect(localizedParcelCompletionDate(delivered, 'de-CH', (key) => en[key], new Date(2026, 8, 9).getTime())).toBe('Do 16 juli');
+    expect(localizedParcelCompletionDate(delivered, 'de-CH', (key) => en[key], new Date(2026, 8, 9).getTime())).toBe('Do 16. Juli');
   });
 });
 
@@ -113,7 +113,7 @@ describe('relative completion dates', () => {
     const saved = parcel('ok');
     saved.events[0].stage = stage;
     const now = new Date(2026, 8, 9, 12).getTime();
-    for (const [day, expected] of [[8, 'yesterday'], [9, 'today'], [10, 'tomorrow'], [12, 'Sat 12 sep']] as const) {
+    for (const [day, expected] of [[8, 'yesterday'], [9, 'today'], [10, 'tomorrow'], [12, 'Sat 12 Sep']] as const) {
       saved.events[0].occurredAt = new Date(2026, 8, day, 23, 55).toISOString();
       expect(localizedParcelCompletionDate(saved, 'en-CH', (key) => en[key], now)).toBe(expected);
     }

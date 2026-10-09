@@ -109,12 +109,12 @@ describe('the parcel page of a recipient', () => {
     expect(screen.getByText('Peek forgets this parcel 30 days after delivery.')).toBeVisible();
     moving.unmount();
     const delivered = open(view({ owner: false, events: arrived }));
-    expect(await screen.findByText('Shared with you · the link works until 30 dec')).toBeVisible();
+    expect(await screen.findByText('Shared with you · the link works until 30 Dec')).toBeVisible();
     expect(screen.queryByText(/Peek forgets this parcel/)).toBeNull();
     delivered.unmount();
     // Someone signed in reads the same day; a link from an account has none.
     const account = open(view({ owner: false, events: arrived }), { session: signedIn });
-    expect(await screen.findByText('Shared with you · the link works until 30 dec')).toBeVisible();
+    expect(await screen.findByText('Shared with you · the link works until 30 Dec')).toBeVisible();
     account.unmount();
     open(view({ owner: false, events: arrived, link: { kind: 'shared', forgetAt: null } }));
     expect(await screen.findByText('Shared with you · no account needed')).toBeVisible();
@@ -179,7 +179,7 @@ describe('the parcel page of a link’s owner', () => {
     const delivered = open(view({ events: arrived }), { session: { account: 'visitor', signIn } });
     await user.click(await actions().findByRole('button', { name: 'Share' }));
     const sheet = within(screen.getByRole('dialog', { name: 'Share this parcel' }));
-    expect(sheet.getByText(/^Works until 30 dec/)).toBeVisible();
+    expect(sheet.getByText(/^Works until 30 Dec/)).toBeVisible();
     await user.click(sheet.getByRole('button', { name: 'Keep it longer' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID);
@@ -187,7 +187,7 @@ describe('the parcel page of a link’s owner', () => {
     // Someone signed in adds the parcel from the page: the sheet only says the day.
     open(view({ events: arrived }), { session: signedIn });
     await user.click(await actions().findByRole('button', { name: 'Share' }));
-    expect(within(screen.getByRole('dialog')).getByText('Works until 30 dec')).toBeVisible();
+    expect(within(screen.getByRole('dialog')).getByText('Works until 30 Dec')).toBeVisible();
     expect(within(screen.getByRole('dialog')).queryByRole('button', { name: 'Keep it longer' })).toBeNull();
   });
 

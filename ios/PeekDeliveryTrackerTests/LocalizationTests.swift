@@ -20,9 +20,9 @@ final class LocalizationTests: XCTestCase {
         let localizer = Localizer()
         localizer.language = .en
         let now = try XCTUnwrap(DateParser.deliveryDate("2026-09-09"))
-        XCTAssertEqual(localizer.deliveryWindow(from: "2026-09-10", to: "2026-09-11", now: now), "tomorrow – Fri 11 sep")
+        XCTAssertEqual(localizer.deliveryWindow(from: "2026-09-10", to: "2026-09-11", now: now), "tomorrow – Fri 11 Sep")
         for from in [nil, "invalid", "2026-09-12", "2026-09-11"] as [String?] {
-            XCTAssertEqual(localizer.deliveryWindow(from: from, to: "2026-09-11", now: now), "Fri 11 sep")
+            XCTAssertEqual(localizer.deliveryWindow(from: from, to: "2026-09-11", now: now), "Fri 11 Sep")
         }
     }
 
@@ -195,8 +195,10 @@ final class LocalizationTests: XCTestCase {
         let localizer = Localizer()
         let date = try XCTUnwrap(DateParser.deliveryDate("2026-09-12"))
         let cases: [(AppLanguage, String)] = [
-            (.en, "Sat 12 sep"), (.de, "Sa 12 sept"),
-            (.fr, "Sam 12 sept"), (.it, "Sab 12 set"),
+            (.en, "Sat 12 Sep"), (.de, "Sa 12. Sept"),
+            (.fr, "sam 12 sept"), (.it, "sab 12 set"),
+            (.es, "sáb 12 sept"), (.pt, "sábado 12 set"),
+            (.pl, "sob 12 wrz"),
         ]
         for (language, expected) in cases {
             localizer.language = language
@@ -265,7 +267,7 @@ final class LocalizationTests: XCTestCase {
         let day = try XCTUnwrap(DateParser.deliveryDate("2026-09-09"))
         let late = try XCTUnwrap(Calendar.current.date(bySettingHour: 23, minute: 55, second: 0, of: day))
         XCTAssertEqual(localizer.deliveryDate(day, now: late), "today")
-        XCTAssertEqual(localizer.expectedDelivery("2026-09-11", now: late), "Fri 11 sep")
+        XCTAssertEqual(localizer.expectedDelivery("2026-09-11", now: late), "Fri 11 Sep")
     }
 
     func testTrackingPlacesTakeOnlyExplicitCountries() {

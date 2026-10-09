@@ -993,7 +993,7 @@ final class ParcelLogicTests: XCTestCase {
         let now = try XCTUnwrap(DateParser.deliveryDate("2026-09-09"))
         let id = UUID()
         for stage in [TrackingStage.delivered, .returned] {
-            for (value, expected) in [("2026-09-08", "yesterday"), ("2026-09-09", "today"), ("2026-09-10", "tomorrow"), ("2026-09-12", "Sat 12 sep")] {
+            for (value, expected) in [("2026-09-08", "yesterday"), ("2026-09-09", "today"), ("2026-09-10", "tomorrow"), ("2026-09-12", "Sat 12 Sep")] {
                 let day = try XCTUnwrap(DateParser.deliveryDate(value))
                 let late = try XCTUnwrap(Calendar.current.date(bySettingHour: 23, minute: 55, second: 0, of: day))
                 let parcel = makeParcel(id: id, events: [event(id, stage, DateParser.isoString(late))])
@@ -2380,8 +2380,8 @@ extension ParcelLogicTests {
         XCTAssertNil(DateParser.date("2026-09-12"))
         XCTAssertEqual(DateParser.deliveryDate("2026-09-12"), day)
         for _ in 0..<3 {
-            XCTAssertEqual(localizer.shortDate(day), "Sat 12 sep")
-            XCTAssertEqual(localizer.dateTime(DateParser.isoString(day)), "Sat 12 sep, 00:00")
+            XCTAssertEqual(localizer.shortDate(day), "Sat 12 Sep")
+            XCTAssertEqual(localizer.dateTime(DateParser.isoString(day)), "Sat 12 Sep, 00:00")
         }
     }
 }

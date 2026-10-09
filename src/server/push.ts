@@ -117,8 +117,8 @@ const PUSH_COPY: Record<Locale, Record<string, string>> = {
     delivered_date: 'livré le {{date}} à {{time}}',
     eta_day: 'arrive {{date}}',
     eta_date: 'arrive le {{date}}',
-    eta_changed_day: 'arrive finalement {{date}}',
-    eta_changed_date: 'arrive finalement le {{date}}',
+    eta_changed_day: 'arrive désormais {{date}}',
+    eta_changed_date: 'arrive désormais le {{date}}',
   },
   it: {
     test_title: 'Peek ti terrà al corrente',
@@ -153,7 +153,7 @@ const PUSH_COPY: Record<Locale, Record<string, string>> = {
   },
   es: {
     test_title: 'Peek te mantendrá al tanto',
-    test_body: 'Este dispositivo recibe avisos de los pasos que has elegido. Cámbialos cuando quieras en los ajustes.',
+    test_body: 'Este dispositivo recibe avisos de los pasos que has elegido. Cámbialos cuando quieras en Ajustes.',
     friend_title: '{{name}} se apunta',
     friend_body: 'Vuestros pasaportes ya están uno al lado del otro. Echa un vistazo.',
     update: 'Novedades del paquete',
@@ -169,7 +169,7 @@ const PUSH_COPY: Record<Locale, Record<string, string>> = {
     body_accepted: 'en marcha',
     body_in_transit: 'un paso más cerca',
     body_customs: 'Peek no lo pierde de vista',
-    body_exception: 'toca para ver qué hacer',
+    body_exception: 'el transportista ha detectado un problema. Toca para ver qué hacer.',
     body_out_for_delivery: 'ya casi está',
     body_ready_for_pickup: 'esperando en el punto de recogida',
     body_delivered: 'entregado',
@@ -200,7 +200,7 @@ const PUSH_COPY: Record<Locale, Record<string, string>> = {
     body_accepted: 'a viagem começou',
     body_in_transit: 'um passo mais perto',
     body_customs: 'o Peek está de olho nele',
-    body_exception: 'toca para ver o que fazer',
+    body_exception: 'a transportadora assinalou um problema. Toca para ver o que fazer.',
     body_out_for_delivery: 'quase a chegar',
     body_ready_for_pickup: 'à espera no ponto de recolha',
     body_delivered: 'entregue',
@@ -227,18 +227,18 @@ const PUSH_COPY: Record<Locale, Record<string, string>> = {
     title_returned: 'W drodze powrotnej',
     body_update: 'stuknij, aby zobaczyć szczegóły',
     body_pending: 'czeka na pierwszy skan przewoźnika',
-    body_registered: 'przewoźnik jeszcze jej nie ma',
-    body_accepted: 'ruszyła w drogę',
+    body_registered: 'przewoźnik jeszcze nie ma przesyłki',
+    body_accepted: 'rusza w drogę',
     body_in_transit: 'o krok bliżej',
-    body_customs: 'Peek ma ją na oku',
+    body_customs: 'Peek ma wszystko na oku',
     body_exception: 'stuknij, aby zobaczyć, co zrobić',
     body_out_for_delivery: 'już prawie na miejscu',
     body_ready_for_pickup: 'czeka w punkcie odbioru',
-    body_delivered: 'dostarczona',
-    body_failed_attempt: 'przewoźnik nie mógł jej doręczyć. Stuknij, aby zobaczyć, co dalej.',
+    body_delivered: 'dostarczono',
+    body_failed_attempt: 'przewoźnikowi nie udało się doręczyć przesyłki. Stuknij, aby zobaczyć, co dalej.',
     body_returned: 'wraca do nadawcy',
-    delivered_time: 'dostarczona o {{time}}',
-    delivered_date: 'dostarczona {{date}} o {{time}}',
+    delivered_time: 'dostarczono o {{time}}',
+    delivered_date: 'dostarczono {{date}} o {{time}}',
     eta_day: 'dotrze {{date}}',
     eta_date: 'dotrze {{date}}',
     eta_changed_day: 'nowy termin: {{date}}',
@@ -274,12 +274,15 @@ function stringField(row: JsonObject, name: string): string {
   return typeof row[name] === 'string' ? row[name] : '';
 }
 
-function carrierDisplayName(value: unknown): string {
+/** The carrier's name as the app writes it on the activities it starts, in the reader's language. */
+function carrierDisplayName(value: unknown, locale: Locale): string {
   const carrier = typeof value === 'string' ? value : '';
   if (Object.hasOwn(CARRIER_CAPABILITIES, carrier)) {
-    return CARRIER_CAPABILITIES[carrier as keyof typeof CARRIER_CAPABILITIES].displayName;
+    const capability: { displayName: string; displayNames?: Partial<Record<Locale, string>> } =
+      CARRIER_CAPABILITIES[carrier as keyof typeof CARRIER_CAPABILITIES];
+    return capability.displayNames?.[locale] ?? capability.displayName;
   }
-  return carrier || 'Carrier';
+  return carrier || appWord(locale, 'add.carrier')!;
 }
 
 /** The language a notification is written in: its device's, or English. */
@@ -1113,7 +1116,7 @@ export class DeliveryLiveActivityNotificationService {
       parcel: {
         id: parcelId,
         label: notificationText(row.label || appWord(locale, 'common.parcel'), 80),
-        carrier: notificationText(carrierDisplayName(row.carrier), 80),
+        carrier: notificationText(carrierDisplayName(row.carrier, locale), 80),
         status: notificationText(status, 80),
         // Older app versions already suppress a detail equal to the status.
         detail: notificationText(stage === 'out_for_delivery' && expected && expected !== appWord(locale, 'time.today')

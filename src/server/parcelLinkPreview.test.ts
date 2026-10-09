@@ -77,7 +77,7 @@ describe('parcelLinkPreview', () => {
   it('writes the preview in the page’s language', async () => {
     vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel').mockResolvedValue(stored({ expected_delivery: '2026-10-05' }));
     expect(await parcelLinkPreview(linkId, new Headers(), 'de')).toMatchObject({
-      title: 'In Zustellung · DHL', description: 'Erwartet: Mo 5 okt. Verfolge es auf Peek.',
+      title: 'In Zustellung · DHL', description: 'Erwartet: Mo 5. Okt. Verfolge es auf Peek.',
     });
   });
 
@@ -157,7 +157,7 @@ describe('parcelLinkPreview', () => {
       title: 'Peek — Sample parcel',
       description: 'Waiting for a real one? Paste a tracking number or a carrier link, no account needed.',
       headline: 'In transit',
-      detail: 'Expected: Sun 4 oct',
+      detail: 'Expected: Sun 4 Oct',
       carrier: expect.objectContaining({ id: 'gls-de' }),
       steps: 4,
       note: 'Sample parcel',
@@ -251,7 +251,7 @@ describe('the sample page’s metadata', () => {
     const picture = 'https://peek.example.test/api/public/parcels/sample/image?lang=fr';
     expect(metadata).toMatchObject({
       title,
-      description: 'Tu en attends un vrai ? Colle un numéro de suivi ou un lien de transporteur, pas besoin de compte.',
+      description: 'Tu en attends un vrai\u202f? Colle un numéro de suivi ou un lien de transporteur, pas besoin de compte.',
       alternates: { canonical: 'https://peek.example.test/sample' },
       openGraph: {
         title, url: 'https://peek.example.test/sample', siteName: 'Peek',
@@ -284,7 +284,7 @@ describe('the link preview image', () => {
 
   it.each([
     ['a short status', {}],
-    ['a long German one', { headline: 'Zustellversuch fehlgeschlagen', detail: 'Erwartet: Mo 5 okt' }],
+    ['a long German one', { headline: 'Zustellversuch fehlgeschlagen', detail: 'Erwartet: Mo 5. Okt' }],
     ['no estimate and no step yet', { headline: 'Waiting for the carrier', detail: null, steps: 0 }],
   ])('draws a complete 1200 × 630 PNG for %s', async (_name, overrides) => {
     const response = parcelLinkSocialImage(preview(overrides), 'peek.example.test');

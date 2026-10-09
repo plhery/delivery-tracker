@@ -39,7 +39,7 @@ export function userErrorKey(error: unknown): MessageKey | null {
   if (/tracking (?:number|input)|parcel number/.test(message)) return 'error.trackingNumber';
   if (/80 characters|label.*long/.test(message)) return 'error.nameTooLong';
   if (/notifications were not allowed/.test(message) || value.name === 'NotAllowedError') {
-    return 'notifications.state.blocked';
+    return 'notifications.state.blockedBrowser';
   }
   if (/failed to fetch|fetch failed|network|offline|load failed/.test(message)) return 'error.connection';
   return null;
