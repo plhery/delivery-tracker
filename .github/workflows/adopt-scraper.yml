@@ -46,8 +46,10 @@ env:
     ios/PeekDeliveryTracker/Resources/ChecksumVectors.json
 
 jobs:
-  # Installs the release and prepares its generated files without secrets or
-  # repository write access. CI tests the final commit before deployment.
+  # Installs the release, prepares its generated files and runs the app's
+  # typecheck and unit tests on them, without secrets or repository write
+  # access. A release that breaks the app stops here instead of stopping every
+  # deploy on main. CI still tests the final commit before deployment.
   adopt:
     name: Adopt
     if: github.repository == 'plhery/peek-delivery-tracker'
@@ -148,6 +150,16 @@ jobs:
           mkdir "$RUNNER_TEMP/adoption"
           git diff --cached --binary --full-index > "$RUNNER_TEMP/adoption/adoption.patch"
 
+      # After the patch is written, so files the tests leave behind are not
+      # part of it. The browser journeys, the build and the iPhone app are left
+      # to CI on the pushed commit.
+      - name: Test the app with the release
+        id: tests
+        if: steps.target.outputs.adopt == 'true'
+        run: |
+          npm run typecheck
+          npm test
+
       - name: Hand the patch to the push job
         if: steps.target.outputs.adopt == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -167,6 +179,7 @@ jobs:
             || steps.peers.outcome == 'failure' && 'The app does not have the optional peer versions this release needs.'
             || steps.regenerate.outcome == 'failure' && 'The contract or the iPhone resources could not be regenerated.'
             || steps.patch.outcome == 'failure' && 'The release changed files an adoption does not own.'
+            || steps.tests.outcome == 'failure' && 'The app fails its typecheck or unit tests with this release.'
             || '' }}
         run: |
           if [ -n "$FAILED" ]; then

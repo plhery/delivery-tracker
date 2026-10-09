@@ -70,12 +70,21 @@ gh workflow run adopt-scraper.yml -f version=1.2.3   # one exact release
 ```
 
 It never downgrades. It waits until npm serves the release, pins it, checks the database
-gate and optional peers, and regenerates the contract and iPhone resources. A second job,
-which runs nothing of the release, pushes the result to `main` as one commit. CI validates
-that final commit before deployment ([deployment](DEPLOYMENT.md)); adoption does not
-repeat the test suites or production build. A commit that reached `main` in the meantime
-is kept when it leaves the adoption's files alone; otherwise the run fails and its summary
-gives the command that starts it again.
+gate and optional peers, regenerates the contract and iPhone resources, and runs the app's
+typecheck and unit tests with them. A second job, which runs nothing of the release, pushes
+the result to `main` as one commit. CI validates that final commit before deployment
+([deployment](DEPLOYMENT.md)); adoption leaves the browser journeys, the production build
+and the iPhone app to it. A commit that reached `main` in the meantime is kept when it
+leaves the adoption's files alone; otherwise the run fails and its summary gives the
+command that starts it again.
+
+When the app fails its typecheck or unit tests with a release, nothing is pushed and
+`main` keeps deploying the release it has; every later release fails the same way until
+the app is fixed. When the release changed an answer on purpose, such as the carrier a
+number is detected as, either make the app's tests accept both answers on `main` and start
+the adoption again, or adopt the release by hand: one commit with
+`npm install --save-exact universal-parcel-scraper@<version>`, `npm run contract:generate`,
+`npm run ios:resources` and the fixes.
 
 `playwright-core`, `sharp` and `onnxruntime-web` are the scraper's optional peers. npm does
 not check them here, so [a test](../src/server/scraperDependency.test.ts) does. When a

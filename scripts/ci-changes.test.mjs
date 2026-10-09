@@ -242,12 +242,20 @@ describe('deployment gating', () => {
 describe('scraper adoption validation', () => {
   const workflow = readFileSync(new URL('../.github/workflows/adopt-scraper.yml', import.meta.url), 'utf8');
 
-  it('keeps database and peer gates while leaving test suites and the build to CI', () => {
+  it('keeps database and peer gates and tests the app with the release, leaving the build to CI', () => {
     assert.ok(workflow.includes('node scripts/adopt-scraper.mjs gate'));
     assert.ok(workflow.includes('node scripts/adopt-scraper.mjs peers'));
     assert.ok(workflow.includes('npm run contract:generate'));
     assert.ok(workflow.includes('npm run ios:resources'));
-    assert.doesNotMatch(workflow, /npm (?:test|run (?:lint|typecheck|test:[\w:-]+|build|audit))\b/);
+    // A release that breaks the app's types or unit tests never reaches main,
+    // and the job holding the push token still runs nothing of the release.
+    const [adopt, push] = workflow.split(/\n  push:\n/);
+    assert.ok(push, 'The push job must exist.');
+    const tests = adopt.indexOf('npm test');
+    assert.ok(adopt.includes('npm run typecheck') && tests > 0);
+    assert.ok(adopt.indexOf('Write the adoption as a patch') < tests && tests < adopt.indexOf('Hand the patch to the push job'));
+    assert.doesNotMatch(workflow, /npm (?:audit|run (?:lint|test:[\w:-]+|build))\b/);
+    assert.doesNotMatch(push, /\bnpm\b/);
     assert.ok(workflow.includes('PUSH_TOKEN: ${{ secrets.SCRAPER_ADOPTION_TOKEN }}'));
   });
 
