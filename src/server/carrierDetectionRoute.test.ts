@@ -174,7 +174,8 @@ it('returns the unknown answer when retaining its number fails', async () => {
 it('lets the user choose between unrelated carriers that both know the number', async () => {
   recognize.mockImplementation(knows('dpd', 'hermes-de'));
   expect(await (await request('12345678901231')).json()).toEqual({
-    trackingNumber: '12345678901231', carrier: 'unknown', recognized: ['dpd', 'hermes-de'], asked: asked(),
+    trackingNumber: '12345678901231', carrier: 'unknown',
+    recognized: asked().filter((carrier) => carrier === 'dpd' || carrier === 'hermes-de'), asked: asked(),
   });
 });
 

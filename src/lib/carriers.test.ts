@@ -707,11 +707,14 @@ describe('carrier detection', () => {
     const jd = detectCarrierMatch('JD0002123456789012');
     expect(jd).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(jd.candidates).toContain('inpost');
-    // Legacy JJD collides with the existing high-confidence DHL prefix rule:
-    // official domain or explicit carrier selection must win over number alone.
+    // Legacy JJD plates of sixteen digits are printed by both DHL and InPost,
+    // so the number alone suggests both and recognition settles it.
     // Sources: https://wobaaa.com/aliexpress-uk-tracking-numbers/ and https://github.com/jkeen/tracking_number_data/issues/91
-    expect(detectCarrier('JJD0002233564270287')).toBe('dhl');
-    expect(detectCarrier('JJD0002123456789012')).toBe('dhl');
+    for (const number of ['JJD0002233564270287', 'JJD0002123456789012']) {
+      const match = detectCarrierMatch(number);
+      expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
+      expect(match.candidates).toEqual(expect.arrayContaining(['dhl', 'inpost']));
+    }
     // OSS 24-digit InPost CLI example stays ambiguous with bpost 24-digit.
     // Source: https://github.com/alufers/inpost-cli
     const long = detectCarrierMatch('642600027844200234823732');
@@ -901,10 +904,10 @@ describe('carrier detection', () => {
   });
 
   it('ontrac — OnTrac', () => {
-    // OSS EXAMPLES, C/D + 14 digits.
+    // OSS EXAMPLES, C/D + 14 digits that pass OnTrac's check digit.
     // Source: https://github.com/jkeen/tracking_number_data/blob/main/couriers/ontrac.json
     for (const number of ['C11031500001879', 'C11121552953069', 'D10011354453707', 'D10011345983010']) {
-      expect(detectCarrierMatch(number)).toMatchObject({ carrier: 'unknown', confidence: 'low', candidates: expect.arrayContaining(['ontrac']) });
+      expect(detectCarrierMatch(number)).toMatchObject({ carrier: 'ontrac', confidence: 'high' });
     }
     // OSS legacy LaserShip L-letter + 8 digits (LA/LI/LE/LH/LN forms).
     // Source: https://github.com/jkeen/tracking_number_data/blob/main/couriers/lasership.json
@@ -1189,12 +1192,20 @@ describe('carrier detection', () => {
     expect(detectCarrier('CK089862199NL')).toBe('spring-gds');
     // OFFICIAL generated-barcode examples (illustrations, not customer shipments).
     // Source: https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/
+    // PostNL's 3S barcodes carry a four-letter customer code; DHL Parcel
+    // prints the same format with three letters, so its rule takes the
+    // three-letter example and the shorter codes stay suggestions.
     for (const number of [
-      '3SAB83691658823', '3SABCD3427702', '3SABCD987446630',
-      '3SABCD1175003', '3SABC19149187', '3SA5210528875',
+      '3SABCD3427702', '3SABCD987446630', '3SABCD1175003',
       'CC123442066NL', 'CD111208171NL', 'CP112251335NL', 'LA599196732NL',
     ]) {
       expect(detectCarrier(number)).toBe('spring-gds');
+    }
+    expect(detectCarrier('3SABC19149187')).toBe('dhl-ecommerce-nl');
+    for (const number of ['3SAB83691658823', '3SA5210528875']) {
+      const match = detectCarrierMatch(number);
+      expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
+      expect(match.candidates).toContain('spring-gds');
     }
     // Official examples that fail S10 are quarantined, never PostNL positives.
     // Source: https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/
