@@ -6,7 +6,7 @@ import type { ParcelWithEvents, Stage, TrackingEvent } from '../types';
 import { ParcelLinkError, type ParcelLinkView } from './links';
 import { ParcelPage } from './ParcelPage';
 import { NoticeToast } from './parcel/Toast';
-import { clearPendingKeep, onKeepOutcome, pendingKeep, rememberPendingKeep, announceKeepOutcome, type KeepOutcome } from './pending';
+import { clearPendingKeep, onKeepOutcome, PENDING_KEEP_STORAGE_KEY, pendingKeep, rememberPendingKeep, announceKeepOutcome, type KeepOutcome } from './pending';
 import { forgetAllRecents, recentFor, rememberParcel } from './recents';
 import { SAMPLE_LINK_ID } from './sample';
 import { PeekSessionProvider, type PeekSession } from './session';
@@ -426,7 +426,7 @@ describe('ParcelPage stages and troubles', () => {
     expect(document.querySelector('.peekp-pip')).not.toHaveClass('peekp-pip--hero');
     // The account is offered under the card, as on any other day.
     await user.click(screen.getByRole('button', { name: /Create an account/ }));
-    expect(signIn).toHaveBeenCalledWith(LINK_ID);
+    expect(signIn).toHaveBeenCalledWith(LINK_ID, false);
     await act(async () => { await user.click(screen.getAllByRole('button', { name: 'Track another parcel' })[1]); });
     expect(location.pathname).toBe('/');
   });
@@ -456,7 +456,7 @@ describe('ParcelPage stages and troubles', () => {
     expect(others.queryByRole('button', { name: /^See all/ })).toBeNull();
     expect(others.getByText('Kept in this browser only.')).toBeVisible();
     await user.click(others.getByRole('button', { name: 'Create an account to keep them, with alerts' }));
-    expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID);
+    expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID, false);
     // The other parcel's page opens on its card.
     await user.click(links[0]);
     expect(location.pathname).toBe(`/p/${OTHER_LINK_ID}`);
@@ -616,12 +616,12 @@ describe('ParcelPage keeping', () => {
     const user = userEvent.setup();
     open({ account: 'visitor', signIn });
     await user.click(await screen.findByRole('button', { name: /Create an account/ }));
-    expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID);
+    expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID, false);
     expect(screen.queryByRole('dialog')).toBeNull();
     // The header's button leads to the same step.
     await user.click(within(document.querySelector('header')!).getByRole('button', { name: 'Sign in' }));
     expect(signIn).toHaveBeenCalledTimes(2);
-    expect(signIn).toHaveBeenLastCalledWith(LINK_ID);
+    expect(signIn).toHaveBeenLastCalledWith(LINK_ID, false);
   });
 
   it('offers the ways to sign in on the page itself, and notes the parcel only when one is taken', async () => {
@@ -655,6 +655,42 @@ describe('ParcelPage keeping', () => {
     await user.click(screen.getByRole('button', { name: 'View my parcels' }));
     expect(signInWith.verifyCode).toHaveBeenCalledWith('owner@example.test', '123456');
     expect(pendingKeep()).toBe(LINK_ID);
+  });
+
+  it('signs in for the email from the alerts: the sheet promises it, and the note carries the wish', async () => {
+    const signInWith = methods();
+    const emailing = () => {
+      const shown = testView();
+      return { ...shown, link: { ...shown.link, alerts: { available: true, vapidPublicKey: null, email: true } } };
+    };
+    mocks.read.mockResolvedValue(emailing());
+    const user = userEvent.setup();
+    const { unmount } = open({ account: 'visitor', signIn: vi.fn(), signInWith });
+    await user.click(await screen.findByRole('button', { name: /^Ping me/ }));
+    await user.click(within(screen.getByText('An email when it arrives').closest('.peeks-account') as HTMLElement).getByRole('button', { name: 'Sign in' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Sign in to keep it' });
+    expect(within(sheet).getAllByText(/Peek emails the address you sign in with when it arrives/).length).toBeGreaterThan(0);
+    expect(within(sheet).queryByText(/gets alerts like your other parcels/)).toBeNull();
+    expect(pendingKeep()).toBeNull();
+    await user.click(within(sheet).getByRole('button', { name: 'Continue with Google' }));
+    expect(JSON.parse(sessionStorage.getItem(PENDING_KEEP_STORAGE_KEY)!)).toMatchObject({ id: LINK_ID, email: true });
+    // The page's other ways in keep the parcel without asking for the email.
+    await user.click(within(sheet).getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await user.click(within(document.querySelector('header')!).getByRole('button', { name: 'Sign in' }));
+    const plain = screen.getByRole('dialog', { name: 'Sign in to keep it' });
+    expect(within(plain).getAllByText(/gets alerts like your other parcels/).length).toBeGreaterThan(0);
+    await user.click(within(plain).getByRole('button', { name: 'Continue with Google' }));
+    expect(JSON.parse(sessionStorage.getItem(PENDING_KEEP_STORAGE_KEY)!)).not.toHaveProperty('email');
+    unmount();
+    clearPendingKeep();
+
+    // Where signing in is its own step, the wish goes with the parcel.
+    const signIn = vi.fn();
+    open({ account: 'visitor', signIn });
+    await user.click(await screen.findByRole('button', { name: /^Ping me/ }));
+    await user.click(within(screen.getByText('An email when it arrives').closest('.peeks-account') as HTMLElement).getByRole('button', { name: 'Sign in' }));
+    expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID, true);
   });
 
   it('offers nothing to keep while the account is still being checked', async () => {
@@ -788,7 +824,7 @@ describe('ParcelPage keeping', () => {
     const user = userEvent.setup();
     open({ account: 'visitor', signIn });
     await user.click(await screen.findByRole('button', { name: /Create an account/ }));
-    expect(signIn).toHaveBeenCalledWith(LINK_ID);
+    expect(signIn).toHaveBeenCalledWith(LINK_ID, false);
     expect(screen.queryByRole('button', { name: 'Forget it now' })).toBeNull();
   });
 });
@@ -875,7 +911,7 @@ describe('ParcelPage for the sample parcel', () => {
 
     // Signing in keeps nothing: there is no parcel to keep.
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(signIn).toHaveBeenCalledExactlyOnceWith(undefined);
+    expect(signIn).toHaveBeenCalledExactlyOnceWith(undefined, false);
     expect(pendingKeep()).toBeNull();
 
     // The demo opens in place; a modified click is the browser's, for a new tab.

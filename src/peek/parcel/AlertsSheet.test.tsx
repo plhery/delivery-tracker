@@ -206,7 +206,7 @@ describe('the Ping me sheet', () => {
     expect(document.body).not.toHaveTextContent(/e-?mail/i);
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(onClose).toHaveBeenCalledTimes(1);
-    expect(onSignIn).toHaveBeenCalledTimes(1);
+    expect(onSignIn).toHaveBeenCalledExactlyOnceWith(false);
     unmount();
     // Someone signed in already has an account.
     open({ onSignIn: undefined });
@@ -224,7 +224,8 @@ describe('the Ping me sheet', () => {
     expect(way(/^Notifications in this browser/)).toBeChecked();
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(onClose).toHaveBeenCalledTimes(1);
-    expect(onSignIn).toHaveBeenCalledTimes(1);
+    // The email is what they signed in for.
+    expect(onSignIn).toHaveBeenCalledExactlyOnceWith(true);
     unmount();
     // Someone signed in is not asked to.
     open({ alerts: { ...SERVER, email: true }, onSignIn: undefined });
@@ -252,8 +253,34 @@ describe('the Ping me sheet', () => {
     await user.click(screen.getByRole('button', { name: 'Or add to calendar' }));
     expect(onCalendar).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole('button', { name: 'Sign in for alerts on all your devices' }));
-    expect(onSignIn).toHaveBeenCalledTimes(1);
+    expect(onSignIn).toHaveBeenCalledExactlyOnceWith(false);
     expect(requestPermission).not.toHaveBeenCalled();
+  });
+
+  it('offers that iPhone the email first where the server emails accounts: it needs no Home Screen', async () => {
+    stubAlertBrowser({ userAgent: IPHONE_SAFARI });
+    const user = userEvent.setup();
+    const { onSignIn, onClose, unmount } = open({ alerts: { ...SERVER, email: true } });
+    const sheet = screen.getByRole('dialog', { name: 'Alerts on iPhone' });
+    const after = (first: Element, second: Element) => first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING;
+    const email = within(sheet).getByText('An email when it arrives');
+    const safari = within(sheet).getByText('Safari only sends notifications from sites on your Home Screen.');
+    expect(within(sheet).getByText('Sign in, and Peek writes to the address you sign in with.')).toBeVisible();
+    expect(after(email, safari)).toBeTruthy();
+    expect(after(safari, within(sheet).getByRole('list'))).toBeTruthy();
+    expect(within(sheet).getAllByRole('listitem')).toHaveLength(3);
+    // The row stands in for the plain sign-in button; the calendar stays.
+    expect(screen.queryByRole('button', { name: 'Sign in for alerts on all your devices' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Or add to calendar' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onSignIn).toHaveBeenCalledExactlyOnceWith(true);
+    unmount();
+    // Someone signed in gets the steps alone.
+    open({ alerts: { ...SERVER, email: true }, onSignIn: undefined, calendar: null });
+    expect(screen.getByText('Safari only sends notifications from sites on your Home Screen.')).toBeVisible();
+    expect(document.body).not.toHaveTextContent(/e-?mail/i);
+    expect(screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Close']);
   });
 
   it('starts Safari 27 from the page menu of its address bar, drawn with the site’s address', () => {

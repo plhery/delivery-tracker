@@ -16,8 +16,8 @@ export function useVisitorSession(account: 'checking' | 'visitor'): PeekSession 
   const { navigate } = useEntryExperience();
   return useMemo(() => ({
     account,
-    signIn(keepLinkId?: string) {
-      if (keepLinkId) rememberPendingKeep(keepLinkId);
+    signIn(keepLinkId?: string, email = false) {
+      if (keepLinkId) rememberPendingKeep(keepLinkId, { email });
       if (parcelLinkIdFromPath(window.location.pathname)) leaveParcelLink();
       navigate('sign-in');
     },

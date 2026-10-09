@@ -40,17 +40,20 @@ export function AccountRow({ carrier, onSignIn }: { carrier: CarrierInfo; onSign
  * sign in. The parcel is noted before a sign-in leaves the page or completes,
  * so it joins the account as soon as there is one.
  */
-export function KeepSheet({ linkId, carrier, title, summary, methods, onClose }: {
+export function KeepSheet({ linkId, carrier, title, summary, email = false, methods, onClose }: {
   linkId: string;
   carrier: CarrierInfo;
   /** The parcel's name, or its number. */
   title: string;
   /** Its status and estimate, on one line. */
   summary: string;
+  /** Signing in was asked for the delivery email: the sheet promises it, and it is switched on with the parcel. */
+  email?: boolean;
   methods: SignInMethods;
   onClose: () => void;
 }) {
   const { t } = useI18n();
+  const what = t(email ? 'link.keep.sheetEmail' : 'link.keep.sheet');
   const close = useRef<HTMLButtonElement>(null);
   const [dialog, dismiss] = useSheetDialog<HTMLDivElement>(true, () => {
     // Closing the sheet takes the wish back: a later sign-in keeps nothing by surprise.
@@ -58,7 +61,7 @@ export function KeepSheet({ linkId, carrier, title, summary, methods, onClose }:
     onClose();
   }, close);
   const noted = <Arguments extends unknown[]>(signIn: ((...values: Arguments) => Promise<void>) | undefined) => signIn && ((...values: Arguments) => {
-    rememberPendingKeep(linkId);
+    rememberPendingKeep(linkId, { email });
     return signIn(...values);
   });
 
@@ -73,8 +76,8 @@ export function KeepSheet({ linkId, carrier, title, summary, methods, onClose }:
         <CarrierTruck carrier={carrier} />
         <span><strong>{title}</strong><small>{summary}</small></span>
       </div>
-      <p className="peekp-keepsheet__what">{t('link.keep.sheet')}</p>
-      <SignInScreen {...methods} card title={t('link.keep.action')} subtitle={t('link.keep.sheet')}
+      <p className="peekp-keepsheet__what">{what}</p>
+      <SignInScreen {...methods} card title={t('link.keep.action')} subtitle={what}
         signInWithGoogle={noted(methods.signInWithGoogle)} signInWithApple={noted(methods.signInWithApple)} verifyCode={noted(methods.verifyCode)!} />
     </div>
   </div>, document.body);

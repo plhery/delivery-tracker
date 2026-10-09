@@ -43,15 +43,25 @@ describe('the note of a parcel to keep', () => {
   it('lasts for this tab, for a day, and holds only the link id', () => {
     const now = Date.parse('2026-10-02T08:00:00Z');
     expect(pendingKeep(now)).toBeNull();
-    rememberPendingKeep(LINK_ID, now);
+    rememberPendingKeep(LINK_ID, { now });
     expect(pendingKeep(now)).toBe(LINK_ID);
     expect(JSON.parse(sessionStorage.getItem(PENDING_KEEP_STORAGE_KEY)!)).toEqual({ id: LINK_ID, at: now });
     expect(localStorage.getItem(PENDING_KEEP_STORAGE_KEY)).toBeNull();
     expect(pendingKeep(now + 24 * 3_600_000 - 1)).toBe(LINK_ID);
     expect(pendingKeep(now + 24 * 3_600_000)).toBeNull();
     expect(pendingKeep(now - 1)).toBeNull();
-    rememberPendingKeep('not a link', now);
+    rememberPendingKeep('not a link', { now });
     expect(pendingKeep(now)).toBe(LINK_ID);
+  });
+
+  it('says that signing in was for the email only when it was', () => {
+    const now = Date.parse('2026-10-02T08:00:00Z');
+    rememberPendingKeep(LINK_ID, { email: true, now });
+    expect(JSON.parse(sessionStorage.getItem(PENDING_KEEP_STORAGE_KEY)!)).toEqual({ id: LINK_ID, at: now, email: true });
+    expect(pendingKeep(now)).toBe(LINK_ID);
+    // A later wish to keep it replaces the note, email and all.
+    rememberPendingKeep(LINK_ID, { now });
+    expect(JSON.parse(sessionStorage.getItem(PENDING_KEEP_STORAGE_KEY)!)).toEqual({ id: LINK_ID, at: now });
   });
 
   it('is dropped on request, for a given link only when it is the noted one', () => {
@@ -126,6 +136,49 @@ describe('keeping after sign-in', () => {
       expect(pendingKeep()).toBeNull();
     }
     expect(heard.map(({ outcome }) => outcome)).toEqual(['already', 'quota', 'unavailable']);
+  });
+
+  it('switches the email on for someone who signed in for it, once the parcel is in the account, and says whether it is', async () => {
+    const emailOn = vi.fn(async () => true);
+    const kept = [{ id: LINK_ID, outcome: 'kept', packageId: 'p1' }];
+    // Signing in to keep a parcel asks for no email.
+    rememberPendingKeep(LINK_ID);
+    mocks.claim.mockResolvedValue(kept);
+    expect(await keepPendingParcel(auth, emailOn)).toEqual({ id: LINK_ID, outcome: 'kept', packageId: 'p1', name: null });
+    expect(emailOn).not.toHaveBeenCalled();
+
+    for (const outcome of ['kept', 'already'] as const) {
+      rememberPendingKeep(LINK_ID, { email: true });
+      mocks.claim.mockResolvedValue([{ id: LINK_ID, outcome, packageId: 'p1' }]);
+      // The parcel is in the account before the email is switched, and the deliveries hear of both at once.
+      emailOn.mockImplementationOnce(async () => {
+        expect(mocks.claim).toHaveBeenCalled();
+        expect(heard.some((said) => said.email)).toBe(false);
+        return true;
+      });
+      mocks.claim.mockClear();
+      expect(await keepPendingParcel(auth, emailOn)).toEqual({ id: LINK_ID, outcome, packageId: 'p1', name: null, email: true });
+      expect(heard.pop()).toMatchObject({ outcome, email: true });
+    }
+    expect(emailOn).toHaveBeenCalledTimes(2);
+
+    // A parcel the account cannot take leaves the email as it was.
+    rememberPendingKeep(LINK_ID, { email: true });
+    mocks.claim.mockResolvedValue([{ id: LINK_ID, outcome: 'quota' }]);
+    expect(await keepPendingParcel(auth, emailOn)).toEqual({ id: LINK_ID, outcome: 'quota', name: null });
+    expect(emailOn).toHaveBeenCalledTimes(2);
+
+    // An email that stayed off, or could not be switched, is not announced as on; the parcel is kept all the same.
+    mocks.claim.mockResolvedValue(kept);
+    for (const answer of [async () => false, async () => { throw new Error('offline'); }]) {
+      rememberPendingKeep(LINK_ID, { email: true });
+      emailOn.mockImplementationOnce(answer);
+      expect(await keepPendingParcel(auth, emailOn)).toEqual({ id: LINK_ID, outcome: 'kept', packageId: 'p1', name: null });
+      expect(pendingKeep()).toBeNull();
+    }
+    // Nothing to switch it on with: the parcel is kept as before.
+    rememberPendingKeep(LINK_ID, { email: true });
+    expect(await keepPendingParcel(auth)).toEqual({ id: LINK_ID, outcome: 'kept', packageId: 'p1', name: null });
   });
 
   it('keeps a link without a device copy by its id alone, and reads no answer as unavailable', async () => {

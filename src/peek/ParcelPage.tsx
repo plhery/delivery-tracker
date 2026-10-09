@@ -310,17 +310,19 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   // Keeping: a visitor signs in first; someone signed in adds the parcel with one tap.
   const signedIn = session.account === 'signed-in';
   const pendingId = usePendingKeep();
-  const [keepSheet, setKeepSheet] = useState(false);
+  // `email` when signing in was asked for the delivery email, which is then switched on with the parcel.
+  const [keepSheet, setKeepSheet] = useState<'keep' | 'email' | null>(null);
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<MessageKey | null>(null);
   const followed = signedIn && parcel.trackingNumber
     ? session.deliveries?.find((own) => own.trackingNumber === parcel.trackingNumber) : undefined;
 
-  function signInToKeep() {
+  function signInFor(email: boolean) {
     trackAction('parcel-link-sign-in');
-    if (link.canKeep && session.signInWith?.configured) setKeepSheet(true);
-    else session.signIn(link.canKeep ? linkId : undefined);
+    if (link.canKeep && session.signInWith?.configured) setKeepSheet(email ? 'email' : 'keep');
+    else session.signIn(link.canKeep ? linkId : undefined, email);
   }
+  const signInToKeep = () => signInFor(false);
 
   const stopListening = useRef<() => void>(() => undefined);
   const openDeliveries = session.openDeliveries;
@@ -425,7 +427,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
       : !carrierKnown ? 'unknown' : automatic || moving ? 'found' : null,
     scan: scanIdentity(parcel),
     carrier: displayed.name,
-    busy: !!word || sharing || alerting || keepSheet || !!forgetting || mapOpen,
+    busy: !!word || sharing || alerting || !!keepSheet || !!forgetting || mapOpen,
     notes: feedbackNotes,
     send: (answer) => sendLinkFeedback(linkId, answer, key),
   });
@@ -508,12 +510,12 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
     {word?.kind === 'calendar' && <Toast>{t('alerts.calendar.done')}</Toast>}
     {word?.kind === 'calendar-failed' && <Toast mark={<Glyph name="info" />}>{t('alerts.calendar.failed')}</Toast>}
     {keepSheet && session.signInWith && <KeepSheet linkId={linkId} carrier={displayed} title={name ?? number ?? t('common.parcel')} summary={summary}
-      methods={session.signInWith} onClose={() => setKeepSheet(false)} />}
+      email={keepSheet === 'email'} methods={session.signInWith} onClose={() => setKeepSheet(null)} />}
     {sharing && key && <LinkShareSheet linkId={linkId} ownerKey={key} view={view} name={name} onChanged={adopt}
       worksUntil={final ? forgetOn : null} onAccount={visitor ? signInToKeep : undefined} onClose={() => setSharing(false)} />}
     {alerting && <AlertsSheet linkId={linkId} ownerKey={key} alerts={link.alerts} initialPreset={early ? 'all' : 'important'}
       calendar={calendarWindow} onCalendar={calendarFile}
-      onSignIn={session.account === 'visitor' && !sample ? signInToKeep : undefined} onClose={() => setAlerting(false)} />}
+      onSignIn={session.account === 'visitor' && !sample ? signInFor : undefined} onClose={() => setAlerting(false)} />}
     {forgetting && <ForgetDialog arrived={forgetting === 'arrived' ? { forgetLine } : undefined} onForget={forget} onCancel={() => setForgetting(false)} />}
     {mapOpen && route && <ParcelMapSheet route={route} stage={stage ?? undefined} brand={brand} onClose={() => setMapOpen(false)} />}
     <FeedbackOverlays feedback={feedback} />

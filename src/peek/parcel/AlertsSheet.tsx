@@ -46,7 +46,8 @@ function Presets({ value, disabled, onChange }: { value: ParcelAlertPreset; disa
  * "Ping me": this browser's notifications for the parcel, or the delivery
  * window as a calendar file. The browser is asked for nothing until someone
  * chooses "Turn on". An iPhone outside a Home Screen app gets the steps to
- * put Peek there, instead of a button that cannot work.
+ * put Peek there, instead of a button that cannot work, after the email that
+ * signing in brings, which needs no Home Screen.
  */
 export function AlertsSheet({ linkId, ownerKey, alerts, initialPreset, calendar, onCalendar, onSignIn, onClose }: {
   linkId: string;
@@ -59,8 +60,8 @@ export function AlertsSheet({ linkId, ownerKey, alerts, initialPreset, calendar,
   calendar: string | null;
   /** Hands the calendar file to the browser, and says whether it could. */
   onCalendar: () => boolean;
-  /** Offered to a visitor: an account alerts every device they sign in on. */
-  onSignIn?: () => void;
+  /** Offered to a visitor: an account alerts every device they sign in on. `email` when the email was what they asked for. */
+  onSignIn?: (email: boolean) => void;
   onClose: () => void;
 }) {
   const { t, locale } = useI18n();
@@ -129,7 +130,7 @@ export function AlertsSheet({ linkId, ownerKey, alerts, initialPreset, calendar,
   const account = (dismiss: () => void) => onSignIn && <div className="peeks-account">
     <span aria-hidden="true"><Icon name={emails ? 'mail' : 'account'} /></span>
     <span><strong>{t(emails ? 'alerts.email.title' : 'alerts.account.title')}</strong><small>{t(emails ? 'alerts.email.body' : 'alerts.account.body')}</small></span>
-    <button type="button" onClick={() => { dismiss(); onSignIn(); }}>{t('arrival.signInTitle')}</button>
+    <button type="button" onClick={() => { dismiss(); onSignIn(emails); }}>{t('arrival.signInTitle')}</button>
   </div>;
   const feedback = <>
     {error && <p className="sheet__error" role="alert">{t(error)}</p>}
@@ -137,13 +138,17 @@ export function AlertsSheet({ linkId, ownerKey, alerts, initialPreset, calendar,
   </>;
 
   if (support === 'install') {
-    return <Sheet title={t('alerts.iphone.title')} intro={t('alerts.iphone.body')} className="peeks-alerts" onClose={onClose}>{(dismiss) => <>
+    // The email needs no Home Screen: where signing in brings it, it is offered before the steps.
+    const emailFirst = emails && !!onSignIn;
+    const signIn = !emailFirst && onSignIn;
+    return <Sheet title={t('alerts.iphone.title')} intro={emailFirst ? undefined : t('alerts.iphone.body')} className="peeks-alerts" onClose={onClose}>{(dismiss) => <>
+      {emailFirst && <>{account(dismiss)}<p className="peeks__intro">{t('alerts.iphone.body')}</p></>}
       <HomeScreenSteps then="ping" cards />
       {feedback}
-      <div className="peeks__actions">
+      {(calendar || signIn) && <div className="peeks__actions">
         {calendar && <button type="button" className="button button--secondary" onClick={addToCalendar}><Glyph name="calendar" /><span>{t('alerts.calendar.or')}</span></button>}
-        {onSignIn && <button type="button" className="button button--secondary" onClick={() => { dismiss(); onSignIn(); }}><Icon name="account" /><span>{t('alerts.iphone.signIn')}</span></button>}
-      </div>
+        {signIn && <button type="button" className="button button--secondary" onClick={() => { dismiss(); signIn(false); }}><Icon name="account" /><span>{t('alerts.iphone.signIn')}</span></button>}
+      </div>}
     </>}</Sheet>;
   }
 

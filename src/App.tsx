@@ -78,6 +78,11 @@ const KEEP_MESSAGES = {
   unavailable: 'link.gone.title',
   failed: 'add.failed',
 } as const satisfies Record<KeepOutcome['outcome'], MessageKey>;
+/** The same, for someone who signed in to be emailed and now is. */
+const KEEP_EMAIL_MESSAGES: Partial<Record<KeepOutcome['outcome'], MessageKey>> = {
+  kept: 'link.keptEmail',
+  already: 'link.alreadyEmail',
+};
 
 export default function App({
   accountEmail,
@@ -200,7 +205,7 @@ export default function App({
 
   // A parcel kept from its link joins the list: say how that ended, once.
   const [keptParcelId, setKeptParcelId] = useState<string | null>(null);
-  useEffect(() => onKeepOutcome(({ outcome, packageId }) => {
+  useEffect(() => onKeepOutcome(({ outcome, packageId, email }) => {
     if (outcome === 'kept' && packageId) setKeptParcelId(packageId);
     // The parcel was in the account already: open it, unless the address already does.
     if (outcome === 'already' && packageId && new URLSearchParams(window.location.search).get('parcel') !== packageId) {
@@ -209,7 +214,7 @@ export default function App({
     }
     setRefreshNotice({
       mark: outcome === 'kept' || outcome === 'already' ? 'success' : 'pending',
-      text: t(KEEP_MESSAGES[outcome]),
+      text: t((email && KEEP_EMAIL_MESSAGES[outcome]) || KEEP_MESSAGES[outcome]),
     });
   }), [t]);
   // The kept parcel's card celebrates once the list has it.

@@ -100,6 +100,18 @@ export function saveEmailOnDelivery(enabled: boolean, auth: ApiAuth): Promise<No
   }, auth);
 }
 
+/**
+ * Switches the delivery email on for someone who signed in to get it, and
+ * says whether it is on. Asking again overrides an earlier "off"; an account
+ * the server cannot write to stays without.
+ */
+export async function turnOnDeliveryEmail(auth: ApiAuth): Promise<boolean> {
+  const preferences = await loadNotificationPreferences(auth, { once: true });
+  if (preferences.emailAvailable !== true) return false;
+  if (preferences.emailOnDelivery === true) return true;
+  return (await saveEmailOnDelivery(true, auth)).emailOnDelivery === true;
+}
+
 /** The shared copy: null until this sign-in has read or saved them, and without an account. */
 export function useNotificationPreferences(auth: ApiAuth | undefined): NotificationPreferences | null {
   const subscribe = useCallback((notify: () => void) => {

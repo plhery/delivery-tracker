@@ -339,8 +339,10 @@ usage count.
   Activity pushes go first, so a successful one replaces the matching banner; if it fails,
   the banner is sent.
 - The delivery email is apart from notifications: off until the account switches it on,
-  and switched off per parcel. A parcel is told once when it is ready to collect and once
-  when it is delivered, so one collected from a pickup point gets both: the second says it
+  and switched off per parcel. A visitor who signs in from the email row of a parcel
+  link's alerts gets it switched on once that parcel is in the account. A parcel is told
+  once when it is ready to collect and once when it is delivered, so one collected from a
+  pickup point gets both: the second says it
   was collected, when its last movement before the delivery made it ready for pickup, as
   the apps' pickup point does. Each goes after the notifications of the sync job that stored the scan, on
   deployments without push too.

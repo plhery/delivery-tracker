@@ -17,8 +17,11 @@ export interface PeekSession {
   account: 'checking' | 'visitor' | 'signed-in';
   /** The account's email, for someone signed in: its initial stands in the landing's header. */
   email?: string;
-  /** Opens the sign-in step. With a link id, that parcel is kept as soon as the visitor is signed in. */
-  signIn(keepLinkId?: string): void;
+  /**
+   * Opens the sign-in step. With a link id, that parcel is kept as soon as the visitor is signed in;
+   * with `email`, the delivery email is switched on with it.
+   */
+  signIn(keepLinkId?: string, email?: boolean): void;
   /** Lets a visitor sign in without leaving the page they are on. Absent where signing in is its own step, as in the demo. */
   signInWith?: SignInMethods;
   /** The server emails an account that asks for it when a parcel is delivered. Absent where it sends none. */

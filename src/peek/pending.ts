@@ -8,8 +8,8 @@ import { forgetRecent, recentFor } from './recents';
 /**
  * "Keep it after signing in": a note of the parcel link to keep, held for
  * this tab so it survives the round trip to a sign-in provider and back to
- * `/`. Only the link id is noted; the key and the name stay with the device's
- * copy of the parcel.
+ * `/`. Only the link id is noted, and whether signing in was for the delivery
+ * email; the key and the name stay with the device's copy of the parcel.
  */
 export const PENDING_KEEP_STORAGE_KEY = 'sdt.peek.pendingKeep.v1'; // gitleaks:allow -- sessionStorage name, not a credential
 const MAX_AGE_MS = 24 * 60 * 60_000;
@@ -24,10 +24,10 @@ function stored(): string | null {
   try { return window.sessionStorage.getItem(PENDING_KEEP_STORAGE_KEY); } catch { return memory; }
 }
 
-/** Notes the parcel to keep once someone is signed in. */
-export function rememberPendingKeep(id: string, now = Date.now()): void {
+/** Notes the parcel to keep once someone is signed in; with `email`, they signed in to be emailed when it arrives. */
+export function rememberPendingKeep(id: string, { email = false, now = Date.now() }: { email?: boolean; now?: number } = {}): void {
   if (!isParcelLinkId(id)) return;
-  memory = JSON.stringify({ id, at: now });
+  memory = JSON.stringify({ id, at: now, ...(email ? { email: true } : {}) });
   try {
     window.sessionStorage.setItem(PENDING_KEEP_STORAGE_KEY, memory);
     inMemory = false;
@@ -37,15 +37,19 @@ export function rememberPendingKeep(id: string, now = Date.now()): void {
   changed();
 }
 
-/** The link id waiting to be kept, if the note is still fresh. */
-export function pendingKeep(now = Date.now()): string | null {
+function freshNote(now: number): { id: string; email: boolean } | null {
   try {
-    const note = JSON.parse(stored() ?? 'null') as { id?: unknown; at?: unknown } | null;
+    const note = JSON.parse(stored() ?? 'null') as { id?: unknown; at?: unknown; email?: unknown } | null;
     const age = now - Number(note?.at);
-    return note && isParcelLinkId(note.id) && age >= 0 && age < MAX_AGE_MS ? note.id : null;
+    return note && isParcelLinkId(note.id) && age >= 0 && age < MAX_AGE_MS ? { id: note.id, email: note.email === true } : null;
   } catch {
     return null;
   }
+}
+
+/** The link id waiting to be kept, if the note is still fresh. */
+export function pendingKeep(now = Date.now()): string | null {
+  return freshNote(now)?.id ?? null;
 }
 
 /** Drops the note; with an id, only when the note is about that link. */
@@ -72,6 +76,8 @@ export interface KeepOutcome {
   outcome: ParcelClaimResult['outcome'] | 'failed';
   /** The parcel in the account, for `kept` and `already`. */
   packageId?: string;
+  /** The delivery email is on, for someone who signed in to get it. */
+  email?: boolean;
   /** The name the device had given it. */
   name: string | null;
 }
@@ -124,16 +130,21 @@ const keeping = new Set<string>();
 
 /**
  * After sign-in: keeps the parcel the visitor asked to keep, once, and
- * announces how it ended. Without an answer the note stays for the next
+ * announces how it ended. For someone who signed in to be emailed, `emailOn`
+ * switches the delivery email on once the parcel is in the account, and the
+ * outcome says whether it is. Without an answer the note stays for the next
  * visit of this tab.
  */
-export async function keepPendingParcel(auth: ApiAuth): Promise<KeepOutcome | null> {
-  const id = pendingKeep();
-  if (!id || keeping.has(id)) return null;
+export async function keepPendingParcel(auth: ApiAuth, emailOn?: () => Promise<boolean>): Promise<KeepOutcome | null> {
+  const note = freshNote(Date.now());
+  if (!note || keeping.has(note.id)) return null;
+  const { id } = note;
   keeping.add(id);
   try {
     const outcome = await keepParcelLink(id, auth, auth.signal);
     clearPendingKeep(id);
+    // An email that could not be switched on stays as it was: the settings have it, and a delivered parcel asks.
+    if (note.email && emailOn && settled(outcome.outcome) && await emailOn().catch(() => false)) outcome.email = true;
     announceKeepOutcome(outcome);
     return outcome;
   } catch (error) {

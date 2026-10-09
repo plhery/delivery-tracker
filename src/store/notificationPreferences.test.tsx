@@ -9,6 +9,7 @@ import {
   loadNotificationPreferences,
   saveEmailOnDelivery,
   saveNotificationStages,
+  turnOnDeliveryEmail,
   useDeliveryEmail,
   useNotificationPreferences,
 } from './notificationPreferences';
@@ -99,6 +100,38 @@ describe('the account’s shared notification preferences', () => {
     vi.mocked(saveNotificationPreferences).mockRejectedValueOnce(new Error('Email is not available for this account'));
     await expect(saveEmailOnDelivery(true, auth)).rejects.toThrow('not available');
     expect(renderHook(() => useNotificationPreferences(auth)).result.current).toEqual(SAVED);
+  });
+
+  it('switches the email on for someone who signed in to get it, over an earlier “off”, and only where the server can write', async () => {
+    for (const emailOnDelivery of [null, false]) {
+      const auth = session();
+      vi.mocked(getNotificationPreferences).mockResolvedValueOnce({ ...SAVED, emailOnDelivery });
+      await expect(turnOnDeliveryEmail(auth)).resolves.toBe(true);
+      expect(saveNotificationPreferences).toHaveBeenLastCalledWith(expect.objectContaining({
+        enabledStages: SAVED.enabledStages, quietHoursStart: '22:00', quietHoursEnd: '08:00', emailOnDelivery: true,
+      }), auth);
+      expect(renderHook(() => useNotificationPreferences(auth)).result.current).toMatchObject({ emailOnDelivery: true });
+    }
+    expect(saveNotificationPreferences).toHaveBeenCalledTimes(2);
+
+    // Already on: nothing to save. It reads what this sign-in has read.
+    const on = session();
+    vi.mocked(getNotificationPreferences).mockResolvedValueOnce({ ...SAVED, emailOnDelivery: true });
+    await loadNotificationPreferences(on, { once: true });
+    vi.mocked(getNotificationPreferences).mockClear();
+    await expect(turnOnDeliveryEmail(on)).resolves.toBe(true);
+    expect(getNotificationPreferences).not.toHaveBeenCalled();
+
+    // No email from this server, or none to this account: it stays without.
+    vi.mocked(getNotificationPreferences).mockResolvedValueOnce({ ...SAVED, emailAvailable: false });
+    await expect(turnOnDeliveryEmail(session())).resolves.toBe(false);
+    expect(saveNotificationPreferences).toHaveBeenCalledTimes(2);
+
+    // A save the server did not keep is not reported as on, and a failure is the caller's to hear.
+    vi.mocked(saveNotificationPreferences).mockResolvedValueOnce({ ...SAVED, emailOnDelivery: false });
+    await expect(turnOnDeliveryEmail(session())).resolves.toBe(false);
+    vi.mocked(saveNotificationPreferences).mockRejectedValueOnce(new Error('offline'));
+    await expect(turnOnDeliveryEmail(session())).rejects.toThrow('offline');
   });
 
   it('saves the events without the email choice, so the server keeps it', async () => {

@@ -182,7 +182,7 @@ describe('the parcel page of a link’s owner', () => {
     expect(sheet.getByText(/^Works until 30 Dec/)).toBeVisible();
     await user.click(sheet.getByRole('button', { name: 'Keep it longer' }));
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID);
+    expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID, false);
     delivered.unmount();
     // Someone signed in adds the parcel from the page: the sheet only says the day.
     open(view({ events: arrived }), { session: signedIn });
@@ -287,7 +287,7 @@ describe('the parcel page of a link’s owner', () => {
     const visitor = open(view(), { session: { account: 'visitor', signIn } });
     await user.click(await screen.findByRole('button', { name: /^Ping me/ }));
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign in' }));
-    expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID);
+    expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID, false);
     expect(screen.queryByRole('dialog')).toBeNull();
     visitor.unmount();
     open(view(), { session: signedIn });

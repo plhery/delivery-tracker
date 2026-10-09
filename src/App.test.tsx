@@ -184,6 +184,11 @@ describe('App', () => {
     expect(toast()).toHaveTextContent('This parcel has been forgotten');
     act(() => announceKeepOutcome({ ...outcome, outcome: 'failed' }));
     expect(toast()).toHaveTextContent('Couldn’t add this parcel.');
+    // Someone who signed in for the email reads that it is on.
+    act(() => announceKeepOutcome({ ...outcome, outcome: 'kept', email: true }));
+    expect(toast()).toHaveTextContent('Kept · email is on');
+    act(() => announceKeepOutcome({ ...outcome, outcome: 'already', packageId: undefined, email: true }));
+    expect(toast()).toHaveTextContent('You already follow this parcel · email is on');
   });
 
   it('celebrates the kept parcel’s card once the list has it', async () => {

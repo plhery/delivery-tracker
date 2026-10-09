@@ -111,6 +111,9 @@
 .peeks-option strong, .peeks-account strong, .peeks-on strong { font-size: 13px; font-weight: 600; }
 .peeks-option small, .peeks-account small, .peeks-on small { color: var(--ink-soft); font-size: 12px; line-height: 1.4; }
 .peeks-account { display: flex; align-items: center; gap: 12px; min-height: 60px; margin-top: 7px; padding: 12px 14px; border: 1px dashed var(--line); border-radius: 14px; }
+/* The row that opens a sheet, before the sentence about what follows it. */
+.sheet__heading + .peeks-account { margin-top: 0; }
+.peeks-account + .peeks__intro { margin-top: 18px; }
 .peeks-account button { flex: 0 0 auto; min-height: 44px; padding: 0; background: none; font-size: 12.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .peeks-on { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 13px 14px; border-radius: 14px; background: var(--green-soft); }
 .peeks-on > span:nth-of-type(1) { color: var(--green); }
