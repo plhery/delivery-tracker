@@ -1931,12 +1931,23 @@ export const CARRIER_CAPABILITIES = {
     "displayName": "An Post",
     "color": "#00a76a",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Dublin",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "an-post"
     },
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "anpost.com"
+        ],
+        "pathPattern": "^/Post-Parcels/Track/History/?$",
+        "params": [
+          "item",
+          "barcode"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^[A-Z]{2}\\d{9}IE$",
@@ -2725,7 +2736,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "speedx"
     },
     "linkRules": [
       {
@@ -2838,7 +2849,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "old-dominion"
     },
     "linkRules": [
       {
@@ -2865,7 +2876,7 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "luhn"
       }
     ],
-    "trackingUrlTemplate": "https://www.odfl.com/us/en/tools/trace-track-ltl-freight/trace.html?proNumbers={trackingNumber}",
+    "trackingUrlTemplate": "https://www.odfl.com/us/en/tools/trace-track-ltl-freight.html?proNumbers={trackingNumber}",
     "countries": [
       "US"
     ]
@@ -2877,7 +2888,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "spee-dee"
     },
     "linkRules": [
       {
@@ -3340,13 +3351,19 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Asia/Shanghai",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "sto",
+      "recognitionRank": 10
     },
     "linkRules": [],
     "detectionRules": [
       {
         "pattern": "^\\d{12}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^77\\d{13}$",
+        "confidence": "low",
+        "preferred": true
       }
     ],
     "trackingUrlTemplate": "https://www.sto.cn/",
@@ -3558,12 +3575,21 @@ export const CARRIER_CAPABILITIES = {
     "displayName": "Thailand Post",
     "color": "#ef172f",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Asia/Bangkok",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "thailand-post"
     },
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "track.thailandpost.co.th"
+        ],
+        "params": [
+          "trackNumber"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^[A-Z]{2}\\d{9}TH$",
@@ -3571,7 +3597,7 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       }
     ],
-    "trackingUrlTemplate": "https://international.thailandpost.com/track-status?lang=en",
+    "trackingUrlTemplate": "https://track.thailandpost.co.th/?trackNumber={trackingNumber}",
     "countries": [
       "TH"
     ]
@@ -3665,7 +3691,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "hongkong-post"
     },
     "linkRules": [],
     "detectionRules": [
@@ -3768,7 +3794,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "china-post"
     },
     "linkRules": [],
     "detectionRules": [
@@ -4138,7 +4164,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "j-and-t",
+      "recognitionRank": 9
     },
     "linkRules": [
       {
@@ -4611,7 +4638,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Asia/Tokyo",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "sagawa"
     },
     "trackingUrlTemplate": "https://k2k.sagawa-exp.co.jp/p/sagawa/web/okurijoinput.jsp",
     "linkRules": [
