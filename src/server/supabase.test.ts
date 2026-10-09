@@ -760,7 +760,7 @@ describe('notification reads', () => {
         { token: 'U0VTU0lPTl9PTkU=', opened_at: '2026-10-09T08:00:00+00:00', checked_at: null },
         { token: 'U0VTU0lPTl9UV08=', opened_at: '2026-10-08T08:00:00+00:00', checked_at: '2026-10-09T07:00:00+00:00' },
         { token: 42, opened_at: '2026-10-08T08:00:00+00:00' },
-        { token: 'U0VTU0lPTl9USFJFRQ==', opened_at: 'not a time' },
+        { token: 'U0VTU0lPTl9USFJFRQ==', opened_at: 'not a time' }, // gitleaks:allow -- made-up session token, never issued by DPD
       ]).mockResolvedValueOnce(null);
       await expect(client.dpdAppSessions()).resolves.toEqual([
         { token: 'U0VTU0lPTl9PTkU=', openedAt: Date.parse('2026-10-09T08:00:00Z') },

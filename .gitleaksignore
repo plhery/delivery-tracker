@@ -26,3 +26,7 @@ b964bcc5dc5fb10e6d2211be002260de21dacee5:packages/carriers/carriers/purolator/ad
 # A browser test once spelled out the name of the browser storage that keeps a device's parcels.
 # The name is public; the scanner mistakes it for a key value.
 075a319ed5362e39095d2b6fcf2cce625d6ce810:e2e/door-arrival.spec.ts:generic-api-key:46
+
+# A made-up DPD app session token in a test, never issued by DPD.
+# The current line carries an inline annotation; this covers its original commit.
+e2859c6ff881a16dc29553f07f06e190aa127a90:src/server/supabase.test.ts:generic-api-key:763
