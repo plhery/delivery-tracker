@@ -45,7 +45,9 @@ Key server modules:
   without sign-in that write.
 - `background.ts` runs the scheduler. `public.sync_jobs` is the durable, deduplicated
   queue, and workers claim jobs with leases, so deploys, crashes and replicas never lose
-  or double-run work. This is the only code path with cross-account access.
+  or double-run work. This is the only code path with cross-account access. An idle
+  worker asks for a job less often, down to every 10 s; a job its own process queues
+  wakes it at once, so only a job another container queued or handed back can wait.
 - `trackingSync.ts` runs one refresh through the adapter registry;
   `trackingRouting.ts` decides which source to ask ([ROUTING.md](ROUTING.md)), and
   `sharedLookups.ts` lets the copies of a number in one scheduled run share their lookups.

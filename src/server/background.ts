@@ -27,6 +27,9 @@ import type { JsonObject } from './types';
 
 const AUTO_ARCHIVE_DAYS = 60;
 const MAX_WORKER_BACKOFF_MS = 60_000;
+// An idle worker asks for a job less and less often, up to every ten poll intervals.
+// Every job this process queues wakes it at once, so only jobs queued elsewhere wait.
+const MAX_IDLE_POLL_INTERVALS = 10;
 // The platform stops the old container 30 s after SIGTERM (docs/DEPLOYMENT.md). A check
 // in progress gets 10 s to end on its own: nearly all take less. Then it is aborted, and
 // the handoff waits at most 4 s for it to stop before returning its job to the queue.
@@ -83,6 +86,17 @@ export function workerPollDelay(pollIntervalMs: number, consecutiveFailures: num
   );
 }
 
+/** How long a worker waits after `emptyClaims` claims in a row found no job: doubling, then capped. */
+export function idlePollDelay(pollIntervalMs: number, emptyClaims: number): number {
+  if (!Number.isFinite(pollIntervalMs) || pollIntervalMs <= 0) {
+    throw new TypeError('Worker poll interval must be positive');
+  }
+  if (!Number.isInteger(emptyClaims) || emptyClaims < 0) {
+    throw new TypeError('Worker empty claim count must be a non-negative integer');
+  }
+  return pollIntervalMs * Math.min(MAX_IDLE_POLL_INTERVALS, 2 ** Math.max(0, Math.min(emptyClaims - 1, 8)));
+}
+
 /** Waits for `work` to settle, for at most `ms`. */
 async function settleWithin(work: Promise<unknown> | null, ms: number): Promise<void> {
   if (!work) return;
@@ -99,6 +113,8 @@ export class SyncJobWorker {
   #stopped = false;
   #running = false;
   #timer: NodeJS.Timeout | null = null;
+  #woken = false;
+  #emptyClaims = 0;
   #consecutiveClaimFailures = 0;
   #claimFailingSince: number | null = null;
   #claimReportedAfterMs: number | null = null;
@@ -120,8 +136,14 @@ export class SyncJobWorker {
     this.schedule(0);
   }
 
+  /** Claims at once, or right after the claim or job in progress: a job was just queued. */
   wake(): void {
-    if (this.#stopped || this.#running) return;
+    if (this.#stopped) return;
+    this.#emptyClaims = 0;
+    if (this.#running) {
+      this.#woken = true;
+      return;
+    }
     if (this.#timer) clearTimeout(this.#timer);
     this.schedule(0);
   }
@@ -178,6 +200,7 @@ export class SyncJobWorker {
   private async run(): Promise<void> {
     if (this.#stopped || this.#running) return;
     this.#running = true;
+    this.#woken = false;
     let processed = false;
     try {
       this.#processing = this.processNext();
@@ -188,10 +211,10 @@ export class SyncJobWorker {
       this.#processing = null;
       this.#running = false;
       if (!this.#stopped) {
-        this.schedule(processed ? 0 : workerPollDelay(
-          this.pollIntervalMs,
-          this.#consecutiveClaimFailures,
-        ));
+        // A job queued while the claim was on its way may not have been seen by it.
+        this.schedule(processed || this.#woken ? 0
+          : this.#consecutiveClaimFailures > 0 ? workerPollDelay(this.pollIntervalMs, this.#consecutiveClaimFailures)
+            : idlePollDelay(this.pollIntervalMs, this.#emptyClaims));
       }
     }
   }
@@ -235,7 +258,11 @@ export class SyncJobWorker {
     }
     this.#consecutiveClaimFailures = 0;
     this.state.workerHeartbeat = Date.now() / 1_000;
-    if (!job) return false;
+    if (!job) {
+      this.#emptyClaims += 1;
+      return false;
+    }
+    this.#emptyClaims = 0;
     const jobId = String(job.id ?? '');
     const kind = String(job.kind ?? '');
     if (!jobId) {

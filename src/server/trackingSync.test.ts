@@ -2,7 +2,7 @@ import { carrierResult } from '../test/carrierResults';
 import { CarrierError } from 'universal-parcel-scraper';
 import { REGISTRY } from 'universal-parcel-scraper/node';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { secondsUntilNextSync, workerPollDelay } from './background';
+import { idlePollDelay, secondsUntilNextSync, workerPollDelay } from './background';
 import { deployedVersion } from './reviewQueues';
 import { normalizeCarrierResult, type CarrierResult } from 'universal-parcel-scraper';
 import { STORED_EVENT_IDENTITIES, type SupabaseServiceClient } from './supabase';
@@ -371,6 +371,14 @@ describe('fair scheduling', () => {
     expect(secondsUntilNextSync(new Date('2026-07-15T20:00:00Z'))).toBe(3_600);
     expect(secondsUntilNextSync(new Date('2026-07-15T20:15:00Z'))).toBe(2_700);
     expect(() => secondsUntilNextSync(new Date('invalid'))).toThrow('valid');
+  });
+
+  it('polls an idle queue less and less often, up to ten intervals apart', () => {
+    expect([0, 1, 2, 3, 4, 5, 50].map((empty) => idlePollDelay(1_000, empty)))
+      .toEqual([1_000, 1_000, 2_000, 4_000, 8_000, 10_000, 10_000]);
+    expect(idlePollDelay(5, 9)).toBe(50);
+    expect(() => idlePollDelay(0, 1)).toThrow('positive');
+    expect(() => idlePollDelay(1_000, 1.5)).toThrow('non-negative');
   });
 
   it('backs off boundedly when the job store is unavailable', () => {

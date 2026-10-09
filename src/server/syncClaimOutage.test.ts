@@ -138,6 +138,93 @@ describe('failed claims of the sync worker', () => {
   });
 });
 
+describe('an idle sync worker', () => {
+  /** A worker whose claims find a job only when one is queued, and, while held, answer when `answer` says so. */
+  function idle() {
+    vi.useFakeTimers();
+    const client = new SupabaseServiceClient('https://database.test', 'test');
+    const queued: Array<Record<string, unknown>> = [];
+    const answers: Array<() => void> = [];
+    let holding = false;
+    const claims: number[] = [];
+    vi.spyOn(client, 'claimSyncJob').mockImplementation(async () => {
+      claims.push(Date.now());
+      const job = queued.shift() ?? null;
+      if (holding) await new Promise<void>((resolve) => { answers.push(resolve); });
+      return job;
+    });
+    // A queued parcel that was deleted since: the job ends without a check.
+    vi.spyOn(client, 'getPackage').mockResolvedValue(null);
+    const state: BackgroundState = { workerHeartbeat: null, lastScheduledSync: null, nextScheduledSync: null,
+      lastSummary: null, lastError: null, lastAutoArchived: 0 };
+    const worker = new SyncJobWorker(new TrackingSyncService(client), state);
+    const started = Date.now();
+    return {
+      state, worker, claims: () => claims.map((at) => at - started),
+      queue: () => queued.push({ id: `job-${queued.length + 1}`, kind: 'package', package_id: 'gone' }),
+      hold: (next: boolean) => { holding = next; },
+      answer: () => answers.splice(0).forEach((resolve) => resolve()),
+      ...monitor(),
+    };
+  }
+
+  it('asks for a job less often while it finds none, up to every ten seconds, and keeps its heartbeat', async () => {
+    const { state, worker, claims, queue } = idle();
+    worker.start();
+    await vi.advanceTimersByTimeAsync(45_000);
+    expect(claims()).toEqual([0, 1_000, 3_000, 7_000, 15_000, 25_000, 35_000, 45_000]);
+    expect(state.workerHeartbeat).toBe((Date.now()) / 1_000);
+    // A job queued elsewhere is found by the next claim, and the worker polls quickly again.
+    queue();
+    await vi.advanceTimersByTimeAsync(13_001);
+    worker.stop();
+    // A timer of no delay fires a millisecond later.
+    expect(claims().slice(8)).toEqual([55_000, 55_001, 56_001, 58_001]);
+  });
+
+  it('claims at once when this process queues a job, and starts polling quickly again', async () => {
+    const { worker, claims, queue } = idle();
+    worker.start();
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(claims()).toEqual([0, 1_000, 3_000, 7_000, 15_000]);
+    queue();
+    worker.wake();
+    await vi.advanceTimersByTimeAsync(2);
+    expect(claims().slice(5)).toEqual([20_000, 20_001]);
+    await vi.advanceTimersByTimeAsync(3_000);
+    worker.stop();
+    expect(claims().slice(7)).toEqual([21_001, 23_001]);
+  });
+
+  it('claims again at once when a job is queued while a claim is on its way', async () => {
+    const { worker, claims, queue, hold, answer } = idle();
+    hold(true);
+    worker.start();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(claims()).toEqual([0]);
+    // The claim already read an empty queue when the job arrives.
+    queue();
+    worker.wake();
+    hold(false);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(claims()).toEqual([0]);
+    answer();
+    await vi.advanceTimersByTimeAsync(1);
+    worker.stop();
+    expect(claims()).toEqual([0, 500, 501]);
+  });
+
+  it('stops polling when it drains, whatever its back-off', async () => {
+    const { worker, claims } = idle();
+    worker.start();
+    await vi.advanceTimersByTimeAsync(20_000);
+    await worker.drain();
+    worker.wake();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(claims()).toEqual([0, 1_000, 3_000, 7_000, 15_000]);
+  });
+});
+
 describe('a failed enqueue of the scheduled sync', () => {
   function scheduled(failure: Error) {
     vi.useFakeTimers();
