@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useI18n } from '../i18n';
 import { parcelHasCarrierUpdate } from '../lib/parcelStatus';
-import { currentEvent } from '../lib/stages';
+import { currentEvent, currentStage } from '../lib/stages';
 import type { TrackingEvent } from '../types';
 import { isWrappedGift, ParcelLinkError, readParcelLink, type ParcelLinkView } from './links';
 import { forgetRecent, recentFor, rememberParcel, useRecents } from './recents';
@@ -11,11 +11,24 @@ import { SAMPLE_LINK_ID } from './sample';
 /** Until the first check lands the page asks again after 2 s, then ever more slowly up to 10 s. */
 const FIRST_CHECK_MS = 2_000;
 const FIRST_CHECK_MAX_MS = 10_000;
-/** Afterwards, while the tab is visible. */
+/**
+ * Afterwards the page asks 30 s after an answer that brought something new, and twice as
+ * long after each that did not, up to the pace the server checks the parcel at: every
+ * 2 minutes out for delivery, otherwise every 10 minutes at most, and hourly once the
+ * parcel is idle. A tab in the background keeps that pace, so its title can count the
+ * scans that land there, and it slows down by itself since nothing changes on screen.
+ * Showing it again, or coming back to its window, asks at once unless the last answer
+ * is that fresh.
+ */
 const LIVE_MS = 30_000;
-/** A tab left in the background keeps asking for a while, slowly, so its title can say a scan arrived. */
-const BACKGROUND_MS = 120_000;
-const BACKGROUND_FOR_MS = 30 * 60_000;
+const DELIVERING_MAX_MS = 2 * 60_000;
+const LIVE_MAX_MS = 10 * 60_000;
+
+/** What a reader of the page sees change: its scans, its status and its estimate. */
+function story({ parcel }: ParcelLinkView): string {
+  return JSON.stringify([parcel.carrier, parcel.syncStatus, parcel.syncError, parcel.lastStatusText, parcel.expectedDelivery,
+    parcel.expectedDeliveryFrom, parcel.events.map((event) => event.id)]);
+}
 
 /** A lookup answers before the carrier was asked: its first check has landed once the parcel is no longer waiting for one. */
 export function firstCheckLanded(view: ParcelLinkView): boolean {
@@ -74,9 +87,10 @@ function onVisibilityChange(notify: () => void) {
 }
 
 /**
- * Follows one parcel link: reads it, keeps reading while the tab is visible
- * and for a while after it is hidden, and saves every answer to this device's
- * parcels. One link per mount: give the component a `key` when the link can change.
+ * Follows one parcel link: reads it, keeps reading as often as the server
+ * can have news, in sight or in the background, and saves every answer to
+ * this device's parcels. One link per mount: give the component a `key` when
+ * the link can change.
  */
 export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelLinkState {
   const recent = useRecents().find((candidate) => candidate.id === linkId);
@@ -105,20 +119,36 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
     let waits = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | null = null;
-    let hiddenAt = document.hidden ? Date.now() : null;
     // What the reader saw last: the lookup's answer, or what this device kept from an earlier visit.
     let shown = first.current ?? recentFor(linkId)?.snapshot ?? null;
+    // The story this page was last told, and how many answers in a row told it again.
+    let heard: string | null = null;
+    let quiet = 0;
+    // When the last read began, whether one is on its way, and whether the next is set.
+    let askedAt = 0;
+    let reading = false;
+    let waiting = false;
 
     const cadence = () => !landed ? Math.min(FIRST_CHECK_MAX_MS, FIRST_CHECK_MS * 1.5 ** waits++)
-      : document.hidden ? BACKGROUND_MS : LIVE_MS;
+      : Math.min(shown && currentStage(shown.parcel.events) === 'out_for_delivery' ? DELIVERING_MAX_MS : LIVE_MAX_MS, LIVE_MS * 2 ** quiet);
+    const stop = () => { clearTimeout(timer); waiting = false; };
     const schedule = (delay: number) => {
-      clearTimeout(timer);
-      const watching = !document.hidden || (hiddenAt !== null && Date.now() + delay - hiddenAt <= BACKGROUND_FOR_MS);
-      if (!disposed && !gone && watching) timer = setTimeout(() => void read(false), delay);
+      stop();
+      if (disposed || gone) return;
+      waiting = true;
+      timer = setTimeout(() => void read(false), delay);
+    };
+    // Back in sight: an answer older than the shortest wait is read again at once.
+    const catchUp = () => {
+      if (gone || document.hidden || reading) return;
+      if (Date.now() - askedAt >= LIVE_MS) void read(false);
+      else if (!waiting) schedule(cadence());
     };
 
     async function read(advance: boolean): Promise<boolean> {
-      clearTimeout(timer);
+      stop();
+      askedAt = Date.now();
+      reading = true;
       controller?.abort();
       const current = controller = new AbortController();
       try {
@@ -132,6 +162,9 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
           return false;
         }
         landed = firstCheckLanded(result);
+        const told = story(result);
+        quiet = told === heard ? quiet + 1 : 0;
+        heard = told;
         const scan = newScan(shown, result);
         const earlier = shown?.parcel.expectedDelivery;
         const moved = !!earlier && !!result.parcel.expectedDelivery && earlier !== result.parcel.expectedDelivery;
@@ -162,22 +195,20 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
         setAnswer((previous) => ({ ...previous, trouble }));
         schedule(Math.max(cadence(), (trouble.retryAfterSeconds ?? 0) * 1_000));
         return false;
+      } finally {
+        if (controller === current) reading = false;
       }
     }
     reader.current = read;
 
     const onVisibility = () => {
-      if (document.hidden) {
-        hiddenAt = Date.now();
-        schedule(cadence());
-        return;
-      }
-      hiddenAt = null;
+      if (document.hidden) return;
       setTold((previous) => previous.unseen ? { ...previous, unseen: 0 } : previous);
-      if (!gone) void read(false);
+      catchUp();
     };
     const onOnline = () => { if (!gone && !document.hidden) void read(false); };
     document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', catchUp);
     window.addEventListener('online', onOnline);
     // An answer that just came with the lookup waits for its first check; any other opening reads at once, hidden or not.
     if (first.current) schedule(cadence());
@@ -185,9 +216,10 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
 
     return () => {
       disposed = true;
-      clearTimeout(timer);
+      stop();
       controller?.abort();
       document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', catchUp);
       window.removeEventListener('online', onOnline);
     };
   }, [linkId]);

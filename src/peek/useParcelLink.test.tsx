@@ -46,7 +46,7 @@ afterEach(() => {
 });
 
 describe('useParcelLink', () => {
-  it('opens a link directly: reads at once, remembers the parcel, then reads every 30 seconds', async () => {
+  it('opens a link directly: reads at once, remembers the parcel, then reads again more slowly while nothing changes, up to 10 minutes', async () => {
     const hook = renderHook(() => useParcelLink(LINK_ID));
     expect(hook.result.current).toMatchObject({ status: 'loading', view: null, live: true, checking: false });
     await pass(0);
@@ -55,12 +55,30 @@ describe('useParcelLink', () => {
     // The page asks to be told when a link's sharing was stopped.
     expect(mocks.read).toHaveBeenLastCalledWith(LINK_ID, expect.objectContaining({ key: undefined, advance: false, tellStopped: true }));
     expect(recentFor(LINK_ID)).toMatchObject({ key: null, stage: 'in_transit' });
-    await pass(29_999);
-    expect(mocks.read).toHaveBeenCalledTimes(1);
-    await pass(1);
-    expect(mocks.read).toHaveBeenCalledTimes(2);
+    const waits = [30_000, 60_000, 120_000, 240_000, 480_000, 600_000, 600_000];
+    for (const [index, wait] of waits.entries()) {
+      await pass(wait - 1);
+      expect(mocks.read).toHaveBeenCalledTimes(index + 1);
+      await pass(1);
+      expect(mocks.read).toHaveBeenCalledTimes(index + 2);
+    }
+  });
+
+  it('keeps to the server’s 2 minutes while the parcel is out for delivery, and asks after 30 s again once an answer brings news', async () => {
+    const delivering = testView({ stages: ['registered', 'in_transit', 'out_for_delivery'] });
+    const delivered = testView({ stages: ['registered', 'in_transit', 'out_for_delivery', 'delivered'] });
+    answers(delivering, delivering, delivering, delivering, delivering, delivered);
+    renderHook(() => useParcelLink(LINK_ID));
+    await pass(0);
+    for (const [index, wait] of [30_000, 60_000, 120_000, 120_000, 120_000].entries()) {
+      await pass(wait - 1);
+      expect(mocks.read).toHaveBeenCalledTimes(index + 1);
+      await pass(1);
+    }
+    expect(mocks.read).toHaveBeenCalledTimes(6);
+    // The delivery was news: the next read comes 30 s later.
     await pass(30_000);
-    expect(mocks.read).toHaveBeenCalledTimes(3);
+    expect(mocks.read).toHaveBeenCalledTimes(7);
   });
 
   it('after a lookup, waits 2 s and backs off to 10 s until the first check lands, then settles at 30 s', async () => {
@@ -89,37 +107,55 @@ describe('useParcelLink', () => {
     expect(mocks.read).toHaveBeenCalledTimes(8);
   });
 
-  it('slows down while the tab is hidden, stops after half an hour, and catches up when it is shown again', async () => {
+  it('keeps its pace while the tab is hidden, and reads at once when it is shown again', async () => {
     const hook = renderHook(() => useParcelLink(LINK_ID));
     await pass(0);
     act(() => setHidden(true));
     expect(hook.result.current.live).toBe(false);
-    // In the background the page asks every two minutes.
-    await pass(119_999);
-    expect(mocks.read).toHaveBeenCalledTimes(1);
-    await pass(1);
-    expect(mocks.read).toHaveBeenCalledTimes(2);
-    await pass(28 * 60_000);
-    expect(mocks.read).toHaveBeenCalledTimes(16);
-    // Half an hour after it was hidden, it stops.
-    await pass(60 * 60_000);
-    expect(mocks.read).toHaveBeenCalledTimes(16);
+    // In the background nothing changes on screen either: the page asks ever more slowly, up to 10 minutes.
+    for (const [index, wait] of [30_000, 60_000, 120_000, 240_000, 480_000, 600_000].entries()) {
+      await pass(wait - 1);
+      expect(mocks.read).toHaveBeenCalledTimes(index + 1);
+      await pass(1);
+      expect(mocks.read).toHaveBeenCalledTimes(index + 2);
+    }
+    await pass(60_000);
     act(() => setHidden(false));
     expect(hook.result.current.live).toBe(true);
     await pass(0);
-    expect(mocks.read).toHaveBeenCalledTimes(17);
-    await pass(30_000);
-    expect(mocks.read).toHaveBeenCalledTimes(18);
+    expect(mocks.read).toHaveBeenCalledTimes(8);
+    // The window's focus comes with it: one read answers both.
+    await act(async () => { window.dispatchEvent(new Event('focus')); });
+    await pass(0);
+    expect(mocks.read).toHaveBeenCalledTimes(8);
   });
 
-  it('gets its first answer even when it opens in a hidden tab, and asks slowly there', async () => {
+  it('keeps its pace through a glance at another tab, and reads on coming back to the window once its answer is 30 s old', async () => {
+    renderHook(() => useParcelLink(LINK_ID));
+    await pass(10_000);
+    act(() => setHidden(true));
+    act(() => setHidden(false));
+    await pass(0);
+    expect(mocks.read).toHaveBeenCalledTimes(1);
+    await pass(20_000);
+    expect(mocks.read).toHaveBeenCalledTimes(2);
+    await pass(29_999);
+    await act(async () => { window.dispatchEvent(new Event('focus')); });
+    expect(mocks.read).toHaveBeenCalledTimes(2);
+    await pass(1);
+    await act(async () => { window.dispatchEvent(new Event('focus')); });
+    await pass(0);
+    expect(mocks.read).toHaveBeenCalledTimes(3);
+  });
+
+  it('gets its first answer even when it opens in a hidden tab, and keeps asking there', async () => {
     hidden = true;
     const hook = renderHook(() => useParcelLink(LINK_ID));
     await pass(0);
     expect(hook.result.current).toMatchObject({ status: 'ready', live: false });
-    await pass(30_000);
+    await pass(29_999);
     expect(mocks.read).toHaveBeenCalledTimes(1);
-    await pass(90_000);
+    await pass(1);
     expect(mocks.read).toHaveBeenCalledTimes(2);
   });
 
@@ -140,8 +176,12 @@ describe('useParcelLink', () => {
     await pass(30_000);
     expect(hook.result.current.news).toBeNull();
     act(() => setHidden(true));
-    await pass(120_000);
+    await pass(60_000);
     expect(hook.result.current).toMatchObject({ news: { stage: 'delivered' }, unseen: 1 });
+    // The same delivery read again in the background is not counted twice.
+    await pass(30_000);
+    expect(mocks.read).toHaveBeenCalledTimes(5);
+    expect(hook.result.current.unseen).toBe(1);
     act(() => setHidden(false));
     expect(hook.result.current.unseen).toBe(0);
     expect(hook.result.current.news).toMatchObject({ stage: 'delivered' });
