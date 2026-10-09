@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { relayCopies, relayRepeats } from './relayCopies';
+import { lateScans, relayCopies, relayRepeats } from './relayCopies';
 
 /** A stored scan: its id, the carrier that stored it, its stage, when it happened and when a check stored it. */
 const scan = (id: string, source: string, stage: string, occurred_at: string, created_at = '2026-09-10T08:00:00Z') => ({
@@ -86,5 +86,27 @@ describe('relayRepeats', () => {
       scan('delivered-copy', 'dhl', 'delivered', '2026-09-10T10:08:00Z', '2026-09-10T10:24:02Z'),
       scan('alone', 'swiss-post', 'in_transit', '2026-09-09T20:00:00Z', '2026-09-10T08:00:05Z'),
     ]))).toEqual(new Set(['arrived', 'depot-copy', 'delivered-copy']));
+  });
+});
+
+describe('lateScans', () => {
+  it('names the earlier carrier\'s scans that reached the parcel after a later one was stored', () => {
+    // A parcel Chronopost handed over to DPD Germany, then told a scan of its own late.
+    const chronopost = (data: object, tracking_events: object[]) => ({ carrier: 'chronopost', carrier_data: data, tracking_events });
+    const handoff = { original_carrier: 'chronopost', active_tracking_carrier: 'dpd-de' };
+    const rows = [
+      // The handoff's check stored both histories, older scans with newer ones.
+      scan('sorted', 'chronopost', 'in_transit', '2026-10-08T09:00:00Z', '2026-10-08T14:30:00Z'),
+      scan('received', 'dpd-de', 'in_transit', '2026-10-08T14:24:00Z', '2026-10-08T14:30:00Z'),
+      scan('late', 'chronopost', 'in_transit', '2026-10-08T14:12:00Z', '2026-10-08T15:25:00Z'),
+      // Newer than anything stored before it, and Peek's own rows date no scan.
+      scan('added', 'app', 'pending', '2026-10-08T14:50:00Z', '2026-10-08T14:50:00Z'),
+      scan('newer', 'chronopost', 'in_transit', '2026-10-08T14:40:00Z', '2026-10-08T15:25:00Z'),
+      // The new carrier's own scans are never late.
+      scan('depot', 'dpd-de', 'in_transit', '2026-10-08T14:20:00Z', '2026-10-08T16:25:00Z'),
+    ];
+    expect(lateScans(chronopost(handoff, rows))).toEqual(new Set(['late']));
+    expect(lateScans(chronopost({}, rows))).toEqual(new Set());
+    expect(lateScans({ carrier_data: handoff })).toEqual(new Set());
   });
 });

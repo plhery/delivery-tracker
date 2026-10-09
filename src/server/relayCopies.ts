@@ -9,6 +9,10 @@
  * serves the copy with `relay_of`, the id of the scan it repeats, and the apps
  * show it under that scan (eventPlaces.ts). Of the two rows, the one that
  * reached the parcel second announces nothing (push.ts).
+ *
+ * The earlier carrier also publishes some of its own scans late, after the
+ * new carrier's later ones are stored (trackingSync.ts asks it again for a day
+ * after the handoff). Those announce nothing either.
  */
 import { isRecord, type JsonObject } from './types';
 
@@ -66,4 +70,22 @@ export function relayRepeats(row: JsonObject): Set<string> {
   const repeats = new Set<string>();
   for (const [copy, scan] of relayCopies(row)) repeats.add(stored.get(copy)! < stored.get(scan)! ? scan : copy);
   return repeats;
+}
+
+/**
+ * The earlier carrier's scans that reached the parcel after a later scan was
+ * stored: older than news the parcel already had. Scans stored by one check
+ * never make each other late. The scans need their `created_at`.
+ */
+export function lateScans(row: JsonObject): Set<string> {
+  const earlier = earlierCarrier(row);
+  if (!earlier || !Array.isArray(row.tracking_events)) return new Set();
+  const scans = row.tracking_events.filter(isRecord)
+    .map((event) => ({
+      id: String(event.id), source: source(event),
+      at: Date.parse(String(event.occurred_at)), stored: Date.parse(String(event.created_at)),
+    }))
+    .filter((scan) => Number.isFinite(scan.at) && Number.isFinite(scan.stored) && scan.source !== 'app');
+  return new Set(scans.filter((scan) => scan.source === earlier
+    && scans.some((other) => other.stored < scan.stored && other.at > scan.at)).map((scan) => scan.id));
 }

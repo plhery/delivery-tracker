@@ -95,8 +95,22 @@ const ARCHIVED_FOLLOWED_MS = 30 * 24 * 60 * 60 * 1_000;
  * Recheck when origin history advances, the partner/reference changes, or this gap passes.
  */
 const DELIVERY_PROBE_INTERVAL_MS = 55 * 60 * 1_000;
+/**
+ * A carrier publishes some scans after it handed the parcel over. The earlier
+ * carrier is asked again this long after the handoff, at most once per
+ * DELIVERY_PROBE_INTERVAL_MS, alongside the delivery carrier.
+ */
+const EARLIER_FOLLOW_UP_MS = 24 * 60 * 60 * 1_000;
 
 interface DeliveryProbe extends JsonObject { at: string; origin_update: string | null }
+
+/** Whether this check asks a handed-over parcel's earlier carrier again: within a day of the handoff, at most hourly. */
+function asksEarlierCarrier(metadata: JsonObject, now: Date): boolean {
+  const handedOver = Date.parse(String(metadata.handed_over_at ?? ''));
+  const asked = Math.max(handedOver, Date.parse(String(metadata.earlier_checked_at ?? '')) || 0);
+  const time = now.getTime();
+  return time >= handedOver && time - handedOver < EARLIER_FOLLOW_UP_MS && time - asked >= DELIVERY_PROBE_INTERVAL_MS;
+}
 
 function previousDeliveryProbe(parcel: JsonObject, carrier: string, number: string): DeliveryProbe | null {
   const data = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
@@ -1076,6 +1090,7 @@ export class TrackingSyncService {
         handoffFallbackErrorType: string | null;
         earlierResult?: CarrierResult;
         earlierCarrierId?: string;
+        earlierFollowUp?: boolean;
       };
       const fetchStartedAt = performance.now();
       // The check sees the routing its number shares with the other copies in the run.
@@ -1280,7 +1295,8 @@ export class TrackingSyncService {
         const keepWatermark = olderSnapshot || keepSaved;
         const watermark = keepWatermark ? previousEventTime : withoutCopyDrift(
           Date.parse(String(routing.last_event_at ?? '')), events, stored, matches, { also: [returnedEventTime,
-            fetched.earlierResult ? latestResultTime(fetched.earlierResult, fetched.earlierCarrierId ?? sourceCarrierId) : Number.NaN] },
+            fetched.earlierResult && !fetched.earlierFollowUp
+              ? latestResultTime(fetched.earlierResult, fetched.earlierCarrierId ?? sourceCarrierId) : Number.NaN] },
         );
         const saved = keepWatermark ? previousRouting.last_event_at : routing.last_event_at;
         if (Number.isFinite(watermark) && Date.parse(String(saved ?? '')) !== watermark) routing.last_event_at = new Date(watermark).toISOString();
@@ -1293,7 +1309,7 @@ export class TrackingSyncService {
       if (localHistory) carrierData.direct_local_history = localHistory;
       // Linked journey identity belongs to the parcel, not an individual carrier response.
       if (isRecord(parcel.carrier_data)) {
-        for (const key of ['lookup_country_hint', 'original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier', 'active_tracking_number', 'original_canonical_tracking_number', 'auto_changed_from', 'auto_changed_to', 'auto_changed_at']) {
+        for (const key of ['lookup_country_hint', 'original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier', 'active_tracking_number', 'original_canonical_tracking_number', 'auto_changed_from', 'auto_changed_to', 'auto_changed_at', 'handed_over_at', 'earlier_checked_at']) {
           if (parcel.carrier_data[key] != null && carrierData[key] == null) carrierData[key] = parcel.carrier_data[key];
         }
       }
@@ -1323,7 +1339,7 @@ export class TrackingSyncService {
         const data = isRecord(values.carrier_data) ? values.carrier_data : isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
         const preservedData = { ...data };
         for (const key of ['lookup_country_hint', 'original_carrier', 'original_tracking_number', 'original_tracking_url',
-          'original_canonical_tracking_number', 'active_tracking_carrier', 'active_tracking_number']) {
+          'original_canonical_tracking_number', 'active_tracking_carrier', 'active_tracking_number', 'handed_over_at']) {
           if (carrierData[key] != null) preservedData[key] = carrierData[key];
         }
         values.carrier_data = preservedData;
@@ -1332,6 +1348,12 @@ export class TrackingSyncService {
         values.carrier_data = {
           ...(isRecord(values.carrier_data) ? values.carrier_data : isRecord(parcel.carrier_data) ? parcel.carrier_data : {}),
           delivery_probe: result.delivery_probe,
+        };
+      }
+      if (preserveSummary && typeof result.earlier_checked_at === 'string') {
+        values.carrier_data = {
+          ...(isRecord(values.carrier_data) ? values.carrier_data : isRecord(parcel.carrier_data) ? parcel.carrier_data : {}),
+          earlier_checked_at: result.earlier_checked_at,
         };
       }
       if (!preserveSummary) {
@@ -1510,6 +1532,7 @@ export class TrackingSyncService {
     handoffFallbackErrorType: string | null;
     earlierResult?: CarrierResult;
     earlierCarrierId?: string;
+    earlierFollowUp?: boolean;
   }> {
     const trackingNumber = String(parcel.tracking_number ?? '');
     const metadata = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
@@ -1519,9 +1542,27 @@ export class TrackingSyncService {
       : legacySwissReady ? 'swiss-post' : '';
     const activeNumber = typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : trackingNumber;
     if ((metadata.original_carrier || legacySwissReady) && hasDirectHandoffAdapter(activeCarrier, activeNumber)) {
+      // The earlier carrier still publishes late scans: ask it too, as at the handoff, for a while.
+      const followUp = metadata.original_carrier === carrierId && carrierId !== activeCarrier
+        && metadata.original_tracking_number === trackingNumber && asksEarlierCarrier(metadata, this.now());
+      const [result, earlier] = await Promise.all([
+        this.fetchCarrier(checks, activeCarrier, activeNumber, null, null),
+        followUp ? this.fetchCarrier(checks, carrierId, trackingNumber,
+          typeof parcel.tracking_url === 'string' ? parcel.tracking_url : null,
+          typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null,
+        ).then(normalizeCarrierResult).catch((error: unknown) => {
+          // The delivery carrier answers for the parcel: a miss here only waits for the next follow-up.
+          if (!isUnannouncedTrackingError(error)) reportRoutingEvent('provider_failed', {
+            carrier: carrierId, provider: carrierId, trackingNumber, category: routingFailure(error).kind,
+            errorClass: errorType(error), error,
+          });
+          return null;
+        }) : null,
+      ]);
       return {
-        result: normalizeCarrierResult(await this.fetchCarrier(checks, activeCarrier, activeNumber, null, null)),
+        result: { ...normalizeCarrierResult(result), ...(followUp ? { earlier_checked_at: this.now().toISOString() } : {}) },
         sourceCarrierId: activeCarrier, swissPostReady: activeCarrier === 'swiss-post' ? true : null, handoffFallbackErrorType: null,
+        ...(earlier ? { earlierResult: earlier, earlierCarrierId: carrierId, earlierFollowUp: true } : {}),
       };
     }
     // Cainiao remains a fallback for an explicitly selected Swiss postal route.
@@ -1585,6 +1626,7 @@ export class TrackingSyncService {
                 ...(origin.canonical_tracking_number ? { original_canonical_tracking_number: origin.canonical_tracking_number } : {}),
                 original_carrier: carrierId, original_tracking_number: trackingNumber,
                 original_tracking_url: typeof parcel.tracking_url === 'string' ? parcel.tracking_url : null,
+                handed_over_at: this.now().toISOString(),
                 ...(delivery.sender_name === undefined && origin.sender_name ? { sender_name: origin.sender_name } : {}),
               },
               sourceCarrierId: candidate.carrier, swissPostReady: candidate.carrier === 'swiss-post' ? true : null, handoffFallbackErrorType: null,

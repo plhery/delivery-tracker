@@ -14,13 +14,15 @@ describe('SharedLookups', () => {
       routing: routing({ preferred_provider: '17TRACK', failures: { Ship24: { count: 1, kind: 'transport', retry_at: '2026-09-10T13:00:00Z' } },
         last_event_at: '2026-09-09T10:00:00Z', last_success_at: '2026-09-10T11:00:00Z', consecutive_failures: 2, next_check_at: '2026-09-10T11:15:00Z' }),
       delivery_probe: { at: '2026-09-10T10:00:00Z', origin_update: null }, sender_name: 'Shop',
+      earlier_checked_at: '2026-09-10T10:00:00Z',
     });
     const newer = copy('newer', { label: 'Gift', last_synced_at: '2026-09-10T11:05:00Z' }, {
       routing: routing({ preferred_provider: 'Ship24', confirmed_carrier: 'ups', confirmed_number: 'TEST1234', last_event_at: '2026-09-10T09:00:00Z' }),
+      earlier_checked_at: '2026-09-10T11:05:00Z',
     });
     const lookups = new SharedLookups([older, newer]);
     const seen = lookups.for(older).parcel;
-    expect(seen).toMatchObject({ id: 'older', label: 'Shoes', carrier_data: { sender_name: 'Shop', routing: {
+    expect(seen).toMatchObject({ id: 'older', label: 'Shoes', carrier_data: { sender_name: 'Shop', earlier_checked_at: '2026-09-10T11:05:00Z', routing: {
       preferred_provider: 'Ship24', confirmed_carrier: 'ups', confirmed_number: 'TEST1234', failures: {},
       // The parcel's own streak, watermark and schedule stay its own.
       last_event_at: '2026-09-09T10:00:00Z', last_success_at: '2026-09-10T11:00:00Z', consecutive_failures: 2, next_check_at: '2026-09-10T11:15:00Z',

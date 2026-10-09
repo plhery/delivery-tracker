@@ -73,7 +73,8 @@ Key server modules:
   readiness is announced again by the same rules, once, when it is from the last day and
   the parcel had shown that stage neither as its own nor in another scan.
   A handoff's relay copy that reaches the parcel after the scan it repeats is never the one
-  announced ([ROUTING.md](ROUTING.md#handoffs-two-carriers)). A scheduled run sends a
+  announced, nor is an earlier carrier's scan that reaches it after a later one
+  ([ROUTING.md](ROUTING.md#handoffs-two-carriers)). A scheduled run sends a
   parcel's notifications right after its check, without waiting for the parcels after it.
   Once it has checked a parcel it may merge with another carrier's leg in the same
   account, it holds the rest of its notifications until the merge.

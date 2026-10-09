@@ -1130,6 +1130,17 @@ describe('persistent tracking routing', () => {
     expect(result.correction).toBeUndefined();
     expect(universal).not.toHaveBeenCalled();
   });
+
+  it('keeps an earlier carrier asked again after the handoff out of the watermark', async () => {
+    const { router, direct } = setup();
+    direct.mockResolvedValue({ sourceCarrierId: 'posti', swissPostReady: null, handoffFallbackErrorType: null,
+      earlierCarrierId: 'la-poste', earlierFollowUp: true, earlierResult: { status: 'in_transit', last_update: '2026-09-10T11:00:00Z' },
+      result: { status: 'in_transit', last_update: '2026-09-10T10:00:00Z' } });
+    const result = await router.fetch(parcel({ carrier: 'la-poste', tracking_number: 'CW123456785FR', carrier_data: {
+      original_carrier: 'la-poste', active_tracking_carrier: 'posti', active_tracking_number: 'CW123456785FR' } }), true);
+    expect(result.result.routing).toMatchObject({ last_event_at: '2026-09-10T10:00:00.000Z' });
+    expect(result.earlierResult).toMatchObject({ last_update: '2026-09-10T11:00:00Z' });
+  });
 });
 
 describe('coverage-based provider order', () => {

@@ -13,8 +13,8 @@ const NUMBER_ROUTING = ['preferred_provider', 'preferred_number', 'confirmed_car
   'confirmed_tracking_url', 'confirmed_postcode', 'discovered_carrier', 'direct_retry_at', 'last_probe_at',
   'candidate_probes', 'input_needed', 'provider_input_needed', 'probe_cursor', 'discovery_cursor', 'failures',
   'reported_carriers_seen'];
-/** When a delivery partner of the number was last asked. */
-const NUMBER_DATA = ['delivery_probe', 'swiss_post_probe'];
+/** When a delivery partner of the number, or its earlier carrier after a handoff, was last asked. */
+const NUMBER_DATA = ['delivery_probe', 'swiss_post_probe', 'earlier_checked_at'];
 
 const text = (value: unknown): string | null => typeof value === 'string' && value ? value : null;
 const number = (value: unknown): string => normalizeTrackingNumber(String(value ?? ''));

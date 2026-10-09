@@ -13,7 +13,7 @@ import { ALERT_PRESET_STAGES } from '../lib/notificationPresets';
 import { capitalized } from '../peek/parcel/summary';
 import { recordParcelAlertRemoved, recordParcelAlertSent } from './metrics';
 import { logOperationalEvent } from './observability';
-import { relayRepeats } from './relayCopies';
+import { lateScans, relayRepeats } from './relayCopies';
 import { messagesFor } from './requestLocale';
 import type { SupabaseServiceClient } from './supabase';
 import { errorMessage, isRecord, type JsonObject } from './types';
@@ -431,13 +431,13 @@ export function compareNotificationEvents(left: JsonObject, right: JsonObject): 
 
 /**
  * What a batch of new scans is measured against, by parcel: its newest stored
- * scan, when it joined its account, the relay copies that reached it after
- * the scan they pair with (relayCopies.ts), and whether it is archived.
+ * scan, when it joined its account, the handed-over parcel's scans whose news
+ * it already had (relayCopies.ts), and whether it is archived.
  */
 interface ParcelTimes {
   latest: ReadonlyMap<string, string>;
   joined: ReadonlyMap<string, string>;
-  repeats: ReadonlySet<string>;
+  known: ReadonlySet<string>;
   archived: ReadonlySet<string>;
 }
 
@@ -453,16 +453,17 @@ async function parcelTimes(client: SupabaseServiceClient, batches: Iterable<Json
     read(() => client.handoffScans(ids), []),
     read(() => client.archivedPackageIds(ids), new Set<string>()),
   ]);
-  return { latest, joined, repeats: new Set(handoffs.flatMap((row) => [...relayRepeats(row)])), archived };
+  return { latest, joined, known: new Set(handoffs.flatMap((row) => [...relayRepeats(row), ...lateScans(row)])), archived };
 }
 
 /**
  * The scan a batch announces: its newest, leaving out the row of a relay pair
- * that reached the parcel second, which repeats news the parcel already had.
- * None when that is all the batch holds.
+ * that reached the parcel second, which repeats news the parcel already had,
+ * and an earlier carrier's scan that reached it after a later one, which is
+ * older news. None when that is all the batch holds.
  */
-function announcedScan(events: readonly JsonObject[], { repeats }: ParcelTimes): JsonObject | undefined {
-  return events.filter((event) => !repeats.has(stringField(event, 'event_id'))).sort(compareNotificationEvents)[0];
+function announcedScan(events: readonly JsonObject[], { known }: ParcelTimes): JsonObject | undefined {
+  return events.filter((event) => !known.has(stringField(event, 'event_id'))).sort(compareNotificationEvents)[0];
 }
 
 const BACKFILL_TOLERANCE_MS = 60 * 60 * 1_000;

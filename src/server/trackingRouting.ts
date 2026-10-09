@@ -39,6 +39,8 @@ export interface RoutedResult {
   handoffFallbackErrorType: string | null;
   earlierResult?: CarrierResult;
   earlierCarrierId?: string;
+  /** The earlier carrier asked again after a handoff: its late scans join the history, not the watermark. */
+  earlierFollowUp?: boolean;
 }
 interface Failure { count: number; retry_at: string; kind: RoutingFailureKind; user_error?: string }
 export interface RoutingState extends JsonObject {
@@ -310,8 +312,8 @@ export class TrackingRouter {
       state.consecutive_failures = withoutProgress && !directCarrier(declared)
         ? Math.min(20, previousFailures + 1) : 0;
       // A future-dated scan must not make every later real update look older.
-      const eventTime = Math.min(now().getTime(), Math.max(latest(value),
-        value.earlierResult ? latestResultTime(value.earlierResult, value.earlierCarrierId ?? value.sourceCarrierId) : 0));
+      const eventTime = Math.min(now().getTime(), Math.max(latest(value), value.earlierResult && !value.earlierFollowUp
+        ? latestResultTime(value.earlierResult, value.earlierCarrierId ?? value.sourceCarrierId) : 0));
       state.last_event_at = eventTime && !withoutProgress && value.result.direct_local_fallback !== true ? iso(eventTime) : state.last_event_at;
       // Universal checks are deliberately less frequent than direct in-transit polls.
       state.next_check_at = sources.includes(provider as UniversalSource)

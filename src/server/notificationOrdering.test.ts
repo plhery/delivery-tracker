@@ -249,3 +249,48 @@ it.each(['web', 'native'] as const)('records the row of a relay pair that reache
   handoffs.mockRejectedValueOnce(new Error('down'));
   expect(await dispatched('sorted')).toEqual(['sorted']);
 });
+
+it.each(['web', 'native'] as const)('records an earlier carrier\'s scan told after a later one as handled without announcing it, for %s', async (channel) => {
+  const client = new SupabaseServiceClient('https://example.test', 'test');
+  const clock = clocks('2026-10-08T15:26:00Z');
+  const apns = new NativePushNotificationService(client, 'team', 'key', privateKey, 'app', clock.apns);
+  const service = channel === 'web' ? new WebPushNotificationService(client, '', '', '', clock.web) : apns;
+  const send = vi.spyOn(service, 'send').mockResolvedValue();
+  const ack = channel === 'web' ? vi.spyOn(client, 'recordPushDeliveries').mockResolvedValue() : vi.spyOn(client, 'recordNativePushDeliveries').mockResolvedValue();
+  const pending = channel === 'web' ? vi.spyOn(client, 'listPendingPushNotifications') : vi.spyOn(client, 'listPendingNativePushNotifications');
+  vi.spyOn(client, 'updatePushSubscription').mockResolvedValue();
+  vi.spyOn(client, 'updateNativePushDevice').mockResolvedValue();
+  vi.spyOn(client, 'packageJoinTimes').mockResolvedValue(new Map([['pkg', '2026-10-01T08:00:00Z']]));
+  vi.spyOn(client, 'latestScanTimes').mockResolvedValue(new Map([['pkg', '2026-10-08T14:40:00Z']]));
+  // Chronopost handed the parcel over to DPD Germany, and is asked again for its late scans.
+  const stored = (id: string, source: string, stage: string, occurred_at: string, created_at: string) => ({
+    id, stage, occurred_at, created_at, provider_event_id: `${source}:${id}`,
+  });
+  const scans = [
+    // DPD's scan was announced; Chronopost's scan from before it comes with a later check.
+    stored('received', 'dpd-de', 'in_transit', '2026-10-08T14:24:00Z', '2026-10-08T14:30:00Z'),
+    stored('late', 'chronopost', 'in_transit', '2026-10-08T14:12:00Z', '2026-10-08T15:25:00Z'),
+    stored('newer', 'chronopost', 'out_for_delivery', '2026-10-08T14:40:00Z', '2026-10-08T15:25:00Z'),
+  ];
+  const handoffs = vi.mocked(client.handoffScans).mockResolvedValue([{
+    id: 'pkg', carrier: 'chronopost', carrier_data: { original_carrier: 'chronopost', active_tracking_carrier: 'dpd-de' }, tracking_events: scans,
+  }]);
+  const dispatched = async (...ids: string[]) => {
+    pending.mockResolvedValueOnce(ids.map((id) => {
+      const { stage, occurred_at, created_at } = scans.find((scan) => scan.id === id)!;
+      return { subscription_id: 'sub', device_id: 'device', package_id: 'pkg', event_id: id, stage, occurred_at, event_created_at: created_at };
+    }));
+    send.mockClear(); ack.mockClear();
+    await service.dispatch();
+    expect(ack).toHaveBeenCalledExactlyOnceWith(channel === 'web' ? 'sub' : 'device', ids);
+    return send.mock.calls.map(([event]) => event.event_id);
+  };
+  // Within an hour of the parcel's newest scan, yet older than one it had announced.
+  expect(await dispatched('late')).toEqual([]);
+  // A scan newer than everything stored before it is announced as ever.
+  expect(await dispatched('late', 'newer')).toEqual(['newer']);
+  expect(await dispatched('newer')).toEqual(['newer']);
+  // A failed lookup announces as before.
+  handoffs.mockRejectedValueOnce(new Error('down'));
+  expect(await dispatched('late')).toEqual(['late']);
+});
