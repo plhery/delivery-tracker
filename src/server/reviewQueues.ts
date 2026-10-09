@@ -45,17 +45,38 @@ export interface StatusObservationClosing {
   keys: string[];
 }
 
+/** The carrier the router files a universal provider's scans under (trackingRouting.ts). */
+const UNIVERSAL_CARRIER = 'unknown';
+
+/** What the status map of the scraper this server runs says about an observed wording. */
+function observedAnswer(observation: JsonObject) {
+  return statusMapAnswer({
+    carrier: String(observation.carrier ?? ''),
+    providerCode: typeof observation.provider_code === 'string' ? observation.provider_code : null,
+    description: String(observation.description_normalized ?? ''),
+  });
+}
+
+/**
+ * Whether a universal provider's scan counts as mapped. No carrier map stands
+ * behind those scans: the scraper's universal map, the reading the providers
+ * give a scan, is theirs. A scan it gives the stage the sync chose is mapped;
+ * wording it does not read, or reads as another stage, stays for review.
+ * Other carriers' scans are mapped only by their own map.
+ */
+export function universalMapAgrees(observation: JsonObject): boolean {
+  if (observation.carrier !== UNIVERSAL_CARRIER) return false;
+  const answer = observedAnswer(observation);
+  return answer.kind === 'mapped' && answer.stage === observation.chosen_stage;
+}
+
 /**
  * How the scraper this server runs closes an observed wording: as mapped when
  * its carrier's status map gives it a stage, as ignored with the map's note
  * when the map leaves it without one on purpose. Null while no map knows it.
  */
 export function statusMapClosing(observation: JsonObject): Omit<StatusObservationClosing, 'keys'> | null {
-  const answer = statusMapAnswer({
-    carrier: String(observation.carrier ?? ''),
-    providerCode: typeof observation.provider_code === 'string' ? observation.provider_code : null,
-    description: String(observation.description_normalized ?? ''),
-  });
+  const answer = observedAnswer(observation);
   if (answer.kind === 'intentional_gap') return { resolution: 'ignored', note: answer.note.slice(0, 500) };
   if (answer.kind !== 'mapped') return null;
   // A different stage from the sightings' says their stored scans may need a repair.

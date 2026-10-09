@@ -367,11 +367,17 @@ describe('fair scheduling', () => {
 });
 
 describe('status observation collection', () => {
-  it('reviews preclassified aggregator wording and pending fallbacks while keeping explicit maps out', () => {
+  // The key an observation of the same universal wording carries. No map stages a scan pending.
+  const universalKey = (row: JsonObject) => collectStatusObservations(
+    [{ ...row, stage: 'pending', raw_data: { ...row.raw_data as JsonObject, stage_source: 'none' } }], 'unknown',
+  )[0]?.observation_key;
+
+  it('reviews aggregator wording the universal map leaves unread or reads otherwise, and keeps mapped wording out', () => {
     const rows = buildEvents({ id: 'package-1', carrier: 'unknown' }, {
       tracking_provider: 'ParcelsApp',
       status: 'in_transit', current_stage: 'in_transit',
       events: [
+        { time: '2026-01-01T13:00:00Z', description: 'Departed from facility', stage: 'out_for_delivery', stage_source: 'wording:provider' },
         { time: '2026-01-01T12:00:00Z', description: 'Unrecognized carrier message', stage: 'pending', stage_source: 'none' },
         { time: '2026-01-01T11:00:00Z', description: 'Sorted in regional hub', stage: 'in_transit', stage_source: 'wording:language' },
         { time: '2026-01-01T10:00:00Z', description: 'Mapped milestone', stage: 'accepted', stage_source: 'carrier_map' },
@@ -379,35 +385,58 @@ describe('status observation collection', () => {
       ],
     });
     expect(rows.map((row) => [row.stage, (row.raw_data as JsonObject).stage_source])).toEqual([
-      ['pending', 'none'], ['in_transit', 'wording:language'], ['accepted', 'carrier_map'], ['accepted', 'carrier_map'],
+      ['out_for_delivery', 'wording:provider'], ['pending', 'none'], ['in_transit', 'wording:language'],
+      ['accepted', 'carrier_map'], ['accepted', 'carrier_map'],
     ]);
+    // The universal map reads the first as in transit and does not read the second.
     expect(collectStatusObservations(rows, 'unknown').map((observation) => [
       observation.description_normalized, observation.chosen_stage, observation.stage_source,
     ])).toEqual([
+      ['departed from facility', 'out_for_delivery', 'wording:provider'],
       ['unrecognized carrier message', 'pending', 'none'],
-      ['sorted in regional hub', 'in_transit', 'wording:language'],
     ]);
+    // It reads the third as in transit too, so that wording is mapped like the explicit maps'.
+    expect(collectMappedStatusKeys(rows, 'unknown')).toEqual(rows.slice(2).map(universalKey));
+  });
+
+  it('reads only universal scans with the universal map: a direct carrier\'s wording fallback is still reviewed', () => {
+    const scan = (carrier: string) => ({
+      package_id: 'package-1', stage: 'in_transit', description: 'Sorted in regional hub',
+      provider_event_id: `${carrier}:abc`, raw_data: { stage_source: 'wording:language' },
+    });
+    const rows = [scan('unknown'), scan('dpd')];
+    expect(collectStatusObservations(rows, 'unknown')).toMatchObject([
+      { carrier: 'dpd', description_normalized: 'sorted in regional hub', chosen_stage: 'in_transit', stage_source: 'wording:language' },
+    ]);
+    expect(collectMappedStatusKeys(rows, 'unknown')).toEqual([universalKey(scan('unknown'))]);
   });
 
   it('preserves summary and local-clock milestone sources when no timestamped scan can be saved', () => {
     const parcel = { id: 'package-1', carrier: 'unknown', current_stage: 'pending' };
-    const summary = buildEvents(parcel, {
-      status: 'in_transit', current_stage: 'in_transit', current_stage_source: 'wording:provider',
+    // The universal map reads the wording as in transit: a summary that agrees is
+    // mapped, one that does not is reviewed.
+    const summary = (stage: string) => buildEvents(parcel, {
+      status: 'in_transit', current_stage: stage, current_stage_source: 'wording:provider',
       last_status_text: 'Sorted in regional hub', last_update: '2026-01-01T11:00:00Z',
     });
-    expect(collectStatusObservations(summary, 'unknown')).toMatchObject([
-      { chosen_stage: 'in_transit', stage_source: 'wording:provider' },
+    expect(summary('in_transit').map((row) => row.raw_data)).toMatchObject([{ stage_source: 'wording:provider' }]);
+    expect(collectStatusObservations(summary('in_transit'), 'unknown')).toEqual([]);
+    expect(collectMappedStatusKeys(summary('in_transit'), 'unknown')).toEqual(summary('in_transit').map(universalKey));
+    expect(collectStatusObservations(summary('out_for_delivery'), 'unknown')).toMatchObject([
+      { chosen_stage: 'out_for_delivery', stage_source: 'wording:provider' },
     ]);
+    expect(collectMappedStatusKeys(summary('out_for_delivery'), 'unknown')).toEqual([]);
     for (const current_stage_source of [undefined, 'wording:provider']) {
       const observed = buildEvents(parcel, {
         tracking_provider: 'UPU', status: 'in_transit', current_stage: 'in_transit', current_stage_source,
         events: [{ local_time: '2026-01-01T11:00:00', description: 'Sorted in regional hub',
           stage: 'in_transit', stage_source: 'wording:provider', provider_code: 'ZZ1' }],
       }, undefined, new Date('2026-01-01T12:00:00Z'));
-      expect(observed).toHaveLength(1);
-      expect(collectStatusObservations(observed, 'unknown')).toMatchObject([
-        { provider_code: 'ZZ1', chosen_stage: 'in_transit', stage_source: 'wording:provider' },
+      expect(observed.map((row) => [row.stage, row.raw_data])).toMatchObject([
+        ['in_transit', { provider_code: 'ZZ1', stage_source: 'wording:provider' }],
       ]);
+      expect(collectStatusObservations(observed, 'unknown')).toEqual([]);
+      expect(collectMappedStatusKeys(observed, 'unknown')).toEqual(observed.map(universalKey));
     }
   });
 
@@ -563,6 +592,25 @@ describe('status observation collection', () => {
     ], [], deployedVersion());
     expect(client.recordTrackingStatusObservations.mock.invocationCallOrder[0])
       .toBeGreaterThan(client.insertEvents.mock.invocationCallOrder[0]);
+  });
+
+  it('sends the aggregator wording the universal map reads as mapped and files the rest', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValue({
+      tracking_provider: 'Ship24', status: 'in_transit', current_stage: 'in_transit',
+      current_stage_source: 'wording:language',
+      events: [
+        { time: '2026-01-01T12:00:00Z', description: 'Unrecognized carrier message', stage: 'pending', stage_source: 'none' },
+        { time: '2026-01-01T11:00:00Z', description: 'Sorted in regional hub', stage: 'in_transit', stage_source: 'wording:language' },
+      ],
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    await expect(service.syncPackage({ id: 'observed', carrier: 'unknown', tracking_number: 'TEST1234' }))
+      .resolves.toMatchObject({ updated: 1 });
+    expect(client.recordTrackingStatusObservations).toHaveBeenCalledWith([
+      expect.objectContaining({ carrier: 'unknown', chosen_stage: 'pending', stage_source: 'none' }),
+    ], [expect.stringMatching(/^[0-9a-f]{64}$/)], deployedVersion());
+    expect(client.closeTrackingStatusObservations).not.toHaveBeenCalled();
   });
 
   it('records an entirely unresolved history without advancing the parcel', async () => {

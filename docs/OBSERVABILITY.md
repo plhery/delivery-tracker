@@ -173,16 +173,20 @@ Set `reviewed_at`, and `review_note` with the outcome, once an answer is handled
 ## Unmapped wording
 
 `tracking_status_observations` collects carrier wording whose stage didn't come from a
-carrier status map, so it can be mapped instead of guessed forever. There is one row per
-carrier, provider code and normalized description. `count` and `last_seen` grow on repeat
-sightings. It holds no tracking number or account reference. Each refresh records at most
-32 observations, and a failed write never fails the refresh. `last_seen_version` names
-the server version of the latest sighting.
+carrier status map, so it can be mapped instead of guessed forever. Scans a universal
+provider relays are filed under the carrier `unknown`, which has no carrier map: the
+scraper's universal map, which reads them as the providers do, stands in for one. Such a
+scan is collected only when that map leaves its wording unread, or reads it as another
+stage than the scan's. There is one row per carrier, provider code and normalized
+description. `count` and `last_seen` grow on repeat sightings. It holds no tracking number
+or account reference. Each refresh records at most 32 observations, and a failed write
+never fails the refresh. `last_seen_version` names the server version of the latest
+sighting.
 
-Each refresh also sends the keys of the wording its carrier maps did resolve, with its
-version. An open row with one of those keys closes as `mapped`, with `reviewed_version`
-and `review_note`. If a server that names its version sees that wording unmapped again,
-the row reopens: the map covers it only sometimes.
+Each refresh also sends the keys of the wording its maps did resolve, the universal map
+included, with its version. An open row with one of those keys closes as `mapped`, with
+`reviewed_version` and `review_note`. If a server that names its version sees that wording
+unmapped again, the row reopens: the map covers it only sometimes.
 
 The scraper's carrier maps also declare the wording they leave unmapped on purpose, each
 with a note, and `statusMapAnswer` from `universal-parcel-scraper/app` says, for one
@@ -217,10 +221,9 @@ current stage only when the newest milestone changes.
 Each event records its stage source in `tracking_events.raw_data.stage_source`:
 `carrier_map` (explicit carrier vocabulary or provider-code mapping), `wording:<rule>`
 (classifier rule that matched), or `none` (fallback). The sync preserves the scraper's
-source, including on unresolved `pending` scans and observed milestones. Universal
-wording rules remain eligible for review even when their adapter already assigned a stage.
-Local-clock wording is recorded without a sample timeline event when its instant is
-unresolved. It never creates a timestamped scan just to populate the review queue.
+source, including on unresolved `pending` scans and observed milestones. Local-clock
+wording is recorded without a sample timeline event when its instant is unresolved. It
+never creates a timestamped scan just to populate the review queue.
 
 Review, most frequent first:
 

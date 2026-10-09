@@ -46,7 +46,7 @@ import { collectedPickupPoint } from './collectedPickupPoint';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
 import { eventTimestamp, latestResultTime, resultTimezone } from 'universal-parcel-scraper/app';
 import { trackingSupportEvidence } from './trackingSupport';
-import { deployedVersion, statusMapClosings } from './reviewQueues';
+import { deployedVersion, statusMapClosings, universalMapAgrees } from './reviewQueues';
 import { carrierLookupKey, recognitionKey, SharedLookups, universalLookupKey, type ParcelLookups } from './sharedLookups';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
@@ -519,7 +519,10 @@ export function normalizeObservedDescription(description: string): string {
   return description.toLocaleLowerCase('en-US').trim().split(/\s+/).join(' ').slice(0, 500);
 }
 
-/** How one event's wording is observed: its key, carrier, code and stage source; null without wording or stage. */
+/**
+ * How one event's wording is observed: its key, carrier, code, stage source
+ * and whether a map gave its stage; null without wording or stage.
+ */
 function observedWording(event: JsonObject, fallbackCarrierId: string) {
   const raw = isRecord(event.raw_data) ? event.raw_data : {};
   const source = typeof raw.stage_source === 'string' ? raw.stage_source : '';
@@ -537,13 +540,17 @@ function observedWording(event: JsonObject, fallbackCarrierId: string) {
   const key = createHash('sha256')
     .update(JSON.stringify([carrier, providerCode ?? '', description]))
     .digest('hex');
-  return { key, carrier, providerCode, description, source, chosenStage, eventId };
+  const mapped = source === 'carrier_map' || universalMapAgrees({
+    carrier, provider_code: providerCode, description_normalized: description, chosen_stage: chosenStage,
+  });
+  return { key, carrier, providerCode, description, source, chosenStage, eventId, mapped };
 }
 
 /**
- * Collects the carrier wording whose stage did not come from a carrier map, so
- * an operator can map it later. The package and event identifiers travel with
- * the observation only to resolve one sample event row; they are not stored.
+ * Collects the carrier wording no map gave its stage, so an operator can map
+ * it later: the carrier's map, or the universal map for a universal
+ * provider's scan (reviewQueues.ts). The package and event identifiers travel
+ * with the observation only to resolve one sample event row; they are not stored.
  */
 export function collectStatusObservations(
   events: readonly JsonObject[],
@@ -552,7 +559,7 @@ export function collectStatusObservations(
   const observations = new Map<string, StatusObservation>();
   for (const event of events) {
     const observed = observedWording(event, fallbackCarrierId);
-    if (!observed || observed.source === 'carrier_map' || observations.has(observed.key)) continue;
+    if (!observed || observed.mapped || observations.has(observed.key)) continue;
     observations.set(observed.key, {
       observation_key: observed.key,
       carrier: observed.carrier,
@@ -570,16 +577,16 @@ export function collectStatusObservations(
 }
 
 /**
- * The observation keys of wording a carrier map gave its stage in every scan
- * that carried it. An open observation with one of them is covered by the
- * scraper this server runs.
+ * The observation keys of wording a map gave its stage in every scan that
+ * carried it. An open observation with one of them is covered by the scraper
+ * this server runs.
  */
 export function collectMappedStatusKeys(events: readonly JsonObject[], fallbackCarrierId: string): string[] {
   const observed = events.flatMap((event) => observedWording(event, fallbackCarrierId) ?? []);
-  const unmapped = new Set(observed.filter(({ source }) => source !== 'carrier_map').map(({ key }) => key));
+  const unmapped = new Set(observed.filter(({ mapped }) => !mapped).map(({ key }) => key));
   const keys = new Set<string>();
-  for (const { key, source } of observed) {
-    if (source !== 'carrier_map' || unmapped.has(key)) continue;
+  for (const { key, mapped } of observed) {
+    if (!mapped || unmapped.has(key)) continue;
     keys.add(key);
     if (keys.size >= MAX_STATUS_OBSERVATIONS_PER_SYNC) break;
   }
