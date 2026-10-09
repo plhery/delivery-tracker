@@ -111,6 +111,22 @@ describe('one-off parcels and their links', () => {
     expect(params(request.mock.calls[1][0]).get('current_stage')).toBe('eq.delivered');
   });
 
+  it('lists archived parcels for the schedule, and leaves them out of refreshing every parcel', async () => {
+    const client = service();
+    const user = new SupabaseUserClient('https://database.example', 'public-key', 'token');
+    const scheduled = vi.spyOn(client, 'request').mockResolvedValue([]);
+    const refreshed = vi.spyOn(user, 'request').mockResolvedValue([]);
+    await client.listActivePackages();
+    await user.listActivePackages();
+    expect(params(scheduled.mock.calls[0][0]).has('archived_at')).toBe(false);
+    expect(params(scheduled.mock.calls[0][0]).get('select')!.split(',')).toContain('archived_at');
+    expect(params(refreshed.mock.calls[0][0]).get('archived_at')).toBe('is.null');
+    // Neither holds a delivered or returned parcel.
+    for (const request of [scheduled, refreshed]) {
+      expect(params(request.mock.calls[0][0]).get('or')).toBe('(current_stage.not.in.(delivered,returned),last_status_text.eq.TO_BE_DELIVERED)');
+    }
+  });
+
   it('lists the one-off parcels a scheduled run follows in the shape of the other candidates', async () => {
     const client = service();
     const request = vi.spyOn(client, 'request').mockResolvedValue([{ id: 'one-off', one_off: true }]);
@@ -707,6 +723,17 @@ describe('notification reads', () => {
     const pages = request.mock.calls.map(([path]) => new URL(`https://database.example${String(path)}`).searchParams);
     expect(pages.map((page) => page.get('id')!.slice(4, -1).split(',').length)).toEqual([100, 1]);
     expect(pages[0]!.get('select')).toBe('id,created_at,owned_since');
+  });
+
+  it('reads which parcels are archived, a page of ids at a time', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const ids = Array.from({ length: 101 }, (_, index) => `package-${index}`);
+    const request = vi.spyOn(client, 'request').mockResolvedValueOnce([{ id: 'package-1' }, { id: 7 }]).mockResolvedValueOnce([{ id: 'package-100' }]);
+    await expect(client.archivedPackageIds([...ids, 'package-0'])).resolves.toEqual(new Set(['package-1', 'package-100']));
+    const pages = request.mock.calls.map(([path]) => new URL(`https://database.example${String(path)}`).searchParams);
+    expect(pages.map((page) => page.get('id')!.slice(4, -1).split(',').length)).toEqual([100, 1]);
+    expect(pages[0]!.get('archived_at')).toBe('not.is.null');
+    expect(pages[0]!.get('select')).toBe('id');
   });
 
   it('reads the scans of handed-over parcels, with their carriers, for relay copies', async () => {

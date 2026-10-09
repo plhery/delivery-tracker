@@ -82,6 +82,12 @@ const NOT_YET_MOVING = new Set(['registered', 'accepted']);
 const UNSEEN_HOURLY_MS = 6 * 60 * 60 * 1_000;
 /** After this long unseen, a number is checked daily. */
 const UNSEEN_DAILY_AFTER_MS = 48 * 60 * 60 * 1_000;
+/**
+ * An archived parcel is checked daily until this long after its newest carrier
+ * event, or after it was added: one put away at a pickup point still shows its
+ * collection.
+ */
+const ARCHIVED_FOLLOWED_MS = 30 * 24 * 60 * 60 * 1_000;
 
 /**
  * An unsuccessful partner confirmation must not double every refresh's cost.
@@ -191,9 +197,16 @@ function isScheduledTrackingSyncDue(
   if (!isTrackingSyncDue(parcel, now)) return false;
   const unseen = unseenFor(parcel, now);
   if (oneOff && unseen !== null && unseen >= UNSEEN_HOURLY_MS) return false;
+  const archived = parcel.archived_at != null;
+  if (archived) {
+    const activity = lastActivity(parcel);
+    if (activity === null || now.getTime() - activity >= ARCHIVED_FOLLOWED_MS) return false;
+  }
   const lastChecked = Date.parse(String(parcel.last_synced_at ?? ''));
   if (!Number.isFinite(lastChecked)) return true;
   const local = DateTime.fromJSDate(now, { zone: 'Europe/Zurich' });
+  // Archived, daily around the clock.
+  if (archived) return lastChecked < local.startOf('hour').minus({ hours: 23 }).toMillis();
   if (unseen !== null) {
     // Hourly, then every 6 h, then daily, around the clock.
     const hours = unseen < UNSEEN_HOURLY_MS ? 1 : unseen < UNSEEN_DAILY_AFTER_MS ? 6 : 24;

@@ -1339,6 +1339,50 @@ describe('TrackingSyncService', () => {
   });
 
   it.each([
+    { name: 'checked less than a day ago', at: '2026-09-09T09:59:59Z', checked: 0 },
+    { name: 'checked a day ago', at: '2026-09-09T10:00:00Z', checked: 1 },
+    { name: 'checked a day ago, overnight', last: '2026-09-08T22:00:15Z', at: '2026-09-09T22:00:00Z', checked: 1 },
+    { name: 'never checked', last: null, at: '2026-09-09T10:00:00Z', checked: 1 },
+    { name: 'without news for just under 30 days', lastEvent: '2026-08-10T10:00:01Z', at: '2026-09-09T10:00:00Z', checked: 1 },
+    { name: 'without news for 30 days', lastEvent: '2026-08-10T10:00:00Z', at: '2026-09-09T10:00:00Z', checked: 0 },
+    { name: 'without news for 30 days, never checked', lastEvent: '2026-08-01T08:00:00Z', last: null, at: '2026-09-09T10:00:00Z', checked: 0 },
+    { name: 'added 29 days ago with older scans', created: '2026-08-11T08:00:00Z', lastEvent: '2026-07-01T08:00:00Z', at: '2026-09-09T10:00:00Z', checked: 1 },
+    { name: 'in a provider\'s cooldown', nextCheck: '2026-09-09T12:00:00Z', at: '2026-09-09T10:00:00Z', checked: 0 },
+  ])('checks an archived parcel $name at $at: $checked checks', async ({
+    created = '2026-08-01T08:00:00Z', lastEvent = '2026-09-06T09:00:00Z', last = '2026-09-08T10:00:15Z', nextCheck, at, checked,
+  }) => {
+    // Put away while it waits at a pickup point, the parcel is checked daily for its collection.
+    const parcel = {
+      id: 'archived', user_id: 'a', carrier: 'swiss-post', current_stage: 'ready_for_pickup', tracking_number: 'TEST1234',
+      created_at: created, archived_at: '2026-09-07T08:00:00Z', last_synced_at: last, sync_status: 'ok',
+      carrier_data: { routing: { version: 1, configured_carrier: 'swiss-post', last_event_at: lastEvent,
+        ...(nextCheck ? { next_check_at: nextCheck } : {}) } },
+    };
+    const client = fakeClient([parcel]);
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'ready_for_pickup' }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date(at));
+    await expect(service.sync()).resolves.toMatchObject({ checked });
+    expect(adapter.fetch).toHaveBeenCalledTimes(checked);
+    // A manual refresh is never held back by it.
+    if (!checked && !nextCheck) await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1 });
+  });
+
+  it('checks a parcel brought back from the archive at the regular cadence again', async () => {
+    const parcel = { id: 'restored', user_id: 'a', carrier: 'swiss-post', current_stage: 'ready_for_pickup', tracking_number: 'TEST1234',
+      created_at: '2026-09-01T08:00:00Z', last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok',
+      carrier_data: { routing: { version: 1, configured_carrier: 'swiss-post', last_event_at: '2026-09-08T09:00:00Z' } } };
+    const checked = async (archived_at: string | null) => {
+      const client = fakeClient([{ ...parcel, archived_at }]);
+      const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+        { fetch: vi.fn().mockResolvedValue({ status: 'ready_for_pickup' }) }, null, () => new Date('2026-09-09T10:10:00Z'));
+      return (await service.sync()).checked;
+    };
+    // Archived, it waits for tomorrow's check; on the list again, for the next ten minutes.
+    await expect(checked('2026-09-09T09:00:00Z')).resolves.toBe(0);
+    await expect(checked(null)).resolves.toBe(1);
+  });
+
+  it.each([
     { name: 'unseen, added two hours ago', created: '2026-09-09T08:30:00Z', last: '2026-09-09T10:00:15Z', at: '2026-09-09T10:10:00Z', checked: 0 },
     { name: 'unseen, added two hours ago', created: '2026-09-09T08:30:00Z', last: '2026-09-09T10:00:15Z', at: '2026-09-09T11:00:00Z', checked: 1 },
     { name: 'unseen, added a day ago', created: '2026-09-08T10:00:00Z', last: '2026-09-09T06:00:15Z', at: '2026-09-09T11:00:00Z', checked: 0 },

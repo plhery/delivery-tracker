@@ -4,7 +4,10 @@ import { compareNotificationEvents, DeliveryLiveActivityNotificationService, Nat
 import { SupabaseServiceClient } from './supabase';
 
 const privateKey = generateKeyPairSync('ec', { namedCurve: 'prime256v1' }).privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
-beforeEach(() => { vi.spyOn(SupabaseServiceClient.prototype, 'handoffScans').mockResolvedValue([]); });
+beforeEach(() => {
+  vi.spyOn(SupabaseServiceClient.prototype, 'handoffScans').mockResolvedValue([]);
+  vi.spyOn(SupabaseServiceClient.prototype, 'archivedPackageIds').mockResolvedValue(new Set());
+});
 afterEach(() => vi.restoreAllMocks());
 
 /** Web Push counts milliseconds and APNs seconds. */
@@ -166,6 +169,35 @@ it.each(['web', 'native'] as const)('records a batch whose newest scan is more t
   expect(await announced('2026-10-07T07:20:00Z')).toBe(true);
   // A day without a clock has no age to judge.
   expect(await announced('2026-10-05T00:00:00Z', false)).toBe(true);
+});
+
+it.each(['web', 'native'] as const)('records the scans of an archived parcel as handled without announcing them, for %s', async (channel) => {
+  const client = new SupabaseServiceClient('https://example.test', 'test');
+  const clock = clocks('2026-10-08T07:10:00Z');
+  const apns = new NativePushNotificationService(client, 'team', 'key', privateKey, 'app', clock.apns);
+  const service = channel === 'web' ? new WebPushNotificationService(client, '', '', '', clock.web) : apns;
+  const send = vi.spyOn(service, 'send').mockResolvedValue();
+  const ack = channel === 'web' ? vi.spyOn(client, 'recordPushDeliveries').mockResolvedValue() : vi.spyOn(client, 'recordNativePushDeliveries').mockResolvedValue();
+  const pending = channel === 'web' ? vi.spyOn(client, 'listPendingPushNotifications') : vi.spyOn(client, 'listPendingNativePushNotifications');
+  vi.spyOn(client, 'updatePushSubscription').mockResolvedValue();
+  vi.spyOn(client, 'updateNativePushDevice').mockResolvedValue();
+  vi.spyOn(client, 'packageJoinTimes').mockResolvedValue(new Map([['pkg', '2026-09-01T08:00:00Z']]));
+  vi.spyOn(client, 'latestScanTimes').mockResolvedValue(new Map([['pkg', '2026-10-08T07:00:00Z']]));
+  const archived = vi.mocked(client.archivedPackageIds).mockResolvedValue(new Set(['pkg']));
+  // Put away while it waited at a pickup point, the parcel is collected: its daily check says nothing.
+  pending.mockResolvedValue([{
+    subscription_id: 'sub', device_id: 'device', package_id: 'pkg', event_id: 'collected', stage: 'delivered',
+    occurred_at: '2026-10-08T07:00:00Z', event_created_at: '2026-10-08T07:10:00Z', event_has_time: true,
+  }]);
+  expect(await service.dispatch()).toMatchObject({ attempted: 0, sent: 0 });
+  expect(archived).toHaveBeenCalledWith(['pkg']);
+  expect(send).not.toHaveBeenCalled();
+  expect(ack).toHaveBeenCalledExactlyOnceWith(channel === 'web' ? 'sub' : 'device', ['collected']);
+  // On the list it is news, and so it is when the lookup fails.
+  archived.mockResolvedValueOnce(new Set()).mockRejectedValueOnce(new Error('down'));
+  await service.dispatch();
+  await service.dispatch();
+  expect(send).toHaveBeenCalledTimes(2);
 });
 
 it.each(['web', 'native'] as const)('records the row of a relay pair that reached the parcel second as handled without announcing it, for %s', async (channel) => {

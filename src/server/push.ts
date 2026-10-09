@@ -428,10 +428,15 @@ export function compareNotificationEvents(left: JsonObject, right: JsonObject): 
 
 /**
  * What a batch of new scans is measured against, by parcel: its newest stored
- * scan, when it joined its account, and the relay copies that reached it after
- * the scan they pair with (relayCopies.ts).
+ * scan, when it joined its account, the relay copies that reached it after
+ * the scan they pair with (relayCopies.ts), and whether it is archived.
  */
-interface ParcelTimes { latest: ReadonlyMap<string, string>; joined: ReadonlyMap<string, string>; repeats: ReadonlySet<string> }
+interface ParcelTimes {
+  latest: ReadonlyMap<string, string>;
+  joined: ReadonlyMap<string, string>;
+  repeats: ReadonlySet<string>;
+  archived: ReadonlySet<string>;
+}
 
 /** A lookup that fails leaves its answer empty, and its rule then announces every batch as before. */
 async function parcelTimes(client: SupabaseServiceClient, batches: Iterable<JsonObject[]>): Promise<ParcelTimes> {
@@ -439,12 +444,13 @@ async function parcelTimes(client: SupabaseServiceClient, batches: Iterable<Json
   const read = async <T>(load: () => Promise<T>, none: T) => {
     try { return await load(); } catch { return none; }
   };
-  const [latest, joined, handoffs] = await Promise.all([
+  const [latest, joined, handoffs, archived] = await Promise.all([
     read(() => client.latestScanTimes(ids), new Map<string, string>()),
     read(() => client.packageJoinTimes(ids), new Map<string, string>()),
     read(() => client.handoffScans(ids), []),
+    read(() => client.archivedPackageIds(ids), new Set<string>()),
   ]);
-  return { latest, joined, repeats: new Set(handoffs.flatMap((row) => [...relayRepeats(row)])) };
+  return { latest, joined, repeats: new Set(handoffs.flatMap((row) => [...relayRepeats(row)])), archived };
 }
 
 /**
@@ -478,9 +484,13 @@ const DAY_MS = 24 * 60 * 60 * 1_000;
  * - Stale: more than a day old when it would be announced. A leg a provider
  *   reports days late is stored and shown, but no longer worth a
  *   notification. A scan without a clock has no age to judge.
+ * - Archived: its account put the parcel away. The daily check that follows
+ *   it there updates it silently, to its owner and to its links' alerts, and
+ *   bringing the parcel back does not announce what was recorded meanwhile.
  */
-export function isOldNews(newest: JsonObject, { latest, joined }: ParcelTimes, now: number): boolean {
+export function isOldNews(newest: JsonObject, { latest, joined, archived }: ParcelTimes, now: number): boolean {
   const packageId = stringField(newest, 'package_id');
+  if (archived.has(packageId)) return true;
   const scanned = Date.parse(stringField(newest, 'occurred_at'));
   const clockless = newest.event_has_time === false;
   if (!clockless && scanned < now - DAY_MS) return true;

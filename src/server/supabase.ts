@@ -33,7 +33,7 @@ const PACKAGE_COLUMNS = [
  * carries neither.
  */
 const PACKAGE_SELECT = `${PACKAGE_COLUMNS},tracking_events(id,package_id,stage,description,location,occurred_at,provider_event_id,point:raw_data->point)`;
-const ACTIVE_PACKAGE_SELECT = 'id,user_id,tracking_number,label,carrier,current_stage,tracking_url,dpd_postcode,created_at,last_synced_at,sync_status,carrier_data,tracking_generation';
+const ACTIVE_PACKAGE_SELECT = 'id,user_id,tracking_number,label,carrier,current_stage,tracking_url,dpd_postcode,created_at,last_synced_at,sync_status,carrier_data,tracking_generation,archived_at';
 /**
  * Where the sync loaders put each stored event's identity, instant, stage and
  * wording, so a reworded scan can update its row in place and another source's
@@ -355,17 +355,18 @@ export class SupabaseClient {
     return archived.length;
   }
 
+  /** The open parcels on the list, archived ones left out: what refreshing every parcel checks. */
   async listActivePackages(): Promise<JsonObject[]> {
-    return await this.activePackages(ACTIVE_PACKAGE_SELECT);
+    return await this.activePackages(ACTIVE_PACKAGE_SELECT, [['archived_at', 'is.null']]);
   }
 
+  /** The parcels a check can still change: not delivered or returned, unless the delivery is only announced. */
   protected async activePackages(
     select: string,
     filters: ReadonlyArray<readonly [string, string]> = [],
   ): Promise<JsonObject[]> {
     const params = query([
       ['select', select],
-      ['archived_at', 'is.null'],
       ['or', '(current_stage.not.in.(delivered,returned),last_status_text.eq.TO_BE_DELIVERED)'],
       ...filters,
       ['order', 'last_synced_at.asc.nullsfirst,created_at.asc'],
@@ -682,6 +683,18 @@ export class SupabaseClient {
     return joined;
   }
 
+  /** The packages among these that their account archived. */
+  async archivedPackageIds(packageIds: string[]): Promise<Set<string>> {
+    const ids = [...new Set(packageIds)];
+    const pages = Array.from({ length: Math.ceil(ids.length / 100) }, (_, page) => ids.slice(page * 100, page * 100 + 100));
+    const found = await Promise.all(pages.map(async (page) => rows(await this.request(`/rest/v1/packages?${query([
+      ['id', `in.(${page.join(',')})`],
+      ['archived_at', 'not.is.null'],
+      ['select', 'id'],
+    ])}`))));
+    return new Set(found.flat().flatMap((row) => typeof row.id === 'string' ? [row.id] : []));
+  }
+
   /**
    * The packages handed over from one carrier to another, each with its
    * carriers and its stored scans, saying when each was stored, so a relay copy
@@ -857,7 +870,7 @@ export class SupabaseServiceClient extends SupabaseClient {
 
   /**
    * Scheduled sync candidates, with their stored event identities: every
-   * account's open parcels. One-off parcels come from
+   * account's open parcels, archived ones included. One-off parcels come from
    * listFollowedOneOffPackages.
    */
   override async listActivePackages(): Promise<JsonObject[]> {

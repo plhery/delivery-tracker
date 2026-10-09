@@ -274,7 +274,8 @@ loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
   under that scan ([handoffs](ROUTING.md#handoffs-two-carriers)).
   `src/server/eventPlaces.ts` applies this to every parcel and link the API serves; the
   account export keeps every stored row.
-- **Archiving** keeps the parcel and its history.
+- **Archiving** keeps the parcel and its history, still checked daily for a while
+  ([ROUTING.md](ROUTING.md)).
 - **A lookup without an account** stores the number once per carrier and inputs, with one
   link per lookup. A link is forgotten 30 days after the parcel is delivered or returned,
   after 90 days without news (a scan, or the link being opened), or when its owner asks.
@@ -308,6 +309,9 @@ loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)).
   failed attempt, pickup readiness or a return, and whenever they are in the past.
 - An `exception` means the carrier reported a problem that is neither a missed delivery
   nor a return. The parcel keeps its place and keeps refreshing.
+- An archived parcel is never announced. Its new scans are recorded as handled without a
+  browser or phone notification or a link alert, so bringing it back does not announce
+  them either. No Live Activity starts for it, and the delivery email leaves it out.
 - A Live Activity starts only at `out_for_delivery`. It ends on delivery, failed attempt,
   problem, pickup, return, archive, sign-out or opt-out. At most two run at once. Live
   Activity pushes go first, so a successful one replaces the matching banner; if it fails,
