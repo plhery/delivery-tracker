@@ -123,7 +123,7 @@ Often, as a last resort:
 
 ### Can Peek find my parcel?
 
-No. [Peek](/) shows only what the carrier publishes and can't contact a carrier or file a claim. It does check up to every 2 minutes once a parcel is out for delivery and can ping you, so you reach the door soon after the "delivered" scan.
+No. [Peek](/) shows only what the carrier publishes and can't contact a carrier or file a claim. It does check up to every 2 minutes once a parcel is out for delivery and can notify you, so you reach the door soon after the "delivered" scan.
 
 ### Should I report a stolen parcel to the police?
 

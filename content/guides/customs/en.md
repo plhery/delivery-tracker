@@ -59,7 +59,7 @@ Don't leave it too long:
 | Australia | Over AUD 1,000: with no action 30 days after Australia Post's First Notice, it may go back |
 | US | A mail parcel without the required entry or bond stays with U.S. Customs and Border Protection (CBP) until they are filed |
 
-Tired of refreshing? Paste the number into [Peek](/): it checks up to every 10 minutes and pings you when the status changes, though it can't pay the charge or hurry customs. If nothing moves for long and no request appears, see [why tracking stops updating](guide:tracking-not-updating).
+Tired of refreshing? Paste the number into [Peek](/): it checks up to every 10 minutes and notifies you when the status changes, though it can't pay the charge or hurry customs. If nothing moves for long and no request appears, see [why tracking stops updating](guide:tracking-not-updating).
 
 ### How long after customs clearance will I get it?
 

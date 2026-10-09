@@ -74,7 +74,7 @@ Usually, yes:
 
 Two look-alikes: Royal Mail's `Ready for delivery` means it has reached your local delivery office, not the van. And at DHL in Germany, a loading scan shown more than once means the round wasn't finished: a delay of 1 to 2 days is possible.
 
-[Peek](/) checks up to every 2 minutes once a parcel is out for delivery, and its pings can be set to delivery day only.
+[Peek](/) checks up to every 2 minutes once a parcel is out for delivery, and its notifications can be set to delivery day only.
 
 ## "Delivery attempted" or "notice left": what now?
 

@@ -118,7 +118,7 @@ Within one country, it's slow: USPS gives Ground Advantage 2 to 5 business days,
 
 ### Can I make tracking update sooner?
 
-No, and nor can a tracker: it only shows what the carrier publishes. [Peek](/) keeps checking with the carrier and can ping you when a new scan lands, so you can stop refreshing.
+No, and nor can a tracker: it only shows what the carrier publishes. [Peek](/) keeps checking with the carrier and can notify you when a new scan lands, so you can stop refreshing.
 
 ### My tracking number isn't working
 
