@@ -91,5 +91,5 @@ facts were read on.
 - Tone follows the app ([shared/locales](../../shared/locales/README.md)): informal, short
   sentences, European Spanish and Portuguese.
 - In French, type a plain space before `?`, `!`, `;` and `:` and inside « »: the page sets
-  the narrow no-break space French takes there. Code keeps its spaces.
+  the no-break space French takes there, narrow before `?`, `!` and `;`. Code keeps its spaces.
 - Say what Peek does only where it helps the reader, and only what it does.

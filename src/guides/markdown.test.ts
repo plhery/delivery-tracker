@@ -124,10 +124,11 @@ describe('a guide’s Markdown', () => {
 
 describe('a guide’s typography', () => {
   const narrow = String.fromCharCode(0x202f);
+  const space = String.fromCharCode(0xa0);
 
-  it('sets a narrow no-break space where French takes one, in place of the plain space typed', () => {
+  it('sets the no-break space French takes, narrow or full, in place of the plain space typed', () => {
     expect(frenchSpacing('Où est-il ? Le voilà ! Attends ; regarde : « ici ».')).toBe(
-      `Où est-il${narrow}? Le voilà${narrow}! Attends${narrow}; regarde${narrow}: «${narrow}ici${narrow}».`,
+      `Où est-il${narrow}? Le voilà${narrow}! Attends${narrow}; regarde${space}: «${space}ici${space}».`,
     );
     // Nothing else moves: no space is added where none was typed, and other spaces stay.
     expect(frenchSpacing('À 10:30, «oui»: rien?')).toBe('À 10:30, «oui»: rien?');
@@ -140,7 +141,7 @@ describe('a guide’s typography', () => {
     const french = typeset(written, 'fr');
     expect(french.title).toBe(`Où est mon colis${narrow}?`);
     expect(french.blocks[0]).toEqual({ type: 'paragraph', text: [
-      { type: 'text', text: `Le statut dit «${narrow}livré${narrow}»${narrow}: vérifie ` },
+      { type: 'text', text: `Le statut dit «${space}livré${space}»${space}: vérifie ` },
       { type: 'code', text: 'RR 123 : CH' },
       { type: 'text', text: `${narrow}!` },
     ] });

@@ -71,7 +71,7 @@ export function readGuides(directory = contentRoot) {
 
 /**
  * What the app needs of the guides without reading their files: where each one lives and what it is
- * called, set as its language sets it. A narrow no-break space is written as its escape, to be seen.
+ * called, set as its language sets it. No-break spaces are written as their escapes, to be seen.
  */
 export function guidesModule(guides) {
   const links = Object.fromEntries(SUPPORTED_LOCALES.map((locale) => [
@@ -84,7 +84,7 @@ import type { Locale } from '../lib/locale';
 /** A guide in one language: its id in every language, and its address and title in this one. */
 export interface GuideLink { id: string; slug: string; title: string }
 
-export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = ${JSON.stringify(links, null, 2).replace(/\u202f/g, '\\u202f')};
+export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = ${JSON.stringify(links, null, 2).replace(/\u202f/g, '\\u202f').replace(/\u00a0/g, '\\u00a0')};
 `;
 }
 

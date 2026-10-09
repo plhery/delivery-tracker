@@ -12,7 +12,6 @@ test.beforeEach(async ({ page }) => {
 test.afterEach(async ({ page }) => { expect(errors.get(page)).toEqual([]); });
 
 const LANGUAGES = ['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'];
-const NARROW = String.fromCharCode(0x202f);
 const path = (page: Page) => new URL(page.url()).pathname;
 const pathOf = (address: string) => new URL(address).pathname;
 
@@ -104,7 +103,7 @@ test('a guide is written in the language of its address, whatever the browser se
   await page.goto(pathOf(guide.url));
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
   // Read as it is written: a matcher of text would take the narrow space for a plain one.
-  expect(await page.locator('.guide-cta strong').textContent()).toBe(fr['guides.cta.title'].replace(/ (?=[?!;:»])/g, NARROW).replace(/« /g, `«${NARROW}`));
+  expect(await page.locator('.guide-cta strong').textContent()).toBe(fr['guides.cta.title']);
   expect(await page.locator('main').evaluate((main) => {
     const copy = main.cloneNode(true) as HTMLElement;
     copy.querySelectorAll('code, script').forEach((element) => element.remove());

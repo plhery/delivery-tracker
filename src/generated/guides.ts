@@ -93,32 +93,32 @@ export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = {
     {
       "id": "tracking-number-formats",
       "slug": "quel-transporteur-numero-de-suivi",
-      "title": "Numéro de suivi\u202f: à quel transporteur appartient-il\u202f?"
+      "title": "Numéro de suivi\u00a0: à quel transporteur appartient-il\u202f?"
     },
     {
       "id": "tracking-statuses",
       "slug": "etapes-suivi-colis-signification",
-      "title": "Étapes du suivi d'un colis\u202f: que veut dire chaque statut\u202f?"
+      "title": "Étapes du suivi d'un colis\u00a0: que veut dire chaque statut\u202f?"
     },
     {
       "id": "tracking-not-updating",
       "slug": "suivi-colis-ne-bouge-plus",
-      "title": "Suivi de colis qui ne bouge plus\u202f: pourquoi et que faire\u202f?"
+      "title": "Suivi de colis qui ne bouge plus\u00a0: pourquoi et que faire\u202f?"
     },
     {
       "id": "delivered-not-received",
       "slug": "colis-livre-mais-non-recu",
-      "title": "Colis livré mais non reçu\u202f: que faire, étape par étape"
+      "title": "Colis livré mais non reçu\u00a0: que faire, étape par étape"
     },
     {
       "id": "customs",
       "slug": "colis-bloque-en-douane",
-      "title": "Colis bloqué en douane\u202f: délais, frais et faux SMS"
+      "title": "Colis bloqué en douane\u00a0: délais, frais et faux SMS"
     },
     {
       "id": "tracking-from-china",
       "slug": "suivi-colis-chine-aliexpress-temu-shein",
-      "title": "Suivi d'un colis venant de Chine\u202f: AliExpress, Temu, Shein"
+      "title": "Suivi d'un colis venant de Chine\u00a0: AliExpress, Temu, Shein"
     },
     {
       "id": "find-tracking-number",
@@ -128,7 +128,7 @@ export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = {
     {
       "id": "universal-tracker",
       "slug": "suivi-colis-universel-tous-transporteurs",
-      "title": "Suivi de colis universel\u202f: tous tes colis au même endroit"
+      "title": "Suivi de colis universel\u00a0: tous tes colis au même endroit"
     }
   ],
   "it": [

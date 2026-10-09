@@ -70,12 +70,12 @@ test('a folder the list does not name, and an id that is no slug, are refused', 
   }, /"Bad_Id" is not an id/);
 });
 
-test('French titles are listed as French guides are set, the narrow space written as its escape', () => {
-  const directory = copy(({ edit }) => edit('fr', /^title: .+$/m, 'title: Où est mon colis ?'));
+test('French titles are listed as French guides are set, the no-break spaces written as their escapes', () => {
+  const directory = copy(({ edit }) => edit('fr', /^title: .+$/m, 'title: Colis : où est-il ?'));
   try {
     const written = guidesModule(readGuides(directory));
-    assert.match(written, /\\u202f\?"/);
-    assert.doesNotMatch(written, /\u202f/);
+    assert.match(written, /Colis\\u00a0: où est-il\\u202f\?"/);
+    assert.doesNotMatch(written, /[\u202f\u00a0]/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

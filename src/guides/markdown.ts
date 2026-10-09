@@ -312,12 +312,15 @@ export function parseGuide(source: string, where = 'guide'): Guide {
   return guide;
 }
 
-/** The narrow no-break space French sets before `?`, `!`, `;` and `:`, and inside « ». */
+/** The narrow no-break space French sets before `?`, `!` and `;`. */
 const NARROW_SPACE = '\u202f';
 
-/** French text with the narrow no-break spaces its punctuation takes, where the writer typed a plain space. */
+/** The no-break space French sets before `:` and inside « », as the app's own French does. */
+const NO_BREAK_SPACE = '\u00a0';
+
+/** French text with the no-break spaces its punctuation takes, where the writer typed a plain space. */
 export function frenchSpacing(text: string): string {
-  return text.replace(/ (?=[?!;:»])/g, NARROW_SPACE).replace(/« /g, `«${NARROW_SPACE}`);
+  return text.replace(/ (?=[?!;])/g, NARROW_SPACE).replace(/ (?=[:»])/g, NO_BREAK_SPACE).replace(/« /g, `«${NO_BREAK_SPACE}`);
 }
 
 function spacedRun(nodes: readonly Inline[]): Inline[] {
@@ -343,8 +346,8 @@ function spacedBlock(block: Block): Block {
 }
 
 /**
- * A guide's words as its language sets them. French takes a narrow no-break space before `?`, `!`, `;`
- * and `:` and inside « », so writers type a plain space and the page shows the right one. Code, which
+ * A guide's words as its language sets them. French takes a narrow no-break space before `?`, `!` and
+ * `;`, and a full one before `:` and inside « », so writers type a plain space and the page shows the right one. Code, which
  * quotes a tracking number or a carrier's words as they are, keeps its spaces.
  */
 export function typeset(guide: Guide, language: string): Guide {
