@@ -25,6 +25,7 @@ export {
   CARRIERS,
   SELECTABLE_CARRIERS,
   carrierInfo,
+  localizedCarrierUrl,
   requirementSatisfied,
   tracksAutomatically,
 } from 'universal-parcel-scraper';

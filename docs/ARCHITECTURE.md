@@ -93,7 +93,9 @@ Key server modules:
     forget the parcel, and may keep it after signing in.
   - Anyone else with the link is a viewer: the number is masked to its last characters, and
     the answer is built from an allow-list. The name, postcode, private tracking link, routing state,
-    recipient's name and internal ids never leave the server, for either role.
+    recipient's name and internal ids never leave the server, for either role. A viewer's
+    carrier link opens the carrier's page for typing a number in (the catalog's
+    `trackingSearchUrl`), or is left out when the carrier has none.
   - `parcel_links` and the lookup counters are service-role only. An unknown, forgotten,
     expired or malformed link and a wrong key all get the same answer.
   - Keeping a parcel runs under the user's own token: the database checks the key, the
