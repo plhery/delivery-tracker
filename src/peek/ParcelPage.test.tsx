@@ -673,10 +673,14 @@ describe('ParcelPage keeping', () => {
       return { ...shown, link: { ...shown.link, alerts: { available: true, vapidPublicKey: null, email: true } } };
     };
     mocks.read.mockResolvedValue(emailing());
+    const counted = vi.spyOn(await import('../lib/analytics'), 'trackAction');
     const user = userEvent.setup();
     const { unmount } = open({ account: 'visitor', signIn: vi.fn(), signInWith });
     await user.click(await screen.findByRole('button', { name: /^Notify me/ }));
+    expect(counted.mock.calls).toEqual([['parcel-link-alerts-open']]);
     await user.click(within(screen.getByText('An email when it arrives').closest('.peeks-account') as HTMLElement).getByRole('button', { name: 'Sign in' }));
+    // Signing in is counted as ever, and the email row apart.
+    expect(counted.mock.calls).toEqual([['parcel-link-alerts-open'], ['parcel-link-sign-in'], ['parcel-link-email']]);
     const sheet = await screen.findByRole('dialog', { name: 'Sign in to keep it' });
     expect(within(sheet).getAllByText(/Peek emails the address you sign in with when it arrives/).length).toBeGreaterThan(0);
     expect(within(sheet).queryByText(/gets notifications like your other parcels/)).toBeNull();
@@ -686,7 +690,10 @@ describe('ParcelPage keeping', () => {
     // The page's other ways in keep the parcel without asking for the email.
     await user.click(within(sheet).getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    counted.mockClear();
     await user.click(within(document.querySelector('header')!).getByRole('button', { name: 'Sign in' }));
+    expect(counted.mock.calls).toEqual([['parcel-link-sign-in']]);
+    counted.mockRestore();
     const plain = screen.getByRole('dialog', { name: 'Sign in to keep it' });
     expect(within(plain).getAllByText(/gets notifications like your other parcels/).length).toBeGreaterThan(0);
     await user.click(within(plain).getByRole('button', { name: 'Continue with Google' }));

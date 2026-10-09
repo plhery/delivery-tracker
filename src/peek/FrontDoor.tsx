@@ -24,6 +24,7 @@ import { DoorIcon } from './lookup/DoorNote';
 import { LookupFeedback } from './lookup/LookupFeedback';
 import { countdown } from './lookup/machine';
 import { looksLikeNumber } from './lookup/reading';
+import { doorStops } from './lookup/stops';
 import { useLookup } from './lookup/useLookup';
 import { LookupVerification } from './lookup/LookupVerification';
 import { parcelCode } from './parcelCode';
@@ -94,6 +95,15 @@ export function FrontDoor({ onTracked, onSample, onSignIn, covered = false }: {
     if (account !== 'checking' && !covered) trackScreen('front-door', account === 'signed-in' ? 'account' : 'anonymous');
   }, [account, covered]);
 
+  // Each notice or question that stops the door is counted once as it appears, never with what the field holds.
+  const stops = doorStops(state, found).join(' ');
+  const counted = useRef<string[]>([]);
+  useEffect(() => {
+    const shown = stops ? stops.split(' ') : [];
+    for (const stop of shown) if (!counted.current.includes(stop)) trackAction(stop);
+    counted.current = shown;
+  }, [stops]);
+
   // The tab asks the page's question, in the reader's language. Whatever follows the landing is the app again;
   // a page over the door names the tab itself.
   useTabTitle(covered ? null : `${t('app.title')} — ${t('peek.title')} ${t('preview.landing.tagline')}`, `${t('app.title')} — ${t('app.tagline')}`);
@@ -146,11 +156,13 @@ export function FrontDoor({ onTracked, onSample, onSignIn, covered = false }: {
     try {
       text = await navigator.clipboard.readText();
     } catch {
+      trackAction('parcel-paste', 'error');
       send({ type: 'pasteFailed', reason: 'blocked' });
       field.current?.focus();
       return;
     }
     if (!text.trim()) {
+      trackAction('parcel-paste', 'error');
       send({ type: 'pasteFailed', reason: 'empty' });
       field.current?.focus();
       return;

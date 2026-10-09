@@ -33,6 +33,7 @@ const onTracked = vi.fn();
 const onSample = vi.fn();
 const onSignIn = vi.fn();
 const notFound = 'Peek couldn’t find a tracking number. Paste the number or a tracking link.';
+const TYPO_NUMBER = 'LX1234567B5DE';
 
 function door() {
   // The clipboard the Paste button reads exists from here on, as it does in a browser.
@@ -560,6 +561,26 @@ describe('FrontDoor', () => {
     expect(onTracked).not.toHaveBeenCalled();
   });
 
+  it('counts each notice that stops it once as it appears, by a fixed name and never with the text', async () => {
+    const analytics = await import('../lib/analytics');
+    const counted = vi.spyOn(analytics, 'trackAction');
+    vi.useFakeTimers();
+    const { field } = door();
+    type(field, 'hello');
+    expect(counted).not.toHaveBeenCalled();
+    act(() => { vi.advanceTimersByTime(800); });
+    expect(counted.mock.calls).toEqual([['door-no-number']]);
+    // More words, and more pauses, are the same notice.
+    type(field, 'hello there');
+    act(() => { vi.advanceTimersByTime(800); });
+    expect(counted).toHaveBeenCalledOnce();
+    type(field, TYPO_NUMBER);
+    act(() => { vi.advanceTimersByTime(800); });
+    expect(counted.mock.calls).toEqual([['door-no-number'], ['door-check-digit']]);
+    expect(JSON.stringify(counted.mock.calls)).not.toMatch(/hello|LX/);
+    counted.mockRestore();
+  });
+
   it('pastes from the clipboard with its own button', async () => {
     const { user } = door();
     await navigator.clipboard.writeText(`Your order has shipped: ${UPS}`);
@@ -569,11 +590,13 @@ describe('FrontDoor', () => {
   });
 
   it('explains how to paste by hand when the browser keeps the clipboard to itself, or when it is empty', async () => {
+    const counted = vi.spyOn(await import('../lib/analytics'), 'trackAction');
     const { user, field } = door();
     const read = vi.spyOn(navigator.clipboard, 'readText').mockRejectedValueOnce(new DOMException('denied', 'NotAllowedError'));
     await user.click(screen.getByRole('button', { name: 'Paste' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t pasteThis browser didn’t let Peek read the clipboard. Click the field and paste there.');
     expect(field).toHaveFocus();
+    expect(counted).toHaveBeenCalledWith('parcel-paste', 'error');
     expect(document.querySelector('.door-pip')).toBeNull();
     read.mockResolvedValueOnce('  ');
     await user.click(screen.getByRole('button', { name: 'Paste' }));
@@ -581,6 +604,8 @@ describe('FrontDoor', () => {
     // The note goes once the field has something.
     await user.type(field, '1');
     expect(screen.queryByText('Couldn’t paste')).not.toBeInTheDocument();
+    expect(counted.mock.calls.filter(([name]) => name === 'parcel-paste')).toEqual([['parcel-paste', 'error'], ['parcel-paste', 'error']]);
+    counted.mockRestore();
   });
 
   it('tells a touch screen to long-press instead', async () => {

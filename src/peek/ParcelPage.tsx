@@ -319,6 +319,8 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
 
   function signInFor(email: boolean) {
     trackAction('parcel-link-sign-in');
+    // The email row of "Notify me" is counted apart from every other way to sign in.
+    if (email) trackAction('parcel-link-email');
     if (link.canKeep && session.signInWith?.configured) setKeepSheet(email ? 'email' : 'keep');
     else session.signIn(link.canKeep ? linkId : undefined, email);
   }
@@ -371,6 +373,7 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
   // Alerts and the calendar: for anyone with the link, until the journey is over.
   const alert = useLinkNote(linkId).alert;
   const [alerting, setAlerting] = useState(false);
+  const openAlerts = () => { trackAction('parcel-link-alerts-open'); setAlerting(true); };
   useEffect(() => {
     // A browser that withdrew its permission has no alert, whatever it noted; a parcel that arrived has none left.
     if (!final) void deviceAlert(linkId);
@@ -397,9 +400,9 @@ function Parcel({ linkId, entrance, state, view, onHome }: {
     label: t(alert ? 'alerts.action.on' : !carrierKnown ? 'alerts.action.found' : early ? 'alerts.action.moves' : 'alerts.action.ping'),
     long: !alert && owner && !early ? t('alerts.title') : undefined,
     prominent: !alert && early,
-    onOpen: () => setAlerting(true),
+    onOpen: openAlerts,
   } : undefined;
-  const bell = canPing && wrapped && <CardBell label={t(alert ? 'alerts.action.on' : 'alerts.action.ping')} on={!!alert} onOpen={() => setAlerting(true)} />;
+  const bell = canPing && wrapped && <CardBell label={t(alert ? 'alerts.action.on' : 'alerts.action.ping')} on={!!alert} onOpen={openAlerts} />;
   const forgetOn = forgetDate(link.forgetAt, languageTag);
   const forgetLine = forgetOn ? t('link.forget.on', { date: forgetOn }) : null;
   // Someone the link was shared with reads above the card how long it works; the owner reads the date at the foot.
