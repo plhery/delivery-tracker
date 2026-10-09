@@ -1013,5 +1013,12 @@
   "guides.sources": "Sources",
   "guides.more": "Keep reading",
   "guides.cta.title": "Waiting for a parcel?",
-  "guides.cta.body": "Paste its tracking number. Peek finds the carrier, shows every scan on a map and notifies you when it moves. No account needed."
+  "guides.cta.body": "Paste its tracking number. Peek finds the carrier, shows every scan on a map and notifies you when it moves. No account needed.",
+  "carriers.title": "Carriers",
+  "carriers.heading": "Tracking by carrier",
+  "carriers.lead": "What each carrier’s tracking numbers look like, what its statuses mean and what to do when a parcel gets stuck. Peek tracks more than 3,500 carriers; these have a page of their own.",
+  "carriers.all": "All carriers",
+  "carriers.more": "Other carriers",
+  "carriers.track.label": "Track a {{carrier}} parcel",
+  "carriers.independent": "Peek is an independent tracker, not {{carrier}}. It shows what {{carrier}}’s own tracking publishes."
 }

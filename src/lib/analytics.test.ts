@@ -2,6 +2,7 @@
 // @vitest-environment-options {"url":"https://delivery.example/"}
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import catalog from '../../shared/analytics.json';
+import { CARRIER_LINKS } from '../generated/carriers';
 import { GUIDE_LINKS } from '../generated/guides';
 
 const config = { endpoint: 'https://analytics.example/api/send', hostname: 'delivery.example',
@@ -64,6 +65,21 @@ describe('safe analytics collection', () => {
     await a.startAnalytics({ open: false }); await settle();
     const sent = requests.filter((r) => r.url === config.endpoint).map((r) => JSON.parse(r.init!.body as string).payload);
     expect(sent.map((payload) => [payload.url, payload.name, payload.data.mode])).toEqual([['/guides/fr', undefined, 'account']]);
+  });
+
+  it('counts a carrier’s page the same way, under its language and the carrier', async () => {
+    const [{ id }] = CARRIER_LINKS.en;
+    const a = await import('./analytics');
+    a.trackScreen('carriers/de');
+    a.trackScreen(`carriers/en/${id}`);
+    a.trackScreen(`carriers/en/${id}/../secret`);
+    a.trackScreen('carriers/xx');
+    a.trackScreen('carriers');
+    a.trackScreen('/carriers');
+    a.trackScreen('carrier/en');
+    await a.startAnalytics(); await settle();
+    const urls = requests.filter((r) => r.url === config.endpoint).map((r) => JSON.parse(r.init!.body as string).payload.url);
+    expect(urls).toEqual(['/carriers/de', `/carriers/en/${id}`, `/carriers/en/${id}`]);
   });
 
   it.each(['opt-out', 'dnt', 'gpc', 'webdriver'])('honors %s without fetching configuration', async (kind) => {

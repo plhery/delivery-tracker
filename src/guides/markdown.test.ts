@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { anchorOf, figureShape, frenchSpacing, linkedGuides, parseBlocks, parseGuide, parseInline, plainText, typeset, wordCount } from './markdown';
+import {
+  anchorOf, figureShape, frenchSpacing, linkedCarriers, linkedGuides, parseBlocks, parseCarrierText, parseGuide, parseInline, plainBlocks, plainText,
+  questions, typeset, wordCount,
+} from './markdown';
 
 const head = ['---', 'title: Where is my parcel?', 'description: What a parcel does between two scans.', 'slug: where-is-my-parcel',
   'picture: Pip looks at a map.', 'published: 2026-01-05', 'updated: 2026-02-01', '---', ''].join('\n');
@@ -122,6 +125,57 @@ describe('a guide’s Markdown', () => {
   });
 });
 
+describe('a carrier page’s Markdown', () => {
+  const carrierHead = head.replace('picture: Pip looks at a map.\n', '');
+  const page = [
+    'The lead names [Planzer](carrier:planzer) and [the statuses](guide:tracking-statuses).', '',
+    '## Statuses', '', '| Status | Meaning |', '| --- | --- |', '| `Shipped` | Delivered, as **[Quickpac](carrier:quickpac)** says |', '',
+    '## Questions about tracking', '', 'A word before the first question.', '',
+    '### Where is my parcel?', '', 'At the depot.', '', '- Or on the van.', '',
+    '### Who do I call?', '', 'The shop.', '',
+    ':::sources', '- [Planzer](https://www.planzer.ch/) – the statuses', ':::', '',
+  ].join('\n');
+
+  it('reads a guide’s file without a picture, and refuses one with a picture', () => {
+    const text = parseCarrierText(`${carrierHead}\n${page}`);
+    expect(text).toMatchObject({ title: 'Where is my parcel?', slug: 'where-is-my-parcel', published: '2026-01-05', updated: '2026-02-01' });
+    expect(text).not.toHaveProperty('picture');
+    expect(() => parseCarrierText(`${head}\n${page}`, 'content/carriers/x/en.md')).toThrow('content/carriers/x/en.md: "picture: Pip looks at a map." is not one of title, description, slug, published, updated');
+    expect(() => parseCarrierText('No head.')).toThrow(/a carrier page starts with its title, description, slug and dates/);
+    expect(() => parseCarrierText(`${carrierHead}\n## A heading first\n`)).toThrow(/a carrier page opens with a paragraph/);
+    expect(() => parseCarrierText(carrierHead.replace('2026-02-01', '2025-12-01') + '\nText.')).toThrow(/a carrier page cannot be updated before it is published/);
+  });
+
+  it('reads a link to a carrier’s page by its id, and refuses one that names no carrier', () => {
+    expect(parseInline('Ask [BRT](carrier:brt).')).toEqual([
+      { type: 'text', text: 'Ask ' }, { type: 'carrier', id: 'brt', children: [{ type: 'text', text: 'BRT' }] }, { type: 'text', text: '.' },
+    ]);
+    expect(() => parseInline('A [carrier](carrier:Not A Carrier)')).toThrow(/does not name a carrier/);
+    expect(() => parseInline('A [carrier](carrier:)')).toThrow(/does not name a carrier/);
+    expect(() => parseInline('A [page](mailto:a@b.example)')).toThrow(/to "guide:<id>" or to "carrier:<id>"/);
+  });
+
+  it('finds the carriers a text links apart from the guides, wherever the link stands', () => {
+    const { blocks } = parseCarrierText(`${carrierHead}\n${page}`);
+    expect(linkedCarriers(blocks)).toEqual(['planzer', 'quickpac']);
+    expect(linkedGuides(blocks)).toEqual(['tracking-statuses']);
+  });
+
+  it('finds its questions in its last section, each with the blocks that answer it', () => {
+    const { blocks } = parseCarrierText(`${carrierHead}\n${page}`);
+    const asked = questions(blocks);
+    expect(asked.map(({ question }) => question)).toEqual(['Where is my parcel?', 'Who do I call?']);
+    // A word before the first question answers none of them.
+    expect(asked[0].answer.map((block) => block.type)).toEqual(['paragraph', 'list']);
+    expect(plainBlocks(asked[0].answer)).toBe('At the depot. Or on the van.');
+    expect(plainBlocks(asked[1].answer)).toBe('The shop.');
+    // Without sources the last section still holds them; a question can go unanswered, and a text without a section asks nothing.
+    expect(questions(parseBlocks('Lead.\n\n## Questions\n\n### Why?\n\n### How?\n\nLike so.')).map(({ question, answer }) => [question, answer.length])).toEqual([['Why?', 0], ['How?', 1]]);
+    expect(questions(parseBlocks('Lead.\n\n## Statuses\n\nText.'))).toEqual([]);
+    expect(questions(parseBlocks('Only a lead.'))).toEqual([]);
+  });
+});
+
 describe('a guide’s typography', () => {
   const narrow = String.fromCharCode(0x202f);
   const space = String.fromCharCode(0xa0);
@@ -150,5 +204,15 @@ describe('a guide’s typography', () => {
     expect(french.blocks[3]).toMatchObject({ items: [{ note: [{ text: `Un jour ou deux${narrow}?` }] }] });
     // The written guide is left as it was read.
     expect(written.title).toBe('Où est mon colis ?');
+  });
+
+  it('sets a French carrier page as it sets a guide, without giving it a picture', () => {
+    const written = parseCarrierText(`${head.replace('picture: Pip looks at a map.\n', '').replace('title: Where is my parcel?', 'title: Suivi BRT : où est-il ?')}\nVoir [Quickpac](carrier:quickpac) !\n`);
+    const french = typeset(written, 'fr');
+    expect(french.title).toBe(`Suivi BRT${space}: où est-il${narrow}?`);
+    expect(french).not.toHaveProperty('picture');
+    expect(french.blocks[0]).toEqual({ type: 'paragraph', text: [
+      { type: 'text', text: 'Voir ' }, { type: 'carrier', id: 'quickpac', children: [{ type: 'text', text: 'Quickpac' }] }, { type: 'text', text: `${narrow}!` },
+    ] });
   });
 });

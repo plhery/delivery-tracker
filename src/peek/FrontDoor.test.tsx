@@ -13,6 +13,7 @@ import { FIRST_SAMPLE_MS, SAMPLE_PERIOD_MS } from './landing/useSampleLoop';
 import { ParcelLinkError, type ParcelLookup } from './links';
 import { forgetDeviceChecks } from './lookup/deviceList';
 import { forgetAllRecents, recentFor, rememberParcel, renameParcel } from './recents';
+import { CARRIER_HANDOFF_STORAGE_KEY, writeCarrierHandoff } from '../lib/carrierHandoff';
 import { POSTCODES_STORAGE_KEY, rememberPostcode } from '../lib/postcodeMemory';
 
 const mocks = vi.hoisted(() => ({ lookup: vi.fn(), detect: vi.fn(), read: vi.fn(), forget: vi.fn(), sample: vi.fn() }));
@@ -636,6 +637,21 @@ describe('FrontDoor', () => {
     await waitFor(() => expect(mocks.lookup).toHaveBeenCalledWith({ trackingNumber: UPS, carrier: 'ups' }, expect.any(AbortSignal)));
     act(() => root.unmount());
     container.remove();
+  });
+
+  it('looks up a number typed into a carrier’s page’s box once it opens, and only that once', async () => {
+    writeCarrierHandoff(`  Your order has shipped: ${UPS}  `);
+    const view = render(<FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />);
+    // Put in as if pasted: a certain carrier goes straight on, the field hidden behind the number it found.
+    expect(document.querySelector('textarea')).toHaveValue(`Your order has shipped: ${UPS}`);
+    expect(mocks.lookup).toHaveBeenCalledWith({ trackingNumber: UPS, carrier: 'ups' }, expect.any(AbortSignal));
+    expect(document.querySelector('.door-field__number')).toHaveTextContent(UPS);
+    await waitFor(() => expect(onTracked).toHaveBeenCalledOnce());
+    expect(sessionStorage.getItem(CARRIER_HANDOFF_STORAGE_KEY)).toBeNull();
+    // The door opened again starts empty.
+    view.unmount();
+    expect(door().field).toHaveValue('');
+    expect(mocks.lookup).toHaveBeenCalledOnce();
   });
 });
 

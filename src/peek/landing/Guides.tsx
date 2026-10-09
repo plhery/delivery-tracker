@@ -1,4 +1,5 @@
 import { useId, useRef, useState, type MouseEvent } from 'react';
+import { carrierPath } from '../../carriers/paths';
 import { GUIDE_LINKS } from '../../generated/guides';
 import { guidePath } from '../../guides/paths';
 import { useI18n } from '../../i18n';
@@ -7,7 +8,8 @@ import { trackAction } from '../../lib/analytics';
 /**
  * The foot's way to the guides. It is a link to their page; a plain click
  * opens their list in place instead. The list is in the page from the start,
- * out of sight, so a search engine reads every guide's address on the landing.
+ * out of sight, so a search engine reads every guide's address on the landing,
+ * and the way to the carriers' pages below it.
  */
 export function GuidesLink() {
   const { t, locale } = useI18n();
@@ -44,7 +46,10 @@ export function GuidesLink() {
       onToggle={(event) => setExpanded(event.currentTarget.matches(':popover-open'))}>
       <strong id={`${id}-title`}>{t('guides.heading')}</strong>
       <ul>{links.map(({ id: guide, slug, title }) => <li key={guide}><a href={guidePath(locale, slug)}>{title}</a></li>)}</ul>
-      <a className="landing-guides__all" href={guidePath(locale)}>{t('guides.all')}</a>
+      <p className="landing-guides__more">
+        <a className="landing-guides__all" href={guidePath(locale)}>{t('guides.all')}</a>
+        <a className="landing-guides__all" href={carrierPath(locale)}>{t('carriers.all')}</a>
+      </p>
     </div>
   </>;
 }

@@ -25,6 +25,8 @@ import robots from '../app/robots';
 import sitemap from '../app/sitemap';
 import { metadata as offlineMetadata } from '../app/~offline/page';
 import mark from './brand/mark.json';
+import { carrierPath } from './carriers/paths';
+import { CARRIER_LINKS } from './generated/carriers';
 import { GUIDE_LINKS } from './generated/guides';
 import { guidePath } from './guides/paths';
 import { ADDRESS_LANGUAGES, documentLanguage, SUPPORTED_LOCALES, type Locale } from './lib/locale';
@@ -223,15 +225,27 @@ describe('public product metadata', () => {
       const address = (locale: Locale) => `${origin}${guidePath(locale, id && GUIDE_LINKS[locale].find((link) => link.id === id)!.slug)}`;
       return { ...Object.fromEntries(SUPPORTED_LOCALES.map((locale) => [locale, address(locale)])) as Record<Locale, string>, 'x-default': address('en') };
     };
+    /** The carriers' own page in every language, or one carrier's page in each of its languages only; in English for a reader of none. */
+    const carriers = (id?: string) => {
+      const languages = id ? SUPPORTED_LOCALES.filter((locale) => CARRIER_LINKS[locale].some((link) => link.id === id)) : SUPPORTED_LOCALES;
+      const address = (locale: Locale) => `${origin}${carrierPath(locale, id && CARRIER_LINKS[locale].find((link) => link.id === id)!.slug)}`;
+      return { ...Object.fromEntries(languages.map((locale) => [locale, address(locale)])) as Partial<Record<Locale, string>>, 'x-default': address('en') };
+    };
     const ids = GUIDE_LINKS.en.map(({ id }) => id);
+    const carrierIds = CARRIER_LINKS.en.map(({ id }) => id);
+    const carrierPages = carrierIds.flatMap((id) => SUPPORTED_LOCALES.filter((locale) => carriers(id)[locale]).map((locale) => ({ id, locale })));
     expect(entries.map(({ url }) => url)).toEqual([
       'https://peek.example.test/', 'https://peek.example.test/de', 'https://peek.example.test/fr', 'https://peek.example.test/it',
       'https://peek.example.test/es', 'https://peek.example.test/pt', 'https://peek.example.test/pl',
       ...SUPPORTED_LOCALES.map((locale) => guides()[locale]),
       ...ids.flatMap((id) => SUPPORTED_LOCALES.map((locale) => guides(id)[locale])),
+      ...SUPPORTED_LOCALES.map((locale) => `${origin}${carrierPath(locale)}`),
+      ...carrierPages.map(({ id, locale }) => carriers(id)[locale]),
       'https://peek.example.test/privacy.html',
     ]);
-    const [landings, indexes, articles] = [entries.slice(0, 7), entries.slice(7, 14), entries.slice(14, -1)];
+    const articlesEnd = 14 + ids.length * SUPPORTED_LOCALES.length;
+    const [landings, indexes, articles] = [entries.slice(0, 7), entries.slice(7, 14), entries.slice(14, articlesEnd)];
+    const [hubs, pages] = [entries.slice(articlesEnd, articlesEnd + 7), entries.slice(articlesEnd + 7, -1)];
     // Each language's landing names all of them, itself included, and `/` for a reader of none.
     for (const entry of landings) expect(entry.alternates?.languages).toEqual(alternates(origin));
     // No date is claimed for a page whose last change nobody recorded.
@@ -247,6 +261,17 @@ describe('public product metadata', () => {
       expect(entry.alternates?.languages).toEqual(guides(id));
       expect(entry.lastModified).toBe(updated(id, locale));
     }));
+    // The carriers' own page names every language; a carrier's page only those it is written in, each dated as a guide is.
+    const checked = (id: string, locale: Locale) => /^updated: (\S+)$/m.exec(readFileSync(`content/carriers/${id}/${locale}.md`, 'utf8'))![1];
+    expect(carrierPages.length).toBeGreaterThan(carrierIds.length);
+    SUPPORTED_LOCALES.forEach((locale, at) => {
+      expect(hubs[at].alternates?.languages).toEqual(carriers());
+      expect(hubs[at].lastModified).toBe(CARRIER_LINKS[locale].map(({ id }) => checked(id, locale)).sort().at(-1));
+    });
+    carrierPages.forEach(({ id, locale }, at) => {
+      expect(pages[at].alternates?.languages).toEqual(carriers(id));
+      expect(pages[at].lastModified).toBe(checked(id, locale));
+    });
   });
 
   it('writes a sitemap that stays well-formed whatever host a request names', async () => {

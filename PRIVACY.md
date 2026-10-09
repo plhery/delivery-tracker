@@ -322,7 +322,10 @@ a processor must retain for security or legal obligations.
 The browser stores the Supabase session, application preferences, an offline
 application shell, and an account-scoped offline parcel snapshot. A language
 chosen in the app is also kept in a first-party cookie, so pages open in that
-language; it contains only the language code. The iPhone app stores its session
+language; it contains only the language code. What you type into the tracking
+box of a carrier's page waits in that tab's session storage until the landing
+opens and takes it, ten minutes at most; it never goes into an address. The
+iPhone app stores its session
 in Keychain and a protected account-scoped parcel snapshot; it requests a
 current APNs token from Apple instead of persisting that token locally. It
 stores a random installation identifier and the independent Home Screen widget

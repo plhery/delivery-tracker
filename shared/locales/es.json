@@ -1013,5 +1013,12 @@
   "guides.sources": "Fuentes",
   "guides.more": "Sigue leyendo",
   "guides.cta.title": "¿Esperas un paquete?",
-  "guides.cta.body": "Pega su número de seguimiento. Peek encuentra al transportista, muestra cada escaneo en un mapa y te envía una notificación cuando se mueve. No hace falta cuenta."
+  "guides.cta.body": "Pega su número de seguimiento. Peek encuentra al transportista, muestra cada escaneo en un mapa y te envía una notificación cuando se mueve. No hace falta cuenta.",
+  "carriers.title": "Transportistas",
+  "carriers.heading": "Seguimiento por transportista",
+  "carriers.lead": "Cómo son los números de seguimiento de cada transportista, qué significan sus estados y qué hacer cuando un paquete se queda atascado. Peek sigue más de 3500 transportistas; estos tienen su propia página.",
+  "carriers.all": "Todos los transportistas",
+  "carriers.more": "Otros transportistas",
+  "carriers.track.label": "Seguir un envío de {{carrier}}",
+  "carriers.independent": "Peek es un servicio de seguimiento independiente, no {{carrier}}. Muestra lo que {{carrier}} publica en su propio seguimiento."
 }

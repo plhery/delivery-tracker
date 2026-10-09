@@ -129,13 +129,14 @@ describe('what stands around a guides page', () => {
   const addresses = { en: '/guides/held-at-customs', de: '/de/guides/paket-beim-zoll', fr: '/fr/guides/colis-en-douane', it: '/it/guides/pacco-in-dogana', es: '/es/guides/paquete-en-aduanas', pt: '/pt/guides/encomenda-na-alfandega', pl: '/pl/guides/paczka-w-urzedzie-celnym' };
   const names = { en: 'English', de: 'Deutsch', fr: 'Français', it: 'Italiano', es: 'Español', pt: 'Português', pl: 'Polski' };
 
-  it('leads to the tracker above, and below to all guides, the notice, the code and the page in every language', () => {
+  it('leads to the tracker above, and below to all guides, all carriers, the notice, the code and the page in every language', () => {
     render(<GuideFrame locale="fr" t={t('fr', fr)} addresses={addresses} languageNames={names} screen="guides/fr/customs"><p>The page</p></GuideFrame>);
     expect(within(screen.getByRole('banner')).getByRole('link', { name: 'Suivre ton colis' })).toHaveAttribute('href', '/fr');
     expect(within(screen.getByRole('banner')).getByRole('link', { name: /Peek/ })).toHaveAttribute('href', '/fr');
     expect(screen.getByRole('main')).toHaveTextContent('The page');
     const foot = screen.getByRole('contentinfo');
     expect(within(foot).getByRole('link', { name: 'Tous les guides' })).toHaveAttribute('href', '/fr/guides');
+    expect(within(foot).getByRole('link', { name: 'Tous les transporteurs' })).toHaveAttribute('href', '/fr/carriers');
     expect(within(foot).getByRole('link', { name: 'Confidentialité' })).toHaveAttribute('href', '/privacy.html');
     expect(within(foot).getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', SOURCE_URL);
     expect(within(foot).getByRole('link', { name: /Peek/ })).toHaveAttribute('href', '/fr');

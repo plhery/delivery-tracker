@@ -15,7 +15,9 @@ export type Inline =
   /** A page elsewhere, or Peek's own front page (`/`). */
   | { type: 'link'; href: string; children: Inline[] }
   /** Another guide, by its id: the page links the reader's own language. */
-  | { type: 'guide'; id: string; children: Inline[] };
+  | { type: 'guide'; id: string; children: Inline[] }
+  /** A carrier's page, by its id: the page links the reader's own language, where the carrier has one. */
+  | { type: 'carrier'; id: string; children: Inline[] };
 
 /** The stops a journey can draw. */
 export const JOURNEY_ICONS = ['shop', 'label', 'warehouse', 'truck', 'plane', 'ship', 'customs', 'handover', 'locker', 'home'] as const;
@@ -46,7 +48,11 @@ export interface Guide {
   blocks: Block[];
 }
 
+/** A carrier's page: a guide's text about one carrier, without a picture of its own. */
+export type CarrierText = Omit<Guide, 'picture'>;
+
 const FIELDS = ['title', 'description', 'slug', 'picture', 'published', 'updated'] as const;
+type Field = (typeof FIELDS)[number];
 const DIRECTIVES = ['steps', 'anatomy', 'journey', 'sources'] as const;
 type Directive = (typeof DIRECTIVES)[number];
 
@@ -72,13 +78,14 @@ export function anchorOf(text: string): string {
 }
 
 function linkTarget(target: string, children: Inline[], where: string): Inline {
-  if (target.startsWith('guide:')) {
-    const id = target.slice(6);
-    if (!GUIDE_SLUG.test(id)) throw new Error(`${where}: "${target}" does not name a guide`);
-    return { type: 'guide', id, children };
+  for (const type of ['guide', 'carrier'] as const) {
+    if (!target.startsWith(`${type}:`)) continue;
+    const id = target.slice(type.length + 1);
+    if (!GUIDE_SLUG.test(id)) throw new Error(`${where}: "${target}" does not name a ${type}`);
+    return { type, id, children };
   }
   if (target !== '/' && !/^https:\/\/[^\s<>"]+$/.test(target)) {
-    throw new Error(`${where}: a link leads to an https address, to "/" or to "guide:<id>", not "${target}"`);
+    throw new Error(`${where}: a link leads to an https address, to "/", to "guide:<id>" or to "carrier:<id>", not "${target}"`);
   }
   return { type: 'link', href: target, children };
 }
@@ -281,35 +288,54 @@ export function parseBlocks(markdown: string, where = 'guide'): Block[] {
   return blocks;
 }
 
-/** A guide's file: what stands between the two `---` lines, then its body. */
-export function parseGuide(source: string, where = 'guide'): Guide {
+/** A file's fields, the ones it may hold each written once as `name: value` between two `---` lines, then its body. */
+function frontMatter(source: string, names: readonly Field[], where: string, kind: string) {
   const match = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(source.replace(/\r\n?/g, '\n'));
-  if (!match) throw new Error(`${where}: a guide starts with its title, description, slug, picture and dates between two "---" lines`);
+  if (!match) throw new Error(`${where}: a ${kind} starts with its ${names.slice(0, -2).join(', ')} and dates between two "---" lines`);
   const fields = new Map<string, string>();
   for (const line of match[1].split('\n')) {
     const field = /^([a-z]+): (\S.*)$/.exec(line);
-    if (!field || !FIELDS.includes(field[1] as (typeof FIELDS)[number]) || fields.has(field[1])) {
-      throw new Error(`${where}: "${line}" is not one of ${FIELDS.join(', ')}, each written once as "name: value"`);
+    if (!field || !names.includes(field[1] as Field) || fields.has(field[1])) {
+      throw new Error(`${where}: "${line}" is not one of ${names.join(', ')}, each written once as "name: value"`);
     }
     fields.set(field[1], field[2].trim());
   }
-  const value = (name: (typeof FIELDS)[number]) => {
+  const value = (name: Field) => {
     const found = fields.get(name);
     if (!found) throw new Error(`${where}: "${name}" is missing`);
     return found;
   };
-  const guide: Guide = {
-    title: value('title'), description: value('description'), slug: value('slug'), picture: value('picture'),
-    published: value('published'), updated: value('updated'), blocks: parseBlocks(match[2], where),
-  };
-  if (!GUIDE_SLUG.test(guide.slug)) throw new Error(`${where}: the slug is lowercase letters, digits and hyphens: "${guide.slug}"`);
-  for (const day of [guide.published, guide.updated]) {
+  return { value, body: match[2] };
+}
+
+/** The checks a guide and a carrier's page share: an address, two days in order, and a lead to open with. */
+function checked<Text extends CarrierText>(text: Text, where: string, kind: string): Text {
+  if (!GUIDE_SLUG.test(text.slug)) throw new Error(`${where}: the slug is lowercase letters, digits and hyphens: "${text.slug}"`);
+  for (const day of [text.published, text.updated]) {
     if (!isDay(day)) throw new Error(`${where}: a date is a day of the calendar, written 2026-01-31, not "${day}"`);
   }
-  if (guide.updated < guide.published) throw new Error(`${where}: a guide cannot be updated before it is published`);
-  if (!guide.blocks.length) throw new Error(`${where}: the guide has no text`);
-  if (guide.blocks[0].type !== 'paragraph') throw new Error(`${where}: a guide opens with a paragraph, which the page sets as its lead`);
-  return guide;
+  if (text.updated < text.published) throw new Error(`${where}: a ${kind} cannot be updated before it is published`);
+  if (!text.blocks.length) throw new Error(`${where}: the ${kind} has no text`);
+  if (text.blocks[0].type !== 'paragraph') throw new Error(`${where}: a ${kind} opens with a paragraph, which the page sets as its lead`);
+  return text;
+}
+
+/** A guide's file: what stands between the two `---` lines, then its body. */
+export function parseGuide(source: string, where = 'guide'): Guide {
+  const { value, body } = frontMatter(source, FIELDS, where, 'guide');
+  return checked({
+    title: value('title'), description: value('description'), slug: value('slug'), picture: value('picture'),
+    published: value('published'), updated: value('updated'), blocks: parseBlocks(body, where),
+  }, where, 'guide');
+}
+
+/** A carrier's page: a guide's file without a picture. */
+export function parseCarrierText(source: string, where = 'carrier'): CarrierText {
+  const { value, body } = frontMatter(source, FIELDS.filter((name) => name !== 'picture'), where, 'carrier page');
+  return checked({
+    title: value('title'), description: value('description'), slug: value('slug'),
+    published: value('published'), updated: value('updated'), blocks: parseBlocks(body, where),
+  }, where, 'carrier page');
 }
 
 /** The narrow no-break space French sets before `?`, `!` and `;`. */
@@ -350,14 +376,14 @@ function spacedBlock(block: Block): Block {
  * `;`, and a full one before `:` and inside « », so writers type a plain space and the page shows the right one. Code, which
  * quotes a tracking number or a carrier's words as they are, keeps its spaces.
  */
-export function typeset(guide: Guide, language: string): Guide {
-  if (language !== 'fr') return guide;
+export function typeset<Text extends CarrierText & { picture?: string }>(text: Text, language: string): Text {
+  if (language !== 'fr') return text;
   return {
-    ...guide,
-    title: frenchSpacing(guide.title),
-    description: frenchSpacing(guide.description),
-    picture: frenchSpacing(guide.picture),
-    blocks: guide.blocks.map(spacedBlock),
+    ...text,
+    title: frenchSpacing(text.title),
+    description: frenchSpacing(text.description),
+    ...(text.picture === undefined ? {} : { picture: frenchSpacing(text.picture) }),
+    blocks: text.blocks.map(spacedBlock),
   };
 }
 
@@ -373,15 +399,47 @@ function runsOf(block: Block): Inline[][] {
   }
 }
 
-/** Every guide a guide links, by id. */
-export function linkedGuides(blocks: readonly Block[]): string[] {
+function linked(blocks: readonly Block[], type: 'guide' | 'carrier'): string[] {
   const ids = new Set<string>();
   const walk = (nodes: readonly Inline[]) => nodes.forEach((node) => {
-    if (node.type === 'guide') ids.add(node.id);
+    if (node.type === type) ids.add(node.id);
     if ('children' in node) walk(node.children);
   });
   blocks.forEach((block) => runsOf(block).forEach(walk));
   return [...ids];
+}
+
+/** Every guide a text links, by id. */
+export function linkedGuides(blocks: readonly Block[]): string[] {
+  return linked(blocks, 'guide');
+}
+
+/** Every carrier's page a text links, by id. */
+export function linkedCarriers(blocks: readonly Block[]): string[] {
+  return linked(blocks, 'carrier');
+}
+
+/**
+ * The questions a carrier's page answers: its last `## ` section before the sources holds them, each a
+ * `### ` heading, its answer the blocks below it. A search engine is told them as the page's FAQ.
+ */
+export function questions(blocks: readonly Block[]): { question: string; answer: Block[] }[] {
+  const end = blocks.at(-1)?.type === 'sources' ? blocks.length - 1 : blocks.length;
+  const opensSection = (block: Block) => block.type === 'heading' && block.level === 2;
+  let start = end - 1;
+  while (start >= 0 && !opensSection(blocks[start])) start -= 1;
+  if (start < 0) return [];
+  const found: { question: string; answer: Block[] }[] = [];
+  for (const block of blocks.slice(start + 1, end)) {
+    if (block.type === 'heading') found.push({ question: block.plain, answer: [] });
+    else found.at(-1)?.answer.push(block);
+  }
+  return found;
+}
+
+/** Some blocks' words without their marks, a space between runs: what a search engine is told a question's answer says. */
+export function plainBlocks(blocks: readonly Block[]): string {
+  return blocks.flatMap(runsOf).map(plainText).join(' ');
 }
 
 /** How many words a guide has, for its reading time and to tell a translation that lost a part. */

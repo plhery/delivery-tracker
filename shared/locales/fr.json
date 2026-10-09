@@ -1013,5 +1013,12 @@
   "guides.sources": "Sources",
   "guides.more": "À lire ensuite",
   "guides.cta.title": "Tu attends un colis ?",
-  "guides.cta.body": "Colle son numéro de suivi. Peek trouve le transporteur, affiche chaque scan sur une carte et te prévient quand il bouge. Pas besoin de compte."
+  "guides.cta.body": "Colle son numéro de suivi. Peek trouve le transporteur, affiche chaque scan sur une carte et te prévient quand il bouge. Pas besoin de compte.",
+  "carriers.title": "Transporteurs",
+  "carriers.heading": "Le suivi, transporteur par transporteur",
+  "carriers.lead": "À quoi ressemblent les numéros de suivi de chaque transporteur, ce que veulent dire ses statuts et quoi faire quand un colis reste bloqué. Peek suit plus de 3 500 transporteurs ; ceux-ci ont leur propre page.",
+  "carriers.all": "Tous les transporteurs",
+  "carriers.more": "Autres transporteurs",
+  "carriers.track.label": "Suivre un envoi {{carrier}}",
+  "carriers.independent": "Peek est un service de suivi indépendant, pas {{carrier}}. Il affiche ce que {{carrier}} publie dans son propre suivi."
 }

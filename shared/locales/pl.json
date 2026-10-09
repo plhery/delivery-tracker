@@ -1013,5 +1013,12 @@
   "guides.sources": "Źródła",
   "guides.more": "Czytaj dalej",
   "guides.cta.title": "Czekasz na paczkę?",
-  "guides.cta.body": "Wklej numer przesyłki. Peek znajdzie przewoźnika, pokaże każdy skan na mapie i powiadomi Cię, gdy paczka ruszy. Bez konta."
+  "guides.cta.body": "Wklej numer przesyłki. Peek znajdzie przewoźnika, pokaże każdy skan na mapie i powiadomi Cię, gdy paczka ruszy. Bez konta.",
+  "carriers.title": "Przewoźnicy",
+  "carriers.heading": "Śledzenie według przewoźnika",
+  "carriers.lead": "Jak wyglądają numery przesyłek każdego przewoźnika, co znaczą jego statusy i co robić, gdy paczka utknie. Peek śledzi ponad 3500 przewoźników, a ci tutaj mają własne strony.",
+  "carriers.all": "Wszyscy przewoźnicy",
+  "carriers.more": "Inni przewoźnicy",
+  "carriers.track.label": "Śledź przesyłkę {{carrier}}",
+  "carriers.independent": "Peek to niezależny serwis do śledzenia przesyłek, a nie {{carrier}}. Pokazuje to, co {{carrier}} publikuje we własnym śledzeniu."
 }

@@ -1013,5 +1013,12 @@
   "guides.sources": "Fontes",
   "guides.more": "Continua a ler",
   "guides.cta.title": "À espera de uma encomenda?",
-  "guides.cta.body": "Cola o número de seguimento. O Peek encontra a transportadora, mostra cada leitura num mapa e envia-te uma notificação quando ela se mexe. Não precisas de conta."
+  "guides.cta.body": "Cola o número de seguimento. O Peek encontra a transportadora, mostra cada leitura num mapa e envia-te uma notificação quando ela se mexe. Não precisas de conta.",
+  "carriers.title": "Transportadoras",
+  "carriers.heading": "Seguimento por transportadora",
+  "carriers.lead": "Como são os números de seguimento de cada transportadora, o que significam os seus estados e o que fazer quando uma encomenda fica parada. O Peek segue mais de 3500 transportadoras; estas têm uma página só delas.",
+  "carriers.all": "Todas as transportadoras",
+  "carriers.more": "Outras transportadoras",
+  "carriers.track.label": "Seguir uma encomenda {{carrier}}",
+  "carriers.independent": "O Peek é um serviço de seguimento independente, não é {{carrier}}. Mostra o que a transportadora {{carrier}} publica no seu próprio seguimento."
 }

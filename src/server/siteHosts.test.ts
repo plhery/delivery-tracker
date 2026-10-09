@@ -2,6 +2,8 @@ import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
 import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { config, proxy } from '../../proxy';
+import { carrierPath } from '../carriers/paths';
+import { CARRIER_LINKS } from '../generated/carriers';
 import { GUIDE_LINKS } from '../generated/guides';
 import { guidePath } from '../guides/paths';
 import { ADDRESS_LANGUAGES, SUPPORTED_LOCALES } from '../lib/locale';
@@ -189,7 +191,7 @@ describe('the page proxy', () => {
     }
     expect(cookieRead(page('https://peek.example.test/de', { headers: { host: 'peek.example.test' } }))).toBe('sdt.locale=de');
     // Every other address reads the browser's own choice, untouched.
-    for (const path of ['/', '/home', '/en', '/xx', '/de/more', '/demo', '/p/k7Qm2xW9bTfR', '/en/guides', '/xx/guides', '/guidesmore']) {
+    for (const path of ['/', '/home', '/en', '/xx', '/de/more', '/demo', '/p/k7Qm2xW9bTfR', '/en/guides', '/xx/guides', '/guidesmore', '/en/carriers', '/xx/carriers', '/carriersmore', '/api/carriers']) {
       expect(cookieRead(page(`https://peek.example.test${path}`, { headers: { host: 'peek.example.test', cookie: 'sdt.locale=fr' } })), path).toBe('sdt.locale=fr');
       expect(cookieRead(page(`https://peek.example.test${path}`, { headers: { host: 'peek.example.test' } })), path).toBeNull();
     }
@@ -209,6 +211,37 @@ describe('the page proxy', () => {
     }
   });
 
+  it('renders the carriers’ pages in their address’s language, whatever the browser sent', () => {
+    const cookieRead = (response: Response) => response.headers.get('x-middleware-request-cookie');
+    for (const locale of SUPPORTED_LOCALES) {
+      const other = locale === 'de' ? 'fr' : 'de';
+      for (const path of [carrierPath(locale), ...CARRIER_LINKS[locale].slice(0, 1).map(({ slug }) => carrierPath(locale, slug))]) {
+        const response = page(`https://peek.example.test${path}`, { headers: { host: 'peek.example.test', cookie: `sdt.locale=${other}; other=1`, 'accept-language': other } });
+        expect(response.status, path).toBe(200);
+        expect(cookieRead(response), path).toBe(`sdt.locale=${locale}; other=1`);
+        expect(response.headers.get('set-cookie'), path).toBeNull();
+      }
+    }
+  });
+
+  it('answers an address below a language’s carriers that names no carrier written in it with the 404 page, in that language', () => {
+    const rewrite = (path: string) => page(`https://peek.example.test${path}`, { headers: { host: 'peek.example.test', cookie: 'sdt.locale=de' } });
+    const everySlug = SUPPORTED_LOCALES.flatMap((locale) => CARRIER_LINKS[locale].map(({ slug }) => slug));
+    for (const locale of SUPPORTED_LOCALES) {
+      const own = CARRIER_LINKS[locale].map(({ slug }) => slug);
+      // A made-up carrier, a carrier of another language, and below a carrier's page.
+      const missing = ['no-such-carrier', ...everySlug.filter((slug) => !own.includes(slug)), ...own.slice(0, 1).flatMap((slug) => [slug.toUpperCase(), `${slug}/more`])];
+      for (const path of missing.map((slug) => carrierPath(locale, slug))) {
+        const response = rewrite(path);
+        expect(response.headers.get('x-middleware-rewrite'), path).toBe('https://peek.example.test/_not-found');
+        expect(response.headers.get('x-middleware-request-cookie'), path).toBe(`sdt.locale=${locale}`);
+        expect(response.headers.get('cache-control'), path).toBe('private, no-store');
+      }
+      for (const path of [carrierPath(locale), ...own.map((slug) => carrierPath(locale, slug))]) expect(rewrite(path).headers.get('x-middleware-rewrite'), path).toBeNull();
+    }
+    for (const path of ['/en/carriers/x', '/carriersmore', '/api/carriers']) expect(rewrite(path).headers.get('x-middleware-rewrite'), path).toBeNull();
+  });
+
   it('answers an address below a language’s guides that names none of them with the 404 page, in that language', () => {
     const rewrite = (path: string) => page(`https://peek.example.test${path}`, { headers: { host: 'peek.example.test', cookie: 'sdt.locale=de' } });
     for (const locale of SUPPORTED_LOCALES) {
@@ -225,7 +258,7 @@ describe('the page proxy', () => {
     for (const path of ['/', '/de', '/xx', '/en/guides/x', '/guidesmore']) expect(rewrite(path).headers.get('x-middleware-rewrite'), path).toBeNull();
   });
 
-  it('always answers a language address and the guides itself, a prefetch too', () => {
+  it('always answers a language address, the guides and the carriers’ pages itself, a prefetch too', () => {
     const [pages, languages] = config.matcher;
     expect(pages.missing).toHaveLength(2);
     expect(languages).toEqual({ source: `/:language(${ADDRESS_LANGUAGES.join('|')})` });
@@ -233,7 +266,7 @@ describe('the page proxy', () => {
     const prefetch = { 'next-router-prefetch': '1', rsc: '1' };
     for (const locale of ADDRESS_LANGUAGES) expect(matches(`/${locale}`, prefetch), locale).toBe(true);
     for (const locale of SUPPORTED_LOCALES) {
-      for (const path of [guidePath(locale), guidePath(locale, GUIDE_LINKS[locale][0].slug), guidePath(locale, 'no-such-guide')]) {
+      for (const path of [guidePath(locale), guidePath(locale, GUIDE_LINKS[locale][0].slug), guidePath(locale, 'no-such-guide'), carrierPath(locale), carrierPath(locale, 'no-such-carrier')]) {
         expect(matches(path), path).toBe(true);
         expect(matches(path, prefetch), path).toBe(true);
         expect(matches(path, { purpose: 'prefetch' }), path).toBe(true);

@@ -18,21 +18,22 @@ import { PREVIEW_LOCALES, sitePicture, wordsIn } from './sitePreview';
 /** How many other guides a guide offers below its text. */
 const READ_ON = 3;
 
-/** The words of a guides page. French sets its punctuation there as its guides do. */
-function guideWords(locale: Locale): Translate {
+/** The words of a guides page, and of a carrier's. French sets its punctuation there as its guides do. */
+export function guideWords(locale: Locale): Translate {
   const t = wordsIn(locale);
   return locale === 'fr' ? (key, variables) => frenchSpacing(t(key, variables)) : t;
 }
 
-const languageNames = () => Object.fromEntries(SUPPORTED_LOCALES.map((locale) => [locale, messagesFor(locale)[`language.${locale}`]])) as Record<Locale, string>;
+/** Each language's name, written in that language, for the foot of a guides page. */
+export const languageNames = () => Object.fromEntries(SUPPORTED_LOCALES.map((locale) => [locale, messagesFor(locale)[`language.${locale}`]])) as Record<Locale, string>;
 
 /**
- * A guides page's metadata: its title with Peek's name, its address in every language on the
- * site's canonical origin, and Peek's own picture in the page's language.
+ * A guides page's metadata, or a carrier's page's: its title with Peek's name, its address in each
+ * language it is written in on the site's canonical origin, and Peek's own picture in the page's language.
  */
-async function pageMetadata(locale: Locale, id: string | undefined, title: string, description: string, article?: { published: string; updated: string }): Promise<Metadata> {
+export async function pageMetadata(locale: Locale, alternates: (site: URL) => Partial<Record<Locale | 'x-default', string>>, title: string, description: string, article?: { published: string; updated: string }): Promise<Metadata> {
   const origin = await requestOrigin();
-  const languages = guideAlternates(await siteOrigin(), id);
+  const languages = alternates(await siteOrigin());
   const address = languages[locale];
   const picture = sitePicture(origin, locale);
   return {
@@ -60,7 +61,7 @@ async function pageMetadata(locale: Locale, id: string | undefined, title: strin
 
 export async function guideIndexMetadata(locale: Locale): Promise<Metadata> {
   const t = guideWords(locale);
-  return pageMetadata(locale, undefined, t('guides.heading'), t('guides.lead'));
+  return pageMetadata(locale, (site) => guideAlternates(site), t('guides.heading'), t('guides.lead'));
 }
 
 /** A guide's metadata, or none of its own for a slug without a guide, which the page answers with a 404. */
@@ -68,7 +69,7 @@ export async function guideMetadata(locale: Locale, slug: string): Promise<Metad
   const link = guideLinkBySlug(locale, slug);
   if (!link) return {};
   const { title, description, published, updated } = guide(locale, link.id);
-  return pageMetadata(locale, link.id, title, description, { published, updated });
+  return pageMetadata(locale, (site) => guideAlternates(site, link.id), title, description, { published, updated });
 }
 
 const described = (locale: Locale) => guideLinks(locale).map((link) => ({ link, description: guide(locale, link.id).description }));

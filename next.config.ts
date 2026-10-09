@@ -19,8 +19,9 @@ const nextConfig: NextConfig = {
       './node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm',
       './node_modules/onnxruntime-common/package.json',
       './node_modules/onnxruntime-common/dist/{cjs,esm}/*.js',
-      // The guides' text, which the guides and the sitemap read when asked for.
+      // The guides' and the carriers' pages' text, which those pages and the sitemap read when asked for.
       './content/guides/**/*.md',
+      './content/carriers/**/*.md',
     ],
   },
   poweredByHeader: false,

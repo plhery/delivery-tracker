@@ -1013,5 +1013,12 @@
   "guides.sources": "Quellen",
   "guides.more": "Weiterlesen",
   "guides.cta.title": "Wartest du auf ein Paket?",
-  "guides.cta.body": "Füge die Sendungsnummer ein. Peek findet den Paketdienst, zeigt jeden Scan auf einer Karte und schickt dir eine Mitteilung, wenn sich etwas tut. Kein Konto nötig."
+  "guides.cta.body": "Füge die Sendungsnummer ein. Peek findet den Paketdienst, zeigt jeden Scan auf einer Karte und schickt dir eine Mitteilung, wenn sich etwas tut. Kein Konto nötig.",
+  "carriers.title": "Paketdienste",
+  "carriers.heading": "Sendungsverfolgung nach Paketdienst",
+  "carriers.lead": "Wie die Sendungsnummern eines Paketdienstes aussehen, was seine Status bedeuten und was du tun kannst, wenn ein Paket feststeckt. Peek verfolgt über 3500 Paketdienste, diese hier haben eine eigene Seite.",
+  "carriers.all": "Alle Paketdienste",
+  "carriers.more": "Weitere Paketdienste",
+  "carriers.track.label": "Sendung von {{carrier}} verfolgen",
+  "carriers.independent": "Peek ist ein unabhängiger Dienst zur Sendungsverfolgung, nicht {{carrier}}. Er zeigt, was {{carrier}} in der eigenen Sendungsverfolgung veröffentlicht."
 }

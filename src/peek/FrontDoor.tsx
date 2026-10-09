@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon';
 import { PeekLockup } from '../components/PeekMark';
 import { useI18n } from '../i18n';
 import { trackAction, trackScreen } from '../lib/analytics';
+import { takeCarrierHandoff } from '../lib/carrierHandoff';
 import { carrierBrand } from '../lib/carrierBrand';
 import { carrierChoiceSections, carrierChoiceTags, shapeCarrier, usedCarrierIds } from '../lib/carrierPicker';
 import { carrierInfo, formatTrackingNumber } from '../lib/carriers';
@@ -130,6 +131,14 @@ export function FrontDoor({ onTracked, onSample, onSignIn, covered = false }: {
     touch();
     send({ type: 'edit', text, via: 'paste' });
   }, [send, touch]);
+
+  // A number typed into a carrier's page's box arrives here, never in the address: once the page is live it is
+  // put in the field as if pasted, which looks it up.
+  useEffect(() => {
+    const handed = takeCarrierHandoff();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- session storage, which only the live page can read
+    if (handed) put(handed);
+  }, [put]);
 
   // Where going on stopped is where the visitor continues: the choice to make or the input to give.
   // Without either, the focus stays where it is; only a focus left nowhere is brought back.

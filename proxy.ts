@@ -1,6 +1,7 @@
 import { analyticsConfiguration } from './src/server/analytics';
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
+import { carrierPathLanguage, namesNoCarrier } from './src/carriers/paths';
 import { guidePathLanguage, namesNoGuide } from './src/guides/paths';
 import { APPEARANCE_BOOTSTRAP } from './src/lib/appearanceConfig';
 import { ENTRY_HINT_BOOTSTRAP } from './src/lib/entryHintConfig';
@@ -50,18 +51,20 @@ export function proxy(request: NextRequest) {
     worker-src 'self';
   `.replace(/\s{2,}/g, ' ').trim();
 
-  // A language address such as `/de`, and a guides address such as `/de/guides/…` or `/guides/…` (English),
-  // is in its own language, whatever the browser prefers: the page is rendered as if that language had been
-  // chosen. Only the request the page reads says so. The browser's own cookie is not written, and no other
+  // A language address such as `/de`, and a guides or carriers address such as `/de/guides/…` or `/carriers/…`
+  // (English), is in its own language, whatever the browser prefers: the page is rendered as if that language had
+  // been chosen. Only the request the page reads says so. The browser's own cookie is not written, and no other
   // address reads anything a client could not already choose.
-  const language = pathLanguage(request.nextUrl.pathname) ?? guidePathLanguage(request.nextUrl.pathname);
+  const { pathname } = request.nextUrl;
+  const language = pathLanguage(pathname) ?? guidePathLanguage(pathname) ?? carrierPathLanguage(pathname);
   if (language) request.cookies.set(LOCALE_COOKIE, language);
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', contentSecurityPolicy);
-  // An address below a language's guides that names none of them is the site's 404 page, written whole by the server.
-  const response = namesNoGuide(request.nextUrl.pathname)
+  // An address below a language's guides that names none of them is the site's 404 page, written whole by the
+  // server, and so is one below its carriers that names no carrier written in that language.
+  const response = namesNoGuide(pathname) || namesNoCarrier(pathname)
     ? NextResponse.rewrite(new URL('/_not-found', request.url), { request: { headers: requestHeaders } })
     : NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set('Content-Security-Policy', contentSecurityPolicy);
@@ -81,9 +84,12 @@ export const config = {
         { type: 'header', key: 'purpose', value: 'prefetch' },
       ],
     },
-    // A language address and the guides are always answered from here, a prefetch too: this is where the page learns its language.
+    // A language address, the guides and the carriers' pages are always answered from here, a prefetch too: this is
+    // where the page learns its language.
     { source: '/:language(de|fr|it|es|pt|pl)' },
     { source: '/guides/:path*' },
     { source: '/:language(de|fr|it|es|pt|pl)/guides/:path*' },
+    { source: '/carriers/:path*' },
+    { source: '/:language(de|fr|it|es|pt|pl)/carriers/:path*' },
   ],
 };

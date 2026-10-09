@@ -1,4 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
+import { carrierPath } from '../carriers/paths';
+import { CARRIER_LINKS } from '../generated/carriers';
 import type { GuideLink } from '../generated/guides';
 import { languagePath, type Locale } from '../lib/locale';
 import type { Block, Inline, JourneyIcon } from './markdown';
@@ -25,9 +27,9 @@ function JourneyGlyph({ name }: { name: JourneyIcon }) {
 }
 
 /**
- * A guide's blocks as the page's elements. Links to other guides and to the
- * tracker (`/`) lead to the guide's own language; every other link leaves the
- * site in a new tab.
+ * A guide's blocks as the page's elements. Links to other guides, to a
+ * carrier's page and to the tracker (`/`) lead to the guide's own language;
+ * every other link leaves the site in a new tab.
  */
 export function GuideBody({ blocks, locale, links, sources }: {
   blocks: readonly Block[];
@@ -44,6 +46,7 @@ export function GuideBody({ blocks, locale, links, sources }: {
         case 'strong': return <strong key={index}>{inline(node.children)}</strong>;
         case 'em': return <em key={index}>{inline(node.children)}</em>;
         case 'guide': return <a key={index} href={guidePath(locale, links.find((link) => link.id === node.id)?.slug)}>{inline(node.children)}</a>;
+        case 'carrier': return <a key={index} href={carrierPath(locale, CARRIER_LINKS[locale].find((link) => link.id === node.id)?.slug)}>{inline(node.children)}</a>;
         case 'link': return node.href === '/'
           ? <a key={index} href={languagePath(locale)}>{inline(node.children)}</a>
           : <a key={index} href={node.href} target="_blank" rel="noopener noreferrer">{inline(node.children)}</a>;

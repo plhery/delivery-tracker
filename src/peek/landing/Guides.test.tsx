@@ -50,11 +50,12 @@ afterEach(() => {
 });
 
 describe('the landing’s way to the guides', () => {
-  it('has every guide’s address in the page as the server writes it, out of sight until asked for', () => {
+  it('has every guide’s address in the page as the server writes it, and the carriers’, out of sight until asked for', () => {
     const html = renderToString(<GuidesLink />);
     expect(html).toContain('href="/guides"');
     expect(html).toContain('href="/guides/held-at-customs"');
     expect(html).toContain('href="/guides/tracking-statuses-explained"');
+    expect(html).toContain('href="/carriers"');
     expect(html).toContain('popover="auto"');
   });
 
@@ -66,7 +67,7 @@ describe('the landing’s way to the guides', () => {
     expect(list().showPopover).toHaveBeenCalledOnce();
     expect(analytics.trackAction).toHaveBeenCalledWith('guides-open');
     expect(within(list()).getAllByRole('link', { hidden: true }).map((item) => [item.textContent, item.getAttribute('href')])).toEqual([
-      ['Held at customs', '/guides/held-at-customs'], ['Tracking statuses, explained', '/guides/tracking-statuses-explained'], ['All guides', '/guides'],
+      ['Held at customs', '/guides/held-at-customs'], ['Tracking statuses, explained', '/guides/tracking-statuses-explained'], ['All guides', '/guides'], ['All carriers', '/carriers'],
     ]);
   });
 
@@ -125,6 +126,7 @@ describe('the landing’s way to the guides', () => {
     render(<I18nProvider initialLocale="fr" initialMessages={fr}><GuidesLink /></I18nProvider>);
     expect(screen.getByRole('link', { name: 'Guides' })).toHaveAttribute('href', '/fr/guides');
     expect(within(list()).getByRole('link', { name: 'Colis en douane', hidden: true })).toHaveAttribute('href', '/fr/guides/colis-en-douane');
+    expect(within(list()).getByRole('link', { name: 'Tous les transporteurs', hidden: true })).toHaveAttribute('href', '/fr/carriers');
   });
 
   it('shows nothing while a language has no guides', () => {

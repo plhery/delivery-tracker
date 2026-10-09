@@ -22,13 +22,14 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
 | Path | What |
 | --- | --- |
 | `app/` | App Router pages, route handlers, manifest, service worker, offline page |
-| `proxy.ts` | Per-request CSP nonce and security headers; redirects pages from a host the site has left; tells a language address and a guide its language |
+| `proxy.ts` | Per-request CSP nonce and security headers; redirects pages from a host the site has left; tells a language address, a guide and a carrier's page its language |
 | `src/` | React client (`components/`, `store/`, `auth/`, `i18n.tsx`) |
 | `src/peek/` | The landing and the parcel page for visitors: the field, parcel link client, this device's parcels, keeping a parcel after sign-in; `landing/` holds the sections below the field |
 | `src/server/` | API helpers, auth, sync worker, routing, push, email, observability |
 | `universal-parcel-scraper` (npm dependency) | Every carrier: catalog, detection, adapters, universal providers ([README](https://github.com/plhery/universal-parcel-scraper/blob/main/README.md), [boundary](SCRAPER.md)) |
 | `shared/` | Translations, tracking message map, analytics catalog and postcode examples, shared by web and iOS |
 | `content/guides/` | The guides' text, one Markdown file per language ([README](../content/guides/README.md)); `src/guides/` draws them |
+| `content/carriers/` | The carriers' pages, one Markdown file per language a carrier is written in ([README](../content/carriers/README.md)); `src/carriers/` draws them with the guides' parts |
 | `contracts/` | OpenAPI contract (source of TypeScript and Swift types) and cross-platform fixtures |
 | `supabase/` | Append-only migrations and SQL assertions for RLS |
 | `ios/` | SwiftUI app, Share extension, widgets ([README](../ios/README.md)) |
@@ -226,6 +227,7 @@ Key server modules:
 | `/i/<key>`, `/invite` | A friend invitation ([FRIENDS.md](FRIENDS.md)) |
 | `/demo` | The demo deliveries, kept on the device, to anyone; leaving the demo returns to `/` |
 | `/guides`, `/guides/<slug>`; `/<language>/guides`, `/<language>/guides/<slug>` | The guides, articles for readers who arrive from a search engine, and their list, in the address's language whatever the browser prefers. English has no prefix. Any other address below a language's guides is sent to the 404 page by the proxy ([`proxy.ts`](../proxy.ts)), so the server writes that page whole. The landing's foot lists them |
+| `/carriers`, `/carriers/<slug>`; `/<language>/carriers`, `/<language>/carriers/<slug>` | A page per carrier for readers who searched for its tracking, in the languages it is written in, and their list in every language. Above its text, a box takes a number to the landing in the page's language without putting it in the address. Any other address below a language's carriers, a carrier's in a language it is not written in too, is sent to the 404 page as a guide's is. The guides' foot and the landing's list of guides lead to them |
 | `/email/off?lang=<language>#t=<token>` | The way out of the delivery email, from the link an email carries, in the email's language. It asks first, then switches the email off (or back on) for the account the token names, without a sign-in. The token stays after the `#` and travels only in the body of that request |
 
 Sessions belong to one origin, so every address lives on the same host. With the iPhone
@@ -246,7 +248,7 @@ address of its own, one page per language under `app/`, written in that language
 first byte: `<html lang>`, the words, the title and the link preview.
 
 - The proxy hands the page the address's language in place of the cookie the browser sent
-  ([`proxy.ts`](../proxy.ts)), at a language address and at a guide's. No other address
+  ([`proxy.ts`](../proxy.ts)), at a language address, at a guide's and at a carrier's page. No other address
   reads anything a client could not already choose, and the browser's own cookie is not
   written.
 - In the browser the address's language wins over a saved choice, and a visit saves
@@ -263,13 +265,17 @@ first byte: `<html lang>`, the words, the title and the link preview.
 
 For search engines, `/robots.txt` lets everything be fetched and `/sitemap.xml` lists the
 pages meant to be found: the landing, the guides' list and every guide in each language,
-and the privacy notice. A guide is dated by the day its facts were last checked. Each
+the carriers' list in each language and every carrier's page in each of its languages, and
+the privacy notice. A guide or a carrier's page is dated by the day its facts were last
+checked. Each
 landing's HTML carries its title, description and canonical address, the address of every
 other language (`hreflang`, with `/` for a reader of none of them), and a schema.org
 description of the site and the app
 ([`landingStructuredData.ts`](../src/server/landingStructuredData.ts)). A guide carries
 the same, with English for a reader of none, and describes itself as a schema.org article
-([`guidePages.tsx`](../src/server/guidePages.tsx)). `/home` names `/` as its canonical
+([`guidePages.tsx`](../src/server/guidePages.tsx)). A carrier's page names only the
+languages it is written in, and adds its questions as a schema.org FAQ
+([`carrierPages.tsx`](../src/server/carrierPages.tsx)). `/home` names `/` as its canonical
 address. Parcel links, invitations and `/email/off` answer `noindex` in a
 header; the demo, the sample and the offline page say it in the page, and let their links
 be followed. These addresses are written on `CANONICAL_ORIGIN` when it is set
@@ -287,7 +293,10 @@ such a screen (`/demo`, `/invite`, `/p/<id>`, `/sample`) brings the code along. 
 of the app loads all the stylesheets, in one order ([`cascade.ts`](../src/cascade.ts)). A
 guide is drawn by the server alone, with the site's base styles and its own
 [`guides.css`](../src/guides/guides.css): the only script it adds to the page's own is its
-usage count.
+usage count. A carrier's page is drawn the same way, and adds one more: its tracking box,
+which notes the number in the tab's session storage for the landing to look up
+([`carrierHandoff.ts`](../src/lib/carrierHandoff.ts)). Without it, the box opens the landing
+alone.
 
 ## Data lifecycle
 

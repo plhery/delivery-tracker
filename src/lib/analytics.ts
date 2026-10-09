@@ -140,8 +140,11 @@ async function flush() {
   } finally { sending = false; }
 }
 
-/** A guides page counts under its language and the guide's id, never its address: `guides/fr`, `guides/fr/<id>`. */
-const GUIDE_SCREEN = new RegExp(`^guides/(?:${SUPPORTED_LOCALES.join('|')})(?:/[a-z0-9]+(?:-[a-z0-9]+)*)?$`);
+/**
+ * A guides page counts under its language and the guide's id, never its address: `guides/fr`, `guides/fr/<id>`.
+ * A carrier's page does the same: `carriers/fr`, `carriers/fr/<id>`.
+ */
+const GUIDE_SCREEN = new RegExp(`^(?:guides|carriers)/(?:${SUPPORTED_LOCALES.join('|')})(?:/[a-z0-9]+(?:-[a-z0-9]+)*)?$`);
 
 export function trackScreen(next: string, nextMode: Event['mode'] = mode) {
   if (!catalog.screens.includes(next) && !GUIDE_SCREEN.test(next)) return;

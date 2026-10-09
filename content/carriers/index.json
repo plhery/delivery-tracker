@@ -1,0 +1,10 @@
+[
+  { "id": "quickpac", "catalog": "quickpac", "name": "Quickpac", "languages": ["en", "de", "fr", "it"] },
+  { "id": "planzer", "catalog": "planzer", "name": "Planzer", "languages": ["en", "de", "fr", "it"] },
+  { "id": "colis-prive", "catalog": "colis-prive", "name": "Colis Privé", "languages": ["en", "fr"] },
+  { "id": "brt", "catalog": "brt", "name": "BRT", "languages": ["en", "it"] },
+  { "id": "correos-express", "catalog": "correos-express", "name": "Correos Express", "languages": ["en", "es", "pt"] },
+  { "id": "nacex", "catalog": "nacex", "name": "NACEX", "languages": ["en", "es", "pt"] },
+  { "id": "yunexpress", "catalog": "yunexpress", "name": "YunExpress", "languages": ["en", "de", "fr", "it", "es", "pt", "pl"] },
+  { "id": "cainiao", "catalog": "aliexpress", "name": "Cainiao", "languages": ["en", "de", "fr", "it", "es", "pt", "pl"] }
+]

@@ -1013,5 +1013,12 @@
   "guides.sources": "Fonti",
   "guides.more": "Continua a leggere",
   "guides.cta.title": "Aspetti un pacco?",
-  "guides.cta.body": "Incolla il numero di tracciamento. Peek trova il corriere, mostra ogni scansione su una mappa e ti avvisa quando si muove. Non serve un account."
+  "guides.cta.body": "Incolla il numero di tracciamento. Peek trova il corriere, mostra ogni scansione su una mappa e ti avvisa quando si muove. Non serve un account.",
+  "carriers.title": "Corrieri",
+  "carriers.heading": "Il tracciamento, corriere per corriere",
+  "carriers.lead": "Come sono fatti i numeri di tracciamento di ogni corriere, cosa vogliono dire i suoi stati e cosa fare quando un pacco si blocca. Peek traccia oltre 3.500 corrieri: questi hanno una pagina tutta loro.",
+  "carriers.all": "Tutti i corrieri",
+  "carriers.more": "Altri corrieri",
+  "carriers.track.label": "Traccia una spedizione {{carrier}}",
+  "carriers.independent": "Peek è un servizio di tracciamento indipendente, non {{carrier}}. Mostra quello che {{carrier}} pubblica nel proprio tracciamento."
 }

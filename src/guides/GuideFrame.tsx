@@ -1,5 +1,6 @@
 import { createElement, type ReactNode } from 'react';
 import mark from '../brand/mark.json';
+import { carrierPath } from '../carriers/paths';
 import { documentLanguage, languagePath, SUPPORTED_LOCALES, type Locale } from '../lib/locale';
 import type { Translate } from '../lib/messages';
 import { SOURCE_URL } from '../lib/source';
@@ -48,6 +49,7 @@ export function GuideFrame({ locale, t, addresses, languageNames, screen, childr
       <div className="guide-footer__links">
         <a className="guide-footer__name" href={tracker}><Mark size={18} />{t('app.title')} · {t('app.tagline')}</a>
         <a href={guidePath(locale)}>{t('guides.all')}</a>
+        <a href={carrierPath(locale)}>{t('carriers.all')}</a>
         <a href="/privacy.html">{t('auth.privacyLink')}</a>
         <a href={SOURCE_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
