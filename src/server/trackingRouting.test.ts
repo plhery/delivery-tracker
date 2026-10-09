@@ -952,7 +952,7 @@ describe('persistent tracking routing', () => {
   });
   it('keeps a prior confirmed route when the new choice has no direct support', async () => {
     const { router, direct, universal } = setup();
-    const result = await router.fetch(parcel({ carrier: 'j-and-t', carrier_data: { routing: state({ configured_carrier: 'ups', confirmed_carrier: 'ups', confirmed_number: 'TEST1234' }) } }), false);
+    const result = await router.fetch(parcel({ carrier: 'omgo', carrier_data: { routing: state({ configured_carrier: 'ups', confirmed_carrier: 'ups', confirmed_number: 'TEST1234' }) } }), false);
     expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['ups']);
     expect(universal).not.toHaveBeenCalled();
     expect(result.correction?.carrier).toBe('ups');

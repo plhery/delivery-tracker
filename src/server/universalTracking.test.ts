@@ -16,7 +16,8 @@ describe('universal tracking dispatch', () => {
     expect(spy).toHaveBeenCalledTimes(2);
     // The third argument is the lookup's signal and budget, which the scraper passes on.
     expect(spy).toHaveBeenCalledWith(number, null, expect.any(Object));
-    await adapter.fetch('j-and-t', number, null, '01234');
+    // A carrier without an adapter of its own passes its postcode to the providers.
+    await adapter.fetch('omgo', number, null, '01234');
     expect(spy).toHaveBeenLastCalledWith(number, '01234', expect.any(Object));
   });
 

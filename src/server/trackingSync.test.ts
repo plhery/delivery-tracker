@@ -2889,7 +2889,7 @@ describe('tracking anomaly detection', () => {
     expect(detect('dpd', { tracking_provider: 'ParcelsApp' }, { status: 'pending', events: [scan] }, 'dpd')).toEqual(['progress_disappeared']);
     // No adapter of its own: routing exhausts the eligible providers before returning a thin answer.
     expect(detect('unknown', { tracking_provider: 'Ship24' }, fallback, 'unknown')).toEqual(['progress_disappeared']);
-    expect(detect('an-post', { tracking_provider: 'Ship24' }, fallback, 'unknown')).toEqual(['progress_disappeared']);
+    expect(detect('omgo', { tracking_provider: 'Ship24' }, fallback, 'unknown')).toEqual(['progress_disappeared']);
     expect(detect('royal-mail', { tracking_provider: 'Ship24' }, fallback, 'unknown')).toEqual(['fallback_without_progress']);
   });
   it('preserves real movement when a provider has only registration, without flagging a new label', () => {

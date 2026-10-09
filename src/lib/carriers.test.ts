@@ -110,7 +110,7 @@ describe('carrier detection', () => {
     // REPORTED REAL label report.
     // Source: https://www.trustpilot.com/review/www.anpost.com
     expect(detectCarrier('CP476340265IE')).toBe('an-post');
-    expectUniversalFallback('an-post');
+    expectDirectTracking('an-post');
   });
 
   it('aramex — Aramex', () => {
@@ -260,7 +260,7 @@ describe('carrier detection', () => {
     // Source: https://github.com/trackingmore100/tracking-sdk-php/blob/master/README.md
     expect(detectCarrier('RP325552475CN')).toBe('china-post');
     expect(detectCarrier('LZ448865302CN')).toBe('china-post');
-    expectUniversalFallback('china-post');
+    expectDirectTracking('china-post');
   });
 
   it('chronopost — Chronopost', () => {
@@ -686,7 +686,7 @@ describe('carrier detection', () => {
     // OSS EXAMPLE S10 fixture (not asserted real).
     // Source: https://github.com/marcoesposito1988/trackingmore-python
     expect(detectCarrier('RE113184005HK')).toBe('hongkong-post');
-    expectUniversalFallback('hongkong-post');
+    expectDirectTracking('hongkong-post');
   });
 
   it('india-post — India Post', () => {
@@ -741,7 +741,7 @@ describe('carrier detection', () => {
     const match = detectCarrierMatch('888 058 657 515');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('j-and-t');
-    expectUniversalFallback('j-and-t');
+    expectDirectTracking('j-and-t');
   });
 
   it('japan-post — Japan Post', () => {
@@ -900,7 +900,7 @@ describe('carrier detection', () => {
     for (const number of ['07209562763', '77767553207', '77806528897', '78045768393', '80003280379', '80993847369']) {
       expect(detectCarrier(number)).toBe('old-dominion');
     }
-    expectUniversalFallback('old-dominion');
+    expectDirectTracking('old-dominion');
   });
 
   it('ontrac — OnTrac', () => {
@@ -1168,7 +1168,7 @@ describe('carrier detection', () => {
     expect(detectCarrier('SP0000000000000001')).toBe('spee-dee');
     expect(detectCarrier('SP000000000000001')).toBe('unknown');
     expect(detectCarrier('SP00000000000000001')).toBe('unknown');
-    expectUniversalFallback('spee-dee');
+    expectDirectTracking('spee-dee');
   });
 
   it('speedx — SpeedX', () => {
@@ -1177,7 +1177,7 @@ describe('carrier detection', () => {
     for (const number of ['SPXMIA056759629631', 'SPXMIA056746165383', 'SPXMIA056746185528', 'SPXMIA056745759994']) {
       expect(detectCarrier(number)).toBe('speedx');
     }
-    expectUniversalFallback('speedx');
+    expectDirectTracking('speedx');
   });
 
   it('spring-gds — PostNL', () => {
@@ -1225,7 +1225,7 @@ describe('carrier detection', () => {
     const match = detectCarrierMatch('968754207139');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('sto');
-    expectUniversalFallback('sto');
+    expectDirectTracking('sto');
   });
 
   it('sunyou — SunYou', () => {
@@ -1262,7 +1262,7 @@ describe('carrier detection', () => {
     // OSS EXAMPLE S10 fixture (not asserted real).
     // Source: https://gist.github.com/zxp/e83a4a1b7294a5ed6207
     expect(detectCarrier('EE138961080TH')).toBe('thailand-post');
-    expectUniversalFallback('thailand-post');
+    expectDirectTracking('thailand-post');
   });
 
   it('the-courier-guy — The Courier Guy', () => {
