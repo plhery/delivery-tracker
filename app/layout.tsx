@@ -4,7 +4,9 @@ import '../src/styles.css';
 import { authConfigFromEnvironment } from '../src/auth/authConfig';
 import { APPEARANCE_BOOTSTRAP } from '../src/lib/appearanceConfig';
 import { ENTRY_HINT_BOOTSTRAP } from '../src/lib/entryHintConfig';
+import { ERROR_REPORTS_META } from '../src/lib/errorReportsConfig';
 import { documentLanguage, manifestPath } from '../src/lib/locale';
+import { browserErrorReporting } from '../src/server/browserErrors';
 import { requestLocale } from '../src/server/requestLocale';
 import { requestOrigin } from '../src/server/requestOrigin';
 import { PREVIEW_LOCALES, sitePicture, siteTitle, wordsIn } from '../src/server/sitePreview';
@@ -57,6 +59,9 @@ const authOrigin = authConfigFromEnvironment({
 })?.url;
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  // Where the page's scripts report their errors. A page keeps it with the scripts it loaded, so
+  // a page open across a deploy still names the release its scripts belong to.
+  const errorReports = browserErrorReporting();
   return (
     <html lang={documentLanguage(await requestLocale())} suppressHydrationWarning>
       <head>
@@ -64,6 +69,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {/* Tells the stylesheet, before anything is painted, who is about to see the landing. */}
         <script dangerouslySetInnerHTML={{ __html: ENTRY_HINT_BOOTSTRAP }} />
         {authOrigin && <link rel="preconnect" href={authOrigin} crossOrigin="anonymous" />}
+        {errorReports && <meta name={ERROR_REPORTS_META} content={JSON.stringify(errorReports)} />}
       </head>
       <body>{children}</body>
     </html>

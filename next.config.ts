@@ -24,12 +24,15 @@ const nextConfig: NextConfig = {
     ],
   },
   poweredByHeader: false,
+  // Sentry reads the browser's stack traces through these maps, served beside the
+  // scripts: the source is public anyway. The service worker leaves them out.
+  productionBrowserSourceMaps: true,
   reactStrictMode: true,
   // Link previews may use browser-like user agents and only inspect the head.
   // Keep social metadata in the initial HTML for every client.
   htmlLimitedBots: /.*/,
   experimental: {
-    // Keep production stack traces actionable without exposing browser maps.
+    // Keep the server's production stack traces actionable.
     serverSourceMaps: true,
   },
   async redirects() {

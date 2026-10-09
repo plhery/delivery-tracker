@@ -73,9 +73,10 @@ interface ApiRouteOptions {
    */
   capability?: boolean;
   /**
-   * The route takes a body it does not read, in whatever form its sender
-   * chose: a mail app posts a form to an email's unsubscribe address. What
-   * guards such a route is the capability in its address, not the body's type.
+   * The route takes a body in whatever form its sender chose: a mail app posts
+   * a form to an email's unsubscribe address, and Sentry's browser SDK an error
+   * report as plain text. What guards such a route is the capability in its
+   * address, or what its body must hold, not the body's type.
    */
   anyBody?: boolean;
   /**

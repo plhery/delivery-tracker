@@ -411,7 +411,8 @@ project-side scrubbing still apply. Automatic lookups wrap each provider failure
 - **Grouping**: by component, operation, carrier and error/anomaly type. `attempt_id`,
   `job_id`, `request_id`, `tracking_number`, `upstream_status` and `database_code` are
   searchable tags.
-- **Source maps** stay in the server image only, never in browser assets.
+- **Source maps**: the server's stay in its image. The browser's are public, beside the
+  scripts; see "Browser error reports" below.
 - **Crons**: a scheduled run sends an in-progress check-in to the daytime or overnight
   monitor, then `ok` or `error` with its duration in seconds. A run handed over at a deploy
   keeps its check-in. The first check-in also sends the monitor's settings (schedule, 5 or
@@ -472,6 +473,55 @@ number too, so `tracking_number:<value>` finds a parcel's reports.
   or client address (`dataCollection.userInfo` is off).
 
 From a report back to its parcel, follow `attempt_id` or `job_id` to Postgres.
+
+### Browser error reports
+
+Pages report their own errors to the same project, with the server's release and
+environment, which the server writes into each page's `error-reports` meta tag. Only a
+production server with `SENTRY_DSN` writes it: development, CI's servers and forks
+without a DSN report nothing.
+
+- **Loading**: `instrumentation-client.ts` listens for uncaught errors and unhandled
+  rejections before the app renders, and the error screen hands over what it catches.
+  Sentry's SDK is a chunk of its own that loads only once a page has an error to report;
+  the first ten wait for it. Most visits never download it.
+- **Quiet**: an error is reported only when its stack runs through the site's `/_next/`
+  scripts and through no extension's code. Failed and aborted requests, cancelled
+  navigations, scripts that did not load and `ResizeObserver` loops are dropped
+  (`IGNORED_ERRORS` in `src/lib/errorReporter.ts`), so is a repeat of the last report,
+  and a page sends five reports at most. An error rendered on the server reaches the page with only
+  a `digest`: the server reported it. No tracing, replay, breadcrumbs or user.
+- **Through the site**: the SDK posts to `/api/errors` (Sentry's `tunnel`), so the CSP
+  names no other host and blockers leave reports alone. The route forwards a report only
+  to the project of `SENTRY_DSN`, without the browser's address, cookies or headers. It
+  takes 64 KiB at most, 10 reports per client network and 60 from all browsers every 10
+  minutes, and passes Sentry's rate limits back. `browser_errors_refused` (with Sentry's
+  `upstream_status`) and `browser_errors_forward_failed` log what Sentry did not take.
+- **What they keep**: the error, its causes and stack, the page's address and the
+  browser's user agent. Addresses lose their query and fragment; parcel link ids, and
+  path segments of six characters or more with a digit, read `:id`. Messages lose email
+  addresses and anything shaped like a tracking number or a key. No IP address: the SDK
+  tells Sentry not to infer one.
+- **Source maps** are served beside the scripts (`productionBrowserSourceMaps`): the
+  source is public. Sentry fetches them by the frames' addresses; the service worker
+  leaves them out. A tab left open across a deploy reports scripts the new image no
+  longer serves, so its frames stay minified.
+
+To check after a deploy: a page's source has the `error-reports` meta tag, and an empty
+POST to `/api/errors` answers 400 (404 where reports are off). Then, in a production
+page's console:
+
+```js
+const at = `${location.origin}/_next/static/chunks/check.js`;
+const error = Object.assign(new Error('Browser report check'), { stack: `Error: Browser report check\n    at ${at}:1:1` });
+dispatchEvent(new ErrorEvent('error', { error, filename: at }));
+```
+
+The network panel shows `/api/errors` answering 204, and the issue appears in Sentry
+with `sdk.name:sentry.javascript.browser`. An error thrown from the console itself is
+not reported: its stack is not the site's. A real issue's frames should show the
+original source; a source map processing error on the event means Sentry could not
+fetch the scripts or their maps.
 
 ## Metrics
 

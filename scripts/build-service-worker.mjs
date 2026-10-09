@@ -18,8 +18,8 @@ const { manifestEntries, count, size, warnings } = await getManifest({
     // public/ are read by the server, and the manifest is rendered per request.
     'public/{icons/*,privacy.html,privacy.css,theme.css,push-sw.js}',
   ],
-  // Modern browsers skip the nomodule polyfills.
-  globIgnores: polyfillFiles.map((file) => `.next/${file}`),
+  // Modern browsers skip the nomodule polyfills, and only Sentry reads the source maps.
+  globIgnores: [...polyfillFiles.map((file) => `.next/${file}`), '.next/static/**/*.map'],
   // Next names its built files after their contents.
   dontCacheBustURLsMatching: /^\.next\/static\//,
   manifestTransforms: [async (entries) => {

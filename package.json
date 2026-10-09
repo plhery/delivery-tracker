@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@prometheus-io/client": "^0.16.1",
+    "@sentry/browser": "^11.5.0",
     "@sentry/node": "^11.5.0",
     "@serwist/next": "^9.5.13",
     "@supabase/auth-js": "^2.117.3",

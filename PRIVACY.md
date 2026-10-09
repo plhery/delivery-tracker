@@ -46,6 +46,12 @@ sell personal data, serve advertising, or use advertising analytics.
   address of the request that failed. They may retain request and response
   headers, addresses shortened to their path, and bounded excerpts of carriers'
   responses, including personal data present in them.
+- When the web app's own code fails in your browser, a Sentry error report: the
+  error's message and stack, the page's address without its query, its fragment
+  or a parcel link's id, and your browser's user agent. It goes through the
+  service's own server, without your IP address, cookies or account, and with
+  anything shaped like a tracking number, a key or an email address taken out
+  of the message.
 
 ## Why and where data is processed
 

@@ -300,8 +300,9 @@ See [OBSERVABILITY.md](OBSERVABILITY.md) for verification monitoring.
 ### Service operation
 
 - **Sentry**: set `SENTRY_DSN`, `SENTRY_ENVIRONMENT=production`, an immutable release, and
-  keep tracing at 0 unless you mean it. See [OBSERVABILITY.md](OBSERVABILITY.md) for alerts,
-  logs and audit queries.
+  keep tracing at 0 unless you mean it. Pages then report their errors to the same project,
+  through the server. See [OBSERVABILITY.md](OBSERVABILITY.md) for alerts, logs and audit
+  queries.
 - **Logs** are one-line JSON. Alert on `sync_job_failed` and `sync_job_finish_failed`, and
   on `sync_claim_failed` once it repeats for two minutes (its `failing_for_ms`). They
   contain tracking numbers, so restrict access.

@@ -41,7 +41,8 @@ describe('test suite boundaries', () => {
   it('runs all web suites for client, server, browser and build inputs', () => {
     for (const file of ['src/components/ParcelMap.tsx', 'src/server/trackingSync.ts', 'app/layout.tsx',
       'app/api/packages/route.ts', 'public/privacy.html', 'e2e/parcel-journeys.spec.ts', 'Dockerfile',
-      'next.config.ts', 'playwright.config.ts', 'scripts/test-pwa-build.mjs', 'PRIVACY.md', 'content/guides/index.json']) {
+      'next.config.ts', 'instrumentation-client.ts', 'playwright.config.ts', 'scripts/test-pwa-build.mjs', 'PRIVACY.md',
+      'content/guides/index.json']) {
       assert.deepEqual(selectSuites([file]), web, file);
     }
   });

@@ -23,15 +23,17 @@ await stat(resolve(next, 'standalone/server.js'));
 const javascriptFiles = staticEntries
   .filter((entry) => entry.isFile() && entry.name.endsWith('.js'))
   .map((entry) => resolve(entry.parentPath, entry.name));
-const applicationBundle = (await Promise.all(javascriptFiles.map(async (file) => ({
+const javascriptSources = await Promise.all(javascriptFiles.map(async (file) => ({
   file,
+  asset: `/_next/${relative(next, file).replaceAll('\\', '/')}`,
   source: await readFile(file, 'utf8'),
-})))).find(({ source }) => (
+})));
+const applicationBundle = javascriptSources.find(({ source }) => (
   source.includes('controllerchange') && source.includes('updateViaCache')
 ));
 
 assert.ok(applicationBundle, 'the production client bundle must observe service worker upgrades');
-const applicationAsset = `/_next/${relative(next, applicationBundle.file).replaceAll('\\', '/')}`;
+const applicationAsset = applicationBundle.asset;
 assert.ok(worker.includes(applicationAsset), 'the service worker must precache the current app bundle');
 assert.match(
   applicationBundle.source,
@@ -53,6 +55,13 @@ assert.doesNotMatch(worker, /["']\/(?:fonts\/|auth-emails\/|og\.(?:png|svg))/, '
 const { polyfillFiles, rootMainFiles } = JSON.parse(buildManifest);
 for (const file of polyfillFiles) assert.ok(!worker.includes(`/_next/${file}`), 'the nomodule polyfills modern browsers skip must not be precached');
 for (const file of rootMainFiles) assert.ok(worker.includes(`/_next/${file}`), 'the App Router entry must stay precached');
+assert.doesNotMatch(worker, /\.map["']/, 'only Sentry reads the source maps: browsers must not download them');
+const entry = new Set(rootMainFiles.map((file) => `/_next/${file}`));
+const reporters = javascriptSources.filter(({ source }) => source.includes('"/api/errors"'));
+assert.equal(reporters.length, 1, 'Sentry\'s browser SDK must be built into one chunk of its own');
+assert.ok(!entry.has(reporters[0].asset), 'Sentry\'s browser SDK must load only once a page has an error to report');
+assert.ok(javascriptSources.some(({ asset, source }) => entry.has(asset) && source.includes('"error-reports"')),
+  'the App Router entry must watch for errors from the start');
 assert.ok(!JSON.parse(serverFiles).config.deploymentId, 'a deployment id in asset addresses would re-download unchanged files after every deployment');
 assert.match(offline, /await connection\(\)/, 'offline HTML must render with its matching CSP nonce');
 assert.match(offline, /FeedbackScreen/, 'offline must use the shared translated screen');
