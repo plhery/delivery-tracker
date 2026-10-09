@@ -17,7 +17,7 @@ afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 describe('friendship receipts', () => {
   it.each([
     ['en', 'Alex is in'], ['fr-CH', 'Alex est de la partie'],
-    ['de', 'Alex ist dabei'], ['it', 'Alex è dei nostri'], ['es', 'Alex se apunta'], ['pt-PT', 'Alex juntou-se a ti'],
+    ['de', 'Alex ist dabei'], ['it', 'Alex è nella tua cerchia'], ['es', 'Alex se apunta'], ['pt-PT', 'Alex juntou-se a ti'],
     ['pl', 'Alex jest już w Twoim kręgu'], ['unknown', 'Alex is in'],
   ])('tells both push channels in the device\'s language: %s', (locale, title) => {
     const payload = friendshipNotification({ ...row, locale, email: 'PRIVATE', label: 'PRIVATE', location: 'PRIVATE' });

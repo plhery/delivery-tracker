@@ -28,12 +28,13 @@ import {
   SUPPORTED_LOCALES,
   type MessageKey,
 } from './i18n';
+import { documentLanguage } from './lib/locale';
 
 function TranslationProbe() {
   const { t } = useI18n();
   return (
     <>
-      <p>{t('app.eyebrow')}</p>
+      <p>{t('app.emptyTitle')}</p>
       <p>{stageLabel(t, 'out_for_delivery')}</p>
     </>
   );
@@ -45,14 +46,14 @@ describe('localization', () => {
   it('restores the saved language before persisting during StrictMode effect replay', async () => {
     window.localStorage.setItem('deliveryTrackerLocale', 'fr');
     render(<StrictMode><I18nProvider><TranslationProbe /></I18nProvider></StrictMode>);
-    await screen.findByText('Suivi de colis');
+    await screen.findByText('Pas encore de colis');
     expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('fr');
   });
   it('writes the sign-in email in every app language', () => {
     const email = readFileSync(resolve(process.cwd(), 'public/auth-emails/magic-link.html'), 'utf8');
     for (const locale of SUPPORTED_LOCALES.filter((locale) => locale !== 'en')) {
       expect(email).toContain(`if eq .Data.locale "${locale}" -}}`);
-      expect(email).toContain(`$lang = "${locale}"`);
+      expect(email).toContain(`$lang = "${documentLanguage(locale)}"`);
     }
     expect(email.match(/\{\{-? ?if /g)).toHaveLength(1);
     expect(email.match(/\{\{-? ?end /g)).toHaveLength(1);
@@ -102,28 +103,53 @@ describe('localization', () => {
 
     await waitFor(() => {
       expect(screen.getByLabelText('Sprache')).toHaveValue('de');
-      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+      expect(screen.getByText('Noch keine Pakete')).toBeInTheDocument();
       expect(screen.getByText('In Zustellung')).toBeInTheDocument();
     });
 
     await user.selectOptions(screen.getByLabelText('Sprache'), 'fr');
-    expect(screen.getByText('Suivi de colis')).toBeInTheDocument();
+    expect(screen.getByText('Pas encore de colis')).toBeInTheDocument();
     expect(screen.getByText('En livraison')).toBeInTheDocument();
     await waitFor(() => {
       expect(document.documentElement.lang).toBe('fr');
       expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('fr');
     });
+
+    // The page says its Portuguese is European; the saved choice is still `pt`.
+    await user.selectOptions(screen.getByLabelText('Langue'), 'pt');
+    await waitFor(() => {
+      expect(document.documentElement.lang).toBe('pt-PT');
+      expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('pt');
+      expect(document.cookie).toContain('sdt.locale=pt');
+    });
+  });
+
+  it('links the installed app’s manifest in the language the page shows', async () => {
+    // The page as the server wrote it, in the language of its request.
+    const link = Object.assign(document.createElement('link'), { rel: 'manifest' });
+    link.setAttribute('href', '/fr/manifest.webmanifest');
+    document.head.append(link);
+    try {
+      window.localStorage.setItem('deliveryTrackerLocale', 'de');
+      const user = userEvent.setup();
+      render(<I18nProvider initialLocale="fr" initialMessages={fr}><LanguageControl /></I18nProvider>);
+      await waitFor(() => expect(link.getAttribute('href')).toBe('/de/manifest.webmanifest'));
+      await user.selectOptions(screen.getByLabelText('Sprache'), 'en');
+      await waitFor(() => expect(link.getAttribute('href')).toBe('/manifest.webmanifest'));
+    } finally {
+      link.remove();
+    }
   });
 
   it('starts in the server language and applies a loaded saved choice before paint', () => {
     const first = render(<I18nProvider initialLocale="fr" initialMessages={fr}><TranslationProbe /></I18nProvider>);
-    expect(screen.getByText('Suivi de colis')).toBeInTheDocument();
+    expect(screen.getByText('Pas encore de colis')).toBeInTheDocument();
     first.unmount();
 
     window.localStorage.setItem('deliveryTrackerLocale', 'de');
     render(<I18nProvider initialLocale="fr" initialMessages={fr}><TranslationProbe /></I18nProvider>);
     // No waiting: the saved language is in place when rendering returns.
-    expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+    expect(screen.getByText('Noch keine Pakete')).toBeInTheDocument();
     expect(document.cookie).toContain('sdt.locale=de');
   });
 
@@ -148,7 +174,7 @@ describe('localization', () => {
       history.replaceState(null, '', '/de');
       landing();
       // No waiting: the page is in German when rendering returns, and stays so.
-      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+      expect(screen.getByText('Noch keine Pakete')).toBeInTheDocument();
       expect(screen.getByLabelText('Sprache')).toHaveValue('de');
       expect(document.documentElement.lang).toBe('de');
       // The saved choice is still French, for `/` and every other address.
@@ -160,7 +186,7 @@ describe('localization', () => {
     it('leaves a browser that chose nothing with nothing chosen', () => {
       history.replaceState(null, '', '/de');
       landing();
-      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+      expect(screen.getByText('Noch keine Pakete')).toBeInTheDocument();
       expect(window.localStorage.getItem('deliveryTrackerLocale')).toBeNull();
       expect(document.cookie).not.toContain('sdt.locale');
     });
@@ -174,7 +200,7 @@ describe('localization', () => {
       const length = history.length;
 
       await user.selectOptions(screen.getByLabelText('Sprache'), 'fr');
-      expect(screen.getByText('Suivi de colis')).toBeInTheDocument();
+      expect(screen.getByText('Pas encore de colis')).toBeInTheDocument();
       expect(location.pathname + location.search + location.hash).toBe('/fr?utm_source=test#who');
       expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('fr');
       expect(document.cookie).toContain('sdt.locale=fr');
@@ -185,7 +211,7 @@ describe('localization', () => {
 
       // English lives at `/`.
       await user.selectOptions(screen.getByLabelText('Langue'), 'en');
-      expect(screen.getByText('Parcel tracking')).toBeInTheDocument();
+      expect(screen.getByText('No parcels yet')).toBeInTheDocument();
       expect(location.pathname + location.search + location.hash).toBe('/?utm_source=test#who');
       expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('en');
       expect(history.length).toBe(length);
@@ -204,19 +230,19 @@ describe('localization', () => {
       landing(() => '/home');
       await user.selectOptions(screen.getByLabelText('Sprache'), 'en');
       expect(location.pathname).toBe('/home');
-      expect(screen.getByText('Parcel tracking')).toBeInTheDocument();
+      expect(screen.getByText('No parcels yet')).toBeInTheDocument();
     });
 
     it('follows Back to a language address, and keeps the language on screen when the address is left', async () => {
       window.localStorage.setItem('deliveryTrackerLocale', 'fr');
       history.replaceState(null, '', '/de');
       landing();
-      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+      expect(screen.getByText('Noch keine Pakete')).toBeInTheDocument();
       // A parcel opened from the landing is read in the landing's language.
       act(() => { history.pushState(null, '', '/sample'); window.dispatchEvent(new PopStateEvent('popstate')); });
-      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+      expect(screen.getByText('Noch keine Pakete')).toBeInTheDocument();
       act(() => { history.replaceState(null, '', '/it'); window.dispatchEvent(new PopStateEvent('popstate')); });
-      expect(await screen.findByText(itMessages['app.eyebrow'])).toBeInTheDocument();
+      expect(await screen.findByText(itMessages['app.emptyTitle'])).toBeInTheDocument();
       expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('fr');
     });
 
@@ -235,7 +261,7 @@ describe('localization', () => {
       const user = userEvent.setup();
       render(<I18nProvider><LanguageControl englishAddress={() => '/home'} /><TranslationProbe /></I18nProvider>);
       await user.selectOptions(screen.getByLabelText('Language'), 'de');
-      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+      expect(screen.getByText('Noch keine Pakete')).toBeInTheDocument();
       expect(location.pathname).toBe('/home');
     });
   });

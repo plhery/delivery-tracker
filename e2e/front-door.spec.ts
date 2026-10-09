@@ -89,7 +89,7 @@ test('says what is wrong with the input: no number, an order number, a check dig
   await openDoor(page);
   await field(page).fill('Thanks for your order! We’ll let you know as soon as it ships.');
   await field(page).press('Enter');
-  await expect(said(page)).toHaveText('We couldn’t find a tracking number. Paste the number or a tracking link.');
+  await expect(said(page)).toHaveText('Peek couldn’t find a tracking number. Paste the number or a tracking link.');
   await expect(page.getByRole('region', { name: 'What tracking numbers look like' }).getByRole('listitem')).toHaveCount(4);
   await expect(field(page)).toHaveValue('Thanks for your order! We’ll let you know as soon as it ships.');
 

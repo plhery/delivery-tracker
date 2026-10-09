@@ -51,13 +51,13 @@ describe('friendly parcel notifications', () => {
   });
 
   it.each([
-    ['registered', 'Announced by the sender'],
+    ['registered', 'Label created'],
     ['accepted', 'Received by carrier'],
     ['in_transit', 'On its way'],
     ['customs', 'At customs'],
     ['exception', 'Needs attention'],
     ['out_for_delivery', 'Out for delivery'],
-    ['ready_for_pickup', 'Ready to collect'],
+    ['ready_for_pickup', 'Ready for pickup'],
     ['failed_attempt', 'Delivery missed'],
     ['returned', 'On its way back'],
     ['something_new', 'Parcel update'],
@@ -81,7 +81,7 @@ describe('friendly parcel notifications', () => {
   it.each([
     ['en', 'Delivered at 14:32', 'Peek is keeping an eye on it'],
     ['de', 'Um 14:32 Uhr zugestellt', 'Peek behält es im Auge'],
-    ['pt', 'Entregue às 14:32', 'O Peek está de olho nele'],
+    ['pt', 'Entregue às 14:32', 'O Peek está de olho nela'],
   ])('starts the line with a capital when a %s parcel has no name', (locale, arrived, customs) => {
     expect(web.payload({ ...delivered, locale, label: '' }).body).toBe(arrived);
     expect(web.payload({ ...delivered, locale, label: null, stage: 'customs', expected_delivery: null }).body).toBe(customs);

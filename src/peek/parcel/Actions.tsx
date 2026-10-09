@@ -6,9 +6,9 @@ import { Glyph } from './glyphs';
 
 /** The way into the alerts, as the actions row words it. */
 export interface PingAction {
-  /** "Ping me", "Alerts on"… */
+  /** "Notify me", "Notifications on"… */
   label: string;
-  /** What the button says where there is room: "Ping me when it arrives". */
+  /** What the button says where there is room: "Notify me when it arrives". */
   long?: string;
   /** The one next step that matters, as for a parcel no carrier has scanned yet: a button of its own above the row. */
   prominent?: boolean;

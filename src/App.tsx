@@ -48,8 +48,9 @@ import {
 } from './lib/parcelView';
 import {
   clearSharedParcelInput,
-  readSharedParcelInput,
-  type SharedParcelInput,
+  readSharedParcel,
+  type ShareFailure,
+  type SharedParcel,
 } from './lib/shareTarget';
 import { currentStage, isDelivered } from './lib/stages';
 import { loadNotificationPreferences } from './store/notificationPreferences';
@@ -83,6 +84,12 @@ const KEEP_EMAIL_MESSAGES: Partial<Record<KeepOutcome['outcome'], MessageKey>> =
   kept: 'link.keptEmail',
   already: 'link.alreadyEmail',
 };
+
+/** Why something shared to the installed app did not come through, as the add sheet says it. */
+const SHARE_FAILURE_MESSAGES = {
+  'too-large': 'add.shareTooLarge',
+  failed: 'add.shareFailed',
+} as const satisfies Record<ShareFailure, MessageKey>;
 
 export default function App({
   accountEmail,
@@ -124,7 +131,8 @@ export default function App({
     retryLoad,
     resetDemoData,
   } = useParcels();
-  const [sharedParcelInput, setSharedParcelInput] = useState<SharedParcelInput | null>(null);
+  // What was shared to the installed app, handed to the add sheet it opens.
+  const [shared, setShared] = useState<SharedParcel | null>(null);
   const [adding, setAdding] = useState(false);
   const [parcelBurst, setParcelBurst] = useState<string | null>(null);
   const finishParcelBurst = useCallback(() => setParcelBurst(null), []);
@@ -176,13 +184,13 @@ export default function App({
     if (mode === 'api' && apiAuth) void loadNotificationPreferences(apiAuth, { once: true }).catch(() => undefined);
   }, [mode, apiAuth]);
 
+  // A share opens the add sheet: filled in with what came, or saying why nothing did.
   useEffect(() => {
     let active = true;
-    if (new URLSearchParams(window.location.search).get('share-target') !== '1') return;
-    void readSharedParcelInput().then((input) => {
-      if (active && input) {
-        trackAction('parcel-share-received');
-        setSharedParcelInput(input);
+    void readSharedParcel().then((received) => {
+      if (active && received) {
+        if ('input' in received) trackAction('parcel-share-received');
+        setShared(received);
         setAdding(true);
       }
     }).finally(() => clearSharedParcelInput());
@@ -707,7 +715,10 @@ export default function App({
         <AddParcelSheet
           apiAuth={apiAuth}
           onAdd={addParcel}
-          onClose={() => setAdding(false)}
+          onClose={() => {
+            setAdding(false);
+            setShared(null);
+          }}
           onAdded={(id) => {
             if (!visibleParcels.some((parcel) => parcel.id === id)) clearView();
             setViewControlsOpen(false);
@@ -717,8 +728,9 @@ export default function App({
           onOpenParcel={(parcelId) => openParcelDetail(parcelId)}
           postcodes={givenPostcodes}
           usedCarriers={usedCarriers}
-          initialLabel={sharedParcelInput?.label}
-          initialTrackingInput={sharedParcelInput?.trackingInput}
+          initialLabel={shared && 'input' in shared ? shared.input.label : undefined}
+          initialTrackingInput={shared && 'input' in shared ? shared.input.trackingInput : undefined}
+          shareError={shared && 'failure' in shared ? t(SHARE_FAILURE_MESSAGES[shared.failure]) : undefined}
         />
       )}
 

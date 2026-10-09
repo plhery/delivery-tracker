@@ -5,6 +5,7 @@ import {
   readJsonObject,
   requireService,
 } from '../../../../src/server/api';
+import { isLocale } from '../../../../src/lib/locale';
 import { emailConfigured } from '../../../../src/server/email/config';
 import {
   UNSUBSCRIBE_TOKEN,
@@ -44,14 +45,15 @@ export const POST = apiRoute(async (context) => {
 /**
  * Someone opened the header's address in a browser. Nothing is switched: mail
  * scanners open links too. The reader continues on the page that asks first,
- * with the token after `#`, where no server is sent it.
+ * in the email's language, with the token after `#`, where no server is sent it.
  */
 export const GET = apiRoute((context) => {
   const token = context.request.nextUrl.searchParams.get('t');
+  const language = context.request.nextUrl.searchParams.get('lang');
   return new Response(null, {
     status: 303,
     headers: {
-      Location: unsubscribePagePath(token !== null && UNSUBSCRIBE_TOKEN.test(token) ? token : null),
+      Location: unsubscribePagePath(token !== null && UNSUBSCRIBE_TOKEN.test(token) ? token : null, isLocale(language) ? language : null),
       'Referrer-Policy': 'no-referrer',
     },
   });

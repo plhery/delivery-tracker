@@ -1,6 +1,7 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
 import { ExpirationPlugin, NetworkFirst, NetworkOnly, Serwist } from 'serwist';
+import { shareTargetAddress, type ShareFailure } from '../src/lib/shareTarget';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -29,6 +30,7 @@ async function serializeShareTarget<T>(operation: () => Promise<T>): Promise<T> 
   }
 }
 
+/** No draft, or an abandoned one: the app tells the reader that nothing came through. */
 function missingShareTarget(): Response {
   return new Response(null, {
     status: 404,
@@ -36,23 +38,27 @@ function missingShareTarget(): Response {
   });
 }
 
+/**
+ * Opens the app after a share: to read the draft, or to say why there is none.
+ * The worker cannot know the reader's language, so the app says it.
+ */
+function openApp(failure?: ShareFailure): Response {
+  return Response.redirect(new URL(shareTargetAddress(failure), self.location.origin), 303);
+}
+
 async function captureShareTarget(request: Request): Promise<Response> {
   const declaredHeader = request.headers.get('content-length');
   if (declaredHeader !== null) {
     const declaredLength = Number(declaredHeader);
-    if (!Number.isInteger(declaredLength) || declaredLength < 0) {
-      return new Response('Shared content has an invalid size.', { status: 400 });
-    }
-    if (declaredLength > 65_536) {
-      return new Response('Shared content is too large.', { status: 413 });
-    }
+    if (!Number.isInteger(declaredLength) || declaredLength < 0) return openApp('failed');
+    if (declaredLength > 65_536) return openApp('too-large');
   }
 
   let form: FormData;
   try {
     form = await request.formData();
   } catch {
-    return new Response('Shared content is invalid.', { status: 400 });
+    return openApp('failed');
   }
   const asText = (value: FormDataEntryValue | null) => (
     typeof value === 'string' ? value.trim() : ''
@@ -78,7 +84,7 @@ async function captureShareTarget(request: Request): Promise<Response> {
       ));
     }
   });
-  return Response.redirect(new URL('/?share-target=1', self.location.origin), 303);
+  return openApp(trackingInput ? undefined : 'failed');
 }
 
 async function consumeShareTarget(): Promise<Response> {

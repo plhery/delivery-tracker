@@ -9,6 +9,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { authConfigFromEnvironment } from './auth/authConfig';
 import { I18nProvider, useI18n, type Locale, type Messages } from './i18n';
 import { isDemoBuild } from './lib/buildMode';
+import { useFollowLanguage } from './lib/followLanguage';
 import { enableAppBadgeClearing } from './lib/pushNotifications';
 import { checkForUpdatesOnResume, enablePwaLiveReload, registerPwaServiceWorker } from './lib/pwaUpdates';
 import { createDemoRepo } from './store/demoRepo';
@@ -17,6 +18,7 @@ import { useEntryHint } from './lib/entryHint';
 import { useDemoAddress, useEntryExperience } from './lib/experience';
 import { MovedHost } from './lib/movedHost';
 import { ParcelIllustration } from './components/Icon';
+import { followAlertLanguage } from './peek/alerts';
 import { usePendingInvitation } from './lib/friendInvites';
 import { parcelCode } from './peek/parcelCode';
 import { PeekRoot } from './peek/PeekRoot';
@@ -86,6 +88,7 @@ function Application({ invitationRoute = false, parcelLinkId = null, demoRoute =
 
   return (
     <I18nProvider initialLocale={initialLocale} initialMessages={initialMessages}>
+      <AlertLanguage />
       <AppearanceProvider>
       {demoRepo ? <DemoApplication repo={demoRepo} invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} demoRoute={demoRoute} landingRoute={landingRoute} /> : (
         <AuthProvider config={authConfig}>
@@ -95,6 +98,12 @@ function Application({ invitationRoute = false, parcelLinkId = null, demoRoute =
       </AppearanceProvider>
     </I18nProvider>
   );
+}
+
+/** The alerts this browser turned on for parcel links, signed in or not, are written in the app's language. */
+function AlertLanguage() {
+  useFollowLanguage(followAlertLanguage);
+  return null;
 }
 
 /** A build without an API: everyone is a visitor, and the demo stands in for an account. */

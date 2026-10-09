@@ -50,7 +50,7 @@ describe('GET /email/example', () => {
     expect(response.headers.get('content-security-policy'))
       .toBe("default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
     // English when no language, or an unknown one, is asked for.
-    expect(await response.text()).toContain(`>${en['email.delivered.title'].replace('{{name}}', 'New sneakers 👟')}</h1>`);
+    expect(await response.text()).toContain(`>${en['email.delivered.title'].replace('{{name}}', 'New trainers 👟')}</h1>`);
     expect(await (await example('?lang=xx')).text()).toContain('<html lang="en">');
   });
 

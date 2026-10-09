@@ -25,7 +25,7 @@ test('localizes carrier details and opens the missing-input editor without overf
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: /Livraison bureau —/ }).click();
   const detail = page.locator('.detail--postcard');
-  await expect(detail.getByText('Lieu de retrait', { exact: true })).toBeVisible();
+  await expect(detail.getByText('Point de retrait', { exact: true })).toBeVisible();
   await expect(detail.getByText('Alex Martin', { exact: true })).toBeVisible();
   await expect(detail.getByText('Rendez-vous de livraison modifié', { exact: true })).toBeVisible();
   await expect(detail.locator('.detail__arrival')).toContainText('demain –');

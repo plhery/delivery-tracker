@@ -119,7 +119,7 @@ describe('NotificationPrompt', () => {
     const user = userEvent.setup();
     render(<NotificationPrompt apiAuth={apiAuth} eligible />);
     await user.click(await screen.findByRole('button', { name: 'Enable notifications' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t turn on alerts');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t turn on notifications');
     expect(notificationInvitationDismissed(apiAuth.userId)).toBe(false);
     await user.click(screen.getByRole('button', { name: 'Retry' }));
     expect(enablePushNotifications).toHaveBeenCalledTimes(2);

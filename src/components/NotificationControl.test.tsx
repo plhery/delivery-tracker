@@ -13,7 +13,6 @@ import { notificationInvitationDismissed } from '../lib/notificationInvitation';
 
 vi.mock('../lib/pushNotifications', () => ({
   inspectPushState: vi.fn(),
-  updatePushNotificationLocale: vi.fn().mockResolvedValue(undefined),
   enablePushNotifications: vi.fn(),
   disablePushNotifications: vi.fn(),
   getNotificationPreferences: vi.fn(),
@@ -55,9 +54,9 @@ describe('NotificationControl', () => {
     const user = userEvent.setup();
     render(<NotificationControl apiAuth={apiAuth} />);
 
-    await user.click(screen.getByRole('button', { name: 'Notification settings' }));
+    await user.click(screen.getByRole('button', { name: 'Notifications' }));
     expect(await screen.findByText(/every 10 minutes from 08:00 to 22:00/i)).toBeInTheDocument();
-    await user.click(screen.getByRole('switch', { name: 'Delivery updates' }));
+    await user.click(screen.getByRole('switch', { name: 'Notifications' }));
     expect(inspectPushState).toHaveBeenCalledWith(apiAuth);
     expect(enablePushNotifications).toHaveBeenCalledWith('public', apiAuth, 'en');
     expect(await screen.findByText("You’re all set for parcel updates")).toBeInTheDocument();
@@ -72,7 +71,7 @@ describe('NotificationControl', () => {
     const user = userEvent.setup();
     render(<NotificationControl />);
     await user.click(await screen.findByRole('button', { name: 'Notifications enabled' }));
-    await user.click(screen.getByRole('switch', { name: 'Delivery updates' }));
+    await user.click(screen.getByRole('switch', { name: 'Notifications' }));
     expect(disablePushNotifications).toHaveBeenCalled();
     expect(await screen.findByText(/Know when your parcel needs you/i)).toBeInTheDocument();
   });
@@ -84,7 +83,7 @@ describe('NotificationControl', () => {
     const user = userEvent.setup();
     render(<NotificationControl apiAuth={apiAuth} />);
     await user.click(await screen.findByRole('button', { name: 'Notifications enabled' }));
-    await user.click(screen.getByRole('switch', { name: 'Delivery updates' }));
+    await user.click(screen.getByRole('switch', { name: 'Notifications' }));
     expect(notificationInvitationDismissed(apiAuth.userId)).toBe(true);
     expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
@@ -93,7 +92,7 @@ describe('NotificationControl', () => {
     vi.mocked(inspectPushState).mockResolvedValue({ kind: 'unsupported' });
     const user = userEvent.setup();
     render(<NotificationControl />);
-    await user.click(screen.getByRole('button', { name: 'Notification settings' }));
+    await user.click(screen.getByRole('button', { name: 'Notifications' }));
     expect(await screen.findByText(/add Peek to your Home Screen/i)).toBeInTheDocument();
   });
 

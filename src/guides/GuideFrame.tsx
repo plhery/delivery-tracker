@@ -1,6 +1,6 @@
 import { createElement, type ReactNode } from 'react';
 import mark from '../brand/mark.json';
-import { languagePath, SUPPORTED_LOCALES, type Locale } from '../lib/locale';
+import { documentLanguage, languagePath, SUPPORTED_LOCALES, type Locale } from '../lib/locale';
 import type { Translate } from '../lib/messages';
 import { SOURCE_URL } from '../lib/source';
 import { GuideAnalytics } from './GuideAnalytics';
@@ -52,7 +52,7 @@ export function GuideFrame({ locale, t, addresses, languageNames, screen, childr
         <a href={SOURCE_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
       <nav className="guide-footer__languages" aria-label={t('language.label')}>
-        {SUPPORTED_LOCALES.map((language) => <a key={language} href={addresses[language]} hrefLang={language} lang={language}
+        {SUPPORTED_LOCALES.map((language) => <a key={language} href={addresses[language]} hrefLang={language} lang={documentLanguage(language)}
           aria-current={language === locale ? 'page' : undefined}>{languageNames[language]}</a>)}
       </nav>
     </footer>

@@ -9,7 +9,6 @@ import {
   enablePushNotifications,
   IMPORTANT_NOTIFICATION_STAGES,
   inspectPushState,
-  updatePushNotificationLocale,
   type NotificationStage,
   type PushState,
 } from '../lib/pushNotifications';
@@ -58,18 +57,7 @@ export function NotificationControl({ apiAuth, email, variant = 'icon' }: {
   const [emailFailed, setEmailFailed] = useState(false);
   const enabled = state?.kind === 'enabled';
   const closeButton = useRef<HTMLButtonElement>(null);
-  const languageUpdate = useRef(Promise.resolve());
   const [dialog, close] = useSheetDialog<HTMLElement>(open, () => setOpen(false), closeButton);
-
-  useEffect(() => {
-    if (!apiAuth || !enabled) return;
-    let cancelled = false;
-    // Serialize changes so a slow request cannot restore an older language.
-    languageUpdate.current = languageUpdate.current.catch(() => undefined).then(async () => {
-      if (!cancelled) await updatePushNotificationLocale(locale, apiAuth);
-    }).catch(() => undefined);
-    return () => { cancelled = true; };
-  }, [apiAuth, enabled, locale]);
 
   useEffect(() => {
     void inspectPushState(apiAuth).then(setState).catch((reason: unknown) => {

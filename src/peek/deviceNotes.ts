@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { isLocale, type Locale } from '../lib/locale';
 import { cleanLinkText, isParcelLinkId, MAX_GIFT_FROM_LENGTH, MAX_GIFT_NOTE_LENGTH, PARCEL_ALERT_PRESETS, type ParcelAlertPreset } from './linkModel';
 import { feedbackMemory, type FeedbackMemory } from './parcel/feedbackModel';
 import { SAMPLE_LINK_ID } from './sample';
@@ -28,6 +29,8 @@ export interface ShareWords {
 export interface DeviceAlert {
   preset: ParcelAlertPreset;
   endpoint: string;
+  /** The language the server was last given for it, which it writes the alert in. Unknown for an alert noted without it. */
+  locale?: Locale;
 }
 
 export interface LinkNote {
@@ -63,7 +66,7 @@ function note(value: unknown): LinkNote | null {
   }
   if (alert && typeof alert === 'object' && typeof alert.endpoint === 'string' && alert.endpoint
     && PARCEL_ALERT_PRESETS.includes(alert.preset as ParcelAlertPreset)) {
-    kept.alert = { preset: alert.preset as ParcelAlertPreset, endpoint: alert.endpoint };
+    kept.alert = { preset: alert.preset as ParcelAlertPreset, endpoint: alert.endpoint, ...(isLocale(alert.locale) ? { locale: alert.locale } : {}) };
   }
   const answered = feedbackMemory(feedback);
   if (answered) kept.feedback = answered;
@@ -117,6 +120,11 @@ const NOTHING: LinkNote = {};
 
 export function linkNote(id: string): LinkNote {
   return read()[id] ?? NOTHING;
+}
+
+/** The alerts this browser has turned on, with their links. */
+export function notedAlerts(): [string, DeviceAlert][] {
+  return Object.entries(read()).flatMap(([id, { alert }]): [string, DeviceAlert][] => alert ? [[id, alert]] : []);
 }
 
 /** This browser's notes about one link; empty for a link it has none about. */

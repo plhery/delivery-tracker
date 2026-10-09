@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import type { Locale } from '../../lib/locale';
 
 /**
  * The token a delivery email carries so its reader can switch the email off
@@ -50,20 +51,25 @@ export function unsubscribeAccount(token: unknown): string | null {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-/** Where a token is carried in the page's address: after `#`, which no server is sent. */
-export function unsubscribePagePath(token: string | null): string {
-  return token === null ? '/email/off' : `/email/off#t=${token}`;
+/**
+ * Where a token is carried in the page's address: after `#`, which no server
+ * is sent. Before it stands the language of the email, which the page speaks.
+ */
+export function unsubscribePagePath(token: string | null, locale: Locale | null = null): string {
+  const page = locale === null ? '/email/off' : `/email/off?lang=${locale}`;
+  return token === null ? page : `${page}#t=${token}`;
 }
 
 /**
- * The two addresses an email carries. `page` is the footer's link: it asks
- * before switching anything. `oneClick` goes in the `List-Unsubscribe` header:
- * a mail app posts to it when its reader presses "Unsubscribe".
+ * The two addresses an email carries, with the email's language. `page` is the
+ * footer's link: it asks before switching anything. `oneClick` goes in the
+ * `List-Unsubscribe` header: a mail app posts to it when its reader presses
+ * "Unsubscribe", and a browser that opens it continues to the page.
  */
-export function unsubscribeUrls(origin: string, userId: string): { page: string; oneClick: string } {
+export function unsubscribeUrls(origin: string, userId: string, locale: Locale): { page: string; oneClick: string } {
   const token = unsubscribeToken(userId);
   return {
-    page: `${origin}${unsubscribePagePath(token)}`,
-    oneClick: `${origin}/api/email/unsubscribe?t=${token}`,
+    page: `${origin}${unsubscribePagePath(token, locale)}`,
+    oneClick: `${origin}/api/email/unsubscribe?t=${token}&lang=${locale}`,
   };
 }

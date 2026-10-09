@@ -301,7 +301,7 @@ test('keeps the parcel after “Create an account”: the demo takes it with its
   await page.getByRole('button', { name: /^All your parcels in one place/ }).click();
   await expect(page).toHaveURL(/\/$/);
   await page.getByRole('button', { name: 'Explore the demo' }).click();
-  await expect(page.getByText('Kept · alerts are on')).toBeVisible();
+  await expect(page.getByText('Kept · notifications are on')).toBeVisible();
   await expect(page.getByRole('button', { name: /^Kind of Blue — In transit/ })).toBeVisible();
 
   // The other parcel of this device is offered once.
@@ -343,7 +343,7 @@ test('lists the device’s other parcels at the foot of a page, and opens one on
   await expect(others.getByRole('link')).toContainText('DEMOGLS…0009');
   await expect(others.getByRole('link')).toContainText('In transit');
   await expect(others.getByText('Kept in this browser only.')).toBeVisible();
-  await expect(others.getByRole('button', { name: 'Create an account to keep them, with alerts' })).toBeVisible();
+  await expect(others.getByRole('button', { name: 'Create an account to keep them, with notifications' })).toBeVisible();
   await others.getByRole('link').click();
   await expect(page).toHaveURL(first);
   await expect(status(page)).toHaveText('In transit');
@@ -361,6 +361,6 @@ test('opens the parcel the deliveries already had when the kept number is one of
   // The header's button keeps the parcel too.
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByRole('button', { name: 'Explore the demo' }).click();
-  await expect(page.getByRole('dialog', { name: /New sneakers/ })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: /New trainers/ })).toBeVisible();
   await expect(page.getByText('You already follow this parcel')).toBeVisible();
 });

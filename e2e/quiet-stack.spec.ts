@@ -33,7 +33,7 @@ test('writes the demo in the chosen language and names the pickup point on the n
 
 test('keeps the next arrival, flagged issue card, and search tools in one compact feed', async ({ page, isMobile }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  const hero = page.getByRole('button', { name: /^Next up: New sneakers/ });
+  const hero = page.getByRole('button', { name: /^Next up: New trainers/ });
   await expect(hero).toBeVisible();
   const notice = page.getByRole('region', { name: 'Needs attention' }).locator('.parcel-card');
   await expect(notice).toContainText('Birthday gift');

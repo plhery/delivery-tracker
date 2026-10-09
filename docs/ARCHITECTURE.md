@@ -69,7 +69,7 @@ Key server modules:
   A batch whose newest scan is more than a day old is stored and shown without an alert.
   A handoff's relay copy that reaches the parcel after the scan it repeats is never the one
   announced ([ROUTING.md](ROUTING.md#handoffs-two-carriers)).
-- `email/` tells an account by email that a parcel was delivered or is ready to collect,
+- `email/` tells an account by email that a parcel was delivered or is ready for pickup,
   when the account asked for it. The database hands each parcel out once per stage (`claim_delivery_emails`),
   `deliveryEmails.ts` writes the email and sends it through any SMTP service, and
   `unsubscribe.ts` signs the link that switches it off.
@@ -176,7 +176,8 @@ Key server modules:
     not make and an account that is gone get the same answer.
   - Opening an address from an email changes nothing, because mail scanners open them too:
     `/email/off` asks first, and reads the token after `#`. Only a mail app's own
-    "Unsubscribe" posts straight to the route.
+    "Unsubscribe" posts straight to the route. Both addresses name the email's language
+    (`lang`), which the page speaks over the browser's own choice.
   - Tokens stay out of request logs and error reports.
 - **Private data**: tracking numbers, labels, carrier history, push endpoints and capability
   URLs (Planzer, Dachser) never go into analytics. They do appear in operator logs and
@@ -214,7 +215,7 @@ Key server modules:
 | `/i/<key>`, `/invite` | A friend invitation ([FRIENDS.md](FRIENDS.md)) |
 | `/demo` | The demo deliveries, kept on the device, to anyone; leaving the demo returns to `/` |
 | `/guides`, `/guides/<slug>`; `/<language>/guides`, `/<language>/guides/<slug>` | The guides, articles for readers who arrive from a search engine, and their list, in the address's language whatever the browser prefers. English has no prefix. Any other address below a language's guides is sent to the 404 page by the proxy ([`proxy.ts`](../proxy.ts)), so the server writes that page whole. The landing's foot lists them |
-| `/email/off#t=<token>` | The way out of the delivery email, from the link an email carries. It asks first, then switches the email off (or back on) for the account the token names, without a sign-in. The token stays after the `#` and travels only in the body of that request |
+| `/email/off?lang=<language>#t=<token>` | The way out of the delivery email, from the link an email carries, in the email's language. It asks first, then switches the email off (or back on) for the account the token names, without a sign-in. The token stays after the `#` and travels only in the body of that request |
 
 Sessions belong to one origin, so every address lives on the same host. With the iPhone
 app installed, `/p/…` and `/i/…` open in the app.
@@ -243,6 +244,11 @@ first byte: `<html lang>`, the words, the title and the link preview.
   demo or the sign-in step. Leaving the address for a parcel keeps the language on screen.
 - A language address counts as the landing's own, like `/home`: someone signed in sees the
   landing there.
+- Every page links the installed app's manifest in its language: `/manifest.webmanifest` in
+  English, `/de/manifest.webmanifest` in German. A browser fetches a manifest without
+  cookies, so its address carries the language, and the page moves the link when the reader
+  picks another. Each names the same app (`id` `/`), so installing it from any language
+  gives one app.
 
 For search engines, `/robots.txt` lets everything be fetched and `/sitemap.xml` lists the
 pages meant to be found: the landing, the guides' list and every guide in each language,
@@ -319,7 +325,10 @@ usage count.
   jobs, events, push registrations, Live Activity tokens, delivery email rows and audit
   rows. Other audit rows expire after 90 days.
 - **Share target**: the PWA receives shared text via `POST`. The service worker keeps it
-  in a one-time cache entry, so tracking text never appears in a URL or HTTP log.
+  in a one-time cache entry, so tracking text never appears in a URL or HTTP log. It then
+  opens the app's add sheet, with the text or with why none came (too long, empty,
+  unreadable): the worker cannot know the reader's language, so it names the reason in
+  the address and the app says it.
 
 ## Notifications and Live Activities
 
@@ -340,10 +349,10 @@ usage count.
   the banner is sent.
 - The delivery email is apart from notifications: off until the account switches it on,
   and switched off per parcel. A visitor who signs in from the email row of a parcel
-  link's alerts gets it switched on once that parcel is in the account. A parcel is told
-  once when it is ready to collect and once when it is delivered, so one collected from a
-  pickup point gets both: the second says it
-  was collected, when its last movement before the delivery made it ready for pickup, as
+  link's notifications gets it switched on once that parcel is in the account. A parcel
+  is told once when it is ready for pickup and once when it is delivered, so one picked
+  up from a pickup point gets both: the second says it was picked up, when its last
+  movement before the delivery made it ready for pickup, as
   the apps' pickup point does. Each goes after the notifications of the sync job that stored the scan, on
   deployments without push too.
   - A parcel is never emailed for what it already showed when it joined the account. A
@@ -363,9 +372,12 @@ shown as-is; known app-generated timeline messages are translated
 ([LOCALIZATION.md](LOCALIZATION.md)). Errors map to localized guidance and never show raw
 diagnostics. Status labels don't imply a carrier delay when only our check failed.
 
-Push registrations store the device language. The web updates it when the user changes
-language, and the Share extension reads it from the app group. The delivery email is
-written in the language the account's apps last stored with its sign-in.
+Push registrations store the device language, and so does each of a browser's alerts for
+a parcel link. The apps send it again on every start and change of language: the iPhone
+with its device token, the web for the account's subscription and for the link alerts
+whenever the language differs from the one it last sent, which it notes on the device.
+The Share extension reads it from the app group. The delivery email is written in the
+language the account's apps last stored with its sign-in.
 
 ## Contracts
 

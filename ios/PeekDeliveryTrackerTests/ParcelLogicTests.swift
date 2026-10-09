@@ -49,7 +49,7 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(parcels.filter(\.isActive).count, 7)
         XCTAssertEqual(parcels.filter(\.isDelivered).count, 10)
         XCTAssertEqual(parcels.filter(\.isArchived).count, 5)
-        XCTAssertEqual(ParcelOrganizer.nextDelivery(from: parcels, now: now)?.label, "New sneakers 👟")
+        XCTAssertEqual(ParcelOrganizer.nextDelivery(from: parcels, now: now)?.label, "New trainers 👟")
         XCTAssertTrue(parcels.contains { $0.expectedDelivery != nil })
         XCTAssertTrue(parcels.contains { $0.currentStage == .inTransit && $0.expectedDelivery == nil })
         for parcel in parcels {
@@ -2345,7 +2345,7 @@ extension ParcelLogicTests {
         let parcels = DemoRepository.seed(now: now)
         let layout = DeliveryListLayout(parcels: parcels, query: "", status: .all, carrier: nil, sort: .priority, featuresNext: true, now: now)
         let next = try? XCTUnwrap(layout.next)
-        XCTAssertEqual(next?.label, "New sneakers 👟")
+        XCTAssertEqual(next?.label, "New trainers 👟")
         XCTAssertEqual(Set(layout.active.map(\.id)), Set(parcels.filter(\.isActive).map(\.id)))
         XCTAssertEqual(Set(layout.attention.map(\.id) + layout.remaining.map(\.id) + [next?.id].compactMap { $0 }),
                        Set(layout.active.map(\.id)))
@@ -2353,14 +2353,14 @@ extension ParcelLogicTests {
         XCTAssertTrue(layout.attention.allSatisfy { $0.attention(now: now) != nil })
         XCTAssertTrue(layout.remaining.allSatisfy { $0.attention(now: now) == nil })
         XCTAssertEqual(layout.sections.map(\.kind), [.delivered, .archived])
-        let searched = DeliveryListLayout(parcels: parcels, query: "sneakers", status: .all, carrier: nil, sort: .priority, featuresNext: false, now: now)
+        let searched = DeliveryListLayout(parcels: parcels, query: "trainers", status: .all, carrier: nil, sort: .priority, featuresNext: false, now: now)
         XCTAssertNil(searched.next)
-        XCTAssertEqual(searched.visible.map(\.label), ["New sneakers 👟"])
+        XCTAssertEqual(searched.visible.map(\.label), ["New trainers 👟"])
     }
 
     func testLatestEventFollowsAChangedHistory() {
         let now = DateParser.date("2026-09-09T12:00:00Z")!
-        var parcel = DemoRepository.seed(now: now).first { $0.label == "New sneakers 👟" }!
+        var parcel = DemoRepository.seed(now: now).first { $0.label == "New trainers 👟" }!
         let before = parcel.currentStage
         XCTAssertEqual(before, .readyForPickup)
         parcel.trackingEvents.append(TrackingEvent(

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { documentLanguage } from '../src/lib/locale';
 
 const token = 'ab'.repeat(16);
 const preview = 'Ab7kP2mQ9xR4tY6n';
@@ -89,9 +90,9 @@ test('long sender names and expired invitations fit narrow screens in every loca
   await page.goto(`/i/${preview}`);
   await expect(page.locator('.arrival__open')).toBeEnabled();
   await expect(page.getByRole('link', { name: 'Open in the iOS app' })).toHaveAttribute('href', `swissdeliverytracker://invite#${preview}`);
-  for (const language of ['fr', 'de', 'it', 'es', 'pt', 'pl', 'en']) {
+  for (const language of ['fr', 'de', 'it', 'es', 'pt', 'pl', 'en'] as const) {
     await page.getByRole('combobox').selectOption(language);
-    await expect(page.locator('html')).toHaveAttribute('lang', language);
+    await expect(page.locator('html')).toHaveAttribute('lang', documentLanguage(language));
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.locator('.arrival__open')).toBeInViewport({ ratio: 1 });
     await expect(page.locator('.arrival__app-link')).toBeInViewport({ ratio: 1 });

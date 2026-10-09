@@ -10,8 +10,12 @@ copy.
 - `node scripts/generate-ios-resources.mjs --check` verifies key parity, placeholders,
   native references and generated output.
 
-**Tone.** Informal and concise. Spanish and Portuguese are the European variants. Passport
-collectibles are postage stamps (sellos, selos, znaczki). Polish counts use `.one`, `.few`
+**Tone.** Informal and concise. Spanish and Portuguese are the European variants; Portuguese
+pages and emails declare `pt-PT`. In Portuguese the tracked parcel is always *encomenda*
+(feminine, so its adjectives and pronouns agree); *envio* only means sending, as in *e-mail
+de envio*. It is *pronta para levantamento* at a *ponto de levantamento* and *levantada* by
+the recipient, while a carrier *recolhe* it from the sender; Peek sends *notificações*.
+Passport collectibles are postage stamps (sellos, selos, znaczki). Polish counts use `.one`, `.few`
 and `.many`, picked from `count`.
 
 ## Tracking messages

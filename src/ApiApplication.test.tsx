@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   createApiRepo: vi.fn(),
   clearApiCache: vi.fn(),
   disablePushNotifications: vi.fn(),
+  followPushNotificationLocale: vi.fn(),
   unsubscribePushNotificationsLocally: vi.fn(),
   exportAccount: vi.fn(),
   downloadAccountExport: vi.fn(),
@@ -54,6 +55,7 @@ vi.mock('./peek/ParcelPage', async () => {
 });
 vi.mock('./lib/pushNotifications', () => ({
   disablePushNotifications: mocks.disablePushNotifications,
+  followPushNotificationLocale: mocks.followPushNotificationLocale,
   unsubscribePushNotificationsLocally: mocks.unsubscribePushNotificationsLocally,
 }));
 vi.mock('./lib/account', () => ({
@@ -118,6 +120,7 @@ beforeEach(() => {
   mocks.browserStorage.mockReturnValue(window.localStorage);
   mocks.createApiRepo.mockReturnValue({ mode: 'api' });
   mocks.disablePushNotifications.mockResolvedValue(undefined);
+  mocks.followPushNotificationLocale.mockResolvedValue(undefined);
   mocks.unsubscribePushNotificationsLocally.mockResolvedValue(undefined);
   mocks.exportAccount.mockResolvedValue({ exportedAt: '2026-08-05T12:00:00Z' });
   mocks.deleteAccount.mockResolvedValue(undefined);
@@ -177,6 +180,15 @@ describe('ApiApplication', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
     expect(screen.queryByText('Configured sign in')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Explore the demo/ })).not.toBeInTheDocument();
+  });
+
+  it('gives the account’s alerts on this browser the app’s language, wherever the account is open', async () => {
+    mocks.auth.status = 'authenticated';
+    mocks.auth.user = USER;
+    render(<ApiApplication />);
+    await waitFor(() => expect(mocks.followPushNotificationLocale).toHaveBeenCalledExactlyOnceWith(
+      'en', expect.objectContaining({ userId: USER.id }),
+    ), { timeout: 3_000 });
   });
 
   it('greets a visitor with the front door, opens sign-in from it and comes back', async () => {

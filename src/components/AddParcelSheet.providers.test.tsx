@@ -32,7 +32,7 @@ describe('automatic unknown-carrier lookup', () => {
     const onAdd = vi.fn().mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput={trackingNumber} />);
-    expect(await screen.findByText('not found yet · we’ll keep checking')).toBeInTheDocument();
+    expect(await screen.findByText('not found yet · Peek keeps checking')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /^add parcel$/i }));
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ trackingNumber, carrier: 'intl-post' }));
   });
@@ -110,7 +110,7 @@ describe('GLS carrier lookup', () => {
   it('allows the usual unknown-carrier flow when the lookup is unavailable', async () => {
     vi.mocked(lookupCarrier).mockRejectedValue(new Error('Unavailable'));
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={vi.fn()} onClose={vi.fn()} initialTrackingInput="123456789018" />);
-    expect(await screen.findByText('couldn’t check · we’ll retry after you add it')).toBeInTheDocument();
+    expect(await screen.findByText('couldn’t check · Peek will retry after you add it')).toBeInTheDocument();
     expect(carrierLine(/^Detect automatically/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^add parcel$/i })).toBeEnabled();
   });
@@ -220,18 +220,18 @@ describe('DPD carrier lookup', () => {
     vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber: '06080000000002', carrier: 'unknown', asked: ['dpd', 'ciblex'] });
     const user = userEvent.setup();
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={vi.fn()} onClose={vi.fn()} initialTrackingInput="06080000000002" />);
-    expect(await screen.findByText('not found yet · we’ll keep checking')).toBeInTheDocument();
+    expect(await screen.findByText('not found yet · Peek keeps checking')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^add parcel$/i })).toBeEnabled();
     await user.click(carrierLine(/^Detect automatically/));
     const auto = within(carrierPicker()).getByRole('option', { name: /^Detect automatically/ });
     expect(auto).toHaveAttribute('aria-selected', 'true');
-    expect(auto).toHaveTextContent('Recommended Not found at DPD Switzerland and Ciblex yet. We’ll keep checking after you add it.');
+    expect(auto).toHaveTextContent('Recommended Not found at DPD Switzerland and Ciblex yet. Peek will keep checking after you add it.');
   });
 
   it('tells a carrier that could not answer from one that said no', async () => {
     vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber: '06080000000002', carrier: 'unknown', asked: ['dpd', 'ciblex'], unanswered: ['dpd', 'ciblex'] });
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={vi.fn()} onClose={vi.fn()} initialTrackingInput="06080000000002" />);
-    expect(await screen.findByText('couldn’t check · we’ll retry after you add it')).toBeInTheDocument();
+    expect(await screen.findByText('couldn’t check · Peek will retry after you add it')).toBeInTheDocument();
   });
 
   it('checks tracking services even when no dedicated carrier fits', () => {

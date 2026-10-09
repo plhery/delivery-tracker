@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { documentLanguage } from '../src/lib/locale';
 
 // What a search engine or a link preview gets: the first answer of the server, before any script runs.
 const errors = new WeakMap<Page, string[]>();
@@ -134,7 +135,8 @@ test('each language has an address whose first answer is entirely in that langua
       expect(response.status(), where).toBe(200);
       // Nothing is chosen for the browser by a visit.
       expect(response.headers()['set-cookie'], where).toBeUndefined();
-      expect(tag(html, /<html lang="([^"]*)"/), where).toBe(language);
+      // The address and hreflang say `pt`; the page says its Portuguese is European.
+      expect(tag(html, /<html lang="([^"]*)"/), where).toBe(documentLanguage(language));
       expect(tag(html, /<title>([^<]*)<\/title>/), where).toBe(titleIn(language));
       expect(tag(html, /<h1[^>]*>([^<]*)<\/h1>/), where).toBe(questions[language]);
       expect(canonicalOf(html), where).toBe(`${baseURL}/${language}`);

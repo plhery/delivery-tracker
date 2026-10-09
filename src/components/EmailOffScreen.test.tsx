@@ -40,7 +40,7 @@ describe('the page a delivery email’s opt-out link opens', () => {
   it('asks first: opening the link sends nothing, and counts nothing', async () => {
     open(`#t=${TOKEN}`);
     expect(title()).toHaveTextContent('Turn off delivery emails?');
-    expect(screen.getByText('Peek will stop emailing you when a parcel is delivered or ready to collect. Your notifications stay as they are.')).toBeVisible();
+    expect(screen.getByText('Peek will stop emailing you when a parcel is delivered or ready for pickup. Your notifications stay as they are.')).toBeVisible();
     expect(button('Turn off')).toBeEnabled();
     expect(screen.getByRole('link', { name: 'Open Peek' })).toHaveAttribute('href', '/');
     // A scanner that opens the link, scripts and all, changes nothing: only the button does.
@@ -66,7 +66,7 @@ describe('the page a delivery email’s opt-out link opens', () => {
     await act(async () => { answer(json({ emailOnDelivery: false })); });
 
     expect(title()).toHaveTextContent('Delivery emails are off');
-    expect(screen.getByText('Peek won’t email you when a parcel is delivered or ready to collect. Your notifications haven’t changed.')).toBeVisible();
+    expect(screen.getByText('Peek won’t email you when a parcel is delivered or ready for pickup. Your notifications haven’t changed.')).toBeVisible();
     // The same button, now the way back: the focus has not moved.
     expect(button('Turn back on')).toHaveFocus();
     expect(document.title).toBe('Peek — Delivery emails are off');
@@ -78,7 +78,7 @@ describe('the page a delivery email’s opt-out link opens', () => {
     await user.click(button('Turn off'));
     await user.click(await screen.findByRole('button', { name: 'Turn back on' }));
     await waitFor(() => expect(title()).toHaveTextContent('Delivery emails are back on'));
-    expect(screen.getByText('You’ll get a short email when a parcel is ready to collect or delivered.')).toBeVisible();
+    expect(screen.getByText('You’ll get a short email when a parcel is ready for pickup or delivered.')).toBeVisible();
     await user.click(button('Turn off'));
     await waitFor(() => expect(title()).toHaveTextContent('Delivery emails are off'));
     expect(posted().map(([, , body]) => body)).toEqual([{ token: TOKEN }, { token: TOKEN, enabled: true }, { token: TOKEN }]);
@@ -91,7 +91,7 @@ describe('the page a delivery email’s opt-out link opens', () => {
   ])('says the link does not work, straight away, when it %s', async (_why, hash) => {
     open(hash);
     expect(title()).toHaveTextContent('This link doesn’t work');
-    expect(screen.getByText('Open Peek and go to Settings › Delivery updates to change your emails.')).toBeVisible();
+    expect(screen.getByText('Open Peek and go to Settings › Notifications to change your emails.')).toBeVisible();
     expect(screen.queryByRole('button', { name: /turn/i })).toBeNull();
     expect(screen.getByRole('link', { name: 'Open Peek' })).toHaveAttribute('href', '/');
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
@@ -154,6 +154,19 @@ describe('the page a delivery email’s opt-out link opens', () => {
     expect(title()).toHaveTextContent('Zustell-E-Mails ausschalten?');
     expect(button('Ausschalten')).toBeEnabled();
     expect(screen.getByRole('link', { name: 'Peek öffnen' })).toBeVisible();
+  });
+
+  it('speaks the language of the email it came from over one this browser saved, and saves none', () => {
+    window.localStorage.setItem('deliveryTrackerLocale', 'en');
+    window.history.replaceState(null, '', `/email/off?lang=de#t=${TOKEN}`);
+    const view = render(<EmailOffScreen initialLocale="de" initialMessages={de} emailLocale="de" />);
+    expect(title()).toHaveTextContent('Zustell-E-Mails ausschalten?');
+    expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('en');
+    view.unmount();
+    // An older email's link names no language: the browser's own choice speaks.
+    window.history.replaceState(null, '', `/email/off#t=${TOKEN}`);
+    render(<EmailOffScreen initialLocale="de" initialMessages={de} />);
+    expect(title()).toHaveTextContent('Turn off delivery emails?');
   });
 
   it('is drawn by the server as the question, with a button that waits for the page to be live', () => {

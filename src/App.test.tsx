@@ -106,7 +106,7 @@ describe('App', () => {
     const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
     await user.type(within(sheet).getByLabelText('Tracking number or link'), 'LF123456785DE');
     expect(within(sheet).getByText('DHL', { exact: true })).toBeInTheDocument();
-    expect(within(sheet).queryByText('We’ll check DHL for updates automatically.')).not.toBeInTheDocument();
+    expect(within(sheet).queryByText('Peek will check DHL for updates automatically.')).not.toBeInTheDocument();
     expect(within(sheet).queryByText(/carrier is still unknown/)).not.toBeInTheDocument();
     await user.click(within(sheet).getByRole('button', { name: 'Add parcel' }));
     await waitFor(() => expect(add).toHaveBeenCalledWith(expect.objectContaining({
@@ -175,7 +175,7 @@ describe('App', () => {
     renderApp();
     await screen.findByText('Coffee beans ☕');
     const toast = () => screen.getByRole('status');
-    expect(toast()).toHaveTextContent('Kept · alerts are on');
+    expect(toast()).toHaveTextContent('Kept · notifications are on');
     expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--success');
     act(() => announceKeepOutcome({ ...outcome, outcome: 'quota' }));
     expect(toast()).toHaveTextContent('Your deliveries are full. Archive or delete a few parcels, then add this one.');
@@ -203,12 +203,12 @@ describe('App', () => {
 
   it('opens the parcel the account already had when a kept link turns out to be one of its own', async () => {
     const repo = createDemoRepo(window.localStorage);
-    const sneakers = (await repo.list()).find((parcel) => parcel.label.startsWith('New sneakers'))!;
+    const sneakers = (await repo.list()).find((parcel) => parcel.label.startsWith('New trainers'))!;
     renderApp(repo);
     await screen.findByText('Coffee beans ☕');
     const entries = window.history.length;
     act(() => announceKeepOutcome({ id: 'k7Qm2xHd9RtW', outcome: 'already', packageId: sneakers.id, name: null }));
-    expect(await screen.findByRole('dialog', { name: /New sneakers/ })).toBeVisible();
+    expect(await screen.findByRole('dialog', { name: /New trainers/ })).toBeVisible();
     expect(new URLSearchParams(window.location.search).get('parcel')).toBe(sneakers.id);
     expect(window.history.length).toBe(entries + 1);
     expect(screen.getByText('You already follow this parcel')).toBeInTheDocument();
@@ -232,8 +232,8 @@ describe('App', () => {
   it('keeps keyboard focus in the carrier sheet and restores it to the detail dialog', async () => {
     const user = userEvent.setup();
     renderApp();
-    await user.click(await screen.findByText('New sneakers 👟'));
-    const detail = screen.getByRole('dialog', { name: 'New sneakers 👟' });
+    await user.click(await screen.findByText('New trainers 👟'));
+    const detail = screen.getByRole('dialog', { name: 'New trainers 👟' });
     const changeCarrier = within(detail).getByRole('button', { name: 'Change carrier from DHL' });
     await user.click(changeCarrier);
     const sheet = screen.getByRole('dialog', { name: 'Change carrier' });
@@ -268,7 +268,7 @@ describe('App', () => {
     const user = userEvent.setup();
     renderApp({ ...base, changeCarrier });
 
-    await user.click(await screen.findByText('New sneakers 👟'));
+    await user.click(await screen.findByText('New trainers 👟'));
     await user.click(screen.getByRole('button', { name: 'Change carrier from DHL' }));
     let sheet = screen.getByRole('dialog', { name: 'Change carrier' });
     await pickCarrier(user, within(sheet).getByRole('button', { name: /^Carrier / }), 'GLS Switzerland');
@@ -338,6 +338,43 @@ describe('App', () => {
     expect(window.location.search).toBe('');
   });
 
+  it('says in the add sheet, once, why content shared to the installed PWA did not come through', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
+    vi.stubGlobal('fetch', fetch);
+    onTestFinished(() => { vi.unstubAllGlobals(); });
+    window.history.replaceState({}, '', '/?share-target=too-large');
+    const user = userEvent.setup();
+    renderApp();
+
+    let sheet = await screen.findByRole('dialog', { name: 'Add a parcel' });
+    const field = within(sheet).getByLabelText(/tracking number or link/i);
+    expect(field).toHaveValue('');
+    expect(field).toHaveAccessibleDescription('The shared text is too long. Paste only the number or a tracking link here.');
+    expect(window.location.search).toBe('');
+    // Typing answers it.
+    await user.type(field, '1Z');
+    expect(within(sheet).queryByText(/shared text is too long/)).not.toBeInTheDocument();
+    expect(field).not.toHaveAttribute('aria-describedby');
+
+    // Opened again, the sheet has nothing to say about the share.
+    await user.click(within(sheet).getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add a parcel' })).not.toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Add a parcel' }));
+    sheet = await screen.findByRole('dialog', { name: 'Add a parcel' });
+    expect(within(sheet).getByLabelText(/tracking number or link/i)).not.toHaveAccessibleDescription();
+  });
+
+  it('says that nothing came through when a share left no draft to read', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
+    onTestFinished(() => { vi.unstubAllGlobals(); });
+    window.history.replaceState({}, '', '/?share-target=1');
+    renderApp();
+
+    const sheet = await screen.findByRole('dialog', { name: 'Add a parcel' });
+    expect(within(sheet).getByRole('status')).toHaveTextContent('Nothing came through from that share. Paste the number or a tracking link.');
+    expect(window.location.search).toBe('');
+  });
+
   it('shows the seeded demo parcels and the demo banner', async () => {
     renderApp();
     expect(screen.getByRole('heading', {
@@ -345,7 +382,7 @@ describe('App', () => {
       name: 'Deliveries',
     })).toBeInTheDocument();
     expect(await screen.findByText('Coffee beans ☕')).toBeInTheDocument();
-    expect(screen.getByText('New sneakers 👟')).toBeInTheDocument();
+    expect(screen.getByText('New trainers 👟')).toBeInTheDocument();
     expect(screen.getAllByText('Birthday gift 🎁')).toHaveLength(1);
     expect(screen.getByText(/demo mode/i)).toBeInTheDocument();
     expect(
@@ -353,13 +390,13 @@ describe('App', () => {
     ).not.toBeInTheDocument();
 
     const active = screen.getByRole('region', { name: 'On the way' });
-    expect(within(active).getByText('New sneakers 👟')).toBeInTheDocument();
+    expect(within(active).getByText('New trainers 👟')).toBeInTheDocument();
     expect(within(active).getByText('Birthday gift 🎁')).toBeInTheDocument();
 
-    const next = screen.getByRole('button', { name: /Next up: New sneakers/ });
+    const next = screen.getByRole('button', { name: /Next up: New trainers/ });
     expect(within(next).getByText('Ready for pickup')).toBeInTheDocument();
     expect(within(next).getByText('Kiosk im Hauptbahnhof')).toBeInTheDocument();
-    expect(next).toHaveAccessibleName('Next up: New sneakers 👟 — Ready for pickup · Kiosk im Hauptbahnhof');
+    expect(next).toHaveAccessibleName('Next up: New trainers 👟 — Ready for pickup · Kiosk im Hauptbahnhof');
     expect(next.querySelector('.parcel-stamp')).toBeInTheDocument();
     expect(within(next).queryByText('Customs clearance')).not.toBeInTheDocument();
     expect(next.querySelector('.progress-track')).not.toBeInTheDocument();
@@ -410,10 +447,10 @@ describe('App', () => {
     renderApp();
 
     await user.click(await screen.findByRole('button', {
-      name: /next up: new sneakers/i,
+      name: /next up: new trainers/i,
     }));
 
-    expect(screen.getByRole('dialog', { name: 'New sneakers 👟' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'New trainers 👟' })).toBeInTheDocument();
     expect(window.location.search).toContain('parcel=');
   });
 
@@ -448,7 +485,7 @@ describe('App', () => {
         .getByText('Birthday gift 🎁'),
     ).toBeInTheDocument();
     expect(screen.queryByText('Coffee beans ☕')).not.toBeInTheDocument();
-    expect(screen.queryByText('New sneakers 👟')).not.toBeInTheDocument();
+    expect(screen.queryByText('New trainers 👟')).not.toBeInTheDocument();
     expect(screen.getByText('1 shown')).toBeInTheDocument();
 
     await user.keyboard('{Escape}');
@@ -957,7 +994,7 @@ describe('App', () => {
       await notify?.();
     });
 
-    expect(screen.getByRole('button', { name: / — Announced/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: / — Label created/ })).toBeInTheDocument();
     expect(screen.queryByText("Checking for updates")).not.toBeInTheDocument();
   });
 
@@ -1334,13 +1371,13 @@ describe('App', () => {
   it('mutes one parcel directly from its postcard header', async () => {
     const user = userEvent.setup();
     renderApp();
-    await user.click(await screen.findByText('New sneakers 👟'));
+    await user.click(await screen.findByText('New trainers 👟'));
 
-    await user.click(screen.getByRole('button', { name: 'Turn off parcel alerts' }));
-    const unmute = screen.getByRole('button', { name: 'Turn parcel alerts on' });
+    await user.click(screen.getByRole('button', { name: 'Turn off parcel notifications' }));
+    const unmute = screen.getByRole('button', { name: 'Turn on parcel notifications' });
     expect(unmute).toHaveAttribute('aria-pressed', 'true');
     await user.click(unmute);
-    expect(screen.getByRole('button', { name: 'Turn off parcel alerts' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Turn off parcel notifications' })).toHaveAttribute('aria-pressed', 'false');
     expect(document.querySelector('.detail__notification-footer')).not.toBeInTheDocument();
   });
 
@@ -1663,7 +1700,7 @@ describe('App', () => {
     };
     const user = userEvent.setup();
     const first = renderApp(failingRepo);
-    expect(await screen.findByRole('alert')).toHaveTextContent("We couldn’t load your parcels. Try again.");
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn’t load your parcels. Try again.");
     expect(screen.queryByText('No parcels yet')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('No parcels yet')).toBeInTheDocument();
@@ -1673,7 +1710,7 @@ describe('App', () => {
     renderApp({ ...base, refresh: vi.fn().mockRejectedValue(new Error('Sync unavailable')) });
     await screen.findByText('Coffee beans ☕');
     await user.click(screen.getByRole('button', { name: /refresh tracking/i }));
-    expect(await screen.findByRole('alert')).toHaveTextContent("We can’t reach the tracking service right now.");
+    expect(await screen.findByRole('alert')).toHaveTextContent("Peek can’t reach the tracking service right now.");
   });
 
   it('shows the last saved parcels when the API is temporarily unavailable', async () => {

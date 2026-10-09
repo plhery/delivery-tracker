@@ -64,6 +64,29 @@ function supported(): boolean {
   );
 }
 
+/**
+ * The language this browser's push subscription last gave an account, with the
+ * subscription's address, so a start that changes nothing asks the server nothing.
+ */
+const sentLocaleKey = (userId: string) => `deliveryTrackerPushLocale:${userId}`;
+
+function wasSent(userId: string, endpoint: string, locale: Locale): boolean {
+  try {
+    return localStorage.getItem(sentLocaleKey(userId)) === `${locale} ${endpoint}`;
+  } catch {
+    return false;
+  }
+}
+
+function noteSent(userId: string, sent: { endpoint?: string; locale: Locale } | null): void {
+  try {
+    if (sent?.endpoint) localStorage.setItem(sentLocaleKey(userId), `${sent.locale} ${sent.endpoint}`);
+    else localStorage.removeItem(sentLocaleKey(userId));
+  } catch {
+    // Without storage the language is sent again on the next start.
+  }
+}
+
 export async function inspectPushState(auth?: ApiAuth): Promise<PushState> {
   const needsInstallation = (/iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
@@ -124,6 +147,7 @@ export async function enablePushNotifications(
         method: 'POST',
         body: JSON.stringify({ ...subscription.toJSON(), locale }),
       });
+      if (auth) noteSent(auth.userId, { endpoint: subscription.endpoint, locale });
       return result.testSent;
     } catch (error) {
       if (created) await subscription.unsubscribe();
@@ -143,18 +167,26 @@ export async function enablePushNotifications(
   return register(await subscribe(), true);
 }
 
-/** Update language without resetting the delivery cursor or sending a welcome alert. */
-export async function updatePushNotificationLocale(locale: Locale, auth: ApiAuth): Promise<void> {
+/**
+ * Gives the account's push subscription on this browser the app's language,
+ * which the server writes its alerts in, without resetting the delivery cursor
+ * or sending a welcome alert. It asks the browser for nothing, and the server
+ * only when this subscription last gave the account another language: without
+ * a permission and a subscription there is nothing to update.
+ */
+export async function followPushNotificationLocale(locale: Locale, auth: ApiAuth): Promise<void> {
   if (!supported() || Notification.permission !== 'granted') return;
   const registration = await navigator.serviceWorker.getRegistration();
   const subscription = await registration?.pushManager.getSubscription();
-  if (!subscription) return;
+  if (!subscription || wasSent(auth.userId, subscription.endpoint, locale)) return;
   await request<ApiOkResponse>('/api/push/subscriptions', auth, {
     method: 'PATCH', body: JSON.stringify({ endpoint: subscription.endpoint, locale }),
   });
+  noteSent(auth.userId, { endpoint: subscription.endpoint, locale });
 }
 
 export async function disablePushNotifications(auth?: ApiAuth): Promise<void> {
+  if (auth) noteSent(auth.userId, null);
   if (!('serviceWorker' in navigator)) return;
   const registration = await navigator.serviceWorker.getRegistration();
   if (!registration) return;

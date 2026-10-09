@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { activeTrackingCarrierId, carrierInfo, deliveringCarrierId, displayedCarrierId, type CarrierInfo } from '../../lib/carriers';
-import { isLocale, type Locale } from '../../lib/locale';
+import { documentLanguage, isLocale, type Locale } from '../../lib/locale';
 import { languageTags, translateMessage, type Translate } from '../../lib/messages';
 import { pickupPoint, pickupPointMapsUrl, type PickupPoint } from '../../lib/pickupPoint';
 import { collectedFromPickupPoint } from '../../lib/stages';
@@ -94,7 +94,7 @@ async function emailContent(input: DeliveryEmailInput, draw = drawCard): Promise
   }
 
   const words: EmailWords = {
-    lang: locale,
+    lang: documentLanguage(locale),
     subject: name ? t(`email.${told}.subject`, { name }) : t(`email.${told}.subjectUnnamed`),
     brand: t('app.title'),
     tagline: t('app.tagline'),

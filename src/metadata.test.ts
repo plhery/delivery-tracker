@@ -18,7 +18,7 @@ vi.mock('next/server', async (original) => ({ ...await original<typeof import('n
 
 import { generateMetadata as demoMetadata } from '../app/demo/page';
 import { generateMetadata as layoutMetadata } from '../app/layout';
-import manifest from '../app/manifest';
+import { GET as englishManifest } from '../app/manifest.webmanifest/route';
 import LandingAddressPage, { generateMetadata as landingAddressMetadata } from '../app/home/page';
 import HomePage, { generateMetadata } from '../app/page';
 import robots from '../app/robots';
@@ -27,15 +27,15 @@ import { metadata as offlineMetadata } from '../app/~offline/page';
 import mark from './brand/mark.json';
 import { GUIDE_LINKS } from './generated/guides';
 import { guidePath } from './guides/paths';
-import { ADDRESS_LANGUAGES, SUPPORTED_LOCALES, type Locale } from './lib/locale';
+import { ADDRESS_LANGUAGES, documentLanguage, SUPPORTED_LOCALES, type Locale } from './lib/locale';
 import { messagesFor } from './server/requestLocale';
 
 const TITLE = 'Peek — Universal Parcel Tracker';
 const DESCRIPTION =
-  'Private parcel tracking, with alerts and history synced across your devices.';
+  'Private parcel tracking, with notifications and history synced across your devices.';
 const LANDING_TITLE = 'Peek — Where’s my parcel? Universal Package & Parcel Tracker';
 const LANDING_DESCRIPTION =
-  'Track any package or parcel: paste a tracking number, a carrier link or a shipping email. 3,500+ carriers, checked up to every 10 minutes. Open source, no account needed.';
+  'Track any package or parcel: paste a tracking number, a carrier link or a shipping email. 3,500+ carriers, checked every 10 minutes. Open source, no account needed.';
 /** The page of a language's address, as the router finds it. */
 const languagePage = (language: string) => import(`../app/${language}/page.tsx`) as Promise<{ default: () => ReactElement; generateMetadata: () => Promise<Metadata> }>;
 /** The landing in every language, as each of its addresses names them. */
@@ -67,11 +67,36 @@ describe('public product metadata', () => {
       description: DESCRIPTION,
       appleWebApp: { title: 'Peek' },
     });
-    expect(manifest()).toMatchObject({
+    expect(await englishManifest().json()).toMatchObject({
       name: TITLE,
       short_name: 'Peek',
       description: DESCRIPTION,
+      lang: 'en',
+      id: '/',
+      start_url: '/',
+      scope: '/',
     });
+    expect((await layoutMetadata()).manifest).toBe('/manifest.webmanifest');
+    // A manifest file of Next's own convention would replace every page's link with its own.
+    expect(readdirSync('app', { withFileTypes: true }).filter((entry) => entry.isFile() && entry.name.startsWith('manifest.'))).toEqual([]);
+  });
+
+  it.each(ADDRESS_LANGUAGES)('names and describes the installed app in %s to pages in that language, as the same app', async (language) => {
+    const words = messagesFor(language);
+    const { GET } = await import(`../app/${language}/manifest.webmanifest/route.ts`) as { GET: () => Response };
+    const response = GET();
+    expect(response.headers.get('content-type')).toBe('application/manifest+json');
+    // Only the words and their language differ: installed from any language, it is one app.
+    expect(await response.json()).toEqual({
+      ...await englishManifest().json(),
+      name: `Peek — ${words['app.tagline']}`,
+      description: words['preview.site.description'],
+      lang: documentLanguage(language),
+    });
+    // A browser fetches the manifest without cookies: the page names the one in its language.
+    request.language = `${language},en;q=0.5`;
+    expect((await layoutMetadata()).manifest).toBe(`/${language}/manifest.webmanifest`);
+    request.language = 'en';
   });
 
   it('draws the browser tab with the mark on its rounded tile and the Home Screen with the full-bleed icon', async () => {

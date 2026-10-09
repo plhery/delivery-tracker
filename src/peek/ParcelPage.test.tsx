@@ -255,7 +255,7 @@ describe('ParcelPage stages and troubles', () => {
 
   it('says a label was made but nothing was scanned yet', async () => {
     await shown(view([scan('registered', 20)]));
-    expect(screen.getByRole('heading', { level: 1, name: 'Announced' })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 1, name: 'Label created' })).toBeVisible();
     expect(within(card()).getByText('No delivery date yet')).toBeVisible();
     expect(within(card()).getByText('DHL hasn’t scanned the parcel yet. That usually happens within a day or two.')).toBeVisible();
     expect(freshness()).toHaveTextContent('Last checked: 2 min ago');
@@ -294,7 +294,7 @@ describe('ParcelPage stages and troubles', () => {
   it('shows where a parcel waits for pickup, with a way to get there', async () => {
     await shown(view([...journey, scan('ready_for_pickup', 2)], { pickupPoint: 'Example Kiosk\nExample Street 1, 9999 Sampleville' }));
     expect(screen.getByRole('heading', { level: 1, name: 'Ready for pickup' })).toBeVisible();
-    const pickup = screen.getByRole('region', { name: 'Pickup location' });
+    const pickup = screen.getByRole('region', { name: 'Pickup point' });
     expect(within(pickup).getByText('Example Kiosk')).toBeVisible();
     expect(within(pickup).getByRole('link', { name: 'Directions' })).toBeVisible();
     expect(card().querySelector('.peekp-card__flag')).toBeNull();
@@ -377,7 +377,7 @@ describe('ParcelPage stages and troubles', () => {
     expect(screen.getByText('From Example Shop')).toBeVisible();
     expect(screen.getByText('Weight').nextElementSibling).toHaveTextContent('1.2 kg');
     expect(screen.getByText('Dimensions').nextElementSibling).toHaveTextContent('30 × 20 × 10 cm');
-    expect(screen.getByText('Pickup location').nextElementSibling).toHaveTextContent('Example Kiosk');
+    expect(screen.getByText('Pickup point').nextElementSibling).toHaveTextContent('Example Kiosk');
   });
 
   it('draws the route across the card once a scan has a place, behind a button that opens the map', async () => {
@@ -455,7 +455,7 @@ describe('ParcelPage stages and troubles', () => {
     expect(others.getByRole('button', { name: 'Track another parcel' })).toBeVisible();
     expect(others.queryByRole('button', { name: /^See all/ })).toBeNull();
     expect(others.getByText('Kept in this browser only.')).toBeVisible();
-    await user.click(others.getByRole('button', { name: 'Create an account to keep them, with alerts' }));
+    await user.click(others.getByRole('button', { name: 'Create an account to keep them, with notifications' }));
     expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID, false);
     // The other parcel's page opens on its card.
     await user.click(links[0]);
@@ -666,11 +666,11 @@ describe('ParcelPage keeping', () => {
     mocks.read.mockResolvedValue(emailing());
     const user = userEvent.setup();
     const { unmount } = open({ account: 'visitor', signIn: vi.fn(), signInWith });
-    await user.click(await screen.findByRole('button', { name: /^Ping me/ }));
+    await user.click(await screen.findByRole('button', { name: /^Notify me/ }));
     await user.click(within(screen.getByText('An email when it arrives').closest('.peeks-account') as HTMLElement).getByRole('button', { name: 'Sign in' }));
     const sheet = await screen.findByRole('dialog', { name: 'Sign in to keep it' });
     expect(within(sheet).getAllByText(/Peek emails the address you sign in with when it arrives/).length).toBeGreaterThan(0);
-    expect(within(sheet).queryByText(/gets alerts like your other parcels/)).toBeNull();
+    expect(within(sheet).queryByText(/gets notifications like your other parcels/)).toBeNull();
     expect(pendingKeep()).toBeNull();
     await user.click(within(sheet).getByRole('button', { name: 'Continue with Google' }));
     expect(JSON.parse(sessionStorage.getItem(PENDING_KEEP_STORAGE_KEY)!)).toMatchObject({ id: LINK_ID, email: true });
@@ -679,7 +679,7 @@ describe('ParcelPage keeping', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     await user.click(within(document.querySelector('header')!).getByRole('button', { name: 'Sign in' }));
     const plain = screen.getByRole('dialog', { name: 'Sign in to keep it' });
-    expect(within(plain).getAllByText(/gets alerts like your other parcels/).length).toBeGreaterThan(0);
+    expect(within(plain).getAllByText(/gets notifications like your other parcels/).length).toBeGreaterThan(0);
     await user.click(within(plain).getByRole('button', { name: 'Continue with Google' }));
     expect(JSON.parse(sessionStorage.getItem(PENDING_KEEP_STORAGE_KEY)!)).not.toHaveProperty('email');
     unmount();
@@ -688,7 +688,7 @@ describe('ParcelPage keeping', () => {
     // Where signing in is its own step, the wish goes with the parcel.
     const signIn = vi.fn();
     open({ account: 'visitor', signIn });
-    await user.click(await screen.findByRole('button', { name: /^Ping me/ }));
+    await user.click(await screen.findByRole('button', { name: /^Notify me/ }));
     await user.click(within(screen.getByText('An email when it arrives').closest('.peeks-account') as HTMLElement).getByRole('button', { name: 'Sign in' }));
     expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID, true);
   });
@@ -721,7 +721,7 @@ describe('ParcelPage keeping', () => {
     const user = userEvent.setup();
     open(session);
     const add = await screen.findByRole('button', { name: 'Add to my deliveries' });
-    expect(screen.getByText('It gets alerts like your other parcels. The person who shared it sees nothing of yours.')).toBeVisible();
+    expect(screen.getByText('It gets notifications like your other parcels. The person who shared it sees nothing of yours.')).toBeVisible();
     expect(screen.queryByRole('button', { name: /Create an account/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
     expect(screen.queryByText('Shared with you')).toBeNull();
@@ -850,7 +850,7 @@ describe('ParcelPage for the sample parcel', () => {
     expect(within(card()).getByText('Moon lamp 🌙')).toBeVisible();
     await waitFor(() => expect(document.title).toMatch(/^Moon lamp 🌙 · In transit/));
     expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('1234567899');
-    expect(screen.getByRole('button', { name: /^Ping me/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /^Notify me/ })).toBeVisible();
     expect(screen.getAllByRole('button', { name: 'Share' }).length).toBeGreaterThan(0);
     // Nothing of it is stored: no promise to forget, nothing to forget now, nothing to keep.
     expect(screen.queryByText('Peek forgets this parcel 30 days after delivery.')).not.toBeInTheDocument();
@@ -965,8 +965,8 @@ describe('ParcelPage for the sample parcel', () => {
     const user = userEvent.setup();
     openSample({ account: 'visitor', signIn: vi.fn() });
     await screen.findByRole('heading', { level: 1, name: 'In transit' });
-    await user.click(screen.getByRole('button', { name: /^Ping me/ }));
-    const sheet = screen.getByRole('dialog', { name: 'Ping me when it arrives' });
-    expect(within(sheet).queryByText('Alerts on all your devices')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Notify me/ }));
+    const sheet = screen.getByRole('dialog', { name: 'Notify me when it arrives' });
+    expect(within(sheet).queryByText('Notifications on all your devices')).not.toBeInTheDocument();
   });
 });

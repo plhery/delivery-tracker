@@ -207,7 +207,7 @@ malformed value stops the server at startup.
 - A page opened on a legacy host answers `308` to the same path and query on the canonical
   origin, so shared parcel links and invitations keep working.
 - Everything a client fetches on its own stays where it is: `/api`, `/health`, assets, the
-  service workers, the manifest, `/.well-known`, `/auth-emails` and `/og.png`. Installed
+  service workers, the manifests, `/.well-known`, `/auth-emails` and `/og.png`. Installed
   iPhone apps and open sessions keep calling the old host with their token, which a
   redirect to another host would drop.
 - `/robots.txt` and `/sitemap.xml` answer on every host too, and name the canonical origin:

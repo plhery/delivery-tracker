@@ -51,7 +51,7 @@ test('asks first: opening the link sends nothing, and one press turns the email 
   expect(response!.headers()['referrer-policy']).toBe('no-referrer');
   expect(response!.headers()['x-robots-tag']).toContain('noindex');
   await expect(title(page)).toHaveText('Turn off delivery emails?');
-  await expect(page.getByText('Peek will stop emailing you when a parcel is delivered or ready to collect. Your notifications stay as they are.')).toBeVisible();
+  await expect(page.getByText('Peek will stop emailing you when a parcel is delivered or ready for pickup. Your notifications stay as they are.')).toBeVisible();
   await expect(button(page, 'Turn off')).toBeEnabled();
   await expect(page).toHaveTitle('Peek — Turn off delivery emails?');
   expect(await fits(page)).toBe(true);
@@ -62,7 +62,7 @@ test('asks first: opening the link sends nothing, and one press turns the email 
 
   await button(page, 'Turn off').click();
   await expect(title(page)).toHaveText('Delivery emails are off');
-  await expect(page.getByText('Peek won’t email you when a parcel is delivered or ready to collect. Your notifications haven’t changed.')).toBeVisible();
+  await expect(page.getByText('Peek won’t email you when a parcel is delivered or ready for pickup. Your notifications haven’t changed.')).toBeVisible();
   expect(posted).toEqual([{ path: `POST ${API}`, body: { token: TOKEN } }]);
   // The token went in the request's body, and in no address.
   expect(addresses.filter((address) => address.includes(TOKEN))).toEqual([]);
@@ -76,7 +76,7 @@ test('turns the email back on with the same link, and off again', async ({ page 
   await button(page, 'Turn off').click();
   await button(page, 'Turn back on').click();
   await expect(title(page)).toHaveText('Delivery emails are back on');
-  await expect(page.getByText('You’ll get a short email when a parcel is ready to collect or delivered.')).toBeVisible();
+  await expect(page.getByText('You’ll get a short email when a parcel is ready for pickup or delivered.')).toBeVisible();
   await button(page, 'Turn off').click();
   await expect(title(page)).toHaveText('Delivery emails are off');
   expect(posted.map(({ body }) => body)).toEqual([{ token: TOKEN }, { token: TOKEN, enabled: true }, { token: TOKEN }]);
@@ -87,7 +87,7 @@ test('says a link without a usable token does not work, and sends nothing', asyn
   for (const address of ['/email/off', '/email/off#t=cut-short', `/email/off#token=${TOKEN}`]) {
     await page.goto(address);
     await expect(title(page)).toHaveText('This link doesn’t work');
-    await expect(page.getByText('Open Peek and go to Settings › Delivery updates to change your emails.')).toBeVisible();
+    await expect(page.getByText('Open Peek and go to Settings › Notifications to change your emails.')).toBeVisible();
     await expect(page.getByRole('button', { name: /^Turn/ })).toHaveCount(0);
   }
   expect(posted).toEqual([]);

@@ -60,7 +60,7 @@ async function open({ preferences = {}, parcel = {}, stages = ON_ITS_WAY, email 
 }
 
 const bell = () => document.querySelector<HTMLButtonElement>('.detail__notification')!;
-const sheet = () => screen.getByRole('dialog', { name: 'Alerts for New sneakers' });
+const sheet = () => screen.getByRole('dialog', { name: 'Notifications for New sneakers' });
 const offer = () => screen.queryByRole('region', { name: 'An email when the next one arrives?' });
 
 beforeEach(() => {
@@ -85,20 +85,20 @@ describe('a parcel’s bell', () => {
     ['there is no account, as in the demo', { account: false }],
   ])('stays the one-tap mute it is when %s', async (_why, setup) => {
     const { user } = await open(setup);
-    expect(bell()).toHaveAccessibleName('Turn off parcel alerts');
+    expect(bell()).toHaveAccessibleName('Turn off parcel notifications');
     expect(bell()).toHaveAttribute('aria-pressed', 'false');
     expect(bell()).not.toHaveAttribute('aria-haspopup');
     await user.click(bell());
     expect(saves.notifications).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: 'package-1' }), true);
-    await waitFor(() => expect(bell()).toHaveAccessibleName('Turn parcel alerts on'));
+    await waitFor(() => expect(bell()).toHaveAccessibleName('Turn on parcel notifications'));
     expect(bell()).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.queryByRole('dialog', { name: /^Alerts for/ })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: /^Notifications for/ })).toBeNull();
     expect(saves.email).not.toHaveBeenCalled();
   });
 
   it('opens the parcel’s alerts while the account’s email is on and the parcel is on its way', async () => {
     const { user } = await open();
-    expect(bell()).toHaveAccessibleName('Alerts for this parcel');
+    expect(bell()).toHaveAccessibleName('Notifications for this parcel');
     expect(bell()).toHaveAttribute('aria-haspopup', 'dialog');
     expect(bell()).not.toHaveAttribute('aria-pressed');
     await user.click(bell());
@@ -110,15 +110,15 @@ describe('a parcel’s bell', () => {
     const email = within(sheet()).getByRole('switch', { name: 'Email when it arrives' });
     expect(email).toBeChecked();
     expect(email).toHaveAccessibleDescription('To alex@example.com');
-    expect(within(sheet()).getByText('Switching one off here only mutes this parcel. Your defaults are in Settings › Delivery updates.')).toBeVisible();
+    expect(within(sheet()).getByText('Switching one off here only mutes this parcel. Your defaults are in Settings › Notifications.')).toBeVisible();
     // It behaves as the other sheets do: the focus is inside, Escape closes it and hands the focus back.
     expect(sheet()).toContainElement(document.activeElement as HTMLElement);
     await user.keyboard('{Escape}');
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Alerts for New sneakers' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Notifications for New sneakers' })).toBeNull());
     expect(bell()).toHaveFocus();
     await user.click(bell());
     await user.click(within(sheet()).getByRole('button', { name: 'Done' }));
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Alerts for New sneakers' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Notifications for New sneakers' })).toBeNull());
     // Opening and closing asked the server for nothing more.
     expect(getNotificationPreferences).toHaveBeenCalledTimes(1);
   });
@@ -126,7 +126,7 @@ describe('a parcel’s bell', () => {
   it('names the sheet after the parcel, or as the bell is named when it has no name', async () => {
     const { user } = await open({ parcel: { label: '' } });
     await user.click(bell());
-    expect(screen.getByRole('dialog', { name: 'Alerts for this parcel' })).toBeVisible();
+    expect(screen.getByRole('dialog', { name: 'Notifications for this parcel' })).toBeVisible();
   });
 
   it('saves each switch at once, for this parcel, and moves it when the server has answered', async () => {
@@ -164,7 +164,7 @@ describe('a parcel’s bell', () => {
     saves.email.mockRejectedValueOnce(new Error('offline'));
     const email = within(sheet()).getByRole('switch', { name: 'Email when it arrives' });
     await user.click(email);
-    expect(await within(sheet()).findByRole('alert')).toHaveTextContent('Couldn’t save your alert settings. Try again.');
+    expect(await within(sheet()).findByRole('alert')).toHaveTextContent('Couldn’t save your notification settings. Try again.');
     expect(email).toBeChecked();
     await user.click(email);
     await waitFor(() => expect(email).not.toBeChecked());
@@ -188,7 +188,7 @@ describe('the email offer on a delivered parcel', () => {
   it('stands between the delivered card and the parcel’s facts, for an account that never chose', async () => {
     await open(never);
     const card = offer()!;
-    expect(within(card).getByText('A short email to alex@example.com when a parcel is ready to collect or delivered. Nothing else.')).toBeVisible();
+    expect(within(card).getByText('A short email to alex@example.com when a parcel is ready for pickup or delivered. Nothing else.')).toBeVisible();
     expect(card.previousElementSibling).toHaveClass('detail__hero');
     expect(card.nextElementSibling).toHaveClass('detail__information');
     // In the page, not over it.
@@ -215,7 +215,7 @@ describe('the email offer on a delivered parcel', () => {
       enabledStages: IMPORTANT, quietHoursStart: null, quietHoursEnd: null,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, emailOnDelivery: true,
     }, auth);
-    expect(await screen.findByRole('status')).toHaveTextContent('Email is on. You can change it in Settings › Delivery updates.');
+    expect(await screen.findByRole('status')).toHaveTextContent('Email is on. You can change it in Settings › Notifications.');
     expect(offer()).toBeNull();
     expect(mocks.track).toHaveBeenCalledWith('email-offer-accept', 'success');
     // The focus stays in the parcel's page rather than nowhere.

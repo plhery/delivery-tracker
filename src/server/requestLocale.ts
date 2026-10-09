@@ -28,6 +28,14 @@ export async function requestLocale(): Promise<Locale> {
   return detectLocale(acceptedLanguages((await headers()).get('accept-language')));
 }
 
+/**
+ * The language an address names, such as the email's on the page its "turn it
+ * off" link opens; the request's when it names none of the app's.
+ */
+export async function namedLocale(named: unknown): Promise<Locale> {
+  return isLocale(named) ? named : requestLocale();
+}
+
 /** A language with its messages, as a page hands them to the client; English ships with the client already. */
 export function languageFor(locale: Locale): { initialLocale: Locale; initialMessages?: Messages } {
   return locale === 'en' ? { initialLocale: locale } : { initialLocale: locale, initialMessages: MESSAGES[locale] };

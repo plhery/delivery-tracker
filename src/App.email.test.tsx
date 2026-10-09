@@ -48,8 +48,8 @@ describe('the delivery email in the deliveries', () => {
 
     await user.click(await screen.findByText('Belgian chocolate 🍫'));
     const detail = screen.getByRole('dialog', { name: 'Belgian chocolate 🍫' });
-    await user.click(await within(detail).findByRole('button', { name: 'Alerts for this parcel' }));
-    const sheet = screen.getByRole('dialog', { name: 'Alerts for Belgian chocolate 🍫' });
+    await user.click(await within(detail).findByRole('button', { name: 'Notifications for this parcel' }));
+    const sheet = screen.getByRole('dialog', { name: 'Notifications for Belgian chocolate 🍫' });
     expect(within(sheet).getByRole('switch', { name: 'Notifications' })).toHaveAccessibleDescription('Delivery day only, as in Settings');
     const email = within(sheet).getByRole('switch', { name: 'Email when it arrives' });
     expect(email).toHaveAccessibleDescription('To alex@example.com');
@@ -63,7 +63,7 @@ describe('the delivery email in the deliveries', () => {
 
     // Another parcel: its bell knows the account's choice without asking the server again.
     await user.click(await screen.findByText('Moon lamp 🌙'));
-    expect(await within(screen.getByRole('dialog', { name: 'Moon lamp 🌙' })).findByRole('button', { name: 'Alerts for this parcel' })).toBeVisible();
+    expect(await within(screen.getByRole('dialog', { name: 'Moon lamp 🌙' })).findByRole('button', { name: 'Notifications for this parcel' })).toBeVisible();
     expect(getNotificationPreferences).toHaveBeenCalledExactlyOnceWith(apiAuth);
   });
 
@@ -75,7 +75,7 @@ describe('the delivery email in the deliveries', () => {
     const detail = screen.getByRole('dialog', { name: 'Coffee beans ☕' });
     expect(await within(detail).findByRole('region', { name: 'An email when the next one arrives?' })).toBeVisible();
     // A delivered parcel has nothing left to announce: its bell is the plain mute.
-    expect(within(detail).getByRole('button', { name: 'Turn off parcel alerts' })).toBeVisible();
+    expect(within(detail).getByRole('button', { name: 'Turn off parcel notifications' })).toBeVisible();
   });
 
   it('leaves the demo as it is: no preferences are read, the bell mutes, nothing is offered', async () => {
@@ -83,8 +83,8 @@ describe('the delivery email in the deliveries', () => {
     render(<ParcelsProvider repo={createDemoRepo(localStorage)}><App apiAuth={session()} accountEmail="alex@example.com" /></ParcelsProvider>);
     await user.click(await screen.findByText('Belgian chocolate 🍫'));
     const detail = screen.getByRole('dialog', { name: 'Belgian chocolate 🍫' });
-    await user.click(within(detail).getByRole('button', { name: 'Turn off parcel alerts' }));
-    expect(await within(detail).findByRole('button', { name: 'Turn parcel alerts on' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(within(detail).getByRole('button', { name: 'Turn off parcel notifications' }));
+    expect(await within(detail).findByRole('button', { name: 'Turn on parcel notifications' })).toHaveAttribute('aria-pressed', 'true');
     await user.click(within(detail).getByRole('button', { name: /back/i }));
     await user.click(await screen.findByText('Coffee beans ☕'));
     expect(within(screen.getByRole('dialog', { name: 'Coffee beans ☕' })).queryByRole('region', { name: /next one arrives/ })).toBeNull();

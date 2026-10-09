@@ -112,7 +112,7 @@ export const SIMULATED_UPDATES: Record<Stage, { description: string; location?: 
     description: 'Tracking added; the carrier has not announced it yet',
   },
   registered: {
-    description: 'The sender announced the parcel',
+    description: 'The sender created a shipping label',
   },
   accepted: {
     description: 'Parcel accepted at the counter',
@@ -120,7 +120,7 @@ export const SIMULATED_UPDATES: Record<Stage, { description: string; location?: 
     place: { latitude: 47.367, longitude: 8.55, precision: 'city', country: 'CH', name: 'Zürich' },
   },
   in_transit: {
-    description: 'Sorted at the parcel center',
+    description: 'Sorted at the parcel centre',
     location: 'Härkingen',
     place: { latitude: 47.305, longitude: 7.821, precision: 'city', country: 'CH', name: 'Härkingen' },
   },
@@ -146,7 +146,7 @@ export const SIMULATED_UPDATES: Record<Stage, { description: string; location?: 
     location: 'Post branch',
   },
   delivered: {
-    description: 'Delivered to your mailbox',
+    description: 'Delivered to your letterbox',
     location: 'Home',
   },
   returned: {

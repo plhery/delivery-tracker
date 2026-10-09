@@ -116,7 +116,8 @@ describe('telling an account that its parcel was delivered', () => {
       stage: 'delivered',
       timezone: 'Europe/Zurich',
       journeyUrl: `https://peek.example.com/?parcel=${claim(1).packageId}`,
-      offUrl: `https://peek.example.com/email/off#t=${token}`,
+      // The page it opens speaks the email's language.
+      offUrl: `https://peek.example.com/email/off?lang=de#t=${token}`,
       deliveredTime: 'timed',
       now,
     });
@@ -131,7 +132,7 @@ describe('telling an account that its parcel was delivered', () => {
       text: content.text,
       html: content.html,
       headers: {
-        'List-Unsubscribe': `<https://peek.example.com/api/email/unsubscribe?t=${token}>`,
+        'List-Unsubscribe': `<https://peek.example.com/api/email/unsubscribe?t=${token}&lang=de>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         'Auto-Submitted': 'auto-generated',
         'X-Auto-Response-Suppress': 'All',
@@ -149,7 +150,7 @@ describe('telling an account that its parcel was delivered', () => {
     expect(reported).not.toHaveBeenCalled();
   });
 
-  it('writes the email a parcel ready to collect gets, and says so in the log', async () => {
+  it('writes the email a parcel ready for pickup gets, and says so in the log', async () => {
     claims([claim(1, { stage: 'ready_for_pickup' })]);
     expect(await service.dispatch()).toEqual({ sent: 1, failed: 0, skipped: 0 });
     expect(written.content).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ stage: 'ready_for_pickup' }));

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { documentLanguage } from '../src/lib/locale';
 
 const browserErrors = new WeakMap<Page, string[]>();
 
@@ -54,13 +55,13 @@ test('finds, filters, and opens a parcel', async ({ page }) => {
 });
 
 test('carefully deletes an active parcel from its detail screen', async ({ page }) => {
-  await page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ }).click();
-  const detail = page.getByRole('dialog', { name: 'New sneakers 👟' });
+  await page.getByRole('button', { name: /^(?:Next up: )?New trainers 👟 —/ }).click();
+  const detail = page.getByRole('dialog', { name: 'New trainers 👟' });
   await detail.getByLabel('Parcel actions', { exact: true }).click();
   await page.getByRole('button', { name: 'Delete permanently' }).click();
 
   let confirmation = page.getByRole('dialog', {
-    name: /permanently delete new sneakers/i,
+    name: /permanently delete new trainers/i,
   });
   await expect(confirmation).toContainText('can’t be undone');
   await expect(confirmation.getByRole('button', { name: 'Cancel' })).toBeFocused();
@@ -69,10 +70,10 @@ test('carefully deletes an active parcel from its detail screen', async ({ page 
 
   await detail.getByLabel('Parcel actions', { exact: true }).click();
   await page.getByRole('button', { name: 'Delete permanently' }).click();
-  confirmation = page.getByRole('dialog', { name: /permanently delete new sneakers/i });
+  confirmation = page.getByRole('dialog', { name: /permanently delete new trainers/i });
   await confirmation.getByRole('button', { name: 'Delete permanently' }).click();
 
-  await expect(page.getByRole('status')).toContainText('New sneakers 👟 permanently deleted');
+  await expect(page.getByRole('status')).toContainText('New trainers 👟 permanently deleted');
   await expect(detail).toBeHidden();
 });
 
@@ -303,9 +304,9 @@ test('keeps invalid tracking input safely in the add sheet', async ({ page }) =>
 });
 
 test('navigates nested carrier dialogs entirely by keyboard', async ({ page }) => {
-  const parcel = page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ });
+  const parcel = page.getByRole('button', { name: /^(?:Next up: )?New trainers 👟 —/ });
   await parcel.click();
-  const detail = page.getByRole('dialog', { name: 'New sneakers 👟' });
+  const detail = page.getByRole('dialog', { name: 'New trainers 👟' });
   // Closed details-menu actions must not enter the Tab order.
   await page.keyboard.press('Tab');
   await expect(detail.getByLabel('Parcel actions', { exact: true })).toBeFocused();
@@ -352,19 +353,19 @@ test('keeps translated add-parcel guidance readable in every app language', asyn
   // Change away from the initial English value first: selecting an unchanged
   // option does not emit a change event or save a language preference.
   for (const [locale, action, title, close] of [
-    ['de', 'Ein Paket hinzufügen', 'Paket hinzufügen', 'Schliessen'],
+    ['de', 'Ein Paket hinzufügen', 'Paket hinzufügen', 'Schließen'],
     ['fr', 'Ajouter un colis', 'Ajouter un colis', 'Fermer'],
     ['it', 'Aggiungi un pacco', 'Aggiungi un pacco', 'Chiudi'],
     ['es', 'Añadir un paquete', 'Añadir un paquete', 'Cerrar'],
-    ['pt', 'Adicionar um envio', 'Adicionar um envio', 'Fechar'],
+    ['pt', 'Adicionar uma encomenda', 'Adicionar uma encomenda', 'Fechar'],
     ['pl', 'Dodaj przesyłkę', 'Dodaj przesyłkę', 'Zamknij'],
     ['en', 'Add a parcel', 'Add a parcel', 'Close'],
-  ]) {
+  ] as const) {
     await page.locator('.account-trigger').click();
     await page.locator('.language-control select').selectOption(locale);
     await page.keyboard.press('Escape');
     await expect(page.locator('.settings-sheet')).toBeHidden();
-    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', documentLanguage(locale));
     await page.getByRole('button', { name: action, exact: true }).click();
     const sheet = page.getByRole('dialog', { name: title });
     await sheet.locator('#add-parcel-tracking').fill('99.34.111111.22222222');

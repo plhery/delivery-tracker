@@ -29,8 +29,15 @@ function subscribeToAddress(notify: () => void) {
  * link's token names the account. The page asks first and sends nothing until
  * its button is pressed, because mail scanners open the links of a message.
  */
-export function EmailOffScreen({ initialLocale, initialMessages }: { initialLocale?: Locale; initialMessages?: Messages }) {
-  return <I18nProvider initialLocale={initialLocale} initialMessages={initialMessages}><AppearanceProvider><EmailOff /></AppearanceProvider></I18nProvider>;
+export function EmailOffScreen({ initialLocale, initialMessages, emailLocale }: {
+  initialLocale?: Locale;
+  initialMessages?: Messages;
+  /** The language of the email the link came from, which its address names: it wins over one this browser saved. */
+  emailLocale?: Locale;
+}) {
+  return <I18nProvider initialLocale={initialLocale} initialMessages={initialMessages} addressLocale={emailLocale}>
+    <AppearanceProvider><EmailOff /></AppearanceProvider>
+  </I18nProvider>;
 }
 
 function EmailOff() {

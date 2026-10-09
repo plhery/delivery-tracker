@@ -4,13 +4,13 @@ import '../src/styles.css';
 import { authConfigFromEnvironment } from '../src/auth/authConfig';
 import { APPEARANCE_BOOTSTRAP } from '../src/lib/appearanceConfig';
 import { ENTRY_HINT_BOOTSTRAP } from '../src/lib/entryHintConfig';
+import { documentLanguage, manifestPath } from '../src/lib/locale';
 import { requestLocale } from '../src/server/requestLocale';
 import { requestOrigin } from '../src/server/requestOrigin';
 import { PREVIEW_LOCALES, sitePicture, siteTitle, wordsIn } from '../src/server/sitePreview';
 
 const site: Metadata = {
   applicationName: 'Peek',
-  manifest: '/manifest.webmanifest',
   icons: {
     icon: { url: '/icons/favicon.svg', type: 'image/svg+xml' },
     apple: '/icons/apple-touch-icon.png',
@@ -23,8 +23,9 @@ const site: Metadata = {
 };
 
 /**
- * Peek's name and what it is, in the reader's language. A page that draws no preview of
- * its own shares Peek's picture, under its own title and description.
+ * Peek's name and what it is, in the reader's language, for the page and for the app a
+ * browser installs from it. A page that draws no preview of its own shares Peek's picture,
+ * under its own title and description.
  */
 export async function generateMetadata(): Promise<Metadata> {
   const origin = await requestOrigin();
@@ -36,6 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: siteTitle(t),
     description: t('preview.site.description'),
     metadataBase: origin,
+    manifest: manifestPath(locale),
     openGraph: { type: 'website', siteName: 'Peek', locale: PREVIEW_LOCALES[locale], images: [picture] },
     twitter: { card: 'summary_large_image', images: [picture.url] },
   };
@@ -56,7 +58,7 @@ const authOrigin = authConfigFromEnvironment({
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang={await requestLocale()} suppressHydrationWarning>
+    <html lang={documentLanguage(await requestLocale())} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOTSTRAP }} />
         {/* Tells the stylesheet, before anything is painted, who is about to see the landing. */}

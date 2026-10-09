@@ -3,7 +3,7 @@ import type { CarrierId, Stage } from '../../types';
 
 /**
  * The journey the landing tells: one fictional parcel, four scans, from the
- * shop in Hamburg to a mailbox in Zürich.
+ * shop in Hamburg to a letterbox in Zürich.
  */
 export const JOURNEY_CARRIER: CarrierId = 'dhl';
 

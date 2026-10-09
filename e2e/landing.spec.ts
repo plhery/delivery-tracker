@@ -86,7 +86,7 @@ test('asks four questions in order, with the field first and the name, the code 
   await expect(page.getByRole('link', { name: 'Open source 3,500+ carriers' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Works with Swiss Post, DHL, UPS, DPD Switzerland, GLS and thousands more carriers' })).toBeVisible();
   const moves = page.getByRole('region', { name: 'Will I know when it moves?' });
-  await expect(moves.getByRole('listitem')).toHaveText(['Checked up to every 10 min', 'Up to every 2 min on the last mile']);
+  await expect(moves.getByRole('listitem')).toHaveText(['Checked every 10 min', 'Every 2 min on the last mile']);
 
   // The heavy parts arrive when their sections come near: the journey on the app's own map, the list in the app's own cards.
   await journey(page).scrollIntoViewIfNeeded();
@@ -259,7 +259,7 @@ test('shows still frames to someone who asked for less motion, and Pip still ope
   // The field shows its placeholder; nothing loops.
   await page.waitForTimeout(3_000);
   await expect(sample(page)).toHaveCount(0);
-  await expect(field(page)).toHaveAttribute('placeholder', 'Paste a number, link, or message');
+  await expect(field(page)).toHaveAttribute('placeholder', 'Paste a number, link or message');
   // The journey shows the parcel on its last mile, with its route and its ping.
   const card = page.locator('.landing-journey__card');
   await card.evaluate((element) => element.scrollIntoView({ block: 'center' }));

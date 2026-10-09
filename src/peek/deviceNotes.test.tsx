@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LINK_ID, OTHER_LINK_ID, OWNER_KEY, testView } from '../test/parcelLinks';
-import { forgetAllLinkNotes, forgetLinkNote, LINK_NOTES_STORAGE_KEY, linkNote, noteLink, useLinkNote } from './deviceNotes';
+import { forgetAllLinkNotes, forgetLinkNote, LINK_NOTES_STORAGE_KEY, linkNote, notedAlerts, noteLink, useLinkNote } from './deviceNotes';
 import { forgetAllRecents, forgetRecent, rememberParcel } from './recents';
 
 const share = { name: true, note: 'Happy birthday!', from: 'Sam' };
@@ -30,7 +30,7 @@ describe('what this browser notes about a link', () => {
   it('reads only what it can trust: a link’s id, clean words within their limits, a known preset', () => {
     localStorage.setItem(LINK_NOTES_STORAGE_KEY, JSON.stringify({
       [LINK_ID]: { share: { name: true, note: `  two\nlines ${'x'.repeat(400)}`, from: 7 }, alert: { preset: 'hourly', endpoint: 'x' } },
-      [OTHER_LINK_ID]: { alert: { preset: 'delivery', endpoint: 'demo:1' }, share: 'nonsense' },
+      [OTHER_LINK_ID]: { alert: { preset: 'delivery', endpoint: 'demo:1', locale: 'xx' }, share: 'nonsense' },
       'not-a-link': { alert },
     }));
     const note = linkNote(LINK_ID);
@@ -44,6 +44,15 @@ describe('what this browser notes about a link', () => {
     expect(linkNote('not-a-link')).toEqual({});
     localStorage.setItem(LINK_NOTES_STORAGE_KEY, '[damaged');
     expect(linkNote(LINK_ID)).toEqual({});
+  });
+
+  it('keeps the language an alert was given, and lists the browser’s alerts', () => {
+    noteLink(LINK_ID, { alert: { ...alert, locale: 'fr' } });
+    noteLink(OTHER_LINK_ID, { share });
+    expect(linkNote(LINK_ID).alert).toEqual({ ...alert, locale: 'fr' });
+    expect(notedAlerts()).toEqual([[LINK_ID, { ...alert, locale: 'fr' }]]);
+    noteLink(OTHER_LINK_ID, { alert });
+    expect(notedAlerts()).toEqual([[LINK_ID, { ...alert, locale: 'fr' }], [OTHER_LINK_ID, alert]]);
   });
 
   it('keeps what the browser answered about the parcel beside the rest, and reads back only a memory it can trust', () => {

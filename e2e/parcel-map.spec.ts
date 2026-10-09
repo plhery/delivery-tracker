@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 test('engraves the route in the card and opens it as a full map', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ }).click();
+  await page.getByRole('button', { name: /^(?:Next up: )?New trainers 👟 —/ }).click();
   const detail = page.locator('.detail--postcard');
   const engraving = detail.locator('.detail__engraving [data-scale]');
   // Out for delivery: the card shows the last mile, with Hamburg on the edge.
@@ -45,7 +45,7 @@ test('keeps Pip on the opened map, and shows more of the land up close', async (
     const address = new URL(response.url());
     if (address.pathname.startsWith('/atlas/')) tiles.push({ address: address.pathname + address.search, kept: response.headers()['cache-control'] ?? '' });
   });
-  await page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ }).click();
+  await page.getByRole('button', { name: /^(?:Next up: )?New trainers 👟 —/ }).click();
   await page.locator('.detail--postcard').getByRole('button', { name: 'Open the map' }).click();
   const map = page.getByRole('dialog', { name: 'Map of the journey from Hamburg to Zürich' });
   // Waiting at its pickup point, Pip waits here as he does on the card: beside the dot, clear of the summary.
@@ -214,7 +214,7 @@ test('stands Pip beside the parcel\u2019s dot, in the mood of its stage', async 
 
 test('zooms the full map with the wheel, and returns to the parcel', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Wheels and trackpads are for desktops.');
-  await page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ }).click();
+  await page.getByRole('button', { name: /^(?:Next up: )?New trainers 👟 —/ }).click();
   await page.locator('.detail--postcard').getByRole('button', { name: 'Open the map' }).click();
   const map = page.getByRole('dialog', { name: /^Map of the journey/ });
   const nearby = map.getByRole('button', { name: 'Nearby' });
@@ -257,7 +257,7 @@ test('pinches the full map, and lets the card peek closer', async ({ page, brows
     }
     if (lift) await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   };
-  await page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ }).click();
+  await page.getByRole('button', { name: /^(?:Next up: )?New trainers 👟 —/ }).click();
   const detail = page.locator('.detail--postcard');
   const engraving = detail.locator('.detail__engraving');
   const leg = engraving.locator('path[data-kind="travelled"]').first();

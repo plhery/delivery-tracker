@@ -95,18 +95,12 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
-    func testNativeWelcomeAndErrorCopyExistsInEveryLanguage() throws {
+    func testNativeErrorAndSettingsCopyExistsInEveryLanguage() throws {
         let dictionaries = try localizationDictionaries()
         let keys = [
-            "welcome.title",
-            "welcome.subtitle",
-            "welcome.feature.track",
-            "welcome.feature.alerts",
-            "welcome.feature.private",
             "add.requirement.dpdPostcodeHelp",
             "add.requirement.dpdPostcodeOptionalHelp",
             "add.requirement.trackingUrlHelp",
-            "auth.subtitle",
             "auth.emailOption",
             "native.configurationHelp",
             "native.appearance.title",
@@ -129,20 +123,6 @@ final class LocalizationTests: XCTestCase {
                 XCTAssertFalse(value.isEmpty, "\(language).\(key)")
                 XCTAssertNotEqual(value, key, "\(language).\(key)")
             }
-        }
-    }
-
-    func testNativeWelcomeExplainsCrossDeviceTrackingInEveryLanguage() throws {
-        let dictionaries = try localizationDictionaries()
-        let expected = [
-            "en": "Track deliveries on the web and this iPhone.",
-            "de": "Verfolge Lieferungen im Web und auf diesem iPhone.",
-            "fr": "Suis tes livraisons sur le web et sur cet iPhone.",
-            "it": "Segui le consegne sul web e su questo iPhone.",
-        ]
-
-        for (language, subtitle) in expected {
-            XCTAssertEqual(dictionaries[language]?["welcome.subtitle"], subtitle, language)
         }
     }
 

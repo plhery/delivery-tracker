@@ -66,14 +66,17 @@ describe('the token an email carries to switch itself off', () => {
     expect(() => unsubscribeToken('not-an-account')).toThrow('account id');
   });
 
-  it('travels after # to the page, and in the address only where a mail app posts', () => {
+  it('travels after # to the page, and in the address only where a mail app posts, with the email’s language', () => {
     const token = unsubscribeToken(alex);
-    expect(unsubscribeUrls('https://peek.example.com', alex)).toEqual({
-      page: `https://peek.example.com/email/off#t=${token}`,
-      oneClick: `https://peek.example.com/api/email/unsubscribe?t=${token}`,
+    expect(unsubscribeUrls('https://peek.example.com', alex, 'fr')).toEqual({
+      page: `https://peek.example.com/email/off?lang=fr#t=${token}`,
+      oneClick: `https://peek.example.com/api/email/unsubscribe?t=${token}&lang=fr`,
     });
+    expect(unsubscribePagePath(token, 'de')).toBe(`/email/off?lang=de#t=${token}`);
+    // As an older email's link, which names no language.
     expect(unsubscribePagePath(token)).toBe(`/email/off#t=${token}`);
     expect(unsubscribePagePath(null)).toBe('/email/off');
+    expect(unsubscribePagePath(null, 'it')).toBe('/email/off?lang=it');
     // Nothing in a token needs escaping in an address or a mail header.
     expect(encodeURIComponent(token)).toBe(token);
   });

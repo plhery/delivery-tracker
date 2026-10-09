@@ -87,10 +87,10 @@ export function movedOrigin(headers: HeaderReader, env: NodeJS.ProcessEnv = proc
 
 // What a browser, an installed app or another server fetches from a host on its
 // own: the API (a redirect to another host drops the bearer token), health
-// checks, assets, the service workers and what they precache, the manifest,
+// checks, assets, the service workers and what they precache, the manifests,
 // app-association files, the sign-in email template the Auth server reads, and
 // the files written for crawlers, which name the canonical origin themselves.
-const staysOnItsHost = /^\/(?:api|health|_next|icons|fonts|auth-emails|\.well-known|share-target)(?:\/|$)|^\/(?:sw\.js|push-sw\.js|manifest\.webmanifest|og(?:-[a-z]{2})?\.png|og\.svg|favicon\.ico|robots\.txt|sitemap\.xml|privacy\.css|theme\.css)$/;
+const staysOnItsHost = /^\/(?:api|health|_next|icons|fonts|auth-emails|\.well-known|share-target)(?:\/|$)|^\/(?:sw\.js|push-sw\.js|(?:[a-z]{2}\/)?manifest\.webmanifest|og(?:-[a-z]{2})?\.png|og\.svg|favicon\.ico|robots\.txt|sitemap\.xml|privacy\.css|theme\.css)$/;
 
 /**
  * Where a page request that reached a legacy host is sent: the same path and

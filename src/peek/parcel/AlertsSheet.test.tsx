@@ -32,12 +32,12 @@ afterEach(() => {
   forgetAllLinkNotes();
 });
 
-describe('the Ping me sheet', () => {
+describe('the Notify me sheet', () => {
   it('offers this browser’s notifications and the calendar, chooses what to hear about, and asks the browser only on “Turn on”', async () => {
     const { requestPermission, pushManager } = stubAlertBrowser();
     const user = userEvent.setup();
     open({ ownerKey: OWNER_KEY });
-    const sheet = screen.getByRole('dialog', { name: 'Ping me when it arrives' });
+    const sheet = screen.getByRole('dialog', { name: 'Notify me when it arrives' });
     expect(way(/^Notifications in this browser/)).toBeChecked();
     expect(within(sheet).getByText('Works while this page is closed. Stops when the parcel is delivered.')).toBeVisible();
     expect(way(/^Add the delivery window to my calendar/)).not.toBeChecked();
@@ -57,9 +57,9 @@ describe('the Ping me sheet', () => {
     expect(mocks.set).toHaveBeenCalledExactlyOnceWith(LINK_ID, {
       subscription: { endpoint: TEST_PUSH_ENDPOINT, keys: { p256dh: 'p256dh-key', auth: 'auth-secret' } }, preset: 'delivery', locale: 'en',
     }, OWNER_KEY);
-    expect(await screen.findByText('Alerts are on in this browser')).toBeVisible();
-    expect(screen.getByText('Peek pings this browser until the parcel is delivered.')).toBeVisible();
-    expect(linkNote(LINK_ID).alert).toEqual({ preset: 'delivery', endpoint: TEST_PUSH_ENDPOINT });
+    expect(await screen.findByText('Notifications are on in this browser')).toBeVisible();
+    expect(screen.getByText('Peek notifies this browser until the parcel is delivered.')).toBeVisible();
+    expect(linkNote(LINK_ID).alert).toEqual({ preset: 'delivery', endpoint: TEST_PUSH_ENDPOINT, locale: 'en' });
     expect(mocks.track).toHaveBeenCalledWith('parcel-link-alerts', 'success');
     expect(screen.queryByRole('button', { name: 'Turn on' })).toBeNull();
   });
@@ -69,7 +69,7 @@ describe('the Ping me sheet', () => {
     noteLink(LINK_ID, { alert: { preset: 'important', endpoint: TEST_PUSH_ENDPOINT } });
     const user = userEvent.setup();
     open();
-    expect(screen.getByText('Alerts are on in this browser')).toBeVisible();
+    expect(screen.getByText('Notifications are on in this browser')).toBeVisible();
     expect(preset('Important steps')).toHaveAttribute('aria-pressed', 'true');
     await user.click(preset('Every scan'));
     expect(mocks.set).toHaveBeenCalledExactlyOnceWith(LINK_ID, expect.objectContaining({ preset: 'all' }), null);
@@ -97,8 +97,8 @@ describe('the Ping me sheet', () => {
     const user = userEvent.setup();
     open();
     await user.click(screen.getByRole('button', { name: 'Turn off' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t update alert settings. Try again.');
-    expect(screen.getByText('Alerts are on in this browser')).toBeVisible();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t update notification settings. Try again.');
+    expect(screen.getByText('Notifications are on in this browser')).toBeVisible();
     expect(mocks.track).toHaveBeenCalledWith('parcel-link-alerts-off', 'error');
   });
 
@@ -148,7 +148,7 @@ describe('the Ping me sheet', () => {
 
     stubAlertBrowser();
     open({ alerts: { available: false, vapidPublicKey: null }, calendar: null });
-    expect(screen.getByText('Alerts are temporarily unavailable. Try again later.')).toBeVisible();
+    expect(screen.getByText('Notifications are temporarily unavailable. Try again later.')).toBeVisible();
     // Nothing can be done here: no button pretends otherwise.
     expect(screen.queryByRole('button', { name: 'Turn on' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add to calendar' })).toBeNull();
@@ -156,11 +156,11 @@ describe('the Ping me sheet', () => {
   });
 
   it.each([
-    [new ParcelLinkError('full'), 'This parcel already pings as many browsers as it can.'],
-    [new ParcelLinkError('unconfigured'), 'Alerts are temporarily unavailable. Try again later.'],
-    [new ParcelLinkError('stopped'), 'This parcel isn’t shared anymore'],
+    [new ParcelLinkError('full'), 'Peek already notifies as many browsers as it can for this parcel.'],
+    [new ParcelLinkError('unconfigured'), 'Notifications are temporarily unavailable. Try again later.'],
+    [new ParcelLinkError('stopped'), 'This parcel isn’t shared any more'],
     [new ParcelLinkError('unavailable'), 'This parcel has been forgotten'],
-    [new ParcelLinkError('server'), 'Couldn’t turn on alerts. Check your connection and try again.'],
+    [new ParcelLinkError('server'), 'Couldn’t turn on notifications. Check your connection and try again.'],
   ])('says why the server refused: %s', async (refusal, message) => {
     const { subscription } = stubAlertBrowser();
     mocks.set.mockRejectedValueOnce(refusal);
@@ -201,8 +201,8 @@ describe('the Ping me sheet', () => {
     stubAlertBrowser();
     const user = userEvent.setup();
     const { onSignIn, onClose, unmount } = open();
-    expect(screen.getByText('Alerts on all your devices')).toBeVisible();
-    expect(screen.getByText('Sign in, and this parcel joins your deliveries, with alerts wherever you turn them on.')).toBeVisible();
+    expect(screen.getByText('Notifications on all your devices')).toBeVisible();
+    expect(screen.getByText('Sign in, and this parcel joins your deliveries, with notifications wherever you turn them on.')).toBeVisible();
     expect(document.body).not.toHaveTextContent(/e-?mail/i);
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -219,7 +219,7 @@ describe('the Ping me sheet', () => {
     const { onSignIn, onClose, unmount } = open({ alerts: { ...SERVER, email: true } });
     expect(screen.getByText('An email when it arrives')).toBeVisible();
     expect(screen.getByText('Sign in, and Peek writes to the address you sign in with.')).toBeVisible();
-    expect(screen.queryByText('Alerts on all your devices')).toBeNull();
+    expect(screen.queryByText('Notifications on all your devices')).toBeNull();
     // The browser's own alerts are offered as before.
     expect(way(/^Notifications in this browser/)).toBeChecked();
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
@@ -236,7 +236,7 @@ describe('the Ping me sheet', () => {
     stubAlertBrowser({ permission: 'granted', existing: true });
     noteLink(LINK_ID, { alert: { preset: 'important', endpoint: TEST_PUSH_ENDPOINT } });
     open({ alerts: { ...SERVER, email: true } });
-    expect(screen.getByText('Alerts are on in this browser')).toBeVisible();
+    expect(screen.getByText('Notifications are on in this browser')).toBeVisible();
     expect(screen.getByText('An email when it arrives')).toBeVisible();
   });
 
@@ -244,15 +244,15 @@ describe('the Ping me sheet', () => {
     const { requestPermission } = stubAlertBrowser({ userAgent: IPHONE_SAFARI });
     const user = userEvent.setup();
     const { onCalendar, onSignIn } = open();
-    const sheet = screen.getByRole('dialog', { name: 'Alerts on iPhone' });
+    const sheet = screen.getByRole('dialog', { name: 'Notifications on iPhone' });
     expect(within(sheet).getByText('Safari only sends notifications from sites on your Home Screen.')).toBeVisible();
     expect(within(sheet).getAllByRole('listitem').map((step) => step.textContent))
-      .toEqual(['1Open your browser’s Share menu', '2Choose Add to Home Screen', '3Open Peek from your Home Screen and tap Ping me']);
+      .toEqual(['1Open your browser’s Share menu', '2Choose Add to Home Screen', '3Open Peek from your Home Screen and tap Notify me']);
     expect(screen.queryByRole('button', { name: 'Turn on' })).toBeNull();
     expect(screen.queryByRole('radio')).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Or add to calendar' }));
     expect(onCalendar).toHaveBeenCalledTimes(1);
-    await user.click(screen.getByRole('button', { name: 'Sign in for alerts on all your devices' }));
+    await user.click(screen.getByRole('button', { name: 'Sign in for notifications on all your devices' }));
     expect(onSignIn).toHaveBeenCalledExactlyOnceWith(false);
     expect(requestPermission).not.toHaveBeenCalled();
   });
@@ -261,7 +261,7 @@ describe('the Ping me sheet', () => {
     stubAlertBrowser({ userAgent: IPHONE_SAFARI });
     const user = userEvent.setup();
     const { onSignIn, onClose, unmount } = open({ alerts: { ...SERVER, email: true } });
-    const sheet = screen.getByRole('dialog', { name: 'Alerts on iPhone' });
+    const sheet = screen.getByRole('dialog', { name: 'Notifications on iPhone' });
     const after = (first: Element, second: Element) => first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING;
     const email = within(sheet).getByText('An email when it arrives');
     const safari = within(sheet).getByText('Safari only sends notifications from sites on your Home Screen.');
@@ -270,7 +270,7 @@ describe('the Ping me sheet', () => {
     expect(after(safari, within(sheet).getByRole('list'))).toBeTruthy();
     expect(within(sheet).getAllByRole('listitem')).toHaveLength(3);
     // The row stands in for the plain sign-in button; the calendar stays.
-    expect(screen.queryByRole('button', { name: 'Sign in for alerts on all your devices' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Sign in for notifications on all your devices' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Or add to calendar' })).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -286,12 +286,12 @@ describe('the Ping me sheet', () => {
   it('starts Safari 27 from the page menu of its address bar, drawn with the site’s address', () => {
     stubAlertBrowser({ userAgent: IPHONE_SAFARI_27 });
     open();
-    const steps = within(screen.getByRole('dialog', { name: 'Alerts on iPhone' })).getAllByRole('listitem');
+    const steps = within(screen.getByRole('dialog', { name: 'Notifications on iPhone' })).getAllByRole('listitem');
     expect(steps.map((step) => step.textContent)).toEqual([
       `1Tap Page Menu in Safari’s address bar${window.location.hostname}`,
       '2Tap Share',
       '3Tap View More, then Add to Home Screen',
-      '4Open Peek from your Home Screen and tap Ping me',
+      '4Open Peek from your Home Screen and tap Notify me',
     ]);
     // The drawing repeats what the sentence says, so it is kept from screen readers.
     expect(within(steps[0]).getByText(window.location.hostname).closest('[aria-hidden="true"]')).not.toBeNull();
@@ -303,7 +303,7 @@ describe('the Ping me sheet', () => {
     open({ alerts: { available: true, vapidPublicKey: null } });
     expect(screen.getByText('This is the demo: nothing is sent.')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Turn on' }));
-    expect(await screen.findByText('Alerts are on in this browser')).toBeVisible();
+    expect(await screen.findByText('Notifications are on in this browser')).toBeVisible();
     expect(screen.getByText('This is the demo: nothing is sent.')).toBeVisible();
     expect(pushManager.subscribe).not.toHaveBeenCalled();
     expect(linkNote(LINK_ID).alert!.endpoint).toMatch(/^demo:/);

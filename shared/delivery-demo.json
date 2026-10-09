@@ -53,7 +53,7 @@
       {
         "stage": "delivered",
         "hoursAgo": 26,
-        "description": "Delivered to your mailbox. Mornings are saved.",
+        "description": "Delivered to your letterbox. Mornings are saved.",
         "location": "Zürich, Switzerland",
         "place": {
           "latitude": 47.367,
@@ -66,7 +66,7 @@
     ]
   },
   {
-    "label": "New sneakers 👟",
+    "label": "New trainers 👟",
     "trackingNumber": "1234567899",
     "carrier": "dhl",
     "senderName": "Elbe Laufladen",
@@ -358,7 +358,7 @@
       {
         "stage": "registered",
         "hoursAgo": 36,
-        "description": "The photo lab has announced your parcel"
+        "description": "The photo lab has created a shipping label for your parcel"
       }
     ]
   },
@@ -949,7 +949,7 @@
       {
         "stage": "delivered",
         "hoursAgo": 602,
-        "description": "Collected from the parcel shop",
+        "description": "Picked up from the parcel shop",
         "location": "Zürich, Switzerland",
         "place": {
           "latitude": 47.367,

@@ -58,7 +58,7 @@ describe('shipment details', () => {
 
   it('shows available facts and omits unknown or invalid measurements', () => {
     const view = show({ pickupPoint: 'Corner shop\n12 Main Street', receiverName: 'Alex', weightKg: 1.25, dimensionsText: '20 × 30 × 10 cm' });
-    expect(screen.getByText('Pickup location')).toBeInTheDocument();
+    expect(screen.getByText('Pickup point')).toBeInTheDocument();
     expect(screen.getByText(/Corner shop/)).toHaveTextContent('12 Main Street');
     expect(screen.getByText('Alex')).toBeInTheDocument();
     expect(screen.getByText('1.25 kg')).toBeInTheDocument();
@@ -66,7 +66,7 @@ describe('shipment details', () => {
     view.unmount();
     show({ weightKg: -1 });
     expect(screen.queryByText('Weight')).not.toBeInTheDocument();
-    expect(screen.queryByText('Pickup location')).not.toBeInTheDocument();
+    expect(screen.queryByText('Pickup point')).not.toBeInTheDocument();
   });
 
   it('shows a waiting parcel\'s pickup point as a card and a collected one as a fact', async () => {
@@ -74,14 +74,14 @@ describe('shipment details', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     const view = show({ pickupPoint: 'Corner shop\n12 Main Street', events: at('ready_for_pickup') });
-    const card = screen.getByRole('region', { name: 'Pickup location' });
+    const card = screen.getByRole('region', { name: 'Pickup point' });
     expect(card).toHaveTextContent('Corner shop12 Main Street');
     expect(screen.getByRole('link', { name: 'Directions' })).toHaveAttribute('href', expect.stringContaining('Corner%20shop%2C%2012%20Main%20Street'));
     expect(screen.getByRole('link', { name: 'Directions' })).toHaveAttribute('rel', 'noopener noreferrer');
     await userEvent.click(screen.getByRole('button', { name: 'Copy address' }));
     expect(writeText).toHaveBeenCalledWith('Corner shop, 12 Main Street');
     expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
-    expect(screen.getAllByText('Pickup location')).toHaveLength(1);
+    expect(screen.getAllByText('Pickup point')).toHaveLength(1);
     view.unmount();
 
     const office = show({ pickupPoint: 'Post office 42', events: at('ready_for_pickup') });
@@ -90,8 +90,8 @@ describe('shipment details', () => {
     office.unmount();
 
     show({ pickupPoint: 'Corner shop\n12 Main Street', events: at('delivered') });
-    expect(screen.queryByRole('region', { name: 'Pickup location' })).not.toBeInTheDocument();
-    expect(screen.getByText('Collected at')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Pickup point' })).not.toBeInTheDocument();
+    expect(screen.getByText('Picked up at')).toBeInTheDocument();
     expect(screen.getByText(/Corner shop/)).toHaveTextContent('12 Main Street');
   });
 

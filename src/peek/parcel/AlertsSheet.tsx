@@ -43,7 +43,7 @@ function Presets({ value, disabled, onChange }: { value: ParcelAlertPreset; disa
 }
 
 /**
- * "Ping me": this browser's notifications for the parcel, or the delivery
+ * "Notify me": this browser's notifications for the parcel, or the delivery
  * window as a calendar file. The browser is asked for nothing until someone
  * chooses "Turn on". An iPhone outside a Home Screen app gets the steps to
  * put Peek there, instead of a button that cannot work, after the email that

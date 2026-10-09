@@ -212,8 +212,8 @@ describe('switching the delivery email from an email', () => {
     method: 'POST', headers: { 'content-type': 'application/json', 'x-real-ip': ip }, body: JSON.stringify(body),
   }), none);
   /** What a mail app sends when its reader presses "Unsubscribe": a form, no session, no origin, no custom header. */
-  const oneClick = (given: string, options: { type?: string; body?: string; ip?: string } = {}) => {
-    const request = new NextRequest(`${endpoint}?t=${given}`, {
+  const oneClick = (given: string, options: { type?: string; body?: string; ip?: string; lang?: string } = {}) => {
+    const request = new NextRequest(`${endpoint}?t=${given}${options.lang ? `&lang=${options.lang}` : ''}`, {
       method: 'POST',
       headers: { 'content-type': options.type ?? 'application/x-www-form-urlencoded', 'x-real-ip': options.ip ?? nextIp() },
       body: options.body ?? 'List-Unsubscribe=One-Click',
@@ -243,7 +243,8 @@ describe('switching the delivery email from an email', () => {
     ['something that is no body at all', 'text/plain', '\u0000\u0001 not a form'],
   ])('takes a mail app\'s one-click post with %s: off, a plain 200, and the body unread', async (_case, type, body) => {
     const switched = store(false);
-    const { request, answer } = oneClick(token(), { type, body });
+    // The header's address names the email's language too, which changes nothing here.
+    const { request, answer } = oneClick(token(), { type, body, lang: 'de' });
     const response = await answer;
     expect(response.status).toBe(200);
     expect(response.headers.get('location')).toBeNull();
@@ -315,6 +316,12 @@ describe('switching the delivery email from an email', () => {
       const response = await open(query);
       expect(response.status).toBe(303);
       expect(response.headers.get('location')).toBe('/email/off');
+    }
+    // The page speaks the email's language, which the address names; one the app does not have is no language.
+    expect((await open(`?t=${token()}&lang=fr`)).headers.get('location')).toBe(`/email/off?lang=fr#t=${token()}`);
+    expect((await open('?t=short&lang=pl')).headers.get('location')).toBe('/email/off?lang=pl');
+    for (const lang of ['xx', 'FR', 'fr%23t%3Dforged', '']) {
+      expect((await open(`?t=${token()}&lang=${lang}`)).headers.get('location')).toBe(`/email/off#t=${token()}`);
     }
     // It works without mail settings too: the page explains.
     vi.stubEnv('SMTP_HOST', '');

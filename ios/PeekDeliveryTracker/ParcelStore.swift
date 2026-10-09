@@ -1837,11 +1837,11 @@ final class DemoRepository {
         let zurich = EventPlace(latitude: 47.367, longitude: 8.55, precision: .city, country: "CH", name: "Zürich")
         let harkingen = EventPlace(latitude: 47.305, longitude: 7.821, precision: .city, country: "CH", name: "Härkingen")
         return [
-            .registered: ("The sender announced the parcel", nil, nil),
+            .registered: ("The sender created a shipping label", nil, nil),
             .accepted: ("Parcel accepted at the counter", "Zürich-Mülligen", zurich),
-            .inTransit: ("Sorted at the parcel center", "Härkingen", harkingen),
+            .inTransit: ("Sorted at the parcel centre", "Härkingen", harkingen),
             .outForDelivery: ("With the courier for delivery today", "Your neighbourhood", nil),
-            .delivered: ("Delivered to your mailbox", "Home", nil),
+            .delivered: ("Delivered to your letterbox", "Home", nil),
             .readyForPickup: ("Ready for pickup at your branch", "Post branch", nil),
             .exception: ("A problem is holding up the parcel", "Härkingen", harkingen),
         ]

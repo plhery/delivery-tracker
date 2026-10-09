@@ -102,7 +102,7 @@ describe('legacyHostRedirect', () => {
     '/health', '/health/live',
     '/_next/static/chunks/main-app-0123.js', '/_next/image?url=%2Fog.png', '/icons/icon-192.png', '/fonts/gelasio/regular.woff2',
     '/favicon.ico', '/robots.txt', '/sitemap.xml', '/privacy.css', '/theme.css',
-    '/sw.js', '/push-sw.js', '/manifest.webmanifest',
+    '/sw.js', '/push-sw.js', '/manifest.webmanifest', '/de/manifest.webmanifest',
     '/.well-known/apple-app-site-association', '/.well-known/assetlinks.json',
     '/auth-emails/magic-link.html', '/og.png', '/og.png?v=73229339', '/og.svg',
     '/share-target', '/share-target/draft',

@@ -16,7 +16,7 @@ import type { ParcelAttention } from '../../lib/parcelPriority';
 
 /** In a gift's card, beside the carrier: the way into the alerts. */
 export function CardBell({ label, on, onOpen }: {
-  /** "Ping me", or "Alerts on" once this browser has them. */
+  /** "Notify me", or "Notifications on" once this browser has them. */
   label: string;
   on: boolean;
   onOpen: () => void;

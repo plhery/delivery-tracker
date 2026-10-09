@@ -7,11 +7,13 @@ import { createDemoRepo } from './store/demoRepo';
 import { deleteAccount, downloadAccountExport, exportAccount } from './lib/account';
 import {
   disablePushNotifications,
+  followPushNotificationLocale,
   unsubscribePushNotificationsLocally,
 } from './lib/pushNotifications';
+import { useFollowLanguage } from './lib/followLanguage';
 import { browserStorage, clearApiCache, createApiRepo } from './store/apiRepo';
 import { ParcelsProvider } from './store/ParcelsContext';
-import { useI18n } from './i18n';
+import { useI18n, type Locale } from './i18n';
 import type { PendingInvitationState } from './lib/friendInvites';
 import { createFriendsClient } from './lib/friends';
 import { restoreRequestedParcel } from './lib/requestedParcel';
@@ -78,6 +80,12 @@ export function ApiAccount({ auth, experience, invitation, demoAddress, linkId, 
     } : undefined,
     [sessionAuth, handleSignOut],
   );
+  // The account's alerts on this browser are written in the app's language, on whichever of its screens it is open.
+  const followLanguage = useMemo(
+    () => apiAuth && ((locale: Locale) => followPushNotificationLocale(locale, apiAuth)),
+    [apiAuth],
+  );
+  useFollowLanguage(followLanguage);
   const handleExport = useCallback(async () => {
     if (!apiAuth) return;
     const result = await exportAccount(apiAuth);

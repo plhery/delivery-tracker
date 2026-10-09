@@ -75,7 +75,7 @@ describe('createDemoRepo', () => {
     expect(parcels).toHaveLength(17);
     expect(new Set(parcels.map(parcel => parcel.trackingNumber)).size).toBe(parcels.length);
     expect(parcels.filter(parcel => parcel.archivedAt)).toHaveLength(5);
-    expect(nextPriorityParcel(parcels, now)?.label).toBe('New sneakers 👟');
+    expect(nextPriorityParcel(parcels, now)?.label).toBe('New trainers 👟');
     expect(parcels.some(parcel => parcel.expectedDelivery)).toBe(true);
     expect(parcels.some(parcel => currentStage(parcel.events) === 'in_transit' && !parcel.expectedDelivery)).toBe(true);
     for (const parcel of parcels) {

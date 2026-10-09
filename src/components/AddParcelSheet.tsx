@@ -57,6 +57,7 @@ export function AddParcelSheet({
   postcodes = [],
   initialLabel = '',
   initialTrackingInput = '',
+  shareError,
   onOpenParcel,
   onAdded,
   apiAuth,
@@ -70,6 +71,8 @@ export function AddParcelSheet({
   postcodes?: readonly GivenPostcode[];
   initialLabel?: string;
   initialTrackingInput?: string;
+  /** Why something shared to the installed app did not come through, said where a failed paste is. */
+  shareError?: string;
   apiAuth?: ApiAuth;
   /** The carriers of the latest parcels, offered first in the picker. */
   usedCarriers?: readonly CarrierId[];
@@ -100,7 +103,7 @@ export function AddParcelSheet({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [existingParcelId, setExistingParcelId] = useState<string | null>(null);
-  const [pasteError, setPasteError] = useState<string | null>(null);
+  const [pasteError, setPasteError] = useState<string | null>(shareError ?? null);
   const trackingInput = useRef<HTMLTextAreaElement>(null);
   const pastingTrackingInput = useRef(false);
   const backdrop = useRef<HTMLDivElement>(null);
@@ -386,6 +389,7 @@ export function AddParcelSheet({
                   ref={trackingInput}
                   value={trackingInputValue}
                   placeholder={t('add.trackingPlaceholder')}
+                  aria-describedby={pasteError ? 'add-parcel-paste-error' : undefined}
                   onPaste={() => { pastingTrackingInput.current = true; }}
                   onBlur={(event) => {
                     // Leaving the field for Add saves instead; the first sync recognizes.
@@ -394,6 +398,7 @@ export function AddParcelSheet({
                   }}
                   onChange={(e) => {
                     setTrackingInputValue(e.target.value);
+                    setPasteError(null);
                     if (pastingTrackingInput.current) {
                       setSettledTrackingInput(e.target.value);
                       setRecognitionNumber(normalizeTrackingNumber(parseTrackingInput(e.target.value).trackingNumber));
@@ -411,7 +416,7 @@ export function AddParcelSheet({
                   required
                 />
               </div>
-              {pasteError && <p className="sheet__error" role="status">{pasteError}</p>}
+              {pasteError && <p className="sheet__error" id="add-parcel-paste-error" role="status">{pasteError}</p>}
               {trackingNotFound && (
                 <div className="add-parcel-notice">
                   <p role="status">{t('add.notFound')}</p>

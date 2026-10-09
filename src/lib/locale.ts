@@ -8,6 +8,14 @@ export function isLocale(value: unknown): value is Locale {
   return SUPPORTED_LOCALES.includes(value as Locale);
 }
 
+/**
+ * The `lang` a page or an email declares in a language. Portuguese is European Portuguese, so
+ * screen readers pick a voice from Portugal. Addresses, hreflang and the stored choice keep `pt`.
+ */
+export function documentLanguage(locale: Locale): string {
+  return locale === 'pt' ? 'pt-PT' : locale;
+}
+
 export function detectLocale(languages: readonly string[] = []): Locale {
   for (const language of languages) {
     const base = language.toLowerCase().split('-')[0];
@@ -23,6 +31,15 @@ export const ADDRESS_LANGUAGES = SUPPORTED_LOCALES.filter((locale): locale is Ad
 /** The landing's address in a language: `/de` in German, `/` in English. */
 export function languagePath(locale: Locale): string {
   return locale === 'en' ? '/' : `/${locale}`;
+}
+
+/**
+ * The address of the installed app's manifest in a language: `/de/manifest.webmanifest` in German,
+ * `/manifest.webmanifest` in English. A browser fetches a manifest without cookies, so its address
+ * carries the language.
+ */
+export function manifestPath(locale: Locale): string {
+  return `${locale === 'en' ? '' : `/${locale}`}/manifest.webmanifest`;
 }
 
 /** The language of a language address, or null at any other address: `/de` is German, `/` and `/en` are no language's own. */

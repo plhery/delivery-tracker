@@ -37,10 +37,10 @@ describe('Landing', () => {
       'Will I know when it moves?', 'Following more than one?', 'Who’s behind Peek?',
     ]);
     const moves = screen.getByRole('region', { name: 'Will I know when it moves?' });
-    expect(within(moves).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Checked up to every 10 min', 'Up to every 2 min on the last mile']);
+    expect(within(moves).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Checked every 10 min', 'Every 2 min on the last mile']);
     const more = screen.getByRole('region', { name: 'Following more than one?' });
     expect(within(more).getAllByRole('listitem')).toHaveLength(3);
-    expect(within(more).getByText('Pings for the steps you choose')).toBeVisible();
+    expect(within(more).getByText('Notifications for the steps you choose')).toBeVisible();
     const who = screen.getByRole('region', { name: 'Who’s behind Peek?' });
     expect(within(who).getAllByRole('listitem').map((item) => item.querySelector('strong')!.textContent))
       .toEqual(['Open source', 'No account needed', 'Forgets on its own']);
@@ -61,8 +61,8 @@ describe('Landing', () => {
     expect(document.body).not.toHaveTextContent(/e-?mail/i);
     unmount();
     render(<PeekSessionProvider value={{ account: 'visitor', signIn: vi.fn(), deliveryEmails: true }}><Landing onSignIn={onSignIn} /></PeekSessionProvider>);
-    expect(benefits()).toEqual(['One list, the next one on its map', 'Pings for the steps you choose', 'An email when it arrives', 'A passport of deliveries']);
-    expect(screen.getByText('A short email when a parcel is ready to collect or delivered, to the address you sign in with. Only if you turn it on.')).toBeVisible();
+    expect(benefits()).toEqual(['One list, the next one on its map', 'Notifications for the steps you choose', 'An email when it arrives', 'A passport of deliveries']);
+    expect(screen.getByText('A short email when a parcel is ready for pickup or delivered, to the address you sign in with. Only if you turn it on.')).toBeVisible();
   });
 
   it('keeps the moving pictures out of a screen reader’s way', () => {
@@ -201,7 +201,7 @@ describe('Landing: the journey', () => {
     render(<Landing onSignIn={onSignIn} />);
     expect(showing('.landing-stack > div')).toBe('In transitArrives in 2 days');
     expect(showing('.landing-ping')).toContain('Collected by DHL');
-    expect(showing('.landing-ping')).toContain('New sneakers · Hamburg, 17:48');
+    expect(showing('.landing-ping')).toContain('New trainers · Hamburg, 17:48');
     // Off screen, nothing moves.
     pass(4 * SCAN_MS);
     expect(journey()).toHaveAttribute('data-scan', '0');
@@ -210,17 +210,17 @@ describe('Landing: the journey', () => {
     pass(SCAN_MS);
     expect(journey()).toHaveAttribute('data-scan', '1');
     expect(showing('.landing-stack > div')).toBe('Cleared customsArrives tomorrow');
-    expect(showing('.landing-ping')).toContain('New sneakers · Basel, 23:05');
+    expect(showing('.landing-ping')).toContain('New trainers · Basel, 23:05');
     pass(SCAN_MS);
     expect(showing('.landing-stack > div')).toBe('Out for deliverytoday, 13:00–17:00');
-    expect(showing('.landing-ping')).toContain('New sneakers · today, 13:00–17:00');
+    expect(showing('.landing-ping')).toContain('New trainers · today, 13:00–17:00');
     expect(document.querySelector('.landing-journey__live')).toHaveAttribute('data-pulse');
     expect(document.querySelector('.landing-stamp--new')).not.toHaveAttribute('data-landed');
 
     // Delivered: the pulse stops, and a stamp lands in the passport.
     pass(SCAN_MS);
-    expect(showing('.landing-stack > div')).toBe('DeliveredLeft in your mailbox at 14:12');
-    expect(showing('.landing-ping')).toContain('New sneakers · in your mailbox, 14:12');
+    expect(showing('.landing-stack > div')).toBe('DeliveredLeft in your letterbox at 14:12');
+    expect(showing('.landing-ping')).toContain('New trainers · in your letterbox, 14:12');
     expect(document.querySelector('.landing-journey__live')).not.toHaveAttribute('data-pulse');
     expect(document.querySelector('.landing-stamp--new')).toHaveAttribute('data-landed');
     expect(document.querySelectorAll('.landing-journey .progress-track__dot--filled')).toHaveLength(6);

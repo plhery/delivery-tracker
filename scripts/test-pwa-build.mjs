@@ -5,11 +5,12 @@ import { relative, resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const next = resolve(root, '.next');
 const staticDirectory = resolve(next, 'static');
-const [worker, workerSource, pushWorker, manifestText, privacy, offline, ogImage, staticEntries, serverFiles, buildManifest] = await Promise.all([
+const [worker, workerSource, pushWorker, manifestText, germanManifestText, privacy, offline, ogImage, staticEntries, serverFiles, buildManifest] = await Promise.all([
   readFile(resolve(root, 'public/sw.js'), 'utf8'),
   readFile(resolve(root, 'app/sw.ts'), 'utf8'),
   readFile(resolve(root, 'public/push-sw.js'), 'utf8'),
   readFile(resolve(next, 'server/app/manifest.webmanifest.body'), 'utf8'),
+  readFile(resolve(next, 'server/app/de/manifest.webmanifest.body'), 'utf8'),
   readFile(resolve(root, 'public/privacy.html'), 'utf8'),
   readFile(resolve(root, 'app/~offline/page.tsx'), 'utf8'),
   readFile(resolve(root, 'public/og.png')),
@@ -62,6 +63,7 @@ assert.match(pushWorker, /addEventListener\(['"]notificationclick['"]/, 'notific
 assert.match(workerSource, /method: 'POST'/, 'private POST share targets must use the worker router');
 assert.match(workerSource, /formData\(\)/, 'shared content must be read from a POST body');
 assert.match(workerSource, /X-SDT-Created-At/, 'abandoned private share drafts must expire');
+assert.doesNotMatch(workerSource, /new Response\(['"`]/, 'a failed share must reach the app, which says why in the reader’s language');
 assert.doesNotMatch(
   pushWorker,
   /addEventListener\(['"]fetch['"]/,
@@ -91,6 +93,11 @@ assert.deepEqual(manifest.share_target, {
   enctype: 'multipart/form-data',
   params: { title: 'title', text: 'text', url: 'url' },
 });
+const germanManifest = JSON.parse(germanManifestText);
+assert.equal(germanManifest.lang, 'de', 'each language must have its own manifest');
+assert.notEqual(germanManifest.description, manifest.description, 'a language’s manifest must describe Peek in that language');
+assert.deepEqual({ ...germanManifest, name: manifest.name, description: manifest.description, lang: manifest.lang }, manifest,
+  'installed from a page in any language, Peek must be the same app');
 assert.match(privacy, /Download my data/, 'the public build must include the privacy notice');
 assert.match(privacy, /Peek/, 'the privacy notice must use the public product name');
 assert.doesNotMatch(privacy, /Delivery Tracker/, 'the old product name must not remain public');

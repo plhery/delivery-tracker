@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import en from '../../../shared/locales/en.json';
 import type { ApiPackageRow, ApiTrackingEventRow } from '../../generated/apiContract';
-import { SUPPORTED_LOCALES } from '../../lib/locale';
+import { documentLanguage, SUPPORTED_LOCALES } from '../../lib/locale';
 import type { MessageKey } from '../../lib/messages';
 import * as observability from '../observability';
 import { messagesFor } from '../requestLocale';
@@ -163,7 +163,7 @@ describe('deliveryEmailContent', () => {
       expect(part).not.toContain('{{');
       expect(part).not.toContain('undefined');
     }
-    expect(email.html).toContain(`<html lang="${locale}">`);
+    expect(email.html).toContain(`<html lang="${documentLanguage(locale)}">`);
     expect(email.html).toContain(messages['email.delivered.button']);
     expect(email.text).toContain(messages['auth.privacyLink']);
     expect(email.subject).not.toMatch(/[\r\n]/);
@@ -265,7 +265,7 @@ describe('deliveryEmailContent', () => {
   });
 });
 
-describe('deliveryEmailContent for a parcel ready to collect', () => {
+describe('deliveryEmailContent for a parcel ready for pickup', () => {
   // A pickup point of its own, so the recipient's address and postcode can still be looked for.
   const KIOSK = 'Example Kiosk\nKioskweg 2, 8888 Kioskdorf';
   const DIRECTIONS = 'https://www.google.com/maps/dir/?api=1&destination=Example%20Kiosk%2C%20Kioskweg%202%2C%208888%20Kioskdorf';
@@ -278,7 +278,7 @@ describe('deliveryEmailContent for a parcel ready to collect', () => {
     }),
   });
 
-  it('says it is ready to collect, where, and the way there, and draws the parcel waiting', async () => {
+  it('says it is ready for pickup, where, and the way there, and draws the parcel waiting', async () => {
     const email = await deliveryEmailContent(waiting());
     expect(email.subject).toBe(english('email.pickup.subject', { name: 'New sneakers' }));
     expect(email.text.split('\n').slice(0, 5)).toEqual([
@@ -349,7 +349,7 @@ describe('deliveryEmailContent for a parcel ready to collect', () => {
   });
 });
 
-describe('deliveryEmailContent for a parcel collected from its pickup point', () => {
+describe('deliveryEmailContent for a parcel picked up from its pickup point', () => {
   const collected = (overrides: Partial<DeliveryEmailInput> = {}, parcel: Partial<ApiPackageRow> = {}) => input({
     parcel: row({
       tracking_events: [event('accepted', '2026-10-01T09:00:00+00:00'), event('ready_for_pickup', '2026-10-02T10:00:00+00:00'), event('delivered', '2026-10-03T12:12:00+00:00')],
@@ -358,7 +358,7 @@ describe('deliveryEmailContent for a parcel collected from its pickup point', ()
     ...overrides,
   });
 
-  it('says it was collected and when, names no carrier, and draws the parcel delivered', async () => {
+  it('says it was picked up and when, names no carrier, and draws the parcel delivered', async () => {
     const email = await deliveryEmailContent(collected());
     expect(email.subject).toBe(english('email.collected.subject', { name: 'New sneakers' }));
     expect(email.text.split('\n').slice(0, 3)).toEqual([
@@ -413,7 +413,7 @@ describe('deliveryEmailContent for a parcel collected from its pickup point', ()
 describe('exampleDeliveryEmail', () => {
   it('tells of a made-up parcel in the reader’s language, with links that lead home', async () => {
     const email = await exampleDeliveryEmail('en', 'https://peek.example.test');
-    expect(email.subject).toBe(english('email.delivered.subject', { name: 'New sneakers 👟' }));
+    expect(email.subject).toBe(english('email.delivered.subject', { name: 'New trainers 👟' }));
     expect(sentence(email.text)).toBe(english('email.delivered.by.today', { carrier: 'DHL', time: '14:12' }));
     expect(cardInput()).toMatchObject({ when: 'Today, 14:12', timed: true, carrier: { id: 'dhl' } });
     expect(cardInput().parcel.events.map((scan) => scan.place?.name)).toEqual([undefined, 'Hamburg', 'Regensdorf', 'Zürich', 'Zürich']);

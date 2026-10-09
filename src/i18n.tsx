@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { detectLocale, isLocale, languagePath, LOCALE_COOKIE, pathLanguage, SUPPORTED_LOCALES, type Locale } from './lib/locale';
+import { detectLocale, documentLanguage, isLocale, languagePath, LOCALE_COOKIE, manifestPath, pathLanguage, SUPPORTED_LOCALES, type Locale } from './lib/locale';
 import { languageTags, translateMessage, type MessageKey, type Messages, type Translate } from './lib/messages';
 
 export { detectLocale, SUPPORTED_LOCALES, type Locale };
@@ -97,10 +97,12 @@ function rememberLocaleCookie(locale: Locale) {
   document.cookie = `${LOCALE_COOKIE}=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
 }
 
-export function I18nProvider({ children, initialLocale, initialMessages }: {
+export function I18nProvider({ children, initialLocale, initialMessages, addressLocale }: {
   children: ReactNode;
   initialLocale?: Locale;
   initialMessages?: Messages;
+  /** The language the page's address names in its query, as a delivery email's link does: it decides like a language address. */
+  addressLocale?: Locale;
 }) {
   // The server renders the language it expects the browser to choose and sends
   // its messages with the page, so hydration starts from the same text. A
@@ -135,9 +137,9 @@ export function I18nProvider({ children, initialLocale, initialMessages }: {
     const saved = savedLocale();
     if (saved) rememberLocaleCookie(saved);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only preference, applied before paint
-    show(addressLanguage() ?? saved ?? initialLocale
+    show(addressLanguage() ?? addressLocale ?? saved ?? initialLocale
       ?? detectLocale(navigator.languages?.length ? navigator.languages : [navigator.language]));
-  }, [initialLocale, show]);
+  }, [initialLocale, addressLocale, show]);
 
   // Arriving at a language address without a page load, as Back does, shows its language.
   // Leaving one keeps the language on screen until the next page load.
@@ -151,7 +153,11 @@ export function I18nProvider({ children, initialLocale, initialMessages }: {
   }, [show]);
 
   useEffect(() => {
-    document.documentElement.lang = language.locale;
+    document.documentElement.lang = documentLanguage(language.locale);
+    // The app a browser installs from this page is named in the language the page shows.
+    const manifest = document.querySelector('link[rel="manifest"]');
+    const path = manifestPath(language.locale);
+    if (manifest && manifest.getAttribute('href') !== path) manifest.setAttribute('href', path);
   }, [language.locale]);
 
   const chooseLocale = useCallback((next: Locale) => {

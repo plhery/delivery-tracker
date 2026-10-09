@@ -6,16 +6,16 @@ import { I18nProvider, LanguageControl, useI18n } from './i18n';
 
 function Title() {
   const { t } = useI18n();
-  return <p>{t('app.eyebrow')}</p>;
+  return <p>{t('app.emptyTitle')}</p>;
 }
 
 it('loads a chosen language on demand and keeps it selected meanwhile', async () => {
   const user = userEvent.setup();
   render(<I18nProvider><LanguageControl /><Title /></I18nProvider>);
-  expect(screen.getByText('Parcel tracking')).toBeInTheDocument();
+  expect(screen.getByText('No parcels yet')).toBeInTheDocument();
 
   await user.selectOptions(screen.getByLabelText('Language'), 'it');
   expect(screen.getByRole('combobox')).toHaveValue('it');
-  expect(await screen.findByText(itMessages['app.eyebrow'])).toBeInTheDocument();
+  expect(await screen.findByText(itMessages['app.emptyTitle'])).toBeInTheDocument();
   expect(document.documentElement.lang).toBe('it');
 });

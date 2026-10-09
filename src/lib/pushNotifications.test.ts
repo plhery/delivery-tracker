@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   decodePublicKey,
-  updatePushNotificationLocale,
   disablePushNotifications,
   enableAppBadgeClearing,
   enablePushNotifications,
+  followPushNotificationLocale,
   getNotificationPreferences,
   inspectPushState,
   saveNotificationPreferences,
@@ -310,7 +310,7 @@ describe('browser notification language', () => {
     vi.stubGlobal('Notification', { permission: 'granted', requestPermission: vi.fn() });
     getSubscription.mockResolvedValue({ endpoint: 'https://push.example/token' });
     const auth = { userId: 'user-1', getAccessToken: vi.fn().mockResolvedValue('token') };
-    await updatePushNotificationLocale('it', auth);
+    await followPushNotificationLocale('it', auth);
     expect(fetch).toHaveBeenCalledWith('/api/push/subscriptions', expect.objectContaining({
       method: 'PATCH', body: JSON.stringify({ endpoint: 'https://push.example/token', locale: 'it' }),
     }));
@@ -318,9 +318,64 @@ describe('browser notification language', () => {
     expect(Notification.requestPermission).not.toHaveBeenCalled();
   });
 
+  it('asks the server only when the language or the subscription changed since it was last sent', async () => {
+    vi.stubGlobal('Notification', { permission: 'granted', requestPermission: vi.fn() });
+    getSubscription.mockResolvedValue({ endpoint: 'https://push.example/token' });
+    vi.mocked(fetch).mockResolvedValue(response({ ok: true }));
+    const auth = { userId: 'user-1', getAccessToken: vi.fn().mockResolvedValue('token') };
+    const patches = () => vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === 'PATCH').map(([, init]) => JSON.parse(String(init?.body)));
+
+    await followPushNotificationLocale('fr', auth);
+    // Every later start in the same language asks nothing.
+    await followPushNotificationLocale('fr', auth);
+    expect(patches()).toEqual([{ endpoint: 'https://push.example/token', locale: 'fr' }]);
+
+    await followPushNotificationLocale('de', auth);
+    getSubscription.mockResolvedValue({ endpoint: 'https://push.example/renewed' });
+    await followPushNotificationLocale('de', auth);
+    // Another account on this browser has its own subscription row.
+    await followPushNotificationLocale('de', { ...auth, userId: 'user-2' });
+    expect(patches()).toEqual([
+      { endpoint: 'https://push.example/token', locale: 'fr' },
+      { endpoint: 'https://push.example/token', locale: 'de' },
+      { endpoint: 'https://push.example/renewed', locale: 'de' },
+      { endpoint: 'https://push.example/renewed', locale: 'de' },
+    ]);
+  });
+
+  it('tries again after a failed update, and needs none after turning alerts on in the language', async () => {
+    vi.stubGlobal('Notification', { permission: 'granted', requestPermission: vi.fn() });
+    const subscription = { endpoint: 'https://push.example/token', toJSON: () => ({ endpoint: 'https://push.example/token' }) };
+    getSubscription.mockResolvedValue(subscription);
+    const auth = { userId: 'user-1', getAccessToken: vi.fn().mockResolvedValue('token') };
+    vi.mocked(fetch).mockResolvedValueOnce(response({ error: 'offline' }, false));
+    await expect(followPushNotificationLocale('pl', auth)).rejects.toThrow('offline');
+    vi.mocked(fetch).mockResolvedValue(response({ ok: true }));
+    await followPushNotificationLocale('pl', auth);
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
+
+    // Turning alerts on sends the language with the subscription.
+    vi.mocked(fetch).mockClear().mockResolvedValue(response({ ok: true, testSent: true }));
+    await enablePushNotifications('AQID', auth, 'es');
+    await followPushNotificationLocale('es', auth);
+    expect(vi.mocked(fetch).mock.calls.map(([, init]) => init?.method)).toEqual(['POST']);
+
+    // Turning them off forgets it: alerts turned on again later send it again.
+    getSubscription.mockResolvedValue({ ...subscription, unsubscribe: vi.fn().mockResolvedValue(true) });
+    await disablePushNotifications(auth);
+    getSubscription.mockResolvedValue(subscription);
+    await followPushNotificationLocale('es', auth);
+    expect(vi.mocked(fetch).mock.calls.map(([, init]) => init?.method)).toEqual(['POST', 'DELETE', 'PATCH']);
+  });
+
   it('does nothing when alerts are off', async () => {
-    await updatePushNotificationLocale('de', { userId: 'user-1', getAccessToken: vi.fn() });
+    const auth = { userId: 'user-1', getAccessToken: vi.fn() };
+    await followPushNotificationLocale('de', auth);
+    // Allowed, but this browser has no subscription.
+    vi.stubGlobal('Notification', { permission: 'granted', requestPermission: vi.fn() });
+    await followPushNotificationLocale('de', auth);
     expect(fetch).not.toHaveBeenCalled();
     expect(subscribe).not.toHaveBeenCalled();
+    expect(Notification.requestPermission).not.toHaveBeenCalled();
   });
 });

@@ -33,7 +33,7 @@ it('replaces an earlier confirmation with the current recheck and its failure', 
   expect(screen.queryByRole('button', { name: /^SEUR has this parcel/ })).not.toBeInTheDocument();
 
   await act(async () => { rejectRecheck(new Error('Unavailable')); });
-  expect(await screen.findByText('couldn’t check · we’ll retry after you add it')).toBeInTheDocument();
+  expect(await screen.findByText('couldn’t check · Peek will retry after you add it')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /^SEUR has this parcel/ })).not.toBeInTheDocument();
   const add = screen.getByRole('button', { name: /^add parcel$/i });
   expect(add).toBeEnabled();

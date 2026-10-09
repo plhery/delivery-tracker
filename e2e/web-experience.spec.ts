@@ -224,7 +224,7 @@ test('keeps language and account consistent across deliveries, Passport, and par
   await expect(sheet.locator('#add-parcel-tracking')).toBeFocused();
   await sheet.locator('#add-parcel-tracking').fill('993411111122222222');
   await expect(sheet.getByText('Swiss Post', { exact: true })).toBeVisible();
-  await expect(sheet.getByText(/Nous consulterons automatiquement/)).toHaveCount(0);
+  await expect(sheet.getByText(/Peek consultera automatiquement/)).toHaveCount(0);
   await noOverflow(page);
 });
 

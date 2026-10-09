@@ -1,11 +1,12 @@
 import type { Locale } from '../i18n';
 import { decodePublicKey } from '../lib/pushNotifications';
 import { uid } from '../lib/uid';
-import { linkNote, noteLink, type DeviceAlert } from './deviceNotes';
-import { removeParcelAlert, setParcelAlert, type ParcelAlertPreset, type ParcelAlerts } from './links';
+import { linkNote, notedAlerts, noteLink, type DeviceAlert } from './deviceNotes';
+import { ParcelLinkError, removeParcelAlert, setParcelAlert, type ParcelAlertPreset, type ParcelAlerts } from './links';
+import { recentFor } from './recents';
 
 /**
- * "Ping me" without an account: this browser's notifications for one parcel
+ * "Notify me" without an account: this browser's notifications for one parcel
  * link. Nothing is asked of the browser before someone chooses "Turn on".
  *
  * - `ready`: the browser can be asked.
@@ -134,9 +135,40 @@ export async function turnOnAlert({ linkId, key, alerts, preset, locale }: {
     if (created) await subscription?.unsubscribe().catch(() => false);
     throw error;
   }
-  const alert = { preset, endpoint: address.endpoint };
+  const alert = { preset, endpoint: address.endpoint, locale };
   noteLink(linkId, { alert });
   return alert;
+}
+
+/** Refusals that hold for as long as the link does: the alert has nothing to update, and is not tried again. */
+const SETTLED: readonly string[] = ['unavailable', 'stopped', 'full', 'validation'];
+
+/**
+ * Gives this browser's alerts on parcel links the app's language, which the
+ * server writes them in, as when the reader turned them on. It asks the
+ * browser for nothing, and the server only about an alert last given another
+ * language that this browser still receives. One link at a time; a failure
+ * leaves the rest for the next start or change of language.
+ */
+export async function followAlertLanguage(locale: Locale): Promise<void> {
+  const stale = () => notedAlerts().filter(([, alert]) => alert.locale !== locale && !alert.endpoint.startsWith(LOCAL_ENDPOINT));
+  if (stale().length === 0 || !hasNotifications() || Notification.permission !== 'granted' || !hasPush()) return;
+  const subscription = await (await navigator.serviceWorker.getRegistration())?.pushManager.getSubscription();
+  if (!subscription) return;
+  const address = pushKeys(subscription);
+  for (const [linkId] of stale()) {
+    // Read as it is now: the reader may have changed or turned off the alert while an earlier link was asked.
+    const alert = linkNote(linkId).alert;
+    // An alert on another subscription no longer reaches this browser: the parcel page forgets it.
+    if (!alert || alert.locale === locale || alert.endpoint !== address.endpoint) continue;
+    try {
+      await setParcelAlert(linkId, { subscription: address, preset: alert.preset, locale }, recentFor(linkId)?.key);
+    } catch (error) {
+      if (!(error instanceof ParcelLinkError) || !SETTLED.includes(error.kind)) throw error;
+    }
+    const current = linkNote(linkId).alert;
+    if (current?.endpoint === alert.endpoint) noteLink(linkId, { alert: { ...current, locale } });
+  }
 }
 
 /**

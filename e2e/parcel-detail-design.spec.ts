@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
     localStorage.setItem('deliveryTrackerLocale', 'en');
   });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ }).click();
+  await page.getByRole('button', { name: /^(?:Next up: )?New trainers 👟 —/ }).click();
 });
 
 test('keeps tracking actions available when history is folded and preserves title editing', async ({ page }) => {
@@ -68,5 +68,5 @@ test('closes from the backdrop, but keeps inside clicks and nested dialogs open'
   await page.mouse.click(20, 180);
   await expect(detail).toHaveCount(0);
   await expect(page.locator('.detail-backdrop')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ })).toBeFocused();
+  await expect(page.getByRole('button', { name: /^(?:Next up: )?New trainers 👟 —/ })).toBeFocused();
 });

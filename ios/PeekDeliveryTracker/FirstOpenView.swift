@@ -10,7 +10,7 @@ enum FirstParcelRequest: Equatable {
     case scan
 }
 
-/// The made-up parcel the first screen follows: a pair of sneakers, from Shenzhen to a mailbox in Zürich.
+/// The made-up parcel the first screen follows: a pair of trainers, from Shenzhen to a letterbox in Zürich.
 enum FirstOpenJourney {
     /// Its scans; the journey is told one more scan at a time.
     static let steps = 5

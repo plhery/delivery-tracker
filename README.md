@@ -7,7 +7,7 @@
 **Universal parcel tracker for iPhone and the web. Open source.**
 
 Paste a tracking number, a carrier link or a whole shipping email.<br>
-Peek finds the carrier, draws the journey, pings you when the parcel moves.
+Peek finds the carrier, draws the journey, notifies you when the parcel moves.
 
 <sub>The carriers are read by our engine, <a href="https://github.com/plhery/universal-parcel-scraper">Universal Parcel Scraper</a>.</sub>
 
@@ -67,7 +67,7 @@ universal trackers such as ParcelsApp, Ship24 and 17TRACK, and turns everyone's 
 into the same delivery stages.
 
 Peek installs it from npm and builds the rest around it: accounts, checks in the
-background, alerts and the two apps.
+background, notifications and the two apps.
 
 - A carrier is missing, or tracks wrongly?
   [Tell the scraper](https://github.com/plhery/universal-parcel-scraper/issues/new/choose).
@@ -122,7 +122,7 @@ upgrades and backups.
 
 Next.js, React and TypeScript for the web and the API, SwiftUI for the iPhone. Supabase
 Auth and Postgres row-level security keep accounts apart, and a queue in the database runs
-the carrier checks and the alerts.
+the carrier checks and the notifications.
 
 - [Architecture](docs/ARCHITECTURE.md): how the pieces fit, and who can see what
 - [Scraper package](docs/SCRAPER.md): what Peek takes from the scraper, and how it updates

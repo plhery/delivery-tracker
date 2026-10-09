@@ -111,10 +111,12 @@ export class DeliveryEmailService {
 
     let message: OutgoingEmail;
     try {
-      const links = unsubscribeUrls(this.settings.origin, claim.userId);
+      const locale = accountLocale(account?.locale ?? null);
+      // The page its "turn it off" link opens speaks the email's language.
+      const links = unsubscribeUrls(this.settings.origin, claim.userId, locale);
       const content = await deliveryEmailContent({
         parcel: withEventPlaces(parcel) as unknown as ApiPackageRow,
-        locale: accountLocale(account?.locale ?? null),
+        locale,
         stage: claim.stage,
         timezone: claim.timezone,
         // What a notification opens.

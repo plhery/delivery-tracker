@@ -104,7 +104,7 @@ extension Parcel {
 
 extension Localizer {
     /// Where the account's defaults are, as the alerts sheet and the offer name it:
-    /// "Settings › Delivery updates".
+    /// "Settings › Notifications".
     var deliveryUpdatesPlace: String {
         "\(text("settings.title")) › \(text("settings.deliveryUpdates"))"
     }

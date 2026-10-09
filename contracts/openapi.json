@@ -5681,11 +5681,20 @@
               "type": "string",
               "pattern": "^[A-Za-z0-9._-]{20,200}$"
             }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "description": "The email's language, which the page speaks. Another value is ignored.",
+            "schema": {
+              "$ref": "#/components/schemas/NativePushLocale"
+            }
           }
         ],
         "responses": {
           "303": {
-            "description": "To /email/off, with the token after #"
+            "description": "To /email/off, in the email's language, with the token after #"
           },
           "429": {
             "description": "Too many requests"

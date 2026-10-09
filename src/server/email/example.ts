@@ -20,13 +20,13 @@ const HAMBURG: ApiEventPlace = { latitude: 53.551, longitude: 9.993, precision: 
 const REGENSDORF: ApiEventPlace = { latitude: 47.434, longitude: 8.469, precision: 'city', country: 'CH', name: 'Regensdorf' };
 const ZURICH: ApiEventPlace = { latitude: 47.367, longitude: 8.55, precision: 'city', country: 'CH', name: 'Zürich' };
 
-/** The demo's sneakers, from a shop in Hamburg to a mailbox in Zürich at 14:12, told in the demo's words. */
+/** The demo's trainers, from a shop in Hamburg to a letterbox in Zürich at 14:12, told in the demo's words. */
 const SCANS: readonly { stage: ApiStage; at: string; description: string; place?: ApiEventPlace }[] = [
   { stage: 'registered', at: '2026-01-13T09:02:00+00:00', description: 'Your running shoes are packed' },
   { stage: 'accepted', at: '2026-01-13T16:48:00+00:00', description: 'Collected from the running shop', place: HAMBURG },
   { stage: 'in_transit', at: '2026-01-14T20:40:00+00:00', description: 'Arrived at the destination depot', place: REGENSDORF },
   { stage: 'out_for_delivery', at: '2026-01-15T07:05:00+00:00', description: 'With the courier for delivery', place: ZURICH },
-  { stage: 'delivered', at: '2026-01-15T13:12:00+00:00', description: 'Delivered to your mailbox', place: ZURICH },
+  { stage: 'delivered', at: '2026-01-15T13:12:00+00:00', description: 'Delivered to your letterbox', place: ZURICH },
 ];
 
 /** The made-up parcel of "See an example": nobody's, with no number, and the same for every reader of a language. */
@@ -36,7 +36,7 @@ export function exampleParcel(locale: Locale): ApiPackageRow {
   return {
     id,
     tracking_number: '',
-    label: words('New sneakers 👟'),
+    label: words('New trainers 👟'),
     carrier: 'dhl',
     created_at: SCANS[0].at,
     expected_delivery: null,

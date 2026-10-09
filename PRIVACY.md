@@ -26,7 +26,7 @@ sell personal data, serve advertising, or use advertising analytics.
   corresponding notification or Live Activity setting.
 - Whether you asked for an email when a parcel arrives and when you
   turned it on, the parcels you muted for it, and a record of each of these
-  emails: the parcel, whether it told a delivery or a parcel ready to collect,
+  emails: the parcel, whether it told a delivery or a parcel ready for pickup,
   when it was sent and whether sending worked.
 - The links you make to share a parcel or to follow one without an account, and
   what each link shows.
@@ -122,21 +122,21 @@ and nothing else about the parcel.
 
 Peek sends two kinds of email, both through Resend (Resend, Inc., United
 States): the sign-in code you ask for and, only if you turn it on, an email
-when a parcel is ready to collect and one when it is delivered.
+when a parcel is ready for pickup and one when it is delivered.
 
-The delivery email is off until you turn it on under Settings › Delivery
-updates, or accept the offer shown once after a delivery. It goes to the
+The delivery email is off until you turn it on under Settings › Notifications,
+or accept the offer shown once after a delivery. It goes to the
 address you sign in with and contains the name you gave the parcel, the
 carrier, the time and a picture of the journey with its towns. For a parcel
-ready to collect, it also names the pickup point the carrier gave, with its
+ready for pickup, it also names the pickup point the carrier gave, with its
 address and a link that opens it in Google Maps, as Directions or Show on map
 does. It never contains the tracking number. It has no tracking pixel, no tracked links
 and no remote images. Peek sends at most these two per parcel and nothing
 else: no newsletter and no promotion.
 
 These emails rest on your consent. Turn them off at any time with the same
-switch, for one parcel in that parcel's alerts, or with the link in every
-email, which works without signing in and takes effect at once. That link
+switch, for one parcel in that parcel's notification settings, or with the
+link in every email, which works without signing in and takes effect at once. That link
 carries a token that tells the service which account it belongs to.
 
 Resend receives your email address and the content of each email, and keeps
@@ -206,7 +206,7 @@ last link. If you sign in and keep the parcel, it becomes part of your account.
 Diagnostic logs and Sentry reports can retain its tracking number as described
 above.
 
-## Sharing a parcel and alerts for a link
+## Sharing a parcel and notifications for a link
 
 You can share a parcel through its link, with or without an account. Anyone
 who has the link sees the parcel's status and history. They never see a pickup
@@ -233,8 +233,8 @@ gift's page shows its recipient none of it before the parcel is delivered.
 Anyone who has a link can turn on notifications in their browser for that one
 parcel, without an account. The service then stores that browser's Web Push
 endpoint and encryption keys, its language, which updates to announce, and
-whether the device that made the lookup turned the alert on. This is deleted
-when the parcel is delivered or returned, when the browser turns the alert off
+whether the device that made the lookup turned notifications on. This is deleted when
+the parcel is delivered or returned, when the browser turns notifications off
 or its push subscription ends, when the link is forgotten, and, for everyone
 but the device that made the lookup, when sharing is stopped. The notifications
 carry the parcel's status and never its number or name; a gift's do not say

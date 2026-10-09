@@ -162,7 +162,7 @@ test('a gift stays a surprise until it is delivered, then shows its note and wha
   await expect(recipient.locator('body')).not.toContainText(/\bSam\b/);
   await expect(recipient.getByText('Left the sender')).toHaveCount(1);
   // A gift's way into the alerts is in its card.
-  await expect(recipient.locator('.peekp-card').getByRole('button', { name: 'Ping me', exact: true })).toBeVisible();
+  await expect(recipient.locator('.peekp-card').getByRole('button', { name: 'Notify me', exact: true })).toBeVisible();
   expect(await fits(recipient)).toBe(true);
   // The device's list does not learn the name either.
   await recipient.goto('/');
@@ -195,9 +195,9 @@ test('stopping the sharing blanks the link for a recipient, and sharing again br
   await expect(sheet.getByText('Sharing is stopped. The link shows nothing to anyone else.')).toBeVisible();
   await expect(sheet.getByRole('switch')).toHaveCount(0);
   await show(page, recipient, address);
-  await expect(recipient.getByRole('heading', { level: 1, name: 'This parcel isn’t shared anymore' })).toBeVisible();
+  await expect(recipient.getByRole('heading', { level: 1, name: 'This parcel isn’t shared any more' })).toBeVisible();
   await expect(recipient.getByText('The person who shared it stopped sharing. If it’s yours, paste its tracking number to follow it again.')).toBeVisible();
-  await expect(recipient).toHaveTitle('This parcel isn’t shared anymore · Peek');
+  await expect(recipient).toHaveTitle('This parcel isn’t shared any more · Peek');
   await expect(recipient.getByText('In transit')).toHaveCount(0);
   expect(await fits(recipient)).toBe(true);
   // It is not the page of a forgotten link, and it leads to the front door.
@@ -221,14 +221,14 @@ test('alerts: turned on only when asked, changed and turned off, and gone once t
   await answerNotifications(page, 'granted');
   await track(page, 'DEMOCHOC20260001');
   await expect(status(page)).toHaveText('Out for delivery');
-  await actions(page).getByRole('button', { name: /^Ping me/ }).click();
-  const sheet = page.getByRole('dialog', { name: 'Ping me when it arrives' });
+  await actions(page).getByRole('button', { name: /^Notify me/ }).click();
+  const sheet = page.getByRole('dialog', { name: 'Notify me when it arrives' });
   await expect(sheet.getByRole('radio', { name: /^Notifications in this browser/ })).toBeChecked();
   await expect(sheet.getByText('Works while this page is closed. Stops when the parcel is delivered.')).toBeVisible();
   await expect(sheet.getByRole('radio', { name: /^Add the delivery window to my calendar/ })).toBeVisible();
   await expect(sheet.getByText('This is the demo: nothing is sent.')).toBeVisible();
   // The row that invites to sign in promises what an account does, and no email.
-  await expect(sheet.getByText('Alerts on all your devices')).toBeVisible();
+  await expect(sheet.getByText('Notifications on all your devices')).toBeVisible();
   await expect(sheet).not.toContainText(/e-?mail/i);
   await expect(sheet.getByRole('button', { name: 'Important steps' })).toHaveAttribute('aria-pressed', 'true');
 
@@ -236,14 +236,14 @@ test('alerts: turned on only when asked, changed and turned off, and gone once t
   expect(await page.evaluate(() => Notification.permission)).toBe('default');
   await sheet.getByRole('button', { name: 'Delivery only' }).click();
   await sheet.getByRole('button', { name: 'Turn on' }).click();
-  await expect(sheet.getByText('Alerts are on in this browser')).toBeVisible();
+  await expect(sheet.getByText('Notifications are on in this browser')).toBeVisible();
   expect(await page.evaluate(() => Notification.permission)).toBe('granted');
   await expect(sheet.getByRole('button', { name: 'Delivery only' })).toHaveAttribute('aria-pressed', 'true');
   await sheet.getByRole('button', { name: 'Every scan' }).click();
   await expect(sheet.getByText('Preferences saved')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(sheet).toHaveCount(0);
-  const ping = actions(page).getByRole('button', { name: 'Alerts on' });
+  const ping = actions(page).getByRole('button', { name: 'Notifications on' });
   await expect(ping).toBeFocused();
 
   // A reload keeps it on; turning off brings the offer back.
@@ -253,13 +253,13 @@ test('alerts: turned on only when asked, changed and turned off, and gone once t
   await sheet.getByRole('button', { name: 'Turn off' }).click();
   await expect(sheet.getByRole('button', { name: 'Turn on' })).toBeVisible();
   await sheet.getByRole('button', { name: 'Turn on' }).click();
-  await expect(sheet.getByText('Alerts are on in this browser')).toBeVisible();
+  await expect(sheet.getByText('Notifications are on in this browser')).toBeVisible();
   await sheet.getByRole('button', { name: 'Close' }).click();
 
   // Delivered: nothing is left to ping about, and "I have it" offers the gentle exit.
   await page.getByRole('button', { name: /Check now$/ }).click();
   await expect(status(page)).toHaveText('Delivered');
-  await expect(page.getByRole('button', { name: /Ping me|Alerts on/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Notify me|Notifications on/ })).toHaveCount(0);
   await actions(page).getByRole('button', { name: 'I have it' }).click();
   const exit = page.getByRole('dialog', { name: 'Glad it arrived' });
   await expect(exit).toContainText(/Peek forgets this parcel on \d+ \p{L}+\./u);
@@ -276,8 +276,8 @@ test('alerts: a browser that refuses notifications gets plain guidance and the c
   await answerNotifications(page, 'denied');
   await track(page, 'DEMOCHOC20260001');
   await expect(status(page)).toHaveText('Out for delivery');
-  await actions(page).getByRole('button', { name: /^Ping me/ }).click();
-  const sheet = page.getByRole('dialog', { name: 'Ping me when it arrives' });
+  await actions(page).getByRole('button', { name: /^Notify me/ }).click();
+  const sheet = page.getByRole('dialog', { name: 'Notify me when it arrives' });
   await sheet.getByRole('button', { name: 'Turn on' }).click();
   await expect(sheet.getByRole('alert')).toHaveText('Notifications are blocked for this site. Allow them in your browser’s site settings, then choose Turn on again.');
   await expect(sheet.getByRole('radio', { name: /^Notifications in this browser/ })).toBeDisabled();
@@ -302,8 +302,8 @@ test('alerts: a browser without notifications is told so, and offered the calend
   await page.addInitScript(() => { Object.defineProperty(window, 'Notification', { configurable: true, value: undefined }); });
   await track(page, 'DEMOCHOC20260001');
   await expect(status(page)).toHaveText('Out for delivery');
-  await actions(page).getByRole('button', { name: /^Ping me/ }).click();
-  const sheet = page.getByRole('dialog', { name: 'Ping me when it arrives' });
+  await actions(page).getByRole('button', { name: /^Notify me/ }).click();
+  const sheet = page.getByRole('dialog', { name: 'Notify me when it arrives' });
   const notifications = sheet.getByRole('radio', { name: /^Notifications in this browser/ });
   await expect(notifications).toBeDisabled();
   await expect(notifications).not.toBeChecked();
@@ -312,7 +312,7 @@ test('alerts: a browser without notifications is told so, and offered the calend
   await expect(sheet.getByRole('radio', { name: /^Add the delivery window to my calendar/ })).toBeChecked();
   await expect(sheet.getByRole('button', { name: 'Add to calendar' })).toBeVisible();
   // An account's alerts do not depend on this browser: the way to them stays.
-  await expect(sheet.getByText('Alerts on all your devices')).toBeVisible();
+  await expect(sheet.getByText('Notifications on all your devices')).toBeVisible();
 });
 
 test('alerts: an iPhone outside its Home Screen app gets the steps there, not a button that cannot work', async ({ browser, page }) => {
@@ -322,15 +322,15 @@ test('alerts: an iPhone outside its Home Screen app gets the steps there, not a 
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1',
   });
   await show(page, phone, page.url());
-  await phone.getByRole('button', { name: 'Ping me', exact: true }).click();
-  const sheet = phone.getByRole('dialog', { name: 'Alerts on iPhone' });
+  await phone.getByRole('button', { name: 'Notify me', exact: true }).click();
+  const sheet = phone.getByRole('dialog', { name: 'Notifications on iPhone' });
   await expect(sheet.getByText('Safari only sends notifications from sites on your Home Screen.')).toBeVisible();
   // Safari 27 keeps Share in the page menu of its address bar, which the first step draws.
   await expect(sheet.getByRole('listitem')).toHaveText([
-    /^1Tap Page Menu in Safari’s address bar/, '2Tap Share', '3Tap View More, then Add to Home Screen', '4Open Peek from your Home Screen and tap Ping me',
+    /^1Tap Page Menu in Safari’s address bar/, '2Tap Share', '3Tap View More, then Add to Home Screen', '4Open Peek from your Home Screen and tap Notify me',
   ]);
   await expect(sheet.getByRole('button', { name: 'Turn on' })).toHaveCount(0);
-  await expect(sheet.getByRole('button', { name: 'Sign in for alerts on all your devices' })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Sign in for notifications on all your devices' })).toBeVisible();
   expect(await fits(phone)).toBe(true);
   expect(errors.get(phone)).toEqual([]);
   await context.close();
@@ -339,24 +339,24 @@ test('alerts: an iPhone outside its Home Screen app gets the steps there, not a 
 test('a parcel of the deliveries is shared through the same sheet: its link is made on copy, and stopped for good', async ({ page, context }) => {
   await allowCopying(page);
   await page.goto('/demo');
-  await page.getByRole('button', { name: /New sneakers/ }).first().click();
-  const detail = page.getByRole('dialog', { name: /New sneakers/ }).first();
+  await page.getByRole('button', { name: /New trainers/ }).first().click();
+  const detail = page.getByRole('dialog', { name: /New trainers/ }).first();
   await expect(detail).toBeVisible();
   await detail.getByRole('button', { name: 'Share this parcel' }).click();
-  const sheet = page.getByRole('dialog', { name: /^Share “New sneakers/ });
+  const sheet = page.getByRole('dialog', { name: /^Share “New trainers/ });
   await expect(sheet.getByText('The link is made when you share or copy it.')).toBeVisible();
   // Before there is a link, the sheet shows what it will show: the status and the number's end, without the name.
   const preview = sheet.getByRole('group', { name: 'What they’ll see' });
   await expect(preview).toContainText('Ready for pickup');
   await expect(preview.locator('.peeks-preview__number')).toHaveText('••• 99');
-  await expect(preview).not.toContainText('New sneakers');
+  await expect(preview).not.toContainText('New trainers');
   await expect(sheet.getByRole('button', { name: 'Stop sharing' })).toHaveCount(0);
   await sheet.getByRole('switch', { name: 'Show its name' }).check();
-  await expect(preview).toContainText('New sneakers');
+  await expect(preview).toContainText('New trainers');
   await sheet.getByRole('button', { name: 'Copy' }).click();
   await expect(sheet.getByText('Link copied')).toBeVisible();
   const link = await copied(page);
-  expect(link).toMatch(/\/p\/[2-9A-HJ-NP-Za-km-z]{12}#n=New%20sneakers/);
+  expect(link).toMatch(/\/p\/[2-9A-HJ-NP-Za-km-z]{12}#n=New%20trainers/);
   await expect(sheet.getByRole('button', { name: 'Stop sharing' })).toBeVisible();
 
   // Anyone with the link gets the page a looked-up parcel has, as a viewer.
@@ -365,7 +365,7 @@ test('a parcel of the deliveries is shared through the same sheet: its link is m
   await visitor.goto(link);
   await expect(visitor.getByText('Shared with you · no account needed')).toBeVisible();
   await expect(status(visitor)).toHaveText('Ready for pickup');
-  await expect(visitor.locator('.peekp-card__name')).toHaveText(/^New sneakers/);
+  await expect(visitor.locator('.peekp-card__name')).toHaveText(/^New trainers/);
   await expect(visitor.getByText('••• 99', { exact: true })).toBeVisible();
   // A link from an account is never forgotten by itself, and nobody can forget it from outside.
   await expect(visitor.getByText(/Peek forgets this parcel/)).toHaveCount(0);
@@ -374,7 +374,7 @@ test('a parcel of the deliveries is shared through the same sheet: its link is m
   await sheet.getByRole('button', { name: 'Stop sharing' }).click();
   await expect(sheet.getByText('Sharing is stopped. Sharing again makes a new link.')).toBeVisible();
   await visitor.reload();
-  await expect(visitor.getByRole('heading', { level: 1, name: 'This parcel isn’t shared anymore' })).toBeVisible();
+  await expect(visitor.getByRole('heading', { level: 1, name: 'This parcel isn’t shared any more' })).toBeVisible();
   expect(errors.get(visitor)).toEqual([]);
 });
 

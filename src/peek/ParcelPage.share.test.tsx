@@ -75,7 +75,7 @@ describe('the parcel page of a recipient', () => {
     expect(screen.getByText('For Mum')).toBeVisible();
     expect(screen.getByText('Tracking number').parentElement).toHaveTextContent('••• 99');
     expect(screen.queryByRole('button', { name: 'Copy tracking number' })).toBeNull();
-    expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Ping me', 'Add to calendar', 'Edit parcel name']);
+    expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Notify me', 'Add to calendar', 'Edit parcel name']);
     // The alerts are among the actions: the card's corner stays empty.
     expect(document.querySelector('.peekp-bell')).toBeNull();
     // Forgetting is the owner's, and so is choosing what the link shows.
@@ -100,7 +100,7 @@ describe('the parcel page of a recipient', () => {
     open(view({ owner: false, link: { numberShown: true, canKeep: true }, parcel: { trackingNumber: '1234567899', expectedDelivery: undefined } }));
     expect(await screen.findByRole('button', { name: /Create an account/ })).toBeVisible();
     expect(actions().queryByRole('button', { name: 'Add to calendar' })).toBeNull();
-    expect(actions().getByRole('button', { name: 'Ping me' })).toBeVisible();
+    expect(actions().getByRole('button', { name: 'Notify me' })).toBeVisible();
   });
 
   it('tells a recipient how long the link works once the parcel is delivered, in place of the footer’s line', async () => {
@@ -202,9 +202,9 @@ describe('the parcel page of a link’s owner', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(share).toHaveFocus();
 
-    const ping = actions().getByRole('button', { name: /^Ping me/ });
+    const ping = actions().getByRole('button', { name: /^Notify me/ });
     fireEvent.click(ping);
-    fireEvent.click(within(screen.getByRole('dialog', { name: 'Ping me when it arrives' })).getByRole('button', { name: 'Close' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Notify me when it arrives' })).getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(ping).toHaveFocus();
   });
@@ -229,45 +229,45 @@ describe('the parcel page of a link’s owner', () => {
   it('words the way to the alerts by where the parcel is, and drops it once the journey is over', async () => {
     const moving = open(view());
     // Short on a phone, and with what it promises where there is room.
-    expect((await screen.findByRole('button', { name: /^Ping me/ })).textContent).toBe('Ping mePing me when it arrives');
+    expect((await screen.findByRole('button', { name: /^Notify me/ })).textContent).toBe('Notify meNotify me when it arrives');
     expect(document.querySelector('.peekp-actions--led')).toBeNull();
     moving.unmount();
 
     // Not scanned yet: being told is the one next step.
     const announced = open(view({ events: [scan('registered', 50)] }));
-    const lead = await screen.findByRole('button', { name: 'Ping me when it moves' });
+    const lead = await screen.findByRole('button', { name: 'Notify me when it moves' });
     expect(lead).toHaveClass('button--primary');
-    expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Ping me when it moves', 'Share', 'Name it']);
+    expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Notify me when it moves', 'Share', 'Name it']);
     announced.unmount();
 
     const unknown = open(view({ events: [scan('pending', 50, 'Tracking added')], parcel: { carrier: 'unknown', syncStatus: 'waiting' } }));
-    expect(await screen.findByRole('button', { name: 'Ping me when it’s found' })).toBeVisible();
+    expect(await screen.findByRole('button', { name: 'Notify me when it’s found' })).toBeVisible();
     unknown.unmount();
 
     const delivered = open(view({ events: arrived, parcel: { expectedDelivery: undefined } }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Delivered' })).toBeVisible();
-    expect(screen.queryByRole('button', { name: /Ping me/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Notify me/ })).toBeNull();
     delivered.unmount();
     open(view({ events: [...journey, scan('returned', 1)] }));
     await screen.findByRole('heading', { level: 1 });
-    expect(screen.queryByRole('button', { name: /Ping me/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Notify me/ })).toBeNull();
   });
 
   it('turns alerts on from the sheet, proposing every scan for a parcel that has not moved yet, and says they are on', async () => {
     stubAlertBrowser();
     const user = userEvent.setup();
     open(view({ events: [scan('registered', 50)] }));
-    await user.click(await screen.findByRole('button', { name: 'Ping me when it moves' }));
-    const sheet = screen.getByRole('dialog', { name: 'Ping me when it arrives' });
+    await user.click(await screen.findByRole('button', { name: 'Notify me when it moves' }));
+    const sheet = screen.getByRole('dialog', { name: 'Notify me when it arrives' });
     expect(within(sheet).getByRole('button', { name: 'Every scan' })).toHaveAttribute('aria-pressed', 'true');
     // The calendar is the sheet's other way, with the estimate in words.
     expect(within(sheet).getByRole('radio', { name: /^Add the delivery window to my calendar/ })).toBeVisible();
     await user.click(within(sheet).getByRole('button', { name: 'Turn on' }));
     expect(mocks.set).toHaveBeenCalledExactlyOnceWith(LINK_ID, expect.objectContaining({ preset: 'all', locale: 'en' }), OWNER_KEY);
-    expect(await within(sheet).findByText('Alerts are on in this browser')).toBeVisible();
+    expect(await within(sheet).findByText('Notifications are on in this browser')).toBeVisible();
     await user.click(within(sheet).getByRole('button', { name: 'Close' }));
     // The alerts are no longer the next step: the row says they are on.
-    expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Alerts on', 'Share', 'Name it']);
+    expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Notifications on', 'Share', 'Name it']);
     expect(document.querySelector('.peekp-actions--led')).toBeNull();
   });
 
@@ -275,9 +275,9 @@ describe('the parcel page of a link’s owner', () => {
     stubAlertBrowser({ permission: 'denied' });
     noteLink(LINK_ID, { alert: { preset: 'all', endpoint: 'demo:1' } });
     open(view());
-    expect(await screen.findByRole('button', { name: /^Ping me/ })).toBeVisible();
+    expect(await screen.findByRole('button', { name: /^Notify me/ })).toBeVisible();
     await waitFor(() => expect(linkNote(LINK_ID).alert).toBeUndefined());
-    expect(actions().queryByRole('button', { name: 'Alerts on' })).toBeNull();
+    expect(actions().queryByRole('button', { name: 'Notifications on' })).toBeNull();
   });
 
   it('offers a visitor the sign-in from the alerts, and not someone signed in', async () => {
@@ -285,14 +285,14 @@ describe('the parcel page of a link’s owner', () => {
     const signIn = vi.fn();
     const user = userEvent.setup();
     const visitor = open(view(), { session: { account: 'visitor', signIn } });
-    await user.click(await screen.findByRole('button', { name: /^Ping me/ }));
+    await user.click(await screen.findByRole('button', { name: /^Notify me/ }));
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign in' }));
     expect(signIn).toHaveBeenCalledExactlyOnceWith(LINK_ID, false);
     expect(screen.queryByRole('dialog')).toBeNull();
     visitor.unmount();
     open(view(), { session: signedIn });
-    await user.click(await screen.findByRole('button', { name: /^Ping me/ }));
-    expect(screen.getByRole('dialog', { name: 'Ping me when it arrives' })).toBeVisible();
+    await user.click(await screen.findByRole('button', { name: /^Notify me/ }));
+    expect(screen.getByRole('dialog', { name: 'Notify me when it arrives' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
   });
 
@@ -363,9 +363,9 @@ describe('a gift', () => {
     expect(screen.queryByText(/Shared with you/)).toBeNull();
     // The way into the alerts is in the card's corner; the row keeps the calendar.
     expect(actions().getAllByRole('button').map((button) => button.textContent)).toEqual(['Add to calendar']);
-    const bell = within(card).getByRole('button', { name: 'Ping me' });
+    const bell = within(card).getByRole('button', { name: 'Notify me' });
     fireEvent.click(bell);
-    fireEvent.click(within(screen.getByRole('dialog', { name: 'Ping me when it arrives' })).getByRole('button', { name: 'Close' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Notify me when it arrives' })).getByRole('button', { name: 'Close' }));
     expect(bell).toHaveFocus();
   });
 
@@ -375,12 +375,12 @@ describe('a gift', () => {
     const shown = wrapped();
     open({ ...shown, parcel: { ...shown.parcel, expectedDelivery: undefined } }, { hash: words });
     const card = await screen.findByRole('region', { name: 'Something’s on its way to you' });
-    await user.click(within(card).getByRole('button', { name: 'Ping me' }));
-    const sheet = screen.getByRole('dialog', { name: 'Ping me when it arrives' });
+    await user.click(within(card).getByRole('button', { name: 'Notify me' }));
+    const sheet = screen.getByRole('dialog', { name: 'Notify me when it arrives' });
     await user.click(within(sheet).getByRole('button', { name: 'Turn on' }));
-    expect(await within(sheet).findByText('Alerts are on in this browser')).toBeVisible();
+    expect(await within(sheet).findByText('Notifications are on in this browser')).toBeVisible();
     await user.click(within(sheet).getByRole('button', { name: 'Close' }));
-    expect(within(card).getByRole('button', { name: 'Alerts on' })).toHaveAttribute('data-on', 'true');
+    expect(within(card).getByRole('button', { name: 'Notifications on' })).toHaveAttribute('data-on', 'true');
     expect(document.querySelector('.peekp-actions')).toBeNull();
   });
 
@@ -465,9 +465,9 @@ describe('a link that is not shared anymore', () => {
     const openDeliveries = vi.fn();
     const user = userEvent.setup();
     render(<PeekSessionProvider value={{ ...signedIn, openDeliveries }}><ParcelPage linkId={LINK_ID} /></PeekSessionProvider>);
-    expect(await screen.findByRole('heading', { level: 1, name: 'This parcel isn’t shared anymore' })).toBeVisible();
+    expect(await screen.findByRole('heading', { level: 1, name: 'This parcel isn’t shared any more' })).toBeVisible();
     expect(screen.getByText('The person who shared it stopped sharing. If it’s yours, paste its tracking number to follow it again.')).toBeVisible();
-    expect(document.title).toBe('This parcel isn’t shared anymore · Peek');
+    expect(document.title).toBe('This parcel isn’t shared any more · Peek');
     expect(screen.queryByText(/forgotten|never existed/)).toBeNull();
     // Nothing of the parcel is left on the page or the device.
     expect(screen.queryByText('In transit')).toBeNull();

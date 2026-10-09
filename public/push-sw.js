@@ -26,7 +26,7 @@ self.addEventListener('push', (event) => {
     fr: ['Des nouvelles du colis', 'Touche pour voir ce qui a changé'],
     it: ['Novità sul pacco', 'Tocca per vedere cos’è cambiato'],
     es: ['Novedades del paquete', 'Toca para ver qué hay de nuevo'],
-    pt: ['Atualização do envio', 'Toca para ver as novidades'],
+    pt: ['Atualização da encomenda', 'Toca para ver as novidades'],
     pl: ['Nowe wieści o przesyłce', 'Stuknij, aby zobaczyć szczegóły'],
   };
   const requestedLanguage = String(payload.lang || self.navigator?.language || 'en').split(/[-_]/)[0].toLowerCase();

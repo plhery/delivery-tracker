@@ -32,7 +32,7 @@ const lookup: ParcelLookup = { id: LINK_ID, key: OWNER_KEY, view: testView() };
 const onTracked = vi.fn();
 const onSample = vi.fn();
 const onSignIn = vi.fn();
-const notFound = 'We couldn’t find a tracking number. Paste the number or a tracking link.';
+const notFound = 'Peek couldn’t find a tracking number. Paste the number or a tracking link.';
 
 function door() {
   // The clipboard the Paste button reads exists from here on, as it does in a browser.
@@ -87,7 +87,7 @@ describe('FrontDoor', () => {
     expect(document.querySelectorAll('.door-pip .parcel-illustration__eye')).toHaveLength(2);
     expect(document.querySelector('.door-pip .parcel-illustration__label')).toBeNull();
     expect(document.querySelector<HTMLElement>('.door-pip')!.style.viewTransitionName).toBe('peek-pip');
-    expect(field).toHaveAttribute('placeholder', 'Paste a number, link, or message');
+    expect(field).toHaveAttribute('placeholder', 'Paste a number, link or message');
     expect(screen.getByRole('button', { name: 'Paste' })).toBeEnabled();
     expect(track).toBeEnabled();
     expect(screen.getAllByRole('textbox')).toHaveLength(1);
@@ -633,7 +633,7 @@ describe('FrontDoor: on this device', () => {
     // No scan has a place: no card leads, and none draws a route.
     expect(list.querySelector('.door-nextup, .card-route')).toBeNull();
     expect(within(list).getByText('Kept in this browser only.')).toBeVisible();
-    await user.click(within(list).getByRole('button', { name: 'Sign in to keep them, with alerts' }));
+    await user.click(within(list).getByRole('button', { name: 'Sign in to keep them, with notifications' }));
     expect(onSignIn).toHaveBeenCalledOnce();
     // A modified click is the browser's: a new tab opens the address itself.
     let takenByPage = true;
@@ -945,7 +945,7 @@ describe('FrontDoor: the landing', () => {
     pass(5 * SAMPLE_PERIOD_MS);
     expect(sample()).toBeNull();
     expect(line()).toHaveAttribute('data-phase', 'rest');
-    expect(screen.getByRole('textbox', { name: 'Tracking number or link' })).toHaveAttribute('placeholder', 'Paste a number, link, or message');
+    expect(screen.getByRole('textbox', { name: 'Tracking number or link' })).toHaveAttribute('placeholder', 'Paste a number, link or message');
     // Pip stands still, and still opens a sample.
     expect(screen.getByRole('link', { name: 'Open a sample parcel' })).toHaveAttribute('href', '/sample');
   });

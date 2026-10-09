@@ -1,4 +1,5 @@
 import { expect, test, type Locator } from '@playwright/test';
+import { documentLanguage } from '../src/lib/locale';
 
 test.use({ locale: 'en-US' });
 test.beforeEach(async ({ page }) => {
@@ -66,10 +67,10 @@ test('Sharing controls stay in place and preserve saved privacy preferences', as
 test('Circle and sharing fit narrow screens in all languages', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
-  for (const language of ['fr', 'de', 'it', 'es', 'pt', 'pl', 'en']) {
+  for (const language of ['fr', 'de', 'it', 'es', 'pt', 'pl', 'en'] as const) {
     await page.locator('.account-trigger').click();
     await page.getByRole('dialog').getByRole('combobox').selectOption(language);
-    await expect(page.locator('html')).toHaveAttribute('lang', language);
+    await expect(page.locator('html')).toHaveAttribute('lang', documentLanguage(language));
     await page.keyboard.press('Escape');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.locator('.friends-own-row').click();

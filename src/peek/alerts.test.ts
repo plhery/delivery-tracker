@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IPHONE_SAFARI, restoreAlertBrowser, stubAlertBrowser, TEST_PUSH_ENDPOINT, TEST_PUSH_KEY } from '../test/alertBrowser';
-import { LINK_ID, OWNER_KEY } from '../test/parcelLinks';
-import { AlertError, alertSupport, deviceAlert, turnOffAlert, turnOnAlert } from './alerts';
+import { LINK_ID, OTHER_LINK_ID, OWNER_KEY, testView } from '../test/parcelLinks';
+import { AlertError, alertSupport, deviceAlert, followAlertLanguage, turnOffAlert, turnOnAlert } from './alerts';
 import { forgetAllLinkNotes, linkNote, noteLink } from './deviceNotes';
 import { ParcelLinkError } from './links';
+import { forgetAllRecents, rememberParcel } from './recents';
 
 const mocks = vi.hoisted(() => ({ set: vi.fn(), remove: vi.fn() }));
 vi.mock('./links', async (original) => ({
@@ -30,6 +31,7 @@ afterEach(() => {
   vi.useRealTimers();
   restoreAlertBrowser();
   forgetAllLinkNotes();
+  forgetAllRecents();
 });
 
 describe('what a browser can do about alerts', () => {
@@ -73,7 +75,7 @@ describe('turning alerts on', () => {
     expect(mocks.set).toHaveBeenCalledExactlyOnceWith(LINK_ID, {
       subscription: { endpoint: ENDPOINT, keys: { p256dh: 'p256dh-key', auth: 'auth-secret' } }, preset: 'important', locale: 'de',
     }, OWNER_KEY);
-    expect(alert).toEqual({ preset: 'important', endpoint: ENDPOINT });
+    expect(alert).toEqual({ preset: 'important', endpoint: ENDPOINT, locale: 'de' });
     expect(linkNote(LINK_ID).alert).toEqual(alert);
   });
 
@@ -84,7 +86,7 @@ describe('turning alerts on', () => {
     expect(requestPermission).not.toHaveBeenCalled();
     expect(pushManager.subscribe).not.toHaveBeenCalled();
     expect(mocks.set).toHaveBeenLastCalledWith(LINK_ID, expect.objectContaining({ preset: 'delivery' }), null);
-    expect(linkNote(LINK_ID).alert).toEqual({ preset: 'delivery', endpoint: ENDPOINT });
+    expect(linkNote(LINK_ID).alert).toEqual({ preset: 'delivery', endpoint: ENDPOINT, locale: 'de' });
   });
 
   it('stops at a refusal or a closed prompt, before any subscription', async () => {
@@ -190,5 +192,80 @@ describe('the alert a browser has', () => {
     mocks.remove.mockRejectedValueOnce(new ParcelLinkError('offline'));
     await expect(turnOffAlert(LINK_ID)).rejects.toMatchObject({ kind: 'offline' });
     expect(linkNote(LINK_ID).alert).toBeDefined();
+  });
+});
+
+describe('the language of a browser’s alerts', () => {
+  const KEYS = { endpoint: ENDPOINT, keys: { p256dh: 'p256dh-key', auth: 'auth-secret' } };
+
+  it('gives an alert in another language the app’s, with what it announces, and asks nothing once it has it', async () => {
+    const { requestPermission, pushManager } = browser({ permission: 'granted', existing: true });
+    rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView(), now: Date.now() });
+    noteLink(LINK_ID, { alert: { preset: 'delivery', endpoint: ENDPOINT, locale: 'de' } });
+    // Noted before alerts kept their language: sent once.
+    noteLink(OTHER_LINK_ID, { alert: { preset: 'all', endpoint: ENDPOINT } });
+    await followAlertLanguage('fr');
+    expect(mocks.set.mock.calls).toEqual([
+      [LINK_ID, { subscription: KEYS, preset: 'delivery', locale: 'fr' }, OWNER_KEY],
+      [OTHER_LINK_ID, { subscription: KEYS, preset: 'all', locale: 'fr' }, undefined],
+    ]);
+    expect(linkNote(LINK_ID).alert).toEqual({ preset: 'delivery', endpoint: ENDPOINT, locale: 'fr' });
+    expect(linkNote(OTHER_LINK_ID).alert).toEqual({ preset: 'all', endpoint: ENDPOINT, locale: 'fr' });
+
+    mocks.set.mockClear();
+    pushManager.getSubscription.mockClear();
+    await followAlertLanguage('fr');
+    expect(mocks.set).not.toHaveBeenCalled();
+    expect(pushManager.getSubscription).not.toHaveBeenCalled();
+    expect(requestPermission).not.toHaveBeenCalled();
+    expect(pushManager.subscribe).not.toHaveBeenCalled();
+  });
+
+  it('leaves alone what this browser no longer receives, and the demo’s', async () => {
+    noteLink(LINK_ID, { alert: { preset: 'all', endpoint: ENDPOINT, locale: 'de' } });
+    noteLink(OTHER_LINK_ID, { alert: { preset: 'all', endpoint: 'demo:1', locale: 'de' } });
+    // Not allowed: nothing is asked of the browser, nor of the server.
+    const { requestPermission } = browser();
+    await followAlertLanguage('it');
+    expect(requestPermission).not.toHaveBeenCalled();
+    // Allowed, without a subscription.
+    browser({ permission: 'granted' });
+    await followAlertLanguage('it');
+    // On a subscription the browser has since replaced.
+    noteLink(LINK_ID, { alert: { preset: 'all', endpoint: 'https://push.example.test/send/old', locale: 'de' } });
+    browser({ permission: 'granted', existing: true });
+    await followAlertLanguage('it');
+    expect(mocks.set).not.toHaveBeenCalled();
+    expect(linkNote(LINK_ID).alert?.locale).toBe('de');
+    expect(linkNote(OTHER_LINK_ID).alert?.locale).toBe('de');
+  });
+
+  it('notes a link that has nothing to update, and leaves the rest for later when the server cannot answer', async () => {
+    browser({ permission: 'granted', existing: true });
+    noteLink(LINK_ID, { alert: { preset: 'all', endpoint: ENDPOINT, locale: 'de' } });
+    noteLink(OTHER_LINK_ID, { alert: { preset: 'important', endpoint: ENDPOINT, locale: 'de' } });
+    mocks.set.mockRejectedValueOnce(new ParcelLinkError('unavailable')).mockRejectedValueOnce(new ParcelLinkError('offline'));
+    await expect(followAlertLanguage('pl')).rejects.toMatchObject({ kind: 'offline' });
+    expect(linkNote(LINK_ID).alert?.locale).toBe('pl');
+    expect(linkNote(OTHER_LINK_ID).alert?.locale).toBe('de');
+
+    await followAlertLanguage('pl');
+    expect(mocks.set).toHaveBeenLastCalledWith(OTHER_LINK_ID, { subscription: KEYS, preset: 'important', locale: 'pl' }, undefined);
+    expect(mocks.set).toHaveBeenCalledTimes(3);
+    expect(linkNote(OTHER_LINK_ID).alert).toEqual({ preset: 'important', endpoint: ENDPOINT, locale: 'pl' });
+  });
+
+  it('keeps a preset chosen while it asked, and leaves an alert turned off meanwhile off', async () => {
+    browser({ permission: 'granted', existing: true });
+    noteLink(LINK_ID, { alert: { preset: 'all', endpoint: ENDPOINT, locale: 'de' } });
+    noteLink(OTHER_LINK_ID, { alert: { preset: 'all', endpoint: ENDPOINT, locale: 'de' } });
+    mocks.set.mockImplementationOnce(async () => {
+      noteLink(LINK_ID, { alert: { preset: 'delivery', endpoint: ENDPOINT, locale: 'es' } });
+      noteLink(OTHER_LINK_ID, { alert: null });
+    });
+    await followAlertLanguage('es');
+    expect(mocks.set).toHaveBeenCalledTimes(1);
+    expect(linkNote(LINK_ID).alert).toEqual({ preset: 'delivery', endpoint: ENDPOINT, locale: 'es' });
+    expect(linkNote(OTHER_LINK_ID).alert).toBeUndefined();
   });
 });
