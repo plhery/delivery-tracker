@@ -45,6 +45,9 @@ const ACTIVE_PACKAGE_SELECT = 'id,user_id,tracking_number,label,carrier,current_
 export const STORED_EVENT_IDENTITIES = 'stored_event_identities';
 const SYNC_EVENT_IDENTITIES = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at,stage,description,location,time:raw_data->>time,provider_code:raw_data->>provider_code,observed_without_provider_timestamp:raw_data->observed_without_provider_timestamp)`;
 
+/** Where each channel records that a scan was announced, or handled without an alert. */
+const SCAN_RECEIPT_TABLES = ['push_deliveries', 'native_push_deliveries', 'parcel_link_alert_deliveries', 'live_activity_event_deliveries'];
+
 export class SupabaseError extends Error {
   constructor(
     message: string,
@@ -788,6 +791,29 @@ export class SupabaseClient {
       body: eventIds.map((eventId) => ({ subscription_id: subscriptionId, event_id: eventId })),
       prefer: 'resolution=ignore-duplicates,return=minimal',
     });
+  }
+
+  /**
+   * Lets the notifications announce these stored scans of a package once more:
+   * forgets every push, link alert and Live Activity receipt for them. Returns how
+   * many scans it found.
+   */
+  async reopenScanAnnouncements(packageId: string, providerEventIds: string[]): Promise<number> {
+    if (providerEventIds.length === 0) return 0;
+    const identities = [...new Set(providerEventIds)].map((id) => `"${id.replace(/["\\]/g, '\\$&')}"`);
+    const events = rows(await this.request(`/rest/v1/tracking_events?${query([
+      ['package_id', `eq.${packageId}`],
+      ['provider_event_id', `in.(${identities.join(',')})`],
+      ['select', 'id'],
+    ])}`)).flatMap((event) => typeof event.id === 'string' ? [event.id] : []);
+    if (events.length === 0) return 0;
+    await Promise.all(SCAN_RECEIPT_TABLES.map(async (table) => {
+      await this.request(`/rest/v1/${table}?${query({ event_id: `in.(${events.join(',')})` })}`, {
+        method: 'DELETE',
+        prefer: 'return=minimal',
+      });
+    }));
+    return events.length;
   }
 
   async recordNativePushDeliveries(deviceId: string, eventIds: string[]): Promise<void> {

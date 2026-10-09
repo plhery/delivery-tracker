@@ -67,6 +67,9 @@ Key server modules:
   that moment, stored by the check that runs as it is added or more than a day older than
   it. A first history that arrives later, from the hours before the add, is announced.
   A batch whose newest scan is more than a day old is stored and shown without an alert.
+  A stored scan the carrier later restages, in place, into a delivery or a pickup
+  readiness is announced again by the same rules, once, when it is from the last day and
+  the parcel had shown that stage neither as its own nor in another scan.
   A handoff's relay copy that reaches the parcel after the scan it repeats is never the one
   announced ([ROUTING.md](ROUTING.md#handoffs-two-carriers)). A scheduled run sends a
   parcel's notifications right after its check, without waiting for the parcels after it.

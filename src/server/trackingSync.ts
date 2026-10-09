@@ -896,6 +896,27 @@ export class TrackingSyncService {
     }
   }
 
+  /**
+   * Forgets the notification receipts of stored scans the check restaged into news, so
+   * the next dispatch announces them by the usual rules. A failure leaves them announced
+   * as they were, and never fails the check.
+   */
+  private async reopenAnnouncements(
+    parcel: JsonObject,
+    restaged: string[],
+    context: SyncRunContext,
+    audit: TrackingSyncAudit,
+  ): Promise<JsonObject> {
+    if (restaged.length === 0) return {};
+    try {
+      return { scans_reannounced: await this.client.reopenScanAnnouncements(String(parcel.id), restaged) };
+    } catch (error) {
+      if (context.signal?.aborted) throw error;
+      audit.reportError(error, 'reopen_announcements');
+      return { scans_reannounced: 0, reannouncement_failed: true };
+    }
+  }
+
   // Unmapped carrier wording is review material, never a reason to fail a
   // refresh: a failed write is logged each time and reported to Sentry once.
   // The events keep their computed identities, whose prefix names the carrier
@@ -1353,7 +1374,10 @@ export class TrackingSyncService {
       // A scan already stored is rewritten in place, which is no news.
       const storedIds = new Set(stored.map((event) => String(event.provider_event_id)));
       const eventsNew = persistedEvents.filter((event) => !storedIds.has(String(event.provider_event_id))).length;
-      const news = eventsNew > 0 || (values.current_stage !== undefined && values.current_stage !== previousStage);
+      // Unless it turns into the delivery or pickup readiness the parcel had not shown yet.
+      const restaged = restagedNews(stored, persistedEvents, previousStage, this.now());
+      const news = eventsNew > 0 || restaged.length > 0
+        || (values.current_stage !== undefined && values.current_stage !== previousStage);
       const outcome = progressDisappeared ? 'error'
         : !knownUpdate || fallbackWithoutProgress ? 'waiting' : news ? 'updated' : 'unchanged';
       operation = 'persist_package';
@@ -1368,12 +1392,14 @@ export class TrackingSyncService {
         carrier: carrierId, provider: String(values.carrier), trackingNumber: String(parcel.tracking_number ?? ''), attemptId: audit.attemptId,
         ...(detectionNames(String(parcel.tracking_number ?? ''), String(values.carrier)) ? { category: 'detected' } : {}),
       });
+      const reannounced = await this.reopenAnnouncements(parcel, restaged, context, audit);
       audit.record('persist_events', 'succeeded', 0, {
         events_persisted: persistedEvents.length,
         events_new: eventsNew,
         identities_reused: [...matches.reused.keys()].filter((id) => persistedIds.has(id)).length,
         copies_skipped: [...matches.skipped.keys()].filter((id) => persistedIds.has(id)).length,
         atomic_with_package: true,
+        ...reannounced,
       });
       // One scan from two sources on clocks a zone apart: a provider's clock the scraper should fix.
       if ([...shared.shifted].some((id) => persistedIds.has(id))) anomalies = [...anomalies, 'provider_clock_offset'];
@@ -1617,6 +1643,32 @@ export class TrackingSyncService {
       handoffFallbackErrorType,
     };
   }
+}
+
+const RESTAGED_NEWS = new Set(['delivered', 'ready_for_pickup']);
+const RESTAGED_NEWS_MS = 24 * 60 * 60 * 1_000;
+
+/**
+ * The stored scans a check restages into a delivery or a pickup readiness that the parcel
+ * has not shown, neither as its stage nor in another scan, from the last day: news worth
+ * announcing once. Any other scan rewritten in place stays announced as it was.
+ */
+export function restagedNews(
+  stored: readonly JsonObject[],
+  persisted: readonly JsonObject[],
+  previousStage: string,
+  now: Date,
+): string[] {
+  const storedStages = new Map(stored.map((event) => [String(event.provider_event_id), String(event.stage)]));
+  const shown = new Set([previousStage, ...storedStages.values()]);
+  const since = now.getTime() - RESTAGED_NEWS_MS;
+  return persisted.flatMap((event) => {
+    const id = String(event.provider_event_id);
+    const stage = String(event.stage);
+    const before = storedStages.get(id);
+    return before !== undefined && before !== stage && RESTAGED_NEWS.has(stage) && !shown.has(stage)
+      && Date.parse(String(event.occurred_at)) >= since ? [id] : [];
+  });
 }
 
 /** The stored event identities a sync loader embedded; none when the parcel came from elsewhere. */

@@ -55,13 +55,17 @@ All tables and views here are service-role only.
 - `tracking_sync_attempts`: one row per check. It holds the configured and actual carrier,
   job and package, previous and selected stage, provider status, event counts, outcome,
   error class, anomaly codes and a bounded private `status_text`. A check that stored a
-  scan for the first time or moved the parcel's stage ends `updated`; one whose carrier
-  answered with the progress already saved ends `unchanged`. `events_new` counts the scans
+  scan for the first time, moved the parcel's stage or restaged a stored scan into news
+  (see `scans_reannounced`) ends `updated`; one whose carrier answered with the progress
+  already saved ends `unchanged`. `events_new` counts the scans
   a check stored for the first time: a stored scan rewritten in place, as when its location
   fills in, is not new. It is null for checks recorded before the column existed.
 - `tracking_sync_steps`: `selected`, `fetch`, `normalize`, `persist_events`,
   `persist_package`, `complete`, each with status and duration. `persist_events` has
-  `events_persisted`, the rows written, and `events_new`. A not-yet-announced number
+  `events_persisted`, the rows written, and `events_new`. When the check restaged stored
+  scans into a delivery or pickup readiness to announce, it has `scans_reannounced`, the
+  scans whose receipts it dropped, and `reannouncement_failed` when that failed (also
+  reported to Sentry as `reopen_announcements`). A not-yet-announced number
   is a successful `fetch` with disposition `unannounced`, and the attempt ends as
   `waiting`. Real failures end as `error`. A `fetch` that reused answers another copy of
   its number got earlier in the same scheduled run counts them in `shared_answers`.

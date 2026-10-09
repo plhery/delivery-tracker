@@ -25,6 +25,7 @@ import {
   isTrackingSyncDue,
   isUnannouncedTrackingError,
   providerEventId,
+  restagedNews,
   resultHasUpdate,
   resultStage,
   stageToSave,
@@ -692,6 +693,7 @@ function fakeClient(packages: JsonObject[] = []) {
     listUnwatchedPackageIds: vi.fn().mockResolvedValue([]),
     sharedAlertPackageIds: vi.fn().mockResolvedValue(new Set()),
     autoLinkPackages: vi.fn().mockResolvedValue(0),
+    reopenScanAnnouncements: vi.fn(async (_packageId: string, ids: string[]) => ids.length),
     unarchivedParcelLegs: vi.fn().mockResolvedValue(
       packages.filter((parcel) => typeof parcel.user_id === 'string' && parcel.archived_at == null)),
     updatePackage: vi.fn().mockResolvedValue(undefined),
@@ -3116,6 +3118,90 @@ it('fills in a UPS scan location without creating another notification event', a
   expect(store.rows.size).toBe(1);
   expect([...store.rows.values()][0]).toMatchObject({ id: original.id, provider_event_id: original.provider_event_id,
     location: 'Example City, France' });
+});
+
+describe('scans restaged into news', () => {
+  const now = new Date('2026-07-11T18:40:00Z');
+  const stored = [
+    { provider_event_id: 'ups:collected', stage: 'accepted', occurred_at: '2026-07-11T16:16:00+00:00' },
+    { provider_event_id: 'ups:notice', stage: 'ready_for_pickup', occurred_at: '2026-07-11T09:00:00+00:00' },
+  ];
+  const restaged = (stage: string, previousStage = 'ready_for_pickup', at = now, others: JsonObject[] = []) => restagedNews(
+    [...stored, ...others],
+    [{ provider_event_id: 'ups:collected', stage, occurred_at: '2026-07-11T16:16:00.000Z' }, { ...stored[1]! }],
+    previousStage, at,
+  );
+
+  it('names a stored scan turned into a delivery the parcel had not shown', () => {
+    expect(restaged('delivered')).toEqual(['ups:collected']);
+    expect(restaged('ready_for_pickup', 'in_transit', now, [])).toEqual([]);
+    expect(restagedNews([stored[0]!], [{ ...stored[0]!, stage: 'ready_for_pickup' }], 'in_transit', now)).toEqual(['ups:collected']);
+  });
+
+  it('leaves out other stages, stages already shown, new scans and scans over a day old', () => {
+    expect(restaged('in_transit')).toEqual([]);
+    expect(restaged('accepted')).toEqual([]);
+    expect(restaged('delivered', 'delivered')).toEqual([]);
+    expect(restaged('delivered', 'ready_for_pickup', now,
+      [{ provider_event_id: 'ups:earlier', stage: 'delivered', occurred_at: '2026-07-11T12:00:00+00:00' }])).toEqual([]);
+    expect(restaged('delivered', 'ready_for_pickup', new Date('2026-07-12T16:17:00Z'))).toEqual([]);
+    expect(restagedNews(stored, [{ provider_event_id: 'ups:new', stage: 'delivered', occurred_at: '2026-07-11T18:00:00Z' }],
+      'ready_for_pickup', now)).toEqual([]);
+  });
+});
+
+it('announces once a stored scan the carrier restages into a delivery', async () => {
+  const store = eventStore();
+  const notice = { time: '2026-07-11T09:00:00Z', stage: 'ready_for_pickup', description: 'Waiting at the parcel shop' };
+  const reply = (stage: string) => ({ status: stage, current_stage: stage, last_update: '2026-07-11T16:16:00Z',
+    last_status_text: 'Collected from the parcel shop',
+    events: [{ time: '2026-07-11T16:16:00Z', stage, description: 'Collected from the parcel shop' }, notice] });
+  const adapter = { fetch: vi.fn().mockResolvedValueOnce(reply('accepted')).mockResolvedValue(reply('delivered')) };
+  let now = new Date('2026-07-11T16:20:00Z');
+  const service = new TrackingSyncService(store.client as unknown as SupabaseServiceClient, adapter, null, () => now);
+  let stage = 'ready_for_pickup';
+  const load = () => ({ id: 'collected-parcel', user_id: 'owner', carrier: 'ups', tracking_number: '1Z0000000000000000',
+    current_stage: stage, [STORED_EVENT_IDENTITIES]: store.identities() });
+  // First stored as accepted: the parcel stays ready for pickup, and nothing is reopened.
+  await expect(service.syncPackage(load())).resolves.toMatchObject({ updated: 1 });
+  expect(store.client.updatePackage.mock.calls.at(-1)![1].current_stage).toBe('ready_for_pickup');
+  const collected = [...store.rows.values()].find((row) => row.description === 'Collected from the parcel shop')!;
+  expect(store.client.reopenScanAnnouncements).not.toHaveBeenCalled();
+
+  now = new Date('2026-07-11T18:40:00Z');
+  await expect(service.syncPackage(load())).resolves.toMatchObject({ updated: 1 });
+  expect(store.rows.size).toBe(2);
+  expect(store.client.reopenScanAnnouncements).toHaveBeenCalledExactlyOnceWith('collected-parcel', [collected.provider_event_id]);
+  const steps = store.client.completeSyncAttempt.mock.calls.at(-1)![2] as JsonObject[];
+  expect(steps.find((step) => step.step === 'persist_events')!.details).toMatchObject({ events_new: 0, scans_reannounced: 1 });
+  stage = 'delivered';
+  await expect(service.syncPackage(load())).resolves.toMatchObject({ unchanged: 1 });
+  expect(store.client.reopenScanAnnouncements).toHaveBeenCalledOnce();
+});
+
+it('keeps a check whose restaged scan cannot be announced again, and reports it', async () => {
+  const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+  const store = eventStore();
+  const failure = new Error('receipts unavailable');
+  store.client.reopenScanAnnouncements.mockRejectedValue(failure);
+  const reply = (stage: string) => ({ status: stage, current_stage: stage, last_update: '2026-07-11T16:16:00Z',
+    last_status_text: 'Collected from the parcel shop',
+    events: [{ time: '2026-07-11T16:16:00Z', stage, description: 'Collected from the parcel shop' }] });
+  const adapter = { fetch: vi.fn().mockResolvedValueOnce(reply('accepted')).mockResolvedValue(reply('delivered')) };
+  const service = new TrackingSyncService(store.client as unknown as SupabaseServiceClient, adapter, null,
+    () => new Date('2026-07-11T18:40:00Z'));
+  const load = () => ({ id: 'collected-parcel', user_id: 'owner', carrier: 'ups', tracking_number: '1Z0000000000000000',
+    current_stage: 'ready_for_pickup', [STORED_EVENT_IDENTITIES]: store.identities() });
+  await service.syncPackage(load());
+  await expect(service.syncPackage(load())).resolves.toMatchObject({ updated: 1, errors: 0 });
+  expect(store.client.reopenScanAnnouncements).toHaveBeenCalledOnce();
+  expect([...store.rows.values()][0]).toMatchObject({ stage: 'delivered' });
+  const steps = store.client.completeSyncAttempt.mock.calls.at(-1)![2] as JsonObject[];
+  expect(steps.find((step) => step.step === 'persist_events')!.details)
+    .toMatchObject({ scans_reannounced: 0, reannouncement_failed: true });
+  expect(report).toHaveBeenCalledExactlyOnceWith(failure, expect.objectContaining({
+    component: 'tracking-sync', operation: 'reopen_announcements',
+  }));
 });
 
 it('rewrites a scan in place when a take-over left its row under an older identity', async () => {

@@ -752,6 +752,27 @@ describe('notification reads', () => {
     expect(pages[0]!.get('select')).toBe('package_id,parcel_link_alerts!inner(id)');
   });
 
+  it('forgets every receipt of the scans to announce again, found by their identities', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const request = vi.spyOn(client, 'request').mockResolvedValueOnce([{ id: 'row-1' }, { id: 'row-2' }]).mockResolvedValue(null);
+    await expect(client.reopenScanAnnouncements('package-1', ['ups:a,b', 'ups:say "hi"', 'ups:a,b'])).resolves.toBe(2);
+    const found = new URL(`https://database.example${String(request.mock.calls[0]![0])}`).searchParams;
+    expect(found.get('package_id')).toBe('eq.package-1');
+    expect(found.get('provider_event_id')).toBe('in.("ups:a,b","ups:say \\"hi\\"")');
+    expect(found.get('select')).toBe('id');
+    expect(request.mock.calls.slice(1).map(([path, init]) => [decodeURIComponent(String(path)), init])).toEqual(
+      ['push_deliveries', 'native_push_deliveries', 'parcel_link_alert_deliveries', 'live_activity_event_deliveries']
+        .map((table) => [`/rest/v1/${table}?event_id=in.(row-1,row-2)`, { method: 'DELETE', prefer: 'return=minimal' }]),
+    );
+    // Nothing to forget: no request, or no delete when the scans are gone.
+    request.mockClear();
+    await expect(client.reopenScanAnnouncements('package-1', [])).resolves.toBe(0);
+    expect(request).not.toHaveBeenCalled();
+    request.mockResolvedValueOnce([]);
+    await expect(client.reopenScanAnnouncements('package-1', ['ups:gone'])).resolves.toBe(0);
+    expect(request).toHaveBeenCalledOnce();
+  });
+
   it('reads the unarchived parcels of accounts, with what tells which legs may be merged', async () => {
     const client = new SupabaseServiceClient('https://database.example', 'service-key');
     const request = vi.spyOn(client, 'request').mockResolvedValue([
