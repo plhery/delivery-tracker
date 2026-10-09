@@ -848,7 +848,7 @@ describe('FrontDoor: the landing', () => {
       'Where’s my parcel?', 'Will I know when it moves?', 'Following more than one?', 'Who’s behind Peek?',
     ]);
     expect(document.querySelector('.door')).toHaveAttribute('data-view', 'first');
-    expect(document.title).toBe('Peek — Where’s my parcel? Universal Parcel Tracker');
+    expect(document.title).toBe('Peek — Where’s my parcel? Universal Package & Parcel Tracker');
   });
 
   it('gives the tab back to the app when the landing closes', () => {
@@ -1038,7 +1038,7 @@ describe('FrontDoor: the landing', () => {
     mocks.read.mockResolvedValue(testView());
     view.rerender(<FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} />);
     expect(seen).toHaveBeenCalledWith('front-door', 'anonymous');
-    expect(document.title).toBe('Peek — Where’s my parcel? Universal Parcel Tracker');
+    expect(document.title).toBe('Peek — Where’s my parcel? Universal Package & Parcel Tracker');
     await waitFor(() => expect(mocks.read).toHaveBeenCalledWith(LINK_ID, expect.objectContaining({ key: OWNER_KEY })));
     seen.mockRestore();
   });

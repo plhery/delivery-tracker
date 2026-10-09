@@ -14,7 +14,7 @@ async function firstByte(request: APIRequestContext, address: string, headers: R
   const response = await request.get(address, { headers, maxRedirects: 0 });
   return { response, html: await response.text() };
 }
-const tag = (html: string, pattern: RegExp) => pattern.exec(html)?.[1] ?? null;
+const tag = (html: string, pattern: RegExp) => pattern.exec(html)?.[1]?.replaceAll('&amp;', '&') ?? null;
 const languages = ['de', 'fr', 'it', 'es', 'pt', 'pl'] as const;
 const questions: Record<string, string> = {
   de: 'Wo ist mein Paket?', fr: 'Où est mon colis\u202f?', it: 'Dov’è il mio pacco?',
@@ -22,7 +22,7 @@ const questions: Record<string, string> = {
 };
 /** What Peek is, as each language's title ends. */
 const taglines: Record<string, string> = {
-  en: 'Universal Parcel Tracker', de: 'Universelle Paketverfolgung', fr: 'Suivi de colis universel', it: 'Tracciamento pacchi universale',
+  en: 'Universal Package & Parcel Tracker', de: 'Universelle Paketverfolgung', fr: 'Suivi de colis universel', it: 'Tracciamento pacchi universale',
   es: 'Seguimiento universal de paquetes', pt: 'Seguimento universal de encomendas', pl: 'Uniwersalne śledzenie przesyłek',
 };
 /** The landing's title in a language: the question it answers, then what Peek is. */
@@ -142,7 +142,7 @@ test('each language has an address whose first answer is entirely in that langua
       expect(robotsOf(html), where).toBeNull();
       const description = tag(html, /<meta name="description" content="([^"]*)"/)!;
       expect(description, where).toMatch(/3.?500/);
-      expect(description, where).not.toContain('Track any parcel');
+      expect(description, where).not.toContain('Track any package');
       expect(tag(html, /<meta property="og:title" content="([^"]*)"/), where).toBe(titleIn(language));
       expect(tag(html, /<meta property="og:description" content="([^"]*)"/), where).toBe(description);
       expect(tag(html, /<meta property="og:url" content="([^"]*)"/), where).toBe(`${baseURL}/${language}`);

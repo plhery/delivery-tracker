@@ -463,6 +463,7 @@
   "link.bring.done.many": "{{count}} pacchi aggiunti alle tue consegne",
   "link.bring.failed": "Impossibile aggiungere questi pacchi. Riprova.",
   "link.preview.follow": "Seguilo su Peek.",
+  "preview.landing.tagline": "Tracciamento pacchi universale",
   "preview.landing.description": "Segui ogni pacco in un unico posto: incolla un numero di tracciamento, un link del corriere o un’e-mail di spedizione. Oltre 3.500 corrieri, controllati fino a ogni 10 minuti. Open source, senza account.",
   "preview.site.description": "Tracciamento pacchi privato, con avvisi e cronologia sincronizzati sui tuoi dispositivi.",
   "preview.picture.detail": "Incolla un numero. Senza account.",

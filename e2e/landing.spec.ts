@@ -76,10 +76,10 @@ test('asks four questions in order, with the field first and the name, the code 
   for (const text of ['Where’s my parcel?', 'Will I know when it moves?', 'Following more than one?', 'Who’s behind Peek?', 'parcel-illustration']) expect(html).toContain(text);
   expect(html).not.toContain('landing-journey__canvas');
   expect(html).not.toContain('parcel-card');
-  expect(html).toContain('<title>Peek — Where’s my parcel? Universal Parcel Tracker</title>');
+  expect(html).toContain('<title>Peek — Where’s my parcel? Universal Package &amp; Parcel Tracker</title>');
 
   await openLanding(page);
-  await expect(page).toHaveTitle('Peek — Where’s my parcel? Universal Parcel Tracker');
+  await expect(page).toHaveTitle('Peek — Where’s my parcel? Universal Package & Parcel Tracker');
   await expect(page.locator('.door h1, .door h2:not(.door-device h2)')).toHaveText([
     'Where’s my parcel?', 'Will I know when it moves?', 'Following more than one?', 'Who’s behind Peek?',
   ]);

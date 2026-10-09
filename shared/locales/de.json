@@ -463,6 +463,7 @@
   "link.bring.done.many": "{{count}} Pakete zu deinen Sendungen hinzugefügt",
   "link.bring.failed": "Die Pakete konnten nicht hinzugefügt werden. Versuch es noch einmal.",
   "link.preview.follow": "Verfolge es auf Peek.",
+  "preview.landing.tagline": "Universelle Paketverfolgung",
   "preview.landing.description": "Verfolge jedes Paket an einem Ort: Füge eine Sendungsnummer, einen Link vom Paketdienst oder eine Versandmail ein. 3500+ Paketdienste, bis zu alle 10 Minuten geprüft. Open Source, kein Konto nötig.",
   "preview.site.description": "Private Paketverfolgung, mit Benachrichtigungen und Verlauf auf all deinen Geräten.",
   "preview.picture.detail": "Nummer einfügen. Kein Konto nötig.",

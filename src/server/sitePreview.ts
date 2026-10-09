@@ -20,9 +20,9 @@ export function siteTitle(t: Translate): string {
   return `${t('app.title')} — ${t('app.tagline')}`;
 }
 
-/** The landing's title: the question it answers, then what Peek is, for someone searching for one. */
+/** The landing's title: the question it answers, then what Peek is, in the words someone searching for one types. */
 export function landingTitle(t: Translate): string {
-  return `${t('app.title')} — ${t('peek.title')} ${t('app.tagline')}`;
+  return `${t('app.title')} — ${t('peek.title')} ${t('preview.landing.tagline')}`;
 }
 
 /** Peek's own picture in a language, as a preview links it. */

@@ -463,6 +463,7 @@
   "link.bring.done.many": "Dodano {{count}} przesyłek do Twoich dostaw",
   "link.bring.failed": "Nie udało się dodać tych przesyłek. Spróbuj ponownie.",
   "link.preview.follow": "Śledź ją w Peek.",
+  "preview.landing.tagline": "Uniwersalne śledzenie przesyłek",
   "preview.landing.description": "Śledź każdą paczkę w jednym miejscu: wklej numer przesyłki, link od przewoźnika albo e-mail o wysyłce. Ponad 3500 przewoźników, sprawdzanie nawet co 10 minut. Open source, bez konta.",
   "preview.site.description": "Prywatne śledzenie przesyłek, z powiadomieniami i historią na wszystkich Twoich urządzeniach.",
   "preview.picture.detail": "Wklej numer. Bez konta.",

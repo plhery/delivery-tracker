@@ -33,9 +33,9 @@ import { messagesFor } from './server/requestLocale';
 const TITLE = 'Peek — Universal Parcel Tracker';
 const DESCRIPTION =
   'Private parcel tracking, with alerts and history synced across your devices.';
-const LANDING_TITLE = 'Peek — Where’s my parcel? Universal Parcel Tracker';
+const LANDING_TITLE = 'Peek — Where’s my parcel? Universal Package & Parcel Tracker';
 const LANDING_DESCRIPTION =
-  'Track any parcel in one place: paste a tracking number, a carrier link or a shipping email. 3,500+ carriers, checked up to every 10 minutes. Open source, no account needed.';
+  'Track any package or parcel: paste a tracking number, a carrier link or a shipping email. 3,500+ carriers, checked up to every 10 minutes. Open source, no account needed.';
 /** The page of a language's address, as the router finds it. */
 const languagePage = (language: string) => import(`../app/${language}/page.tsx`) as Promise<{ default: () => ReactElement; generateMetadata: () => Promise<Metadata> }>;
 /** The landing in every language, as each of its addresses names them. */
@@ -108,7 +108,7 @@ describe('public product metadata', () => {
   it.each(ADDRESS_LANGUAGES)('writes the landing at /%s in that language, whatever the browser prefers, and names that address', async (language) => {
     request.language = 'en-GB,en;q=0.9';
     const words = messagesFor(language);
-    const title = `Peek — ${words['peek.title']} ${words['app.tagline']}`;
+    const title = `Peek — ${words['peek.title']} ${words['preview.landing.tagline']}`;
     const description = words['preview.landing.description'];
     const address = `https://delivery.example.test/${language}`;
     const { default: LanguageLandingPage, generateMetadata: languageMetadata } = await languagePage(language);
@@ -265,7 +265,7 @@ describe('public product metadata', () => {
       const file = `og${locale === 'en' ? '' : `-${locale}`}.png`;
       const digest = createHash('sha256').update(readFileSync(`public/${file}`)).digest('hex').slice(0, 8);
       const metadata = await generateMetadata();
-      expect(metadata.title).toBe(`Peek — ${words['peek.title']} ${words['app.tagline']}`);
+      expect(metadata.title).toBe(`Peek — ${words['peek.title']} ${words['preview.landing.tagline']}`);
       expect(metadata.description).toBe(words['preview.landing.description']);
       // Long enough to say what Peek does, short enough for a search result to show most of it.
       expect([...words['preview.landing.description']].length).toBeLessThanOrEqual(205);

@@ -463,6 +463,7 @@
   "link.bring.done.many": "{{count}} paquetes añadidos a tus entregas",
   "link.bring.failed": "No se han podido añadir estos paquetes. Inténtalo de nuevo.",
   "link.preview.follow": "Síguelo en Peek.",
+  "preview.landing.tagline": "Seguimiento universal de paquetes",
   "preview.landing.description": "Sigue cualquier paquete en un solo lugar: pega un número de seguimiento, un enlace del transportista o un correo de envío. 3500+ transportistas, revisados hasta cada 10 minutos. Código abierto, sin cuenta.",
   "preview.site.description": "Seguimiento de paquetes privado, con avisos e historial sincronizados en tus dispositivos.",
   "preview.picture.detail": "Pega un número. Sin cuenta.",

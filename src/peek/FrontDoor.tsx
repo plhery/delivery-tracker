@@ -96,7 +96,7 @@ export function FrontDoor({ onTracked, onSample, onSignIn, covered = false }: {
 
   // The tab asks the page's question, in the reader's language. Whatever follows the landing is the app again;
   // a page over the door names the tab itself.
-  useTabTitle(covered ? null : `${t('app.title')} — ${t('peek.title')} ${t('app.tagline')}`, `${t('app.title')} — ${t('app.tagline')}`);
+  useTabTitle(covered ? null : `${t('app.title')} — ${t('peek.title')} ${t('preview.landing.tagline')}`, `${t('app.title')} — ${t('app.tagline')}`);
 
   // The field is the browser's own until the page is live: what was typed meanwhile is read once.
   useEffect(() => {

@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const SERVED = 'Peek — Where’s my parcel? Universal Parcel Tracker';
+const SERVED = 'Peek — Where’s my parcel? Universal Package & Parcel Tracker';
 const APP = 'Peek — Universal Parcel Tracker';
 
 let useTabTitle: typeof import('./tabTitle').useTabTitle;

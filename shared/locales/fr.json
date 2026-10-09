@@ -463,6 +463,7 @@
   "link.bring.done.many": "{{count}} colis ajoutés à tes livraisons",
   "link.bring.failed": "Impossible d’ajouter ces colis. Réessaie.",
   "link.preview.follow": "Suis-le sur Peek.",
+  "preview.landing.tagline": "Suivi de colis universel",
   "preview.landing.description": "Suis tous tes colis au même endroit : colle un numéro de suivi, un lien de transporteur ou un e-mail d’expédition. 3 500+ transporteurs, vérifiés jusqu’à toutes les 10 minutes. Open source, sans compte.",
   "preview.site.description": "Un suivi de colis privé, avec alertes et historique synchronisés sur tes appareils.",
   "preview.picture.detail": "Colle un numéro. Sans compte.",
