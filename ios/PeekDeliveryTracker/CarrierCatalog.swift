@@ -428,17 +428,18 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     }
 
     /// The carriers the detect route asks about an ambiguous number, best first:
-    /// number evidence, then the catalog's recognition rank. Mirrors
-    /// `recognitionAskedCarriers`; the detection golden file keeps them in step.
+    /// number evidence, then a passing check digit, then the catalog's recognition
+    /// rank. Mirrors `recognitionAskedCarriers`; the detection golden file keeps
+    /// them in step.
     func recognitionCandidates(for raw: String, browser: Bool = false) -> [CarrierID] {
         let match = detect(raw)
         let unknownPostalCarrier = match.carrier == .internationalPost
         guard match.confidence == .low || unknownPostalCarrier else { return [] }
         var candidates = match.candidates
         var preferred = match.preferred
+        let number = Self.normalize(raw)
+        let printed = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         if unknownPostalCarrier {
-            let number = Self.normalize(raw)
-            let printed = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
             // The generic postal match already checked S10. Recover low rules
             // it hid; each carrier still has to confirm the whole identity. A rule
             // gated by another check, known to this build or not, stays out, as in
@@ -466,13 +467,27 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             if browser && requirements(for: carrier, trackingNumber: raw).contains(where: { $0.optional != true }) { return false }
             return Self.networkBrand(carrier).map { !shadowed.contains($0) } ?? true
         }
+        let checked = Set(eligible.filter { passesCheckDigit($0, number: number, printed: printed) })
         // Ranks are unique, so the order does not depend on the catalog's key order.
         let ordered = eligible.sorted { left, right in
             let leftPreferred = preferred.contains(left)
             if leftPreferred != preferred.contains(right) { return leftPreferred }
+            let leftChecked = checked.contains(left)
+            if leftChecked != checked.contains(right) { return leftChecked }
             return (rank(left) ?? 0) > (rank(right) ?? 0)
         }
         return Array(ordered.prefix(browser ? 2 : Self.maximumRecognitions))
+    }
+
+    /// Whether the rule that offered a carrier for this number, its first rule that fits as in
+    /// `detect`, passed a check digit. A check this build cannot run passes nothing.
+    private func passesCheckDigit(_ carrier: CarrierID, number: String, printed: String) -> Bool {
+        let rule = definitions[carrier]?.detectionRules.first { rule in
+            Self.matches(number, pattern: rule.pattern)
+                && (rule.rawPattern.map { Self.matches(printed, pattern: $0) } ?? true)
+                && (rule.checksum.map { Self.checksumPasses($0, number) != false } ?? true)
+        }
+        return rule?.checksum.flatMap { Self.checksumPasses($0, number) } == true
     }
 
     func discoveryCandidates(for raw: String) -> [CarrierID] {
@@ -844,14 +859,18 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     private static let separatorPattern =
         "[\\t\\n\\x{0B}\\f\\r\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{2028}\\x{2029}\\x{202F}\\x{205F}\\x{3000}\\x{FEFF}.-]"
 
+    /// Capitals without separators. A label prints its SSCC behind the bracketed GS1 identifier,
+    /// "(00) 3 7012345 678901234 7", which carriers track as the twenty digits without brackets;
+    /// other bracketed identifiers stay as typed, since (420), for one, carries a ZIP.
     static func normalize(_ raw: String) -> String {
         let value = raw.uppercased()
         guard let separators = expression(separatorPattern) else { return value }
-        return separators.stringByReplacingMatches(
+        let compact = separators.stringByReplacingMatches(
             in: value,
             range: NSRange(value.startIndex..., in: value),
             withTemplate: ""
         )
+        return matches(compact, pattern: "^\\(00\\)[0-9]{18}$") ? "00" + compact.dropFirst(4) : compact
     }
 
     static func format(_ raw: String, carrier: CarrierID? = nil) -> String {
@@ -900,6 +919,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         case "sf-express": isValidSfExpressWaybill(number)
         case "fedex-ground-96": isValidFedExGround96Barcode(number)
         case "fedex-1d": isValidFedEx1DBarcode(number)
+        case "identcode": isValidDhlIdentcode(number)
         default: nil
         }
     }
@@ -926,6 +946,15 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         let digits = value.compactMap(\.wholeNumberValue)
         let sum = digits[0..<13].enumerated().reduce(0) { $0 + $1.element * ($1.offset % 2 == 0 ? 3 : 1) }
         return (10 - sum % 10) % 10 == digits[13]
+    }
+
+    /// Deutsche Post's Identcode on DHL Paket's 12-digit numbers: a modulo-10 check digit weighted
+    /// 4, 9, 4, … from the left.
+    static func isValidDhlIdentcode(_ value: String) -> Bool {
+        guard matches(value, pattern: "^[0-9]{12}$") else { return false }
+        let digits = value.compactMap(\.wholeNumberValue)
+        let sum = digits[0..<11].enumerated().reduce(0) { $0 + $1.element * ($1.offset % 2 == 0 ? 4 : 9) }
+        return (10 - sum % 10) % 10 == digits[11]
     }
 
     /// GLS 12-digit parcel numbers: a modulo-10 check digit weighted 3, 1, 3, … from the right, plus one.
@@ -1121,10 +1150,14 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             return sum % 10 == 0
         }
         if validPic(number) { return true }
-        guard matches(number, pattern: "^420[0-9]{27}(?:[0-9]{4})?$") else { return false }
-        // A full scan can fit ZIP5/PIC26 and ZIP9/PIC22; an ambiguous split is rejected.
-        let validSplits = [String(number.dropFirst(8)), String(number.dropFirst(12))].filter(validPic)
-        return validSplits.count == 1
+        // The ship-to AI 420 and a ZIP5 or ZIP9 before a 22- or 26-digit PIC, by length alone.
+        guard matches(number, pattern: "^420(?:[0-9]{5}|[0-9]{9})(?:[0-9]{22}|[0-9]{26})$") else { return false }
+        let readings = [String(number.dropFirst(8)), String(number.dropFirst(12))].filter(validPic)
+        if readings.count < 2 { return readings.count == 1 }
+        // A 34-digit scan fits ZIP5/PIC26 and ZIP9/PIC22. When both pass, the one whose Mailer ID
+        // fits its channel wins: nine digits starting with 9 after 92 and the legacy 91's service
+        // code, six starting with 0 to 8 after 93. If both or neither fit, the split is rejected.
+        return readings.filter { matches($0, pattern: "^(?:91[0-9]{2}9|92[0-9]{3}9|93[0-9]{3}[0-8]|9[45])") }.count == 1
     }
 
     /// A number introduced by a "tracking number:" style label, as the web engine reads it.

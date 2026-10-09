@@ -905,6 +905,36 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertTrue(catalog.detect("1234567890123456789").candidates.contains(.pocztaPolska))
     }
 
+    /// Constructed twelve-digit numbers: the Identcode weighs 4 and 9 from the left. Passing it
+    /// suggests DHL, which is never selected, listed first or asked.
+    func testTheIdentcodeCheckSuggestsDHLWithoutSelectingIt() {
+        for number in ["123456789016", "000000000000"] {
+            XCTAssertTrue(CarrierCatalog.isValidDhlIdentcode(number), number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("identcode", number), true, number)
+        }
+        for number in ["123456789015", "123456789010", "12345678901", "1234567890166", "123456789016\n", "12345 6789016"] {
+            XCTAssertFalse(CarrierCatalog.isValidDhlIdentcode(number), number)
+        }
+        let passing = catalog.detect("12.345 678.901 6")
+        XCTAssertEqual(passing.carrier, .unknown)
+        XCTAssertEqual(passing.confidence, .low)
+        XCTAssertTrue(passing.candidates.contains(.dhl))
+        XCTAssertFalse(passing.preferred.contains(.dhl))
+        XCTAssertFalse(catalog.recognitionCandidates(for: "123456789016").contains(.dhl))
+        let failing = catalog.detect("123456789015")
+        XCTAssertFalse(failing.candidates.contains(.dhl))
+        XCTAssertFalse(failing.candidates.isEmpty)
+    }
+
+    /// A check digit that passes ranks its carrier ahead of the catalog's popularity rank alone.
+    func testRecognitionAsksACarrierWhoseCheckDigitPassesFirst() {
+        // Synthetic twelve digits; only the first passes Purolator's Luhn check.
+        XCTAssertEqual(catalog.recognitionCandidates(for: "300000000004").first, .purolator)
+        XCTAssertFalse(catalog.recognitionCandidates(for: "300000000005").contains(.purolator))
+        // Hermes's check digit passes; DPD's networks are only more popular.
+        XCTAssertEqual(catalog.recognitionCandidates(for: "12345678901231"), [.hermesDe, .dpd, .dpdDe, .seur, .brt])
+    }
+
     func testUspsPackageChecksumsIgnoreRoutingAndRejectAmbiguousSplits() {
         // Synthetic PICs, with independently calculated MOD10 check digits.
         let pic = "9210090000000012345679"
@@ -929,10 +959,21 @@ final class CarrierCatalogTests: XCTestCase {
         for number in ["9500000000000000000008", "9100000000000000000002", "420123459102" + pic] {
             XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode(number), number)
         }
+        // A ZIP+4 before a 26-digit PIC is the only split of 38 digits.
+        XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode("420000000000" + longPic))
+        XCTAssertFalse(CarrierCatalog.isValidUspsPackageBarcode("420000000000" + String(longPic.dropLast()) + "5"))
+        // When both readings of 34 digits pass the check digit, the one whose Mailer ID fits its
+        // channel settles the split. ZIP+4 9201 makes a channel 92 PIC whose Mailer ID does not
+        // start with 9; so does the 22-digit reading of this channel 93 PIC behind a ZIP5.
+        let wide = "93009200000000123456789013"
+        for number in ["420000009201" + pic, String(wide.dropFirst(4)), "42000000" + wide] {
+            XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode(number), number)
+        }
+        // ZIP+4 9300 reads as a channel 93 PIC with a six-digit Mailer ID, as valid as the PIC after it.
+        XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode("9300" + pic))
         for number in [
             String(pic.dropLast()) + "1", "42000000" + String(pic.dropLast()) + "1",
-            "420ABCDE" + pic, "4200000" + pic, "420000000" + pic,
-            "420000000000" + longPic, "420000009201" + pic,
+            "420ABCDE" + pic, "4200000" + pic, "420000000" + pic, "420000009300" + pic,
             "9600000000000000000007", String(pic.dropLast()), pic + "0",
         ] {
             XCTAssertFalse(CarrierCatalog.isValidUspsPackageBarcode(number), number)
@@ -1392,5 +1433,20 @@ extension CarrierCatalogTests {
         XCTAssertFalse(CarrierCatalog.isValidSscc("00000000000000000017\n"))
         // S10 normalizes its own input, separators and the final line break included.
         XCTAssertTrue(CarrierCatalog.isValidS10("\u{FEFF}RR 473 124 829 CH\n"))
+    }
+
+    /// A label prints its SSCC behind the bracketed GS1 identifier; carriers track the twenty digits.
+    func testAnSSCCTypedWithItsBracketedIdentifierReadsAsItsDigits() {
+        let sscc = "00370123456789012347"
+        XCTAssertEqual(CarrierCatalog.normalize("(00) 3 7012345 678901234 7"), sscc)
+        XCTAssertEqual(catalog.detect("(00) 3 7012345 678901234 7"), catalog.detect(sscc))
+        let input = catalog.parse("(00) 370123456789012347")
+        XCTAssertEqual(input.source, .number)
+        XCTAssertEqual(input.candidates, catalog.detect(sscc).candidates)
+        // (420) carries the destination ZIP, which is no parcel number.
+        for raw in ["(420) 12345", "(420) 12345 (92) 612 90 100 13043 50825 07", "(00) 37012345678901234", "(01) 09501101530003"] {
+            XCTAssertTrue(CarrierCatalog.normalize(raw).contains("("), raw)
+            XCTAssertEqual(catalog.detect(raw).confidence, .none, raw)
+        }
     }
 }

@@ -126,6 +126,7 @@ A checksum a detection rule names must also exist in `ios/PeekDeliveryTracker/Ca
 The iPhone app keeps a rule whose checksum it does not know only as a low-confidence candidate
 that is never preferred, so its replay of the scraper's detection answers fails after the
 adoption. Add the checksum there before the release that names it. The same file holds the
-iPhone's copy of the shape a number may have and of the labels that introduce one in a message;
-change them with the scraper's. The iPhone tests also replay the scraper's checksum vectors, so a
-Swift checksum that answers differently from the scraper's fails.
+iPhone's copy of how a number is normalized, of the shape a number may have, of the order
+recognition asks carriers in and of the labels that introduce one in a message; change them with
+the scraper's. The iPhone tests also replay the scraper's checksum vectors, so a Swift checksum
+that answers differently from the scraper's fails.
