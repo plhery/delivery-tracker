@@ -4,7 +4,7 @@ import { carrierErrorKind, retryAfterMsOf, normalizeCarrierResult, universalPlan
 import { latestResultTime } from 'universal-parcel-scraper/app';
 import { UniversalTracker, type AdapterEnvironment, type StepRecorder } from 'universal-parcel-scraper/node';
 import { hostAdapterEnvironment } from './adapterRegistry';
-import type { ProviderHealth } from './trackingRouting';
+import { plausibleInputRequest, type ProviderHealth } from './trackingRouting';
 import type { ApiCarrierId } from '../generated/apiContract';
 import { providerCarrier } from './providerCarrier';
 
@@ -105,7 +105,7 @@ async function lookup(number: string, health: ProviderHealth, signal: AbortSigna
       const failure = carrierErrorKind(error);
       retryAfterMs = Math.max(0, Math.min(7 * 86_400_000, retryAfterMsOf(error) ?? 0));
       // Missing recipient data is an answer about one parcel, never an upstream outage.
-      if (failure === 'input_required') { kind = 'not_found'; return { provider, outcome: 'input_required' }; }
+      if (failure === 'input_required') { kind = 'not_found'; return { provider, outcome: plausibleInputRequest(number) ? 'input_required' : 'no_history' }; }
       if (failure === 'not_found' || failure === 'indeterminate') { kind = 'not_found'; return { provider, outcome: 'no_history' }; }
       kind = failure === 'rate_limited' ? 'rate_limited' : failure === 'challenge' ? 'verification' : failure === 'schema' ? 'schema' : 'transport';
       return { provider, outcome: 'unavailable' };

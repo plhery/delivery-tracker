@@ -1312,4 +1312,37 @@ describe('universal preflight and recipient input', () => {
     expect(recorded).toHaveBeenCalledWith('ParcelsApp', 'history');
     expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('provider_input_lookup', expect.objectContaining({ provider: 'ParcelsApp', category: 'history' }));
   });
+  it('leaves a provider waiting for a missing postcode to refreshes by hand until one is given', async () => {
+    const asked = (value: ReturnType<typeof setup>) => value.universal.mock.calls.map(([source]) => source);
+    const first = setup();
+    first.universal.mockImplementation(async (source) => { if (source === 'ParcelsApp') throw new InputRequiredError(source, 'postcode'); throw new NotFoundError(source); });
+    const { routing } = await first.router.fetch(parcel({ tracking_number: '1234567891' }), true).catch((error) => error);
+    expect(routing.failures.ParcelsApp).toMatchObject({ kind: 'input_required', retry_at: '2026-09-10T12:15:00.000Z' });
+    // Its wait would wake the parcel for nothing: the next check is the hourly one.
+    expect(routing.next_check_at).toBe('2026-09-10T13:00:00.000Z');
+    const later = new Date('2026-09-10T13:00:00Z');
+    const scheduled = setup(later);
+    await scheduled.router.fetch(parcel({ tracking_number: '1234567891', carrier_data: { routing } }), true).catch(() => undefined);
+    expect(asked(scheduled)).not.toContain('ParcelsApp');
+    const byHand = setup(later);
+    await byHand.router.fetch(parcel({ tracking_number: '1234567891', carrier_data: { routing } }), false);
+    expect(asked(byHand)).toContain('ParcelsApp');
+    const given = setup(later);
+    await given.router.fetch(parcel({ tracking_number: '1234567891', dpd_postcode: '8000', carrier_data: { routing } }), true);
+    expect(given.universal).toHaveBeenCalledWith('ParcelsApp', '1234567891', expect.any(Number), '8000', null);
+  });
+  it('takes a postcode request for a number no carrier issues in that shape as no history', async () => {
+    const value = setup();
+    value.universal.mockImplementation(async (source) => { throw new InputRequiredError(source, 'postcode'); });
+    const { routing } = await value.router.fetch(parcel({ tracking_number: 'NOSHAPE42', carrier_data: { routing: state({
+      provider_input_needed: { provider: 'ParcelsApp', field: 'dpdPostcode' } }) } }), true).catch((error) => error);
+    expect(routing.failures.ParcelsApp).toMatchObject({ kind: 'no_history', user_error: 'carrier:indeterminate' });
+    expect(routing).not.toHaveProperty('provider_input_needed');
+    // Filed with a carrier that takes a postcode, the same number may well need one.
+    const filed = setup();
+    filed.direct.mockRejectedValue(new NotFoundError('dpd'));
+    filed.universal.mockImplementation(async (source) => { throw new InputRequiredError(source, 'postcode'); });
+    const asked = await filed.router.fetch(parcel({ carrier: 'dpd', tracking_number: 'NOSHAPE42' }), true).catch((error) => error);
+    expect(asked.routing.provider_input_needed).toMatchObject({ field: 'dpdPostcode' });
+  });
 });

@@ -39,6 +39,14 @@ it('keeps input requirements actionable without opening the provider circuit', a
   expect(service.finishTrackingProvider.mock.calls.map((call) => call[2])).toEqual(['not_found', 'not_found']);
   expect(preflightInputNeeded('9876000046')).toEqual({ provider: 'ParcelsApp', field: 'dpdPostcode' });
 });
+it('takes a postcode request for a number no carrier issues in that shape as no history', async () => {
+  vi.spyOn(UniversalTracker.prototype, 'fetchSource').mockImplementation(async (source) => {
+    if (source === 'ParcelsApp') throw new InputRequiredError(source, 'postcode');
+    throw new NotFoundError(source);
+  });
+  expect(await preflightTracking('NOSHAPE42', health())).toEqual({ providers: [{ provider: 'ParcelsApp', outcome: 'no_history' }, { provider: 'Ship24', outcome: 'no_history' }] });
+  expect(preflightInputNeeded('NOSHAPE42')).toBeUndefined();
+});
 it('distinguishes service failures and shared cooldowns from an empty answer', async () => {
   vi.spyOn(UniversalTracker.prototype, 'fetchSource').mockRejectedValue(new RateLimitedError('Ship24'));
   const service = health(); service.acquireTrackingProvider.mockResolvedValueOnce({ token: null, retry_at: '2026-10-05T12:00:00Z' });

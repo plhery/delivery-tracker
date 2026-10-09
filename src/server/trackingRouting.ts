@@ -4,7 +4,7 @@ import { trackingFailureCode } from './trackingFailure';
 
 import { DateTime } from 'luxon';
 import { appInputField, detectCarrierMatch } from '../lib/carriers';
-import { AUTOMATIC_CARRIER_IDS, carrierAdapter, carrierTimezone, requiredRequirements } from './carriers';
+import { activeRequirements, AUTOMATIC_CARRIER_IDS, carrierAdapter, carrierTimezone, requiredRequirements } from './carriers';
 import { checksumRejections, inferStage, normalizeCarrierResult, resultStage, STAGES, type CarrierResult } from 'universal-parcel-scraper';
 import { isRecord, type JsonObject } from './types';
 import { priorityUniversalSource, universalPlan, universalSourceBudget } from 'universal-parcel-scraper';
@@ -13,7 +13,7 @@ import { isCarrierFeedName, isKnownCarrierName } from 'universal-parcel-scraper/
 import { brandCarrierIds, carrierBrand, carrierIdFromName } from 'universal-parcel-scraper/app';
 import { errorType, reportRoutingEvent } from './observability';
 import { recordChecksumRejection, recordProviderInput } from './metrics';
-import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from 'universal-parcel-scraper';
+import { CarrierError, carrierErrorKind, CARRIER_DEFINITIONS, IndeterminateError, NoHistoryError, retryAfterMsOf } from 'universal-parcel-scraper';
 import { captureDirectLocalHistory, directHistoryNumber, directLocalHistory, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
 import { latestResultTime } from 'universal-parcel-scraper/app';
 import type { Recognition, TrackingContext } from 'universal-parcel-scraper/node';
@@ -128,6 +128,17 @@ function answeredWithoutHistory(error: unknown): boolean {
     if (current instanceof CarrierError) return current instanceof IndeterminateError;
   }
   return false;
+}
+/**
+ * Whether a universal provider's postcode request can be about this number:
+ * its shape fits a carrier, or a carrier named for the parcel takes a postcode.
+ * A number that no carrier issues in that shape was misread, and no postcode
+ * answers that.
+ */
+export function plausibleInputRequest(number: string, carriers: readonly (string | undefined)[] = []): boolean {
+  const detected = detectCarrierMatch(number);
+  return detected.carrier !== 'unknown' || detected.candidates.length > 0 || carriers.some((carrier) => carrier !== undefined
+    && carrier in CARRIER_DEFINITIONS && activeRequirements(carrier, number).some((rule) => rule.field === 'postcode'));
 }
 /** A parcel carrier's own zone, when its catalog names one. */
 function carrierZone(carrier: string): string | null {
@@ -247,14 +258,20 @@ export class TrackingRouter {
     // The owner's answer to a provider's postcode request, for this number only.
     const providerInput = isRecord(metadata.universal_input) && metadata.universal_input.number === universalNumber
       && typeof metadata.universal_input.postcode === 'string' ? metadata.universal_input.postcode : null;
-    if (!metadata.universal_input && !state.provider_input_needed) {
-      state.provider_input_needed = this.options.preflightInputNeeded?.(universalNumber);
-      if (state.provider_input_needed) recordProviderInput(state.provider_input_needed.provider, 'asked');
-    }
+    // The postcode every universal provider receives.
+    const providerPostcode = providerInput ?? (typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null);
     if (state.preferred_number && state.preferred_number !== universalNumber) state.preferred_provider = undefined;
     // The delivery leg's own carrier when its number is the one looked up.
     const universalCarrier = universalNumber !== number && typeof metadata.active_tracking_carrier === 'string'
       ? metadata.active_tracking_carrier : declared;
+    const inputPlausible = plausibleInputRequest(universalNumber, [universalCarrier, state.discovered_carrier,
+      state.confirmed_number === universalNumber ? state.confirmed_carrier : undefined]);
+    // A request saved before it was found implausible stops asking the owner.
+    if (!inputPlausible) delete state.provider_input_needed;
+    else if (!metadata.universal_input && !state.provider_input_needed) {
+      state.provider_input_needed = this.options.preflightInputNeeded?.(universalNumber);
+      if (state.provider_input_needed) recordProviderInput(state.provider_input_needed.provider, 'asked');
+    }
     // Ordered by that carrier's coverage evidence, else by the carrier confirmed
     // or discovered for the number, else the default order.
     const plan = universalPlan({
@@ -262,6 +279,10 @@ export class TrackingRouter {
       trackingNumber: universalNumber, enablePostalNinja: this.options.enablePostalNinja,
     });
     const sources = plan.sources;
+    // A provider that asked for a postcode the parcel still lacks would only ask
+    // again: scheduled checks leave it until a postcode is given.
+    const awaitsInput = (provider: string) => sources.includes(provider as UniversalSource)
+      && state.failures[provider]?.kind === 'input_required' && !providerPostcode;
     const prefetchedUniversal = new Map<UniversalSource, CarrierResult>();
     // Show an Add preflight's history immediately; speculative confirmation can wait for the next check.
     if (declared === 'unknown' && !state.confirmed_carrier && !metadata.original_carrier
@@ -583,10 +604,10 @@ export class TrackingRouter {
       signal?.throwIfAborted();
       // Node's AbortSignal.timeout requires integer milliseconds.
       const remaining = Math.floor(universalDeadline - performance.now());
-      if (attemptedUniversal.has(source) || remaining <= 5_000 || millis(state.failures[source]?.retry_at) > now().getTime()) return null;
+      if (attemptedUniversal.has(source) || remaining <= 5_000 || millis(state.failures[source]?.retry_at) > now().getTime()
+        || (scheduled && awaitsInput(source))) return null;
       attemptedUniversal.add(source);
-      const postcode = providerInput ?? (typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null);
-      const prefetched = prefetchedUniversal.get(source) ?? this.options.takePrefetchedUniversal?.(source, universalNumber, postcode);
+      const prefetched = prefetchedUniversal.get(source) ?? this.options.takePrefetchedUniversal?.(source, universalNumber, providerPostcode);
       if (prefetched) {
         const result = normalizeCarrierResult(prefetched);
         if (usable(result) && !foreignHistory(result, universalCarrier, parcel.created_at)) {
@@ -594,7 +615,7 @@ export class TrackingRouter {
           return { result: { ...result, tracking_provider: source }, sourceCarrierId: 'unknown', swissPostReady: null, handoffFallbackErrorType: null };
         }
       }
-      const reused = this.options.reusedUniversal?.(source, universalNumber, postcode, zone);
+      const reused = this.options.reusedUniversal?.(source, universalNumber, providerPostcode, zone);
       const acquire = async () => {
         try { return await this.options.health.acquireTrackingProvider(source); }
         catch {
@@ -629,7 +650,7 @@ export class TrackingRouter {
       let retryAfterMs = 0;
       try {
         const result = normalizeCarrierResult(await (reused ?? this.options.universal(source, universalNumber,
-          Math.max(1, Math.min(universalSourceBudget(source), Math.floor(universalDeadline - performance.now()) - 5_000)), postcode, zone)));
+          Math.max(1, Math.min(universalSourceBudget(source), Math.floor(universalDeadline - performance.now()) - 5_000)), providerPostcode, zone)));
         if (!usable(result)) throw new TypeError('No usable universal progress');
         if (foreignHistory(result, universalCarrier, parcel.created_at)) {
           report('foreign_history_rejected', source);
@@ -639,7 +660,9 @@ export class TrackingRouter {
         if (previousFailure) report('provider_recovered', source);
         delete state.failures[source];
         return { result: { ...result, tracking_provider: source }, sourceCarrierId: 'unknown', swissPostReady: null, handoffFallbackErrorType: null };
-      } catch (error) {
+      } catch (caught) {
+        const error = !inputPlausible && carrierErrorKind(caught) === 'input_required'
+          ? new NoHistoryError(source, `${source} asked for a postcode for a number that no carrier issues`, { cause: caught }) : caught;
         const failure = fail(source, error, true);
         kind = failure.kind;
         if (kind === 'not_found' || kind === 'no_history') answeredEmpty.push(source);
@@ -774,7 +797,8 @@ export class TrackingRouter {
       return persistResult(value, carrier);
     }
     state.discovery_cursor = (offset + Math.max(1, [...attemptedUniversal].filter((source) => rotation.includes(source)).length)) % Math.max(1, rotation.length);
-    const deadlines = Object.values(state.failures).map((failure) => millis(failure.retry_at)).filter((time) => time > now().getTime());
+    const deadlines = Object.entries(state.failures).filter(([provider]) => !awaitsInput(provider))
+      .map(([, failure]) => millis(failure.retry_at)).filter((time) => time > now().getTime());
     state.next_check_at = iso(Math.max(now().getTime() + 15 * 60_000, Math.min(...deadlines, now().getTime() + HOUR)));
     report('all_providers_unavailable', preferred ?? 'none');
     return defer();

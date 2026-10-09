@@ -34,6 +34,11 @@ The owner supplies it through the carrier editor. It is bound to the current num
 kept private, and ignored for a different tracking number. Updating it invalidates an older
 sync and clears universal providers' missing-input backoffs. Other failure backoffs stay in place. Missing recipient input does not
 open the shared provider circuit. Another source with progress clears the prompt.
+While the parcel has no postcode to send, scheduled checks skip a provider that asked for
+one, since it would only ask again; a refresh by hand still asks once its backoff is over.
+A postcode request for a number whose shape fits no carrier, on a parcel that names no
+carrier taking a postcode, is the provider misreading the number: it counts as
+`no_history` and asks the owner nothing.
 Clients show the earliest next-check eligibility; polling windows can delay the actual run.
 
 ## Source order
