@@ -1,14 +1,23 @@
 import SwiftUI
 import UIKit
 
-/// The standing question, where a page's history ends: Pip's for a parcel a carrier answers
-/// for, a row for one none was found for. An answer is given in place; a sheet takes the words.
+/// The standing question, below a page's history: Pip's for a parcel a carrier answers for, a
+/// row for one none was found for. It stands on every visit, for a reader who has more to say
+/// later. An answer is given in place; a sheet takes the words.
 struct ParcelFeedbackQuestionView: View {
     @ObservedObject var model: ParcelFeedbackModel
 
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
+    /// It comes in once it is scrolled to.
+    @State private var arrived = false
+    /// Pip hops each time an answer is taken.
+    @State private var hops = 0
+
+    /// The moments Pip smiles at.
+    private static let happy: Set<ParcelFeedbackModel.Moment> = [.right, .sent, .noted]
+    private static let settle = Animation.spring(response: 0.42, dampingFraction: 0.86)
 
     var body: some View {
         Group {
@@ -18,19 +27,49 @@ struct ParcelFeedbackQuestionView: View {
             case nil: EmptyView()
             }
         }
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: model.moment)
+        .animation(reduceMotion ? .easeInOut(duration: 0.2) : Self.settle, value: model.moment)
+        .onScrollVisibilityChange(threshold: 0.2) { visible in
+            if visible { arrived = true }
+        }
+        .onChange(of: Self.happy.contains(model.moment)) { _, happy in
+            if happy { hops += 1 }
+        }
     }
 
     /// Pip stands beside what he says. At the largest text sizes the words take his room.
     private var pip: some View {
-        HStack(alignment: .bottom, spacing: 8) {
+        let shown = arrived || reduceMotion
+        return HStack(alignment: .bottom, spacing: 8) {
             if !typeSize.isAccessibilitySize {
-                SmallPip()
+                SmallPip(happy: Self.happy.contains(model.moment) ? 1 : 0, blinks: true)
                     .frame(width: 50)
+                    .keyframeAnimator(initialValue: Hop(), trigger: reduceMotion ? 0 : hops) { pip, hop in
+                        pip.rotationEffect(.degrees(hop.turn), anchor: .bottom).offset(y: hop.rise)
+                    } keyframes: { _ in
+                        KeyframeTrack(\.rise) {
+                            CubicKeyframe(-9, duration: 0.21)
+                            CubicKeyframe(0, duration: 0.2)
+                            CubicKeyframe(-2, duration: 0.12)
+                            CubicKeyframe(0, duration: 0.17)
+                        }
+                        KeyframeTrack(\.turn) {
+                            CubicKeyframe(-6, duration: 0.21)
+                            CubicKeyframe(3, duration: 0.2)
+                            CubicKeyframe(0, duration: 0.29)
+                        }
+                    }
+                    // He pops up first, then speaks.
+                    .opacity(shown ? 1 : 0)
+                    .scaleEffect(shown ? 1 : 0.9, anchor: .bottom)
+                    .offset(y: shown ? 0 : 10)
+                    .animation(.spring(response: 0.46, dampingFraction: 0.58), value: shown)
                     .padding(.leading, -2)
                     .padding(.bottom, -3)
             }
             bubble
+                .scaleEffect(shown ? 1 : 0.84, anchor: .bottomLeading)
+                .opacity(shown ? 1 : 0)
+                .animation(.spring(response: 0.42, dampingFraction: 0.66).delay(0.15), value: shown)
         }
     }
 
@@ -39,7 +78,7 @@ struct ParcelFeedbackQuestionView: View {
         let shape = UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: typeSize.isAccessibilitySize ? 18 : 5,
                                            bottomTrailingRadius: 18, topTrailingRadius: 18, style: .continuous)
         let offering = model.moment == .reasons
-        return Group {
+        return turning {
             switch model.moment {
             case .right:
                 said("feedback.pip.right")
@@ -66,8 +105,9 @@ struct ParcelFeedbackQuestionView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     question("feedback.whatsOff")
                     FeedbackFlow(spacing: 6) {
-                        ForEach(ParcelFeedbackReason.allCases) { reason in
+                        ForEach(Array(ParcelFeedbackReason.allCases.enumerated()), id: \.element) { order, reason in
                             FeedbackPill(title: localizer.text(reason.labelKey)) { Task { await model.pick(reason) } }
+                                .modifier(ComesIn(order: order))
                         }
                     }
                 }
@@ -87,12 +127,16 @@ struct ParcelFeedbackQuestionView: View {
         .padding(.vertical, offering ? 12 : 8)
         .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
         .background(Brand.paper, in: shape)
+        .clipShape(shape)
         .overlay(shape.strokeBorder(Brand.separator.opacity(0.6)))
+        .shadow(color: .black.opacity(0.04), radius: 1, y: 1)
     }
 
     /// No Pip here: he found nothing to show.
     private var row: some View {
-        Group {
+        let shown = arrived || reduceMotion
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        return turning {
             switch model.moment {
             case .early:
                 said("feedback.unknown.early")
@@ -113,7 +157,25 @@ struct ParcelFeedbackQuestionView: View {
         .padding(.trailing, 8)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-        .background(Brand.ink.opacity(0.07), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Brand.ink.opacity(0.07), in: shape)
+        .clipShape(shape)
+        .opacity(shown ? 1 : 0)
+        .offset(y: shown ? 0 : 10)
+        .animation(.spring(response: 0.46, dampingFraction: 0.86), value: shown)
+    }
+
+    /// What an answer brings comes in after it, as what it replaces folds away: the bubble or
+    /// the row grows or shrinks to it from where it stood.
+    private func turning(@ViewBuilder _ content: () -> some View) -> some View {
+        ZStack(alignment: .leading) {
+            content()
+                .id(model.moment)
+                .transition(reduceMotion ? .opacity : .asymmetric(
+                    insertion: .opacity.combined(with: .offset(y: 6))
+                        .animation(.spring(response: 0.34, dampingFraction: 0.8).delay(0.06)),
+                    removal: AnyTransition(FoldAway())
+                ))
+        }
     }
 
     /// Side by side while both fit on a line; else the second goes under the first.
@@ -140,15 +202,78 @@ struct ParcelFeedbackQuestionView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// A word of thanks, in the green of a parcel that arrived.
+    /// A word of thanks, in the green of a parcel that arrived, its tick drawn as it comes.
     private func said(_ key: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 7) {
-            Image(systemName: "checkmark").font(.footnote.weight(.semibold)).accessibilityHidden(true)
+        HStack(spacing: 7) {
+            DrawnTick()
             Text(localizer.text(key)).fixedSize(horizontal: false, vertical: true)
         }
-        .font(.footnote.weight(.medium))
+        .font(.footnote.weight(.semibold))
         .foregroundStyle(ExperimentalPalette.delivered)
+        .frame(minHeight: 36)
         .padding(.trailing, 6)
+    }
+}
+
+/// Pip's hop when an answer is taken: up with a lean, down, and a small bounce.
+private struct Hop {
+    var rise: CGFloat = 0
+    var turn: Double = 0
+}
+
+/// What an answer replaces: it is gone at once, as it folds to nothing so that what stands in
+/// its place sets the size.
+private struct FoldAway: Transition {
+    func body(content: Content, phase: TransitionPhase) -> some View {
+        content
+            .opacity(phase.isIdentity ? 1 : 0)
+            .animation(.easeOut(duration: 0.08), value: phase)
+            .frame(height: phase.isIdentity ? nil : 0, alignment: .top)
+            .clipped()
+    }
+}
+
+/// One of a row of answers, coming in a moment after the one before it.
+private struct ComesIn: ViewModifier {
+    let order: Int
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown || reduceMotion ? 1 : 0)
+            .offset(y: shown || reduceMotion ? 0 : 6)
+            .onAppear {
+                withAnimation(.spring(response: 0.34, dampingFraction: 0.8).delay(0.08 + Double(order) * 0.03)) { shown = true }
+            }
+    }
+}
+
+/// The tick of a word of thanks, drawn once it shows.
+private struct DrawnTick: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var drawn = false
+
+    var body: some View {
+        Tick()
+            .trim(from: 0, to: drawn || reduceMotion ? 1 : 0)
+            .stroke(style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+            .frame(width: 16, height: 16)
+            .accessibilityHidden(true)
+            .onAppear { withAnimation(.easeOut(duration: 0.42).delay(0.16)) { drawn = true } }
+    }
+
+    /// The web's check, on its 24-point grid.
+    private struct Tick: Shape {
+        func path(in rect: CGRect) -> Path {
+            let unit = min(rect.width, rect.height) / 24
+            var path = Path()
+            path.move(to: CGPoint(x: rect.minX + 5 * unit, y: rect.minY + 12 * unit))
+            path.addLine(to: CGPoint(x: rect.minX + 9 * unit, y: rect.minY + 16 * unit))
+            path.addLine(to: CGPoint(x: rect.minX + 19 * unit, y: rect.minY + 6 * unit))
+            return path
+        }
     }
 }
 
@@ -294,10 +419,13 @@ private struct ParcelFeedbackOverlays: ViewModifier {
             Group {
                 switch word {
                 case .back:
-                    InlineToast(text: text(word), symbol: "arrow.up.right", tint: Brand.inkSoft, answers: [
+                    // Pip asks this one too.
+                    InlineToast(text: text(word), answers: [
                         InlineToast.Answer(title: localizer.text("feedback.yes")) { Task { await model.right(.back) } },
                         InlineToast.Answer(title: localizer.text("feedback.no")) { model.wrongOnReturn() },
-                    ])
+                    ]) {
+                        SmallPip(blinks: true).frame(width: 34).padding(.bottom, -2)
+                    }
                 case .backRight, .backSent:
                     InlineToast(text: text(word), button: nil, tint: ExperimentalPalette.delivered, action: nil)
                 case .failed:

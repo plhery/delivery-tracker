@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LINK_ID, testParcel } from '../../test/parcelLinks';
 import { forgetAllLinkNotes, forgetLinkNote, linkNote, noteLink } from '../deviceNotes';
-import { asksFeedback, asksOnReturn, feedbackMemory, scanIdentity } from './feedbackModel';
+import { asksOnReturn, feedbackMemory, scanIdentity } from './feedbackModel';
 import { FEEDBACK_STORAGE_KEY, linkFeedbackNotes, parcelFeedbackNotes } from './feedbackNotes';
 
 const NOW = Date.parse('2026-10-08T12:00:00.000Z');
@@ -17,24 +17,16 @@ describe('when a parcel’s question is asked', () => {
     expect(scanIdentity({ events: [] })).toBe('none');
   });
 
-  it('asks a reader who never answered, never twice about one scan, and at most once a day', () => {
-    expect(asksFeedback({}, 'a', NOW)).toBe(true);
-    // The same scan stays answered for however long it stands.
-    expect(asksFeedback({ at: hoursAgo(1), scan: 'a' }, 'a', NOW)).toBe(false);
-    expect(asksFeedback({ at: hoursAgo(500), scan: 'a' }, 'a', NOW)).toBe(false);
-    // A new scan is asked about a day after the answer, not before.
-    expect(asksFeedback({ at: hoursAgo(23), scan: 'a' }, 'b', NOW)).toBe(false);
-    expect(asksFeedback({ at: hoursAgo(25), scan: 'a' }, 'b', NOW)).toBe(true);
-    // "Not yet" answers for no scan: it quiets the question for a day only.
-    expect(asksFeedback({ at: hoursAgo(2), scan: '' }, 'none', NOW)).toBe(false);
-    expect(asksFeedback({ at: hoursAgo(25), scan: '' }, 'none', NOW)).toBe(true);
-  });
-
-  it('asks on the way back once per scan, and only while the standing question is asked', () => {
+  it('asks on the way back once per scan, never about a scan answered for, and not within a day of an answer', () => {
     expect(asksOnReturn({}, 'a', NOW)).toBe(true);
     expect(asksOnReturn({ back: 'a' }, 'a', NOW)).toBe(false);
     expect(asksOnReturn({ back: 'a' }, 'b', NOW)).toBe(true);
-    expect(asksOnReturn({ at: hoursAgo(1), scan: 'a' }, 'b', NOW)).toBe(false);
+    // The same scan stays answered for however long it stands.
+    expect(asksOnReturn({ at: hoursAgo(1), scan: 'a' }, 'a', NOW)).toBe(false);
+    expect(asksOnReturn({ at: hoursAgo(500), scan: 'a' }, 'a', NOW)).toBe(false);
+    // A new scan is asked about a day after the answer, not before.
+    expect(asksOnReturn({ at: hoursAgo(23), scan: 'a' }, 'b', NOW)).toBe(false);
+    expect(asksOnReturn({ at: hoursAgo(25), scan: 'a' }, 'b', NOW)).toBe(true);
   });
 
   it('reads a stored memory back, and anything else as none', () => {

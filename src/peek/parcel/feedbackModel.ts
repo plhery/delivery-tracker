@@ -4,8 +4,10 @@ import type { ParcelWithEvents } from '../../types';
 
 /**
  * What a reader says of a parcel: that what is shown is right, what is off,
- * or who carries a parcel no carrier was found for. The question is asked
- * quietly: never twice about the same scan, and at most once a day.
+ * or who carries a parcel no carrier was found for. The question stands on
+ * the page whenever there is something to judge, for a reader who has more to
+ * say later; only the one asked on the way back from the carrier's site keeps
+ * quiet about what was answered.
  */
 
 /** An answer as the page words it; sending adds the app and the language. */
@@ -18,7 +20,7 @@ export const FEEDBACK_REASONS: readonly ApiParcelFeedbackReason[] = ['arrived', 
 export interface FeedbackMemory {
   /** When the reader last answered. */
   at?: string;
-  /** The scan the page ended on then; empty for "not yet", which answers for a day only. */
+  /** The scan the page ended on then. */
   scan?: string;
   /** The scan the question was asked about on the way back from the carrier's site. */
   back?: string;
@@ -40,16 +42,13 @@ export function scanIdentity(parcel: Pick<ParcelWithEvents, 'events'>): string {
   return newest ? `${parcel.events.length}:${newest.occurredAt}` : NO_SCAN;
 }
 
-/** Whether the standing question is asked: not about a scan already answered for, and not within a day of an answer. */
-export function asksFeedback(memory: FeedbackMemory, scan: string, now = Date.now()): boolean {
-  if (!memory.at) return true;
-  const answered = Date.parse(memory.at);
-  return memory.scan !== scan && !(now - answered < QUIET_MS);
-}
-
-/** Whether the question is asked on the way back from the carrier's site: once per scan, and only while the standing one is. */
+/**
+ * Whether the question is asked on the way back from the carrier's site: once per scan, not about a scan already
+ * answered for, and not within a day of an answer.
+ */
 export function asksOnReturn(memory: FeedbackMemory, scan: string, now = Date.now()): boolean {
-  return memory.back !== scan && asksFeedback(memory, scan, now);
+  if (memory.back === scan) return false;
+  return !memory.at || (memory.scan !== scan && !(now - Date.parse(memory.at) < QUIET_MS));
 }
 
 function text(value: unknown, limit: number): string | undefined {

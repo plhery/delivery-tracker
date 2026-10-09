@@ -12,7 +12,7 @@ test.afterEach(async ({ page }) => { expect(errors.get(page)).toEqual([]); });
 
 const status = (page: Page) => page.getByRole('heading', { level: 1 });
 
-test('asks where the history ends whether the page is right, takes a reason and a note, and does not ask again', async ({ page }) => {
+test('asks where the history ends whether the page is right, takes a reason and a note, and stands again on the next visit', async ({ page }) => {
   const sent: string[] = [];
   page.on('request', (request) => { if (request.url().includes('/feedback')) sent.push(request.url()); });
   await track(page, '1ZDEMO202600000092');
@@ -35,10 +35,10 @@ test('asks where the history ends whether the page is right, takes a reason and 
   await expect(bubble).toBeInViewport();
   await expect(bubble.getByRole('button')).toHaveCount(0);
 
+  // Something may happen that its reader tells only later: the question stands on every visit.
   await page.reload();
   await expect(status(page)).toHaveText('In transit');
-  await expect(page.locator('.peekp-fresh')).toBeVisible();
-  await expect(page.locator('.peekfb-bubble')).toHaveCount(0);
+  await expect(page.locator('.peekfb-bubble').getByText('Did I get this one right?')).toBeVisible();
   // The demo's answer goes nowhere.
   expect(sent).toEqual([]);
 });

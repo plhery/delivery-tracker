@@ -160,9 +160,10 @@ Key server modules:
     address. The words are read by a person and never opened or followed.
   - A link anyone holds cannot fill the table: a tracking number takes twenty answers a
     day, on top of the per-client limit of the route.
-  - The browser remembers that it answered, so the question is not asked twice about the
-    same scan nor more than once a day: beside a link's other notes, or under the parcel's
-    id for an account. That memory never leaves the device.
+  - The question stands on every visit. The browser remembers that it answered, so the
+    one asked on the way back from the carrier's site is not asked twice about the same
+    scan nor more than once a day: beside a link's other notes, or under the parcel's id
+    for an account. That memory never leaves the device.
 - **Delivery email**: sent only to the address an account signs in with, once the Auth
   server has confirmed it. `delivery_emails` is service-role only.
   - Addresses stay out of logs, metric labels and error reports.

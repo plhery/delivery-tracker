@@ -138,15 +138,18 @@ describe('Pip’s question about a parcel a carrier answers for', () => {
     expect(send).toHaveBeenCalledTimes(3);
   });
 
-  it('is not on the page for a scan already answered for, nor within a day of an answer, and comes back after', () => {
-    const same = open({ notes: memoryNotes({ at: hoursAgo(100), scan: SCAN }) });
-    expect(bubble()).toBeNull();
-    same.unmount();
-    const recent = open({ notes: memoryNotes({ at: hoursAgo(3), scan: 'an earlier scan' }) });
-    expect(bubble()).toBeNull();
-    recent.unmount();
-    open({ notes: memoryNotes({ at: hoursAgo(30), scan: 'an earlier scan' }) });
+  it('stands on every visit, for a reader who has more to say about a scan already answered for', () => {
+    open({ notes: memoryNotes({ at: hoursAgo(1), scan: SCAN }) });
     expect(within(bubble()).getByText('Did I get this one right?')).toBeVisible();
+  });
+
+  it('smiles once an answer is taken', async () => {
+    const user = userEvent.setup();
+    open();
+    const pip = document.querySelector<HTMLElement>('.peekfb-pip')!;
+    expect(pip).not.toHaveAttribute('data-mood');
+    await user.click(within(bubble()).getByRole('button', { name: 'Yes' }));
+    expect(pip).toHaveAttribute('data-mood', 'happy');
   });
 
   it('asks nothing when the page has no question to ask', () => {
@@ -162,9 +165,6 @@ describe('Pip’s question about a parcel a carrier answers for', () => {
     expect(within(bubble()).getByText('What’s off?')).toBeVisible();
     rerender(<Page {...subject} notes={memoryNotes()} />);
     expect(within(bubble()).getByText('Did I get this one right?')).toBeVisible();
-    // The other parcel was answered for: it is not asked again.
-    rerender(<Page {...subject} notes={memoryNotes({ at: hoursAgo(1), scan: SCAN })} />);
-    expect(bubble()).toBeNull();
     rerender(<Page {...subject} kind="unknown" />);
     expect(within(row()).getByText('Does the carrier’s own site show it?')).toBeVisible();
   });
@@ -301,7 +301,7 @@ describe('the question about a parcel no carrier was found for', () => {
     expect(send.mock.calls[1][0]).not.toHaveProperty('carrierName');
   });
 
-  it('takes “not yet” without sending anything, and is quiet for a day', async () => {
+  it('takes “not yet” without sending or keeping anything, and asks again on the next visit', async () => {
     const user = userEvent.setup();
     const { send, notes, unmount } = open({ kind: 'unknown', scan: 'none' });
     await user.click(within(row()).getByRole('button', { name: 'Not yet' }));
@@ -309,12 +309,9 @@ describe('the question about a parcel no carrier was found for', () => {
     expect(row()).toHaveFocus();
     expect(send).not.toHaveBeenCalled();
     expect(mocks.track).not.toHaveBeenCalled();
-    expect(notes.memory).toEqual({ at: expect.any(String), scan: '' });
+    expect(notes.memory).toEqual({});
     unmount();
     open({ kind: 'unknown', scan: 'none', notes });
-    expect(row()).toBeNull();
-    notes.memory = { ...notes.memory, at: hoursAgo(25) };
-    open({ kind: 'unknown', scan: 'none', notes: memoryNotes(notes.memory) });
     expect(within(row()).getByText('Does the carrier’s own site show it?')).toBeVisible();
   });
 });

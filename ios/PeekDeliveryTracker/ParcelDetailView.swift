@@ -36,18 +36,23 @@ struct ParcelDetailView: View {
             ExperimentalBackdrop()
             if let parcel {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        liveParcelPass(parcel)
-                        if showsHistory(parcel) {
-                            ParcelJournal(parcel: parcel, tint: identity(parcel).ink)
+                    VStack(spacing: 26) {
+                        VStack(alignment: .leading, spacing: 20) {
+                            liveParcelPass(parcel)
+                            if showsHistory(parcel) {
+                                ParcelJournal(parcel: parcel, tint: identity(parcel).ink)
+                            }
+                            syncStatus(parcel, tint: identity(parcel).ink)
                         }
-                        syncStatus(parcel, tint: identity(parcel).ink)
-                        // The last thing the page says of the parcel: is it right?
-                        if feedback.standing != nil { ParcelFeedbackQuestionView(model: feedback) }
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: emailOffer)
+                        .padding(18)
+                        .background(Brand.paper, in: RoundedRectangle(cornerRadius: 26))
+                        // Below the page, on the ground it lies on, Pip asks whether it is right.
+                        if feedback.standing != nil {
+                            ParcelFeedbackQuestionView(model: feedback)
+                                .padding(.horizontal, 8)
+                        }
                     }
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: emailOffer)
-                    .padding(18)
-                    .background(Brand.paper, in: RoundedRectangle(cornerRadius: 26))
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
                     .padding(.bottom, 36)

@@ -48,18 +48,18 @@ enum ParcelFeedbackSubject: Equatable, Sendable {
 
 /// What this iPhone remembers of the question, one entry per parcel: when its reader last
 /// answered and about which scan, and the scan the way back from a carrier's site last asked
-/// about. A scan is asked about once, and a parcel at most once a day. Nothing of it leaves
-/// the device.
+/// about. The question on the page stands on every visit; the way back asks about a scan
+/// once, and about a parcel at most once a day. Nothing of it leaves the device.
 struct ParcelFeedbackMemory {
     private static let key = "sdt.parcelFeedback.v1"
     /// Only the latest parcels can still matter.
     static let limit = 200
-    /// How long an answer keeps the question away.
+    /// How long an answer keeps the question on the way back away.
     static let quiet: TimeInterval = 24 * 60 * 60
 
     private struct Entry: Codable {
         var answeredAt: Date?
-        /// What the page ended on when its reader answered. Nil for "not yet", which answers for a day only.
+        /// What the page ended on when its reader answered.
         var scan: String?
         /// The scan the question was asked about on the way back.
         var back: String?
@@ -74,23 +74,20 @@ struct ParcelFeedbackMemory {
         self.now = now
     }
 
-    /// Whether the standing question rests: its reader answered about this scan, or answered
-    /// within the last day. Only another scan and a day together bring it back.
-    func rests(_ subject: ParcelFeedbackSubject, scan: String) -> Bool {
-        guard let entry = read()[subject.memoryKey], let answeredAt = entry.answeredAt else { return false }
-        if entry.scan == scan { return true }
+    /// Whether the way back may ask about this scan: once, not about a scan its reader answered
+    /// for, and not within a day of an answer. Only another scan and a day together bring it back.
+    func asksOnReturn(_ subject: ParcelFeedbackSubject, scan: String) -> Bool {
+        guard let entry = read()[subject.memoryKey] else { return true }
+        if entry.back == scan { return false }
+        guard let answeredAt = entry.answeredAt else { return true }
+        if entry.scan == scan { return false }
         // A clock set back must not keep a new scan from being asked about.
         let age = now().timeIntervalSince(answeredAt)
-        return age >= 0 && age < Self.quiet
+        return age < 0 || age >= Self.quiet
     }
 
-    /// Whether the way back may ask about this scan: once, and only while the standing question is asked.
-    func asksOnReturn(_ subject: ParcelFeedbackSubject, scan: String) -> Bool {
-        read()[subject.memoryKey]?.back != scan && !rests(subject, scan: scan)
-    }
-
-    /// An answer about what the page ends on. Without a scan it is about none: it rests the question for a day only.
-    func rememberAnswer(_ subject: ParcelFeedbackSubject, scan: String?) {
+    /// An answer about what the page ends on.
+    func rememberAnswer(_ subject: ParcelFeedbackSubject, scan: String) {
         update(subject) {
             $0.answeredAt = now()
             $0.scan = scan
@@ -252,8 +249,6 @@ final class ParcelFeedbackModel: ObservableObject {
     private let now: () -> Date
     private let report: @MainActor (String, DeliveryAnalytics.Outcome) -> Void
     private var client: ParcelFeedbackClient?
-    /// The reader answered for what the page ends on before this visit. An answer given on this visit stays to be read.
-    private var rests = false
     /// The answer whose reason was given in place, for the note that may follow it.
     private var given: Words?
     /// The reader's leave for a carrier's own page, and when the app left the screen for it.
@@ -266,11 +261,9 @@ final class ParcelFeedbackModel: ObservableObject {
         self.report = report
     }
 
-    /// The question standing on the page, or nil while there is none to ask.
-    var standing: ParcelFeedbackQuestion? {
-        guard let page, moment != .ask || !rests else { return nil }
-        return page.question
-    }
+    /// The question standing on the page, or nil while there is none to ask. It stands on every
+    /// visit: something may happen that its reader tells only later.
+    var standing: ParcelFeedbackQuestion? { page?.question }
 
     /// Takes what the page shows now. Another parcel, or a carrier found while the page was open, starts over.
     func show(_ page: Page?, through client: ParcelFeedbackClient?) {
@@ -288,7 +281,6 @@ final class ParcelFeedbackModel: ObservableObject {
             moment = .ask
             given = nil
         }
-        rests = page.map { memory.rests($0.subject, scan: $0.scan) } ?? false
     }
 
     // MARK: - On the way back
@@ -373,10 +365,9 @@ final class ParcelFeedbackModel: ObservableObject {
         namingCarrier = true
     }
 
-    /// Nothing to send: tomorrow the carrier's site may show it, so the answer is about no scan.
+    /// Nothing to send: tomorrow the carrier's site may show it, and the row asks again.
     func notYet() {
-        guard let page, page.question == .unknown else { return }
-        memory.rememberAnswer(page.subject, scan: nil)
+        guard page?.question == .unknown else { return }
         moment = .early
     }
 
@@ -432,7 +423,6 @@ extension ParcelFeedbackModel {
     /// Puts the question in the state `ParcelFeedbackPreview` names, whatever was answered before.
     func preview(_ variant: String) {
         guard let page else { return }
-        rests = false
         given = Words(id: UUID(), reasons: [.steps], asked: .page)
         switch variant {
         case "reasons": moment = .reasons

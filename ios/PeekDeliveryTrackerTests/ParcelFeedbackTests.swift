@@ -103,7 +103,7 @@ final class ParcelFeedbackTests: XCTestCase {
 
     // MARK: - What the device remembers
 
-    func testAScanIsAskedAboutOnceAndAParcelAtMostOnceADay() {
+    func testAnAnswerKeepsTheWayBackQuietAboutItsScanAndForADay() {
         let (store, suite) = defaults()
         defer { store.removePersistentDomain(forName: suite) }
         let clock = Clock()
@@ -111,22 +111,19 @@ final class ParcelFeedbackTests: XCTestCase {
         let subject = ParcelFeedbackSubject.parcel(UUID())
         let next = "4:2026-10-03T09:30:00Z"
 
-        XCTAssertFalse(memory.rests(subject, scan: scan))
+        XCTAssertTrue(memory.asksOnReturn(subject, scan: scan))
         memory.rememberAnswer(subject, scan: scan)
 
-        XCTAssertTrue(memory.rests(subject, scan: scan))
-        XCTAssertFalse(memory.rests(.parcel(UUID()), scan: scan), "Another parcel was never answered for")
+        XCTAssertFalse(memory.asksOnReturn(subject, scan: scan))
+        XCTAssertTrue(memory.asksOnReturn(.parcel(UUID()), scan: scan), "Another parcel was never answered for")
         clock.now += 2 * 3_600
-        XCTAssertTrue(memory.rests(subject, scan: next), "A new scan the same day is not asked about")
+        XCTAssertFalse(memory.asksOnReturn(subject, scan: next), "A new scan the same day is not asked about")
         clock.now = clock.now - 2 * 3_600 + ParcelFeedbackMemory.quiet - 1
-        XCTAssertTrue(memory.rests(subject, scan: next))
+        XCTAssertFalse(memory.asksOnReturn(subject, scan: next))
         clock.now += 1
-        XCTAssertFalse(memory.rests(subject, scan: next), "A new scan a day later is")
-        clock.now += 3_600
-        XCTAssertTrue(memory.rests(subject, scan: scan), "The same scan never is again")
+        XCTAssertTrue(memory.asksOnReturn(subject, scan: next), "A new scan a day later is")
         clock.now += 30 * ParcelFeedbackMemory.quiet
-        XCTAssertTrue(memory.rests(subject, scan: scan))
-        XCTAssertFalse(memory.rests(subject, scan: next))
+        XCTAssertFalse(memory.asksOnReturn(subject, scan: scan), "The scan answered for never is again")
     }
 
     func testAClockSetBackHidesNoNewScan() {
@@ -139,30 +136,8 @@ final class ParcelFeedbackTests: XCTestCase {
 
         clock.now -= 7 * ParcelFeedbackMemory.quiet
 
-        XCTAssertFalse(memory.rests(subject, scan: "4:2026-10-03T09:30:00Z"))
-        XCTAssertTrue(memory.rests(subject, scan: scan))
-    }
-
-    func testAnAnswerAboutNoScanRestsTheQuestionForADayOnly() {
-        let (store, suite) = defaults()
-        defer { store.removePersistentDomain(forName: suite) }
-        let clock = Clock()
-        let memory = ParcelFeedbackMemory(defaults: store, now: { clock.now })
-        let subject = ParcelFeedbackSubject.parcel(UUID())
-
-        memory.rememberAnswer(subject, scan: nil)
-
-        XCTAssertTrue(memory.rests(subject, scan: ""), "A page without a scan ends on an empty one")
-        XCTAssertTrue(memory.rests(subject, scan: scan))
-        clock.now += ParcelFeedbackMemory.quiet
-        XCTAssertFalse(memory.rests(subject, scan: ""), "Nothing was scanned, and it is asked again")
-        XCTAssertFalse(memory.rests(subject, scan: scan))
-
-        // An answer about a page without scans is one about that page: it is not asked again.
-        memory.rememberAnswer(subject, scan: "")
-        clock.now += 30 * ParcelFeedbackMemory.quiet
-        XCTAssertTrue(memory.rests(subject, scan: ""))
-        XCTAssertFalse(memory.rests(subject, scan: scan))
+        XCTAssertTrue(memory.asksOnReturn(subject, scan: "4:2026-10-03T09:30:00Z"))
+        XCTAssertFalse(memory.asksOnReturn(subject, scan: scan))
     }
 
     func testTheWayBackAsksOncePerScanAndNotAfterAnAnswer() {
@@ -175,7 +150,6 @@ final class ParcelFeedbackTests: XCTestCase {
         XCTAssertTrue(memory.asksOnReturn(subject, scan: scan))
         memory.rememberAskedOnReturn(subject, scan: scan)
         XCTAssertFalse(memory.asksOnReturn(subject, scan: scan))
-        XCTAssertFalse(memory.rests(subject, scan: scan), "Being asked is not an answer")
 
         let next = "4:2026-10-03T09:30:00Z"
         XCTAssertTrue(memory.asksOnReturn(subject, scan: next))
@@ -200,7 +174,7 @@ final class ParcelFeedbackTests: XCTestCase {
 
         memory.rememberAnswer(.link(linkID), scan: scan)
         memory.rememberAskedOnReturn(.link(linkID), scan: scan)
-        XCTAssertTrue(memory.rests(.link(linkID), scan: scan))
+        XCTAssertFalse(memory.asksOnReturn(.link(linkID), scan: scan))
         let kept = try XCTUnwrap(store.dictionaryRepresentation().values.compactMap { $0 as? Data }.first { String(decoding: $0, as: UTF8.self).contains(key) })
         XCTAssertFalse(String(decoding: kept, as: UTF8.self).contains(linkID), "The link's id opens its parcel")
 
@@ -220,12 +194,12 @@ final class ParcelFeedbackTests: XCTestCase {
             clock.now += 1
         }
 
-        XCTAssertFalse(memory.rests(subjects[0], scan: scan), "The oldest made room")
-        XCTAssertTrue(memory.rests(subjects[1], scan: scan))
-        XCTAssertTrue(memory.rests(subjects[ParcelFeedbackMemory.limit], scan: scan))
+        XCTAssertTrue(memory.asksOnReturn(subjects[0], scan: scan), "The oldest made room")
+        XCTAssertFalse(memory.asksOnReturn(subjects[1], scan: scan))
+        XCTAssertFalse(memory.asksOnReturn(subjects[ParcelFeedbackMemory.limit], scan: scan))
 
         memory.forgetAll()
-        XCTAssertFalse(memory.rests(subjects[1], scan: scan))
+        XCTAssertTrue(memory.asksOnReturn(subjects[1], scan: scan))
     }
 
     // MARK: - What an answer carries
@@ -291,7 +265,7 @@ final class ParcelFeedbackTests: XCTestCase {
 
     // MARK: - Pip asks
 
-    func testYesIsShownAtOnceSentAndNotAskedAgainOnALaterVisit() async {
+    func testYesIsShownAtOnceSentAndAskedAgainOnALaterVisit() async {
         let (store, suite) = defaults()
         defer { store.removePersistentDomain(forName: suite) }
         let clock = Clock()
@@ -313,15 +287,11 @@ final class ParcelFeedbackTests: XCTestCase {
         XCTAssertEqual(model.standing, .found, "On this visit the thanks stay to be read")
         XCTAssertNil(model.word)
 
-        // Later the same day: nothing is asked, about this scan or a new one.
-        let next = "4:2026-10-03T09:30:00Z"
+        // Something may happen that its reader tells only later: Pip asks again on the next visit.
         clock.now += 2 * 3_600
-        XCTAssertNil(visit(page(subject), Sent(), store, clock).standing)
-        XCTAssertNil(visit(page(subject, scan: next), Sent(), store, clock).standing)
-        // A day later a new scan is something new to be right or wrong about; the same one is not.
-        clock.now += 23 * 3_600
-        XCTAssertNil(visit(page(subject), Sent(), store, clock).standing)
-        XCTAssertEqual(visit(page(subject, scan: next), Sent(), store, clock).standing, .found)
+        let later = visit(page(subject), Sent(), store, clock)
+        XCTAssertEqual(later.standing, .found)
+        XCTAssertEqual(later.moment, .ask)
     }
 
     func testAnAnswerThatCouldNotBeSentIsTakenBack() async {
@@ -372,7 +342,7 @@ final class ParcelFeedbackTests: XCTestCase {
         XCTAssertEqual(sent.requests.first?.reasons, [.steps])
         XCTAssertNil(sent.requests.first?.note)
         XCTAssertEqual(sent.counted, ["parcel-feedback-wrong success"])
-        XCTAssertNil(visit(page(subject), Sent(), store, clock).standing)
+        XCTAssertEqual(visit(page(subject), Sent(), store, clock).standing, .found)
 
         // A note follows under the same id, with the reason given still on.
         model.addNote()
@@ -515,7 +485,8 @@ final class ParcelFeedbackTests: XCTestCase {
         XCTAssertEqual(ParcelFeedbackModel.Word.backRight.stay, .seconds(4))
         XCTAssertEqual(model.moment, .right)
         XCTAssertEqual(sent.counted, ["parcel-feedback-right success"])
-        XCTAssertNil(visit(page(.link(linkID)), Sent(), store, clock).standing)
+        XCTAssertNil(comeBackOnALaterVisit(.link(linkID), store, clock), "Not asked again on the way back")
+        XCTAssertEqual(visit(page(.link(linkID)), Sent(), store, clock).standing, .found, "Pip still asks")
     }
 
     func testNoOnTheWayBackOpensTheSheetWithNothingChosen() async {
@@ -571,10 +542,10 @@ final class ParcelFeedbackTests: XCTestCase {
         XCTAssertEqual(model.moment, .early)
         XCTAssertTrue(sent.requests.isEmpty)
         XCTAssertTrue(sent.counted.isEmpty)
-        XCTAssertNil(visit(page(subject, .unknown, scan: ""), Sent(), store, clock).standing)
-        // Tomorrow the carrier's site may show it: the row asks again although nothing was scanned.
-        clock.now += 25 * 3_600
-        XCTAssertEqual(visit(page(subject, .unknown, scan: ""), Sent(), store, clock).standing, .unknown)
+        // Tomorrow the carrier's site may show it: the row asks again on the next visit.
+        let later = visit(page(subject, .unknown, scan: ""), Sent(), store, clock)
+        XCTAssertEqual(later.standing, .unknown)
+        XCTAssertEqual(later.moment, .ask)
     }
 
     func testNamingTheCarrierSendsItAndThanks() async {
@@ -611,10 +582,8 @@ final class ParcelFeedbackTests: XCTestCase {
         XCTAssertEqual(sent.requests.last?.carrierName, "Example Parcels")
         XCTAssertEqual(sent.requests.last?.trackingPage, "example.com/track")
         XCTAssertEqual(sent.counted, ["parcel-feedback-carrier error", "parcel-feedback-carrier success"])
-        XCTAssertNil(visit(page(subject, .unknown, scan: ""), Sent(), store, clock).standing)
-        // The carrier was named: the row does not ask again while nothing is scanned.
-        clock.now += 25 * 3_600
-        XCTAssertNil(visit(page(subject, .unknown, scan: ""), Sent(), store, clock).standing)
+        // More may be said later: the row stands on the next visit too.
+        XCTAssertEqual(visit(page(subject, .unknown, scan: ""), Sent(), store, clock).standing, .unknown)
         XCTAssertEqual(visit(page(subject, .found), Sent(), store, clock).standing, .found, "Once it is found, Pip asks about what he shows")
     }
 
@@ -630,12 +599,9 @@ final class ParcelFeedbackTests: XCTestCase {
         model.notYet()
         XCTAssertEqual(model.standing, .unknown)
 
-        // A carrier answers while the page is open: the row's word goes, and Pip waits out the day.
+        // A carrier answers while the page is open: the row's word goes, and Pip asks.
         model.show(page(subject, .found), through: sent.client)
         XCTAssertEqual(model.moment, .ask)
-        XCTAssertNil(model.standing)
-        clock.now += ParcelFeedbackMemory.quiet
-        model.show(page(subject, .found, scan: "4:2026-10-03T09:30:00Z"), through: sent.client)
         XCTAssertEqual(model.standing, .found)
 
         // A new scan leaves an answer given on this visit in place.

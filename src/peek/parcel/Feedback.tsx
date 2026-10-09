@@ -1,13 +1,11 @@
-import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { Icon, SmallPip } from '../../components/Icon';
 import type { ApiParcelFeedbackReason } from '../../generated/apiContract';
 import { useI18n, type MessageKey } from '../../i18n';
 import { trackAction } from '../../lib/analytics';
 import {
-  asksFeedback,
   asksOnReturn,
   FEEDBACK_REASONS,
-  type FeedbackMemory,
   type FeedbackNotes,
   type ParcelFeedback,
   type SendParcelFeedback,
@@ -22,7 +20,8 @@ import './Feedback.css';
  * answers for, Pip asks where the history ends whether he got it right, and
  * the page asks once more on the way back from the carrier's own site. For a
  * parcel no carrier was found for, a row asks whether the carrier's site
- * shows it. An answer is given in place; a sheet takes the words.
+ * shows it. Both stand on every visit: something may happen that the reader
+ * tells only later. An answer is given in place; a sheet takes the words.
  */
 export interface FeedbackSubject {
   /** A carrier answers for the parcel, or none was found. Null asks nothing. */
@@ -65,8 +64,6 @@ const PAGE_LIMIT = 500;
 export interface ParcelFeedbackState {
   kind: 'found' | 'unknown' | null;
   carrier: string;
-  /** The standing question is on the page. */
-  shown: boolean;
   moment: Moment;
   open: Open | null;
   word: Word | null;
@@ -86,14 +83,8 @@ export interface ParcelFeedbackState {
   close(): void;
 }
 
-/** What the browser remembered as the page opened. An answer given on this visit stays on the page to be read. */
-interface Opened { notes: FeedbackNotes; memory: FeedbackMemory; at: number }
-const opening = (notes: FeedbackNotes): Opened => ({ notes, memory: notes.read(), at: Date.now() });
-
 export function useParcelFeedback({ kind, scan, carrier, busy = false, notes, send }: FeedbackSubject): ParcelFeedbackState {
   const { locale } = useI18n();
-  const [remembered, setRemembered] = useState(() => opening(notes));
-  if (remembered.notes !== notes) setRemembered(opening(notes));
   const [flow, setFlow] = useState<{ notes: FeedbackNotes; kind: FeedbackSubject['kind']; moment: Moment }>({ notes, kind, moment: 'ask' });
   // Another parcel, or a carrier found while the page was open, starts over.
   const moment = flow.notes === notes && flow.kind === kind ? flow.moment : 'ask';
@@ -151,7 +142,6 @@ export function useParcelFeedback({ kind, scan, carrier, busy = false, notes, se
   return {
     kind,
     carrier,
-    shown: kind !== null && (moment !== 'ask' || asksFeedback(remembered.memory, scan, remembered.at)),
     moment,
     open,
     word,
@@ -189,11 +179,8 @@ export function useParcelFeedback({ kind, scan, carrier, busy = false, notes, se
       setOpen({ sheet: 'wrong', id: crypto.randomUUID(), reasons: [], asked: 'back' });
     },
     elsewhere: () => setOpen({ sheet: 'carrier' }),
-    notYet() {
-      // Nothing to send: tomorrow the carrier's site may show it.
-      notes.write({ ...notes.read(), at: new Date().toISOString(), scan: '' });
-      go('early');
-    },
+    // Nothing to send: tomorrow the carrier's site may show it, and the row asks again.
+    notYet: () => go('early'),
     async sendWords(reasons, note) {
       if (open?.sheet !== 'wrong') return false;
       const words = note.trim();
@@ -231,47 +218,129 @@ function Said({ children }: { children: ReactNode }) {
   return <p className="peekfb-said" role="status"><Icon name="check" />{children}</p>;
 }
 
+const still = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+/** Out, a little past, and back. */
+const SPRING = 'cubic-bezier(.34, 1.36, .64, 1)';
+const SETTLE = 'cubic-bezier(.22, 1, .36, 1)';
+/** Pip's moments of relief: an answer was taken. */
+const HAPPY: readonly Moment[] = ['right', 'sent', 'noted'];
+
+/**
+ * The first time the question is in view, Pip hops up and what he says opens from beside him; the row rises.
+ * Until then it waits out of sight, so nothing is seen to vanish and come back.
+ */
+function useArrival(stand: RefObject<HTMLDivElement | null>, kind: ParcelFeedbackState['kind']) {
+  useLayoutEffect(() => {
+    const element = stand.current;
+    if (!element?.animate || still()) return;
+    const pip = element.querySelector('.small-pip');
+    const said = element.querySelector('.peekfb-bubble, .peekfb-ask');
+    const moves = [
+      pip?.animate({ opacity: [0, 1, 1], transform: ['translateY(10px) scale(.9)', 'translateY(-5px) scale(1.03)', 'none'] },
+        { duration: 520, easing: SETTLE, fill: 'backwards' }),
+      said?.animate(pip
+        ? { opacity: [0, 1], transform: ['scale(.84)', 'none'] }
+        : { opacity: [0, 1], transform: ['translateY(10px)', 'none'] }, { duration: 460, delay: pip ? 150 : 0, easing: pip ? SPRING : SETTLE, fill: 'backwards' }),
+    ].filter((move): move is Animation => !!move);
+    for (const move of moves) move.pause();
+    const play = () => { for (const move of moves) move.play(); };
+    const box = element.getBoundingClientRect();
+    if (box.top < window.innerHeight && box.bottom > 0) {
+      play();
+      return () => { for (const move of moves) move.cancel(); };
+    }
+    if (typeof IntersectionObserver === 'undefined') {
+      for (const move of moves) move.cancel();
+      return;
+    }
+    const watch = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      watch.disconnect();
+      play();
+    });
+    watch.observe(element);
+    return () => {
+      watch.disconnect();
+      for (const move of moves) move.cancel();
+    };
+  }, [stand, kind]);
+}
+
 /** The standing question, where the history ends: Pip's for a parcel a carrier answers for, a row for one none was found for. */
 export function FeedbackQuestion({ feedback }: { feedback: ParcelFeedbackState }) {
   const { t } = useI18n();
   const { kind, moment, place } = feedback;
-  // An answer replaces the buttons it was given with: the focus stays where the reader was, and what follows is in view.
+  const stand = useRef<HTMLDivElement>(null);
+  useArrival(stand, kind);
+  // What is said after an answer comes in; what the page opened on was simply there.
+  const [opened, setOpened] = useState<Moment | null>(moment);
+  if (opened !== null && moment !== opened) setOpened(null);
+  const moved = opened === null || undefined;
+
+  // The height the question stands at, kept as it changes, for the change an answer brings to grow from.
+  const height = useRef(0);
+  useLayoutEffect(() => {
+    const element = place.current;
+    if (!element || typeof ResizeObserver === 'undefined') return;
+    const watch = new ResizeObserver(() => { height.current = element.offsetHeight; });
+    watch.observe(element);
+    return () => watch.disconnect();
+  }, [place, kind]);
+
+  // An answer replaces the buttons it was given with: the bubble or the row grows or shrinks to it from where it
+  // stood, the focus stays where the reader was, and what follows is in view. The focus and the scroll wait for a
+  // sheet that was over the page to have handed it back.
   const answered = useRef(moment);
+  useLayoutEffect(() => {
+    const element = place.current;
+    if (answered.current === moment || !element) return;
+    const [from, to] = [height.current, element.offsetHeight];
+    if (from && from !== to && element.animate && !still()) element.animate({ height: [`${from}px`, `${to}px`] }, { duration: 420, easing: SETTLE });
+  }, [moment, place]);
   useEffect(() => {
+    const element = place.current;
     if (answered.current === moment) return;
     answered.current = moment;
-    const element = place.current;
     element?.focus({ preventScroll: true });
-    element?.scrollIntoView?.({ block: 'nearest', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    element?.scrollIntoView?.({ block: 'nearest', behavior: still() ? 'auto' : 'smooth' });
   }, [moment, place]);
-  if (!feedback.shown || !kind) return null;
+  if (!kind) return null;
 
   if (kind === 'unknown') {
-    return <div ref={place} className="peekfb-ask" data-moment={moment} tabIndex={-1}>
-      {moment === 'early' ? <Said>{t('feedback.unknown.early')}</Said>
-        : moment === 'named' ? <Said>{t('feedback.unknown.sent')}</Said>
-          : <>
-            <p className="peekfb-question">{t('feedback.unknown.question')}</p>
-            <Answers yes={t('feedback.yes')} no={t('feedback.unknown.notYet')} onYes={feedback.elsewhere} onNo={feedback.notYet} />
-          </>}
+    return <div ref={stand} className="peekfb">
+      <div ref={place} className="peekfb-ask" data-moment={moment} tabIndex={-1}>
+        <div key={moment} className="peekfb-say" data-moved={moved}>
+          {moment === 'early' ? <Said>{t('feedback.unknown.early')}</Said>
+            : moment === 'named' ? <Said>{t('feedback.unknown.sent')}</Said>
+              : <>
+                <p className="peekfb-question">{t('feedback.unknown.question')}</p>
+                <Answers yes={t('feedback.yes')} no={t('feedback.unknown.notYet')} onYes={feedback.elsewhere} onNo={feedback.notYet} />
+              </>}
+        </div>
+      </div>
     </div>;
   }
-  return <div className="peekfb-pip" data-moment={moment}>
-    <SmallPip />
-    <div ref={place} className="peekfb-bubble" tabIndex={-1}>
-      {moment === 'right' ? <Said>{t('feedback.pip.right')}</Said>
-        : moment === 'sent' || moment === 'noted' ? <>
-          <Said>{t('feedback.pip.sent')}</Said>
-          {moment === 'sent' && <button type="button" className="peekfb-beside" onClick={feedback.addNote}>{t('feedback.addNote')}</button>}
-        </> : moment === 'reasons' ? <>
-          <p className="peekfb-question">{t('feedback.whatsOff')}</p>
-          <span className="peekfb-chips">
-            {FEEDBACK_REASONS.map((reason) => <button key={reason} type="button" className="peekfb-pill" onClick={() => feedback.pick(reason)}>{t(REASON_KEYS[reason])}</button>)}
-          </span>
-        </> : <>
-          <p className="peekfb-question">{t('feedback.pip.question')}</p>
-          <Answers yes={t('feedback.yes')} no={t('feedback.notQuite')} onYes={() => feedback.right('page')} onNo={feedback.notQuite} />
-        </>}
+  return <div ref={stand} className="peekfb">
+    <div className="peekfb-pip" data-moment={moment} data-mood={HAPPY.includes(moment) ? 'happy' : undefined}>
+      <SmallPip />
+      <div ref={place} className="peekfb-bubble" tabIndex={-1}>
+        <div key={moment} className="peekfb-say" data-moved={moved}>
+          {moment === 'right' ? <Said>{t('feedback.pip.right')}</Said>
+            : moment === 'sent' || moment === 'noted' ? <>
+              <Said>{t('feedback.pip.sent')}</Said>
+              {moment === 'sent' && <button type="button" className="peekfb-beside" onClick={feedback.addNote}>{t('feedback.addNote')}</button>}
+            </> : moment === 'reasons' ? <>
+              <p className="peekfb-question">{t('feedback.whatsOff')}</p>
+              <span className="peekfb-chips">
+                {FEEDBACK_REASONS.map((reason, index) => <button key={reason} type="button" className="peekfb-pill" style={{ '--i': index } as CSSProperties}
+                  onClick={() => feedback.pick(reason)}>{t(REASON_KEYS[reason])}</button>)}
+              </span>
+            </> : <>
+              <p className="peekfb-question">{t('feedback.pip.question')}</p>
+              <Answers yes={t('feedback.yes')} no={t('feedback.notQuite')} onYes={() => feedback.right('page')} onNo={feedback.notQuite} />
+            </>}
+        </div>
+      </div>
     </div>
   </div>;
 }
@@ -353,7 +422,8 @@ export function FeedbackOverlays({ feedback }: { feedback: ParcelFeedbackState }
   const { t } = useI18n();
   const { open, word } = feedback;
   return <>
-    {word?.say === 'back' && !open && <Toast mark={<Icon name="arrow" />} action={<span className="peekfb-toastanswers">
+    {/* Pip asks this one too. */}
+    {word?.say === 'back' && !open && <Toast mark={<SmallPip />} action={<span className="peekfb-toastanswers">
       <button type="button" onClick={() => feedback.right('back')}>{t('feedback.yes')}</button>
       <button type="button" onClick={feedback.wrongOnReturn}>{t('feedback.no')}</button>
     </span>}>

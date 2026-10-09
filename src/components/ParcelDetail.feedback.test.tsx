@@ -23,13 +23,15 @@ afterEach(() => {
 });
 
 describe('the question in the detail of an account’s parcel', () => {
-  it('is Pip’s under the history, sends the answer as the account, and is not asked again about the same scan', async () => {
+  it('is Pip’s below the page, sends the answer as the account, and stands again on the next visit', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () => new Response(null, { status: 204 }));
     vi.stubGlobal('fetch', fetch);
     const user = userEvent.setup();
     const first = open();
     const sync = document.querySelector('.detail__sync')!;
     expect(sync.compareDocumentPosition(bubble()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // On the ground the page lies on, as on the iPhone.
+    expect(bubble()!.closest('.peekfb')!.parentElement).toBe(sync.parentElement);
     await user.click(within(bubble()!).getByRole('button', { name: 'Not quite' }));
     await user.click(within(bubble()!).getByRole('button', { name: 'Wrong time or place' }));
     await waitFor(() => expect(requests(fetch)).toHaveLength(1));
@@ -42,8 +44,9 @@ describe('the question in the detail of an account’s parcel', () => {
       'package-1': { at: expect.any(String), scan: '2:2026-10-01T10:00:00.000Z' },
     }));
     first.unmount();
+    // Something may happen that its reader tells only later.
     open();
-    expect(bubble()).toBeNull();
+    expect(within(bubble()!).getByText('Did I get this one right?')).toBeVisible();
   });
 
   it('asks who carries a parcel no carrier was found for', async () => {

@@ -259,8 +259,9 @@ an export, and is not removed when the parcel or the account is deleted. Please
 leave personal details out of a note. Every answer is deleted 90 days after it
 was given. A gift's recipient is not asked.
 
-Your browser, or the iPhone app, remembers that you answered, so the question
-is not asked again about the same update. That stays on the device.
+Your browser, or the iPhone app, remembers that you answered, so coming back
+from the carrier's site does not ask again about the same update. That stays on
+the device.
 
 ## Friends is optional
 

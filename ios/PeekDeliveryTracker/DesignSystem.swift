@@ -286,6 +286,8 @@ struct InlineToast: View {
     let action: (() -> Void)?
     /// A question's answers, side by side where the one button stands.
     let answers: [Answer]
+    /// Who asks the question, where the symbol stands.
+    private let asker: AnyView?
 
     init(
         text: String,
@@ -300,21 +302,23 @@ struct InlineToast: View {
         self.tint = tint
         self.action = action
         answers = []
+        asker = nil
     }
 
-    /// A toast that asks: each answer is a button of its own.
-    init(text: String, symbol: String, tint: Color, answers: [Answer]) {
+    /// A toast that asks: each answer is a button of its own, and `asker` stands before the words.
+    init(text: String, answers: [Answer], @ViewBuilder asker: () -> some View) {
         self.text = text
         button = nil
-        self.symbol = symbol
-        self.tint = tint
+        symbol = ""
+        tint = .primary
         action = nil
         self.answers = answers
+        self.asker = AnyView(asker())
     }
 
     var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: symbol).foregroundStyle(tint)
+        HStack(spacing: asker == nil ? 14 : 10) {
+            if let asker { asker } else { Image(systemName: symbol).foregroundStyle(tint) }
             Text(text).font(.subheadline.weight(.medium)).lineLimit(answers.isEmpty ? 2 : 3)
             Spacer(minLength: 4)
             if let button, let action {
@@ -340,7 +344,7 @@ struct InlineToast: View {
                 .fixedSize()
             }
         }
-        .padding(.leading, 17)
+        .padding(.leading, asker == nil ? 17 : 11)
         .padding(.trailing, answers.isEmpty ? 17 : 9)
         .frame(minHeight: 54)
         .foregroundStyle(.primary)

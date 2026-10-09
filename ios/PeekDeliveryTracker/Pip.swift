@@ -505,12 +505,12 @@ enum PipArtwork {
         }
     }
 
-    /// The kraft parcel at sticker size: closed and still, with a face large enough to read,
-    /// and its carrier's label when it has one.
-    static func sticker(_ context: GraphicsContext, label: PipLabel? = nil) {
+    /// The kraft parcel at sticker size: closed, with a face large enough to read, and its
+    /// carrier's label when it has one. `happy` and `blink` are the face's.
+    static func sticker(_ context: GraphicsContext, label: PipLabel? = nil, happy: Double = 0, blink: Double? = nil) {
         box(context, .kraft, open: false)
         if let label { Self.label(context, label) }
-        kraftFace(context, k: 1.3, happy: 0)
+        kraftFace(context, k: 1.3, happy: happy, blink: blink)
         frontFlaps(context, .kraft, open: false)
         tape(context, .kraft)
     }
@@ -856,18 +856,44 @@ struct InkPip: View {
 struct SmallPip: View {
     /// The carrier's label on its right side, for a parcel whose carrier is known.
     var label: PipLabel? = nil
+    /// 0 for open eyes, 1 for happy arcs. A change in an animation turns one into the other.
+    var happy: Double = 0
+    /// His open eyes blink now and then, as he waits for an answer; not when motion is reduced.
+    var blinks = false
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = Date()
 
     private static let crop = CGRect(x: 48, y: 88, width: 204, height: 196)
 
     var body: some View {
-        Canvas { context, size in
-            let scale = size.width / Self.crop.width
-            context.scaleBy(x: scale, y: scale)
-            context.translateBy(x: -Self.crop.minX, y: -Self.crop.minY)
-            PipArtwork.sticker(context, label: label)
+        let blinking = blinks && !reduceMotion && happy == 0
+        TimelineView(PipBlinkSchedule(start: appeared, paused: !blinking)) { timeline in
+            Sticker(label: label, happy: happy, blink: blinking ? timeline.date.timeIntervalSince(appeared) : nil)
         }
         .aspectRatio(Self.crop.width / Self.crop.height, contentMode: .fit)
         .accessibilityHidden(true)
+    }
+
+    /// Drawn again at every step of a change of mood.
+    private struct Sticker: View, Animatable {
+        let label: PipLabel?
+        var happy: Double
+        let blink: Double?
+
+        var animatableData: Double {
+            get { happy }
+            set { happy = newValue }
+        }
+
+        var body: some View {
+            Canvas { context, size in
+                let scale = size.width / SmallPip.crop.width
+                context.scaleBy(x: scale, y: scale)
+                context.translateBy(x: -SmallPip.crop.minX, y: -SmallPip.crop.minY)
+                PipArtwork.sticker(context, label: label, happy: happy, blink: blink)
+            }
+        }
     }
 }
 
