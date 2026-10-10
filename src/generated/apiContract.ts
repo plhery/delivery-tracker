@@ -5231,7 +5231,8 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "emile",
+      "recognitionRank": 4
     },
     "trackingUrlTemplate": "https://www.emileps.com/tracking?tracking={trackingNumber}",
     "linkRules": [
