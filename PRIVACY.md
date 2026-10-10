@@ -98,7 +98,7 @@ such as ParcelsApp, Ship24, 17TRACK and the Universal Postal Union. The
 carriers and services it can ask are listed in the open-source
 [Universal Parcel Scraper](https://github.com/plhery/universal-parcel-scraper).
 A postcode or private link you supply goes to the carrier it is for; ParcelsApp
-also receives the postcode. Dachser's link shows more than the journey: the
+and 17TRACK also receive the postcode. Dachser's link shows more than the journey: the
 service discards its sender, recipient, address, contact and document fields.
 
 Browser push services receive encrypted Web Push messages; Apple processes

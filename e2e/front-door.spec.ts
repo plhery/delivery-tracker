@@ -115,7 +115,7 @@ test('asks for the postcode a chosen carrier needs before opening the parcel', a
   await picker.getByRole('option', { name: /GLS Switzerland/ }).click();
   const postcode = page.getByRole('textbox', { name: 'Delivery postcode' });
   await expect(postcode).toBeFocused();
-  await expect(page.getByText('Only sent to GLS Switzerland, never shown on shared links.')).toBeVisible();
+  await expect(page.getByText('Sent to GLS Switzerland and, when needed, to tracking services. Never shown on shared links.')).toBeVisible();
   await postcode.press('Enter');
   await expect(said(page)).toHaveText('Enter the delivery postcode shown on your order.');
   await expect(page).toHaveURL(/\/$/);

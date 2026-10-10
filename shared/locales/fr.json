@@ -210,7 +210,7 @@
   "door.paste.blocked.touch": "Ce navigateur n’a pas laissé Peek lire le presse-papiers. Appuie longuement sur le champ et choisis Coller.",
   "door.paste.empty": "Le presse-papiers est vide. Copie d’abord le numéro de suivi ou le message d’expédition.",
   "door.picker.auto": "Peek trouvera le transporteur quand tu lanceras le suivi.",
-  "door.postcode.private": "Envoyé uniquement à {{carrier}}, jamais affiché sur les liens partagés.",
+  "door.postcode.private": "Envoyé à {{carrier}} et, si besoin, à des services de suivi. Jamais affiché sur les liens partagés.",
   "door.recents.forget.failed": "Impossible d’oublier tous les colis. Vérifie ta connexion et réessaie.",
   "door.recents.forget.few": "Oublier ces {{count}} colis ?",
   "door.recents.forget.many": "Oublier ces {{count}} colis ?",

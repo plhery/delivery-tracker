@@ -210,7 +210,7 @@
   "door.paste.blocked.touch": "Dieser Browser hat Peek nicht auf die Zwischenablage zugreifen lassen. Halte das Feld gedrückt und wähle „Einfügen“.",
   "door.paste.empty": "Die Zwischenablage ist leer. Kopiere zuerst die Sendungsnummer oder die Versandnachricht.",
   "door.picker.auto": "Peek findet den Paketdienst, sobald du das Paket verfolgst.",
-  "door.postcode.private": "Wird nur an {{carrier}} gesendet und nie auf geteilten Links gezeigt.",
+  "door.postcode.private": "Wird an {{carrier}} und bei Bedarf an Tracking-Dienste gesendet. Nie auf geteilten Links zu sehen.",
   "door.recents.forget.failed": "Nicht alle Pakete konnten vergessen werden. Prüfe deine Verbindung und versuche es erneut.",
   "door.recents.forget.few": "Diese {{count}} Pakete vergessen?",
   "door.recents.forget.many": "Diese {{count}} Pakete vergessen?",

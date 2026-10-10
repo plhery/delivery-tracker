@@ -210,7 +210,7 @@
   "door.paste.blocked.touch": "Ta przeglądarka nie pozwoliła Peek odczytać schowka. Przytrzymaj pole i wybierz „Wklej”.",
   "door.paste.empty": "Schowek jest pusty. Najpierw skopiuj numer śledzenia albo wiadomość o wysyłce.",
   "door.picker.auto": "Peek znajdzie przewoźnika, gdy zaczniesz śledzić.",
-  "door.postcode.private": "Trafia tylko do przewoźnika {{carrier}} i nigdy nie pojawia się w udostępnionych linkach.",
+  "door.postcode.private": "Trafia do przewoźnika {{carrier}}, a w razie potrzeby także do serwisów śledzenia przesyłek. Nigdy nie pojawia się w udostępnionych linkach.",
   "door.recents.forget.failed": "Nie udało się zapomnieć wszystkich przesyłek. Sprawdź połączenie i spróbuj ponownie.",
   "door.recents.forget.few": "Zapomnieć o tych {{count}} przesyłkach?",
   "door.recents.forget.many": "Zapomnieć o tych {{count}} przesyłkach?",

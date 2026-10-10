@@ -210,7 +210,7 @@
   "door.paste.blocked.touch": "Questo browser non ha permesso a Peek di leggere gli appunti. Tieni premuto il campo e scegli Incolla.",
   "door.paste.empty": "Gli appunti sono vuoti. Copia prima il numero di tracciamento o il messaggio di spedizione.",
   "door.picker.auto": "Peek trova il corriere quando avvii il tracciamento.",
-  "door.postcode.private": "Inviato solo a {{carrier}}, mai mostrato nei link condivisi.",
+  "door.postcode.private": "Inviato a {{carrier}} e, se serve, a servizi di tracciamento. Mai mostrato nei link condivisi.",
   "door.recents.forget.failed": "Non è stato possibile dimenticare tutti i pacchi. Controlla la connessione e riprova.",
   "door.recents.forget.few": "Dimenticare questi {{count}} pacchi?",
   "door.recents.forget.many": "Dimenticare questi {{count}} pacchi?",

@@ -210,7 +210,7 @@
   "door.paste.blocked.touch": "This browser didn’t let Peek read the clipboard. Long-press the field and choose Paste.",
   "door.paste.empty": "The clipboard is empty. Copy the tracking number or the shipping message first.",
   "door.picker.auto": "Peek looks the carrier up when you track.",
-  "door.postcode.private": "Only sent to {{carrier}}, never shown on shared links.",
+  "door.postcode.private": "Sent to {{carrier}} and, when needed, to tracking services. Never shown on shared links.",
   "door.recents.forget.failed": "Couldn’t forget every parcel. Check your connection and try again.",
   "door.recents.forget.few": "Forget these {{count}} parcels?",
   "door.recents.forget.many": "Forget these {{count}} parcels?",

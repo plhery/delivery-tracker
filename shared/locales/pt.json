@@ -210,7 +210,7 @@
   "door.paste.blocked.touch": "Este navegador não deixou o Peek ler a área de transferência. Mantém o campo premido e escolhe Colar.",
   "door.paste.empty": "A área de transferência está vazia. Copia primeiro o número de seguimento ou a mensagem de envio.",
   "door.picker.auto": "O Peek procura a transportadora quando começares a seguir.",
-  "door.postcode.private": "Só {{carrier}} o recebe; nunca aparece nas ligações partilhadas.",
+  "door.postcode.private": "Recebem-no {{carrier}} e, quando é preciso, serviços de seguimento. Nunca aparece nas ligações partilhadas.",
   "door.recents.forget.failed": "Não foi possível esquecer todas as encomendas. Verifica a ligação à Internet e tenta novamente.",
   "door.recents.forget.few": "Esquecer estas {{count}} encomendas?",
   "door.recents.forget.many": "Esquecer estas {{count}} encomendas?",

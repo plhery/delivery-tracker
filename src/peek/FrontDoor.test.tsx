@@ -337,7 +337,7 @@ describe('FrontDoor', () => {
     // The field is found as soon as it is drawn; the focus follows in the drawing's effects.
     await waitFor(() => expect(postcode).toHaveFocus());
     expect(postcode).toHaveAccessibleDescription('The carrier needs the delivery postcode to show your parcel’s updates.');
-    expect(screen.getByText('Only sent to GLS Switzerland, never shown on shared links.')).toBeVisible();
+    expect(screen.getByText('Sent to GLS Switzerland and, when needed, to tracking services. Never shown on shared links.')).toBeVisible();
     expect(mocks.lookup).not.toHaveBeenCalled();
     await user.click(track);
     expect(screen.getByRole('alert')).toHaveTextContent('Enter the delivery postcode shown on your order.');
