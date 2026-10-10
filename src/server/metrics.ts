@@ -27,7 +27,7 @@ import { initObservability } from './observability';
  */
 
 /** Bump when the series or their labels change, so a hot-reloaded copy does not reuse an older shape. */
-const RUNTIME_VERSION = 9;
+const RUNTIME_VERSION = 10;
 
 interface PrometheusRuntime {
   version: number;
@@ -52,6 +52,7 @@ interface PrometheusRuntime {
   deliveryEmailTotal: Counter<'outcome' | 'reason'>;
   providerInputTotal: Counter<'provider' | 'step'>;
   checksumRejectionTotal: Counter<'carrier' | 'rule'>;
+  dpdAppSessionTotal: Counter<'outcome' | 'trigger'>;
   publicLookupClients: Gauge;
   publicLookupsPerClient: Gauge<'stat'>;
   publicDetectionClients: Gauge;
@@ -195,6 +196,12 @@ function createRuntime(): PrometheusRuntime {
       name: 'carrier_checksum_rejection_total',
       help: 'Parcels confirmed by a carrier that detection had left out because a detection rule\'s check digit failed, by carrier and rule id.',
       labelNames: ['carrier', 'rule'] as const,
+      registers: [registry],
+    }),
+    dpdAppSessionTotal: new Counter({
+      name: 'dpd_app_session_total',
+      help: 'DPD app sessions taken up at start, and openings that ended opened or failed, by what began them (start, renewal, retry, refused, lookup).',
+      labelNames: ['outcome', 'trigger'] as const,
       registers: [registry],
     }),
     publicLookupClients: new Gauge({
@@ -433,6 +440,11 @@ export function recordChecksumRejection(carrier: string, rule: string): void {
       Sentry.startNewTrace(() => Sentry.metrics.count('tracking.checksum_rejection', 1, { attributes: { carrier, rule } }));
     }
   } catch { /* Telemetry must never change a tracking result. */ }
+}
+
+/** A DPD app session taken up at start, or an opening that ended, by what began it. */
+export function recordDpdAppSession(outcome: string, trigger: string): void {
+  count(runtime.dpdAppSessionTotal, 'dpd_app_session_total', { outcome, trigger });
 }
 
 interface UsageStats { buckets: number; p50: number; p90: number; max: number }

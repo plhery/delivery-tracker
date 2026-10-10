@@ -195,6 +195,8 @@ limit 30;
 
 If `accepted_for` stays well above eight hours, sessions can be kept longer before
 opening the next; if it falls below, lookups meet refused sessions and wait for a new one.
+Each process also logs the session it takes up at start and how each opening ended
+(`dpd_app_session` in [Logs](#logs)); `dpd_app_session_total` counts them.
 
 ## Unmapped wording
 
@@ -341,6 +343,12 @@ Key JSON events:
   yet), `input_required` or `invalid_input`;
 - `tracking_sync_audit_write_failed`, `tracking_sync_audit_maintenance_failed`,
   `tracking_status_observation_write_failed`;
+- `dpd_app_session`: the scraper took up a saved session at start (`outcome` `taken_up`,
+  with `age_ms`, how long ago it opened), or an opening ended, `opened` or `failed`
+  (warning, with `error_kind`). `trigger` says what began it: `start`, `renewal` at eight
+  hours, `retry` a quarter of an hour after a failure, `refused` after DPD refused the
+  current session, or `lookup` when a lookup found none open. `duration_ms` is how long
+  the opening took, or the database read for a session taken up;
 - `dpd_app_session_refused`: DPD refused a session the server no longer used, with
   `accepted_ms`, how long after it opened DPD began refusing it, and `last_accepted_ms`,
   when a check last found it accepted. `dpd_app_session_store_failed` (warning, with the
@@ -576,6 +584,7 @@ is `no_history` rather than `indeterminate`.
 | `parcel_alert_removed_total` (reason) | Alerts ended: `asked`, `delivered` (journey over), `expired`, `failed` (three failed sends in a row) |
 | `parcel_feedback_total` (answer, via, app, outcome) | What readers say of a parcel: `right`, `wrong` or `found_elsewhere`, through an `account` or a `link`. `stored`, `replaced` (a note followed its reason), `full` (twenty answers for the number that day) or `closed` (too late to add to) |
 | `provider_input_total` (provider, step) | Whether relaying a provider's postcode request pays off: a parcel starts asking its owner (`asked`), the owner gives one (`supplied`), then each lookup made with it: `history`, `still_required`, `no_history` or `failed`. Every provider receives the postcode; supported sources can submit it |
+| `dpd_app_session_total` (outcome, trigger) | DPD app sessions `taken_up` at start, and openings that ended `opened` or `failed`, by what began them: `start`, `renewal`, `retry`, `refused` or `lookup`. Openings by `lookup` or `refused` mean lookups waited for one |
 | `delivery_email_total` (outcome, reason) | Delivery emails: `sent`; `failed` and tried again later (`smtp`, `content`, `account`, `parcel`, `interrupted`); `skipped` for good (`no_address`, `relay_address`, `parcel_gone`, `account_cap`, `service_cap`) |
 | `public_lookup_clients` | Clients that made a lookup yesterday (UTC) |
 | `public_lookups_per_client` (stat) | Yesterday's lookups per client: `p50`, `p90`, `max` |

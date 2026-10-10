@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { dpdSessionStore } from './dpdSessions';
+import { dpdSessionStore, logDpdSession } from './dpdSessions';
+import * as metrics from './metrics';
 import * as observability from './observability';
 
 const HOUR = 3_600_000;
@@ -37,5 +38,19 @@ describe('DPD app session store', () => {
       ['dpd_app_session_store_failed', { operation: 'load', error_type: 'TypeError' }, 'warning'],
       ['dpd_app_session_store_failed', { operation: 'save', error_type: 'Error' }, 'warning'],
     ]);
+  });
+
+  it('logs how each session opening ended, and warns of a failure', () => {
+    const logged = vi.spyOn(observability, 'logOperationalEvent').mockImplementation(() => undefined);
+    const counted = vi.spyOn(metrics, 'recordDpdAppSession').mockImplementation(() => undefined);
+    logDpdSession({ outcome: 'taken_up', trigger: 'start', durationMs: 41.6, ageMs: 2 * HOUR });
+    logDpdSession({ outcome: 'opened', trigger: 'renewal', durationMs: 21_480 });
+    logDpdSession({ outcome: 'failed', trigger: 'retry', durationMs: 120_000, errorKind: 'transport' });
+    expect(logged.mock.calls).toEqual([
+      ['dpd_app_session', { outcome: 'taken_up', trigger: 'start', duration_ms: 42, age_ms: 2 * HOUR }, 'info'],
+      ['dpd_app_session', { outcome: 'opened', trigger: 'renewal', duration_ms: 21_480 }, 'info'],
+      ['dpd_app_session', { outcome: 'failed', trigger: 'retry', duration_ms: 120_000, error_kind: 'transport' }, 'warning'],
+    ]);
+    expect(counted.mock.calls).toEqual([['taken_up', 'start'], ['opened', 'renewal'], ['failed', 'retry']]);
   });
 });

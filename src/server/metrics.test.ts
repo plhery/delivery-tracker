@@ -195,6 +195,15 @@ describe('prometheus carrier metrics', () => {
     expect(sentry.newTraces).toBe(1);
   });
 
+  it('counts DPD app sessions by outcome and what began them', async () => {
+    metrics.recordDpdAppSession('opened', 'renewal');
+    metrics.recordDpdAppSession('opened', 'renewal');
+    metrics.recordDpdAppSession('failed', 'lookup');
+    const text = await scraped();
+    expect(text).toContain('dpd_app_session_total{outcome="opened",trigger="renewal"} 2');
+    expect(text).toContain('dpd_app_session_total{outcome="failed",trigger="lookup"} 1');
+  });
+
   it('serves yesterday\'s lookups and detections per client as gauges', async () => {
     metrics.recordPublicLookupUsage({ buckets: 40, p50: 2, p90: 9, max: 15, detection: { buckets: 31, p50: 3, p90: 12, max: 60 } });
     let text = await metrics.metricsText();
