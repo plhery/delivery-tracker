@@ -89,7 +89,7 @@ test('long sender names and expired invitations fit narrow screens in every loca
   await page.route('**/api/friends/invite-preview', (route) => route.fulfill(expired ? { status: 404, json: { error: 'Invitation unavailable' } } : { json: { previewNickname: 'AlexandertheGreatestEver' } }));
   await page.goto(`/i/${preview}`);
   await expect(page.locator('.arrival__open')).toBeEnabled();
-  await expect(page.getByRole('link', { name: 'Open in the iOS app' })).toHaveAttribute('href', `swissdeliverytracker://invite#${preview}`);
+  await expect(page.getByRole('link', { name: 'Open in the iOS app' })).toHaveAttribute('href', `peekdeliverytracker://invite#${preview}`);
   for (const language of ['fr', 'de', 'it', 'es', 'pt', 'pl', 'en'] as const) {
     await page.getByRole('combobox').selectOption(language);
     await expect(page.locator('html')).toHaveAttribute('lang', documentLanguage(language));

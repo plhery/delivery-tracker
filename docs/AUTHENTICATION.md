@@ -34,7 +34,7 @@ The iPhone app reads the same public values from the gitignored
 keeps the session in Keychain. Add its callback to the Supabase redirect allow list:
 
 ```text
-swissdeliverytracker://auth-callback
+peekdeliverytracker://auth-callback
 ```
 
 On self-hosted Supabase, configure GoTrue through environment variables (site URL, allow
@@ -99,8 +99,8 @@ Set `GOTRUE_SITE_URL` and `GOTRUE_URI_ALLOW_LIST`, restart Auth, and check that
 Implemented on web and iOS, off until configured. It needs a paid Apple Developer
 membership, because a Personal Team can't enable the capability.
 
-1. Enable **Sign in with Apple** on the app ID `com.plhery.SwissDeliveryTracker` (or yours).
-2. Create a Services ID for the web (e.g. `com.plhery.SwissDeliveryTracker.web`). Register
+1. Enable **Sign in with Apple** on the app ID `com.plhery.PeekDeliveryTracker` (or yours).
+2. Create a Services ID for the web (e.g. `com.plhery.PeekDeliveryTracker.web`). Register
    your Supabase host as its domain and `https://supabase.example.com/auth/v1/callback` as
    its return URL.
 3. Create a Sign in with Apple key and keep the `.p8` outside the repo. Generate the client
@@ -110,7 +110,7 @@ membership, because a Personal Team can't enable the capability.
 
    ```env
    GOTRUE_EXTERNAL_APPLE_ENABLED=true
-   GOTRUE_EXTERNAL_APPLE_CLIENT_ID=com.plhery.SwissDeliveryTracker.web,com.plhery.SwissDeliveryTracker
+   GOTRUE_EXTERNAL_APPLE_CLIENT_ID=com.plhery.PeekDeliveryTracker.web,com.plhery.PeekDeliveryTracker
    GOTRUE_EXTERNAL_APPLE_SECRET=<server-only client secret JWT>
    GOTRUE_EXTERNAL_APPLE_REDIRECT_URI=https://supabase.example.com/auth/v1/callback
    ```

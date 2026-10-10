@@ -1525,7 +1525,7 @@ private extension Data {
 /// Encoding and writing happen on one serial queue, off the main thread and in
 /// call order, so a sign-out's delete always runs after any earlier save.
 private final class ParcelCache: @unchecked Sendable {
-    private static let queue = DispatchQueue(label: "com.plhery.SwissDeliveryTracker.parcel-cache", qos: .utility)
+    private static let queue = DispatchQueue(label: "com.plhery.PeekDeliveryTracker.parcel-cache", qos: .utility)
 
     func save(_ parcels: [Parcel], userID: UUID) {
         Self.queue.async {

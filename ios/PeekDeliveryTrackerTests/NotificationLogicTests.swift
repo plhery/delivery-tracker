@@ -254,7 +254,7 @@ final class NotificationLogicTests: XCTestCase {
         XCTAssertEqual(DeliveryEmail.exampleURL(site: try XCTUnwrap(URL(string: "http://localhost:3000/")), language: .en)?.absoluteString,
                        "http://localhost:3000/email/example?lang=en")
         // The in-app browser opens web addresses only.
-        for other in ["peek.example", "file:///private/example", "swissdeliverytracker://p/example"] {
+        for other in ["peek.example", "file:///private/example", "peekdeliverytracker://p/example"] {
             XCTAssertNil(DeliveryEmail.exampleURL(site: try XCTUnwrap(URL(string: other)), language: .en), other)
         }
     }

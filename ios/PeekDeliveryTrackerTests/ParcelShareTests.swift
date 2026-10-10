@@ -93,7 +93,7 @@ final class ParcelShareTests: XCTestCase {
         // A part that cannot be decoded is left out; the others stay.
         XCTAssertEqual(ParcelLinkWords(fragment: "g=%ZZ&f=Sam"), ParcelLinkWords(from: "Sam"))
         XCTAssertEqual(route("?g=Query&f=Query"), ParcelLinkRoute(id: linkID))
-        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "swissdeliverytracker://p/" + linkID + "#g=Hi&f=Sam")!, baseURL: base),
+        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "peekdeliverytracker://p/" + linkID + "#g=Hi&f=Sam")!, baseURL: base),
                        ParcelLinkRoute(id: linkID, note: "Hi", from: "Sam"))
         // Longer keys are someone else's.
         XCTAssertEqual(route("#gift=1&from=Sam&note=x"), ParcelLinkRoute(id: linkID))

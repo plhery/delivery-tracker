@@ -147,7 +147,7 @@ protocol DeviceParcelStorage {
 }
 
 struct DeviceParcelFiles: DeviceParcelStorage {
-    private let keychain = KeychainStore(service: "com.plhery.SwissDeliveryTracker.deviceParcels")
+    private let keychain = KeychainStore(service: "com.plhery.PeekDeliveryTracker.deviceParcels")
 
     func load() -> (parcels: [DeviceParcel], keys: [String: String]) {
         let keys: [String: String] = keychain.load() ?? [:]

@@ -50,10 +50,10 @@ final class AppRoutingTests: XCTestCase {
         XCTAssertEqual(FriendInvitationLink.code(from: base.absoluteString + "/invite#" + code, baseURL: base), code)
         XCTAssertEqual(url.fragment, code)
         XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString, baseURL: base), code)
-        XCTAssertEqual(FriendInvitationLink.code(from: "swissdeliverytracker://invite#" + code), code)
+        XCTAssertEqual(FriendInvitationLink.code(from: "peekdeliverytracker://invite#" + code), code)
         for text in ["https://evil.example/invite#" + code, "https://peektracker.com/invite?name=Paul#" + code,
                      "https://user@peektracker.com/invite#" + code, "https://peektracker.com/invite#short",
-                     "http://peektracker.com/invite#" + code, "swissdeliverytracker://auth-callback#" + code] {
+                     "http://peektracker.com/invite#" + code, "peekdeliverytracker://auth-callback#" + code] {
             XCTAssertNil(FriendInvitationLink.code(from: text, baseURL: base))
         }
     }
@@ -69,8 +69,8 @@ final class AppRoutingTests: XCTestCase {
         XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString, baseURL: base), preview)
         XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString + "#" + code, baseURL: base), preview)
         XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString + "?fbclid=tracking#ignored", baseURL: base), preview)
-        XCTAssertEqual(FriendInvitationLink.code(from: "swissdeliverytracker://invite#" + preview), preview)
-        XCTAssertEqual(FriendInvitationLink.code(from: "swissdeliverytracker://invite#" + code), code)
+        XCTAssertEqual(FriendInvitationLink.code(from: "peekdeliverytracker://invite#" + preview), preview)
+        XCTAssertEqual(FriendInvitationLink.code(from: "peekdeliverytracker://invite#" + code), code)
         for invalid in [base.absoluteString + "/i/short#" + code,
                         base.absoluteString + "/i/" + preview + "/extra#" + code,
                         "https://evil.example/i/" + preview + "#" + code] {
@@ -97,8 +97,8 @@ final class AppRoutingTests: XCTestCase {
         XCTAssertEqual(restored.code, store.code)
         restored.dismiss()
         XCTAssertFalse(FriendInvitationStore(defaults: defaults).isPresenting)
-        store.open(URL(string: "swissdeliverytracker://invite#" + String(repeating: "b", count: 32))!)
-        store.open(URL(string: "swissdeliverytracker://invite#invalid")!)
+        store.open(URL(string: "peekdeliverytracker://invite#" + String(repeating: "b", count: 32))!)
+        store.open(URL(string: "peekdeliverytracker://invite#invalid")!)
         store.clearPreview()
         await store.loadPreview()
         XCTAssertEqual(store.errorKey, "friends.inviteUnavailable")
@@ -111,7 +111,7 @@ final class AppRoutingTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let store = FriendInvitationStore(defaults: defaults)
-        store.open(URL(string: "swissdeliverytracker://invite#" + String(repeating: "a", count: 32))!)
+        store.open(URL(string: "peekdeliverytracker://invite#" + String(repeating: "a", count: 32))!)
         store.opened = true
         let friend = FriendCard(id: UUID(), nickname: "Paul")
         store.receive(FriendsActionResponse(acceptedFriend: friend))
@@ -126,7 +126,7 @@ final class AppRoutingTests: XCTestCase {
     func testFriendNotificationsAndLinksOpenOnlyValidProfileIdentifiers() {
         let friendID = UUID()
         XCTAssertEqual(NativeRoute(remoteNotification: ["kind": "friend_accepted", "friend_id": friendID.uuidString]), .friend(friendID))
-        XCTAssertEqual(NativeRoute(url: URL(string: "swissdeliverytracker://friend/\(friendID.uuidString)")!), .friend(friendID))
+        XCTAssertEqual(NativeRoute(url: URL(string: "peekdeliverytracker://friend/\(friendID.uuidString)")!), .friend(friendID))
         XCTAssertNil(NativeRoute(remoteNotification: ["kind": "friend_accepted", "friend_id": "invalid"]))
         XCTAssertNil(NativeRoute(remoteNotification: ["friend_id": friendID.uuidString]))
     }
@@ -138,8 +138,8 @@ final class AppRoutingTests: XCTestCase {
                      "https://PEEKTRACKER.com/p/" + id,
                      "https://peektracker.com/p/" + id + "?utm_source=chat",
                      "https://peektracker.com/p/" + id + "/",
-                     "swissdeliverytracker://p/" + id,
-                     "SwissDeliveryTracker://P/" + id] {
+                     "peekdeliverytracker://p/" + id,
+                     "PeekDeliveryTracker://P/" + id] {
             XCTAssertEqual(ParcelLinkRoute(url: URL(string: text)!, baseURL: base), ParcelLinkRoute(id: id), text)
         }
         // Another deployment answers on its own origin only, port included.
@@ -161,10 +161,10 @@ final class AppRoutingTests: XCTestCase {
                      "https://peektracker.com/p/" + id + "2",
                      "https://peektracker.com/p/",
                      "https://peektracker.com/i/" + id,
-                     "swissdeliverytracker://parcel/" + id,
-                     "swissdeliverytracker://p/" + id + "/extra",
-                     "swissdeliverytracker://p",
-                     "swissdeliverytracker://user@p/" + id,
+                     "peekdeliverytracker://parcel/" + id,
+                     "peekdeliverytracker://p/" + id + "/extra",
+                     "peekdeliverytracker://p",
+                     "peekdeliverytracker://user@p/" + id,
                      "otherapp://p/" + id] {
             XCTAssertNil(ParcelLinkRoute(url: URL(string: text)!, baseURL: base), text)
         }
@@ -179,7 +179,7 @@ final class AppRoutingTests: XCTestCase {
         XCTAssertTrue(ParcelLinkRoute.validID("uvwxyz222222"))
 
         // A parcel link is not an invitation, and the other routes leave it alone.
-        let link = URL(string: "swissdeliverytracker://p/" + id)!
+        let link = URL(string: "peekdeliverytracker://p/" + id)!
         XCTAssertNil(NativeRoute(url: link))
         XCTAssertFalse(FriendInvitationLink.isInvitation(link, baseURL: base))
         XCTAssertFalse(FriendInvitationLink.isInvitation(URL(string: "https://peektracker.com/p/" + id)!, baseURL: base))
@@ -250,7 +250,7 @@ final class AppRoutingTests: XCTestCase {
         XCTAssertEqual(name("#x=1&n=Moon%20lamp"), "Moon lamp")
         XCTAssertEqual(name("#n=a+b%26c"), "a+b&c")
         XCTAssertEqual(name("?n=Query#n=Fragment"), "Fragment")
-        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "swissdeliverytracker://p/" + id + "#n=Kind%20of%20Blue")!, baseURL: base),
+        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "peekdeliverytracker://p/" + id + "#n=Kind%20of%20Blue")!, baseURL: base),
                        ParcelLinkRoute(id: id, name: "Kind of Blue"))
         for fragment in ["", "#", "#n=", "#n=%20%20", "#name=Lamp", "#Lamp", "?n=Query"] {
             XCTAssertNil(name(fragment), fragment)
@@ -268,20 +268,20 @@ final class AppRoutingTests: XCTestCase {
 
     func testParsesParcelDeepLink() {
         let parcelID = UUID()
-        let url = URL(string: "swissdeliverytracker://parcel/\(parcelID.uuidString)")!
+        let url = URL(string: "peekdeliverytracker://parcel/\(parcelID.uuidString)")!
 
         XCTAssertEqual(NativeRoute(url: url), .parcel(parcelID))
     }
 
     func testParsesAddDeepLinkAndDecodesTrackingInput() {
-        let url = URL(string: "swissdeliverytracker://add?tracking=1Z999%20AA")!
+        let url = URL(string: "peekdeliverytracker://add?tracking=1Z999%20AA")!
 
         XCTAssertEqual(NativeRoute(url: url), .add(trackingInput: "1Z999 AA"))
     }
 
     func testRejectsMalformedOrUnrelatedDeepLinks() {
         XCTAssertNil(NativeRoute(url: URL(string: "https://parcel/not-ours")!))
-        XCTAssertNil(NativeRoute(url: URL(string: "swissdeliverytracker://parcel/not-a-uuid")!))
+        XCTAssertNil(NativeRoute(url: URL(string: "peekdeliverytracker://parcel/not-a-uuid")!))
         XCTAssertNil(NativeRoute(url: OAuthFlow.callbackURL))
     }
 
@@ -315,18 +315,18 @@ final class AppRoutingTests: XCTestCase {
     func testOAuthCodeOnlyAcceptsTheExpectedNativeCallback() {
         XCTAssertEqual(
             OAuthFlow.authorizationCode(
-                from: URL(string: "swissdeliverytracker://auth-callback?code=valid-code")!
+                from: URL(string: "peekdeliverytracker://auth-callback?code=valid-code")!
             ),
             "valid-code"
         )
         XCTAssertNil(OAuthFlow.authorizationCode(
-            from: URL(string: "swissdeliverytracker://other?code=valid-code")!
+            from: URL(string: "peekdeliverytracker://other?code=valid-code")!
         ))
         XCTAssertNil(OAuthFlow.authorizationCode(
             from: URL(string: "https://auth-callback?code=valid-code")!
         ))
         XCTAssertNil(OAuthFlow.authorizationCode(
-            from: URL(string: "swissdeliverytracker://auth-callback?code=")!
+            from: URL(string: "peekdeliverytracker://auth-callback?code=")!
         ))
     }
 }

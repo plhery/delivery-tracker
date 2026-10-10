@@ -511,7 +511,7 @@ final class LiveActivityRevocations {
     private var retryTask: Task<Void, Never>?
 
     init(configuration: AppConfiguration, transport: URLSession = .shared,
-         persistence: any SessionPersistence = KeychainStore(service: "com.plhery.SwissDeliveryTracker.liveActivityRevocations")) {
+         persistence: any SessionPersistence = KeychainStore(service: "com.plhery.PeekDeliveryTracker.liveActivityRevocations")) {
         self.configuration = configuration
         self.transport = transport
         self.persistence = persistence

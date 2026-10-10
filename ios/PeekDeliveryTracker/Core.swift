@@ -32,7 +32,7 @@ struct AppConfiguration: Sendable {
             appleAuthEnabled: value("SDTAppleAuthEnabled").uppercased() == "YES",
             emailOTPEnabled: value("SDTEmailOTPEnabled").uppercased() != "NO",
             appGroupIdentifier: value("SDTAppGroupIdentifier").nonEmpty
-                ?? "group.com.plhery.SwissDeliveryTracker",
+                ?? "group.com.plhery.PeekDeliveryTracker",
             linkHosts: linkHosts(in: value("SDTLinkHosts"))
         )
     }()

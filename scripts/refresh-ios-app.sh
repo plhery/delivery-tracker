@@ -5,7 +5,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd)"
 SOURCE_IOS="$PROJECT_ROOT/ios"
 SCHEME="PeekDeliveryTracker"
-BUNDLE_ID="com.plhery.SwissDeliveryTracker.Personal"
+BUNDLE_ID="com.plhery.PeekDeliveryTracker.Personal"
 TEAM_ID="${DELIVERY_TRACKER_TEAM_ID:-HGC93X794T}"
 DEVICE_NAME="${DELIVERY_TRACKER_DEVICE_NAME:-${SWISS_SCOOTERS_DEVICE_NAME:-iPhone de Paul}}"
 TEMP_ROOT="${TMPDIR:-/tmp}"

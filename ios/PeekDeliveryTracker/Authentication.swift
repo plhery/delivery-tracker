@@ -111,7 +111,7 @@ final class SessionStore: ObservableObject {
          appleSignIn: (any AppleSignInAuthorizing)? = nil) {
         self.configuration = configuration
         self.defaults = defaults
-        self.keychain = persistence ?? KeychainStore(service: "com.plhery.SwissDeliveryTracker.auth")
+        self.keychain = persistence ?? KeychainStore(service: "com.plhery.PeekDeliveryTracker.auth")
         self.transport = transport
         self.appleSignIn = appleSignIn ?? AppleSignInAuthorization()
     }

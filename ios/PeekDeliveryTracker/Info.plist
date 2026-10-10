@@ -36,10 +36,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.plhery.SwissDeliveryTracker</string>
+			<string>com.plhery.PeekDeliveryTracker</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>swissdeliverytracker</string>
+				<string>peekdeliverytracker</string>
 			</array>
 		</dict>
 	</array>

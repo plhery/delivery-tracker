@@ -262,7 +262,7 @@ enum NativeRoute: Equatable {
 }
 
 enum OAuthFlow {
-    static let callbackScheme = "swissdeliverytracker"
+    static let callbackScheme = "peekdeliverytracker"
     static let callbackHost = "auth-callback"
 
     static var callbackURL: URL {

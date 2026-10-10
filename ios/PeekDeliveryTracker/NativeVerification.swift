@@ -53,11 +53,11 @@ actor NativeVerification {
          present: @escaping Present = { try await NativeTurnstilePresenter.shared.token(at: $0) },
          records: [String: NativeAttestRecord]? = nil,
          save: @escaping @Sendable ([String: NativeAttestRecord]) -> Void = {
-             try? KeychainStore(service: "com.plhery.SwissDeliveryTracker.appAttest").save($0)
+             try? KeychainStore(service: "com.plhery.PeekDeliveryTracker.appAttest").save($0)
          }) {
         self.provider = provider
         self.present = present
-        self.records = records ?? KeychainStore(service: "com.plhery.SwissDeliveryTracker.appAttest").load() ?? [:]
+        self.records = records ?? KeychainStore(service: "com.plhery.PeekDeliveryTracker.appAttest").load() ?? [:]
         self.save = save
     }
 

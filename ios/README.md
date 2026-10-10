@@ -12,17 +12,13 @@ and an iPhone simulator, and press Run. That's it: the checked-in configuration 
 demo mode, so you need no account, no network and no Apple team. Refresh moves the
 made-up parcels along, and Account resets them.
 
-One thing that may look odd: the bundle ids, the app group and the URL scheme still say
-`SwissDeliveryTracker`, the app's first name. That's on purpose. To iOS those names *are*
-the app, so changing them would sign everyone out and break the links already out there.
-
 ## Connect to a server
 
 Copy `Configuration/Local.xcconfig.example` to `Configuration/Local.xcconfig` (gitignored)
 and set the API origin, Supabase URL and publishable key. Never put a service-role key,
 APNs key, OAuth secret or SMTP credential in the app.
 
-- Add `swissdeliverytracker://auth-callback` to the Supabase redirect allow list.
+- Add `peekdeliverytracker://auth-callback` to the Supabase redirect allow list.
 - Supabase is used only for sign-in. All parcel changes go through the API.
 - Building from a temporary checkout? Copy `Local.xcconfig` into its `ios/Configuration/`
   first. Before installing an account build, check it with
@@ -45,7 +41,7 @@ installed. Two things make that work, both set in `Configuration/Shared.xcconfig
   `SDT_LINK_HOSTS`, the hosts the site answered on before. It never calls those hosts and
   never shares a link on them.
 
-Elsewhere, `swissdeliverytracker://p/<id>` and `swissdeliverytracker://invite#<key>` open
+Elsewhere, `peekdeliverytracker://p/<id>` and `peekdeliverytracker://invite#<key>` open
 the same screens.
 
 A parcel's detail shares the parcel through such a link, built on the host of
@@ -56,7 +52,7 @@ nowhere.
 ## Signing for a device
 
 1. Select your team for the app, `ShareExtension` and `DeliveryWidget` targets.
-2. Register the three bundle ids (`com.plhery.SwissDeliveryTracker` and its extensions),
+2. Register the three bundle ids (`com.plhery.PeekDeliveryTracker` and its extensions),
    or change them to your own.
 3. Create the App Group, set `SDT_APP_GROUP_IDENTIFIER` in `Shared.xcconfig`, and enable
    it on all three targets.

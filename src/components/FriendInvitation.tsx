@@ -95,7 +95,7 @@ export function FriendInvitation({ invitation, onDismiss, client, parcels = empt
       else invitation.setOpened(screen === 'sign-in');
     }}
     invitation={{ title, nickname: nickname ?? undefined, canOpen: !!nickname, received: !!receipt,
-      onDismiss, notice, appURL: ios && code ? `swissdeliverytracker://invite#${code}` : undefined,
+      onDismiss, notice, appURL: ios && code ? `peekdeliverytracker://invite#${code}` : undefined,
       afterOpen: receipt ? <section className="auth-flow friendship-received" role="status"><div className="auth-flow__heading"><h1 tabIndex={-1}>{t('friends.friendshipDelivered')}</h1></div></section>
         : !nickname ? <section className="auth-flow"><div className="auth-flow__heading"><h1 tabIndex={-1}>{title}</h1></div>{notice}</section>
         : client && code ? <InvitationAcceptance key={code} title={title} nickname={nickname} code={code} client={client} parcels={parcels} onAccepted={received} onDismiss={onDismiss} /> : undefined,

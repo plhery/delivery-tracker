@@ -20,7 +20,7 @@ enum ShareInbox {
 
     static var defaults: UserDefaults? {
         let group = Bundle.main.object(forInfoDictionaryKey: "SDTAppGroupIdentifier") as? String
-            ?? "group.com.plhery.SwissDeliveryTracker"
+            ?? "group.com.plhery.PeekDeliveryTracker"
         return UserDefaults(suiteName: group)
     }
 

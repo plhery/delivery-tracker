@@ -29,13 +29,13 @@ const replacements = [
   ['CODE_SIGN_ENTITLEMENTS = PeekDeliveryTracker/PeekDeliveryTracker.entitlements; ', '', 2],
   ['CODE_SIGN_ENTITLEMENTS = DeliveryWidgetExtension/DeliveryWidgetExtension.entitlements; ', '', 2],
   [
-    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.SwissDeliveryTracker;',
-    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.SwissDeliveryTracker.Personal; SDT_APPLE_AUTH_ENABLED = NO; SDT_APP_ATTEST_ENABLED = NO;',
+    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.PeekDeliveryTracker;',
+    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.PeekDeliveryTracker.Personal; SDT_APPLE_AUTH_ENABLED = NO; SDT_APP_ATTEST_ENABLED = NO;',
     2,
   ],
   [
-    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.SwissDeliveryTracker.DeliveryWidget;',
-    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.SwissDeliveryTracker.Personal.DeliveryWidget;',
+    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.PeekDeliveryTracker.DeliveryWidget;',
+    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.PeekDeliveryTracker.Personal.DeliveryWidget;',
     2,
   ],
 ];

@@ -41,11 +41,11 @@ describe('Personal Team Xcode project preparation', () => {
     assert.equal(transformed.split("SDT_APPLE_AUTH_ENABLED = NO;").length - 1, 2);
     assert.match(
       transformed,
-      /PRODUCT_BUNDLE_IDENTIFIER = com\.plhery\.SwissDeliveryTracker\.Personal;/,
+      /PRODUCT_BUNDLE_IDENTIFIER = com\.plhery\.PeekDeliveryTracker\.Personal;/,
     );
     assert.match(
       transformed,
-      /PRODUCT_BUNDLE_IDENTIFIER = com\.plhery\.SwissDeliveryTracker\.Personal\.DeliveryWidget;/,
+      /PRODUCT_BUNDLE_IDENTIFIER = com\.plhery\.PeekDeliveryTracker\.Personal\.DeliveryWidget;/,
     );
     await assert.rejects(() => preparePersonalIosProject(target), /Expected 1 project matches/);
   });

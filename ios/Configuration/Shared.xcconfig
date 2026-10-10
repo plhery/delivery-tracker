@@ -15,6 +15,6 @@ SDT_SUPABASE_PUBLISHABLE_KEY =
 SDT_GOOGLE_AUTH_ENABLED = NO
 SDT_APPLE_AUTH_ENABLED = NO
 SDT_EMAIL_OTP_ENABLED = YES
-SDT_APP_GROUP_IDENTIFIER = group.com.plhery.SwissDeliveryTracker
+SDT_APP_GROUP_IDENTIFIER = group.com.plhery.PeekDeliveryTracker
 
 #include? "Local.xcconfig"

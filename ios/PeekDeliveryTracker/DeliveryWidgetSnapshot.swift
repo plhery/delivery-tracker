@@ -12,7 +12,7 @@ struct DeliveryWidgetParcel: Codable, Equatable, Hashable, Identifiable, Sendabl
     let isOutForDelivery: Bool
 
     var deepLink: URL {
-        URL(string: "swissdeliverytracker://parcel/\(id.uuidString)")!
+        URL(string: "peekdeliverytracker://parcel/\(id.uuidString)")!
     }
 }
 
@@ -42,7 +42,7 @@ struct DeliveryActivityParcel: Codable, Equatable, Hashable, Identifiable, Senda
     let phase: DeliveryActivityPhase
 
     var deepLink: URL {
-        URL(string: "swissdeliverytracker://parcel/\(id.uuidString)")!
+        URL(string: "peekdeliverytracker://parcel/\(id.uuidString)")!
     }
 }
 
@@ -79,7 +79,7 @@ enum DeliveryWidgetSelection {
 
 struct DeliveryWidgetSharedStore {
     static let kind = "NextDeliveryWidget"
-    static let defaultAppGroupIdentifier = "group.com.plhery.SwissDeliveryTracker"
+    static let defaultAppGroupIdentifier = "group.com.plhery.PeekDeliveryTracker"
 
     private static let enabledKey = "sdt.deliveryWidget.enabled.v1"
     private static let liveActivitiesEnabledKey = "sdt.deliveryLiveActivities.enabled.v1"
