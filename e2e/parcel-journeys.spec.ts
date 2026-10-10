@@ -307,6 +307,10 @@ test('navigates nested carrier dialogs entirely by keyboard', async ({ page }) =
   const parcel = page.getByRole('button', { name: /^(?:Next up: )?New trainers 👟 —/ });
   await parcel.click();
   const detail = page.getByRole('dialog', { name: 'New trainers 👟' });
+  // The page itself takes the focus, so Tab reaches Back first.
+  await expect(detail).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(detail.getByRole('button', { name: 'Back', exact: true })).toBeFocused();
   // Closed details-menu actions must not enter the Tab order.
   await page.keyboard.press('Tab');
   await expect(detail.getByLabel('Parcel actions', { exact: true })).toBeFocused();
