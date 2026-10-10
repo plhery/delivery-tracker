@@ -5230,8 +5230,8 @@ export const CARRIER_CAPABILITIES = {
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
-      "mode": "link-only",
-      "adapter": null
+      "mode": "automatic",
+      "adapter": "universal"
     },
     "trackingUrlTemplate": "https://www.emileps.com/tracking?tracking={trackingNumber}",
     "linkRules": [
