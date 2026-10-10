@@ -23,7 +23,7 @@ Planzer veröffentlicht kein Nummernformat. Peek erkennt Planzer an den ersten z
 | `441234567890123456` | [Quickpac](carrier:quickpac), seit 2024 Teil von Planzer Paket: 18 Ziffern, beginnt mit 44. |
 | `99.60.987654.98765432` | Die Post: 18 Ziffern, also länger als Planzers Form mit Punkten. |
 
-Kopier die Nummer lieber, statt sie abzutippen: Mit einer Ziffer zu viel sieht eine Planzer-Nummer aus wie eine Australia-Post-Nummer.
+Kopier die Nummer lieber, statt sie abzutippen: Mit einer Ziffer zu viel sieht eine Planzer-Nummer aus wie eine Australia-Post-Nummer. Woran du andere Paketdienste an ihrer Nummer erkennst, erklärt [Sendungsnummern erkennen](guide:tracking-number-formats).
 
 ## Planzer Sendungsverfolgung: was die Status bedeuten
 
@@ -40,7 +40,7 @@ Planzers Empfängerportal (tracking.app.planzer.ch) spricht Deutsch, Französisc
 | `Shipped` | Zugestellt, nicht „verschickt“. |
 | `Ausgeliefert`, `Sendung zugestellt`, `Shipment delivered` | Zugestellt. |
 
-Zum Zustelltag zeigt das Portal `Zustelltag unbekannt` oder `Voraussichtlich` vor dem erwarteten Datum.
+Zum Zustelltag zeigt das Portal `Zustelltag unbekannt` oder `Voraussichtlich` vor dem erwarteten Datum. Wie andere Paketdienste dieselben Schritte nennen, steht unter [Sendungsstatus erklärt](guide:tracking-statuses).
 
 `Shipped` führt in die Irre: In Planzers englischem Portal heißt es zugestellt, nicht „vom Shop verschickt“. Steht es da und du hast nichts bekommen, lies weiter unten bei „Zugestellt, aber nicht erhalten“.
 

@@ -4,7 +4,7 @@ description: Status „doręczona”, a paczki nie ma? Co sprawdzić najpierw, i
 slug: paczka-doreczona-a-jej-nie-ma
 picture: Zamknięte drzwi, powiadomienie z zielonym ptaszkiem, pusty, przerywany kontur paczki ze znakiem zapytania na wycieraczce i zmartwiony Pip.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Jeśli śledzenie pokazuje „doręczona”, a paczki nie ma, nie zakładaj od razu, że przepadła: „doręczona” to wpis z terminala kuriera, a nie dowód, że paczka trafiła w Twoje ręce. Sprawdź w szczegółach przesyłki, kto ją odebrał, zapytaj domowników i sąsiadów, rozejrzyj się wokół drzwi i odczekaj dzień lub dwa. Jeśli nadal jej nie ma, napisz do sprzedawcy, a nie do kuriera: przy zakupie od firmy to sprzedawca odpowiada za paczkę, dopóki jej nie dostaniesz.
@@ -74,7 +74,7 @@ Ryzyko jest po Twojej stronie, gdy:
 
 Dowód doręczenia może też zadziałać przeciwko Tobie. PayPal pisze, że jeśli sprzedający przedstawi dowód dostawy, może rozstrzygnąć spór na jego korzyść, nawet jeśli twierdzisz, że paczka do Ciebie nie dotarła.
 
-Gdy zgłaszasz brak paczki, przygotuj szczegóły. Vinted prosi między innymi o adres dostawy (punkt, automat paczkowy albo dom), przewidywaną datę dostawy, numer śledzenia i opis zamówienia. Allegro może poprosić o dokument z wynikiem reklamacji, o potwierdzenie płatności, gdy zakup był opłacony poza Allegro albo przy odbiorze, a w wyjątkowych sytuacjach o zgłoszenie sprawy organom ścigania.
+Gdy zgłaszasz brak paczki, przygotuj szczegóły. Vinted prosi między innymi o adres dostawy (punkt, automat paczkowy albo dom), przewidywaną datę dostawy, [numer śledzenia](guide:find-tracking-number) i opis zamówienia. Allegro może poprosić o dokument z wynikiem reklamacji, o potwierdzenie płatności, gdy zakup był opłacony poza Allegro albo przy odbiorze, a w wyjątkowych sytuacjach o zgłoszenie sprawy organom ścigania.
 
 ## Ile czasu dają Ci Allegro, Amazon i Vinted?
 
@@ -89,7 +89,7 @@ Amazon przyjmuje wniosek z Gwarancji od A do Z także wtedy, gdy według śledze
 
 Nie zaczynaj od banku. Jeśli zlecisz w banku obciążenie zwrotne, Amazon nie przyjmie wniosku z Gwarancji od A do Z. Allegro nie wypłaci rekompensaty, jeśli pieniądze odzyskasz już z innego źródła, na przykład z ubezpieczenia karty kredytowej albo od sprzedającego.
 
-Zamówienie z AliExpress, Temu albo Shein? Ich terminy znajdziesz w poradniku o [śledzeniu paczki z Chin](guide:tracking-from-china).
+Zamówienie z AliExpress, Temu albo Shein? Ich terminy znajdziesz w poradniku o [śledzeniu paczki z Chin](guide:tracking-from-china). Jeśli paczkę wiózł [Cainiao](carrier:cainiao) albo [YunExpress](carrier:yunexpress), zobacz też, kogo wtedy pytać.
 
 ## Kto składa reklamację u przewoźnika: nadawca czy odbiorca?
 
@@ -116,7 +116,7 @@ Często tak, jako ostatni krok:
 
 ### Czy Peek znajdzie moją paczkę?
 
-Nie. [Peek](/) pokazuje tylko to, co publikuje przewoźnik, i nie skontaktuje się z nim ani nie złoży za Ciebie reklamacji. Na ostatnim odcinku sprawdza śledzenie nawet co 2 minuty i może wysłać Ci powiadomienie, więc dotrzesz do drzwi niedługo po skanie „doręczona”.
+Nie. [Peek](/), jak [każdy tracker](guide:universal-tracker), pokazuje tylko to, co publikuje przewoźnik, i nie skontaktuje się z nim ani nie złoży za Ciebie reklamacji. Na ostatnim odcinku sprawdza śledzenie nawet co 2 minuty i może wysłać Ci powiadomienie, więc dotrzesz do drzwi niedługo po skanie „doręczona”.
 
 ### Czy zgłaszać kradzież paczki na policję?
 

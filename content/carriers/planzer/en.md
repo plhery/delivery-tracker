@@ -23,7 +23,7 @@ Planzer publishes no number format. Peek knows these shapes (digits invented):
 | `441234567890123456` | [Quickpac](carrier:quickpac), part of Planzer Paket: 18 digits starting 44. |
 | `99.60.987654.98765432` | Swiss Post: 18 digits, longer than Planzer's dotted shape. |
 
-Copy the number rather than typing it: one digit too many and a Planzer number reads as Australia Post's.
+Copy the number rather than typing it: one digit too many and a Planzer number reads as Australia Post's ([lengths overlap between carriers](guide:tracking-number-formats)).
 
 ## Planzer track and trace statuses explained
 
@@ -31,7 +31,7 @@ Planzer's recipient portal (tracking.app.planzer.ch) follows your browser's lang
 
 | Status | What it means for you |
 | --- | --- |
-| `Recorded` | Label created: Planzer has the shipment's details. |
+| `Recorded` | [Label created](guide:tracking-statuses): Planzer has the shipment's details. |
 | `Delivery day unknown`, `Expected` | No day set yet, or the day Planzer expects to come. |
 | `Transferred`, `Shipment on the way` | It's moving through Planzer's network. |
 | `In delivery`, `Shipment out for delivery` | It's out with the driver. |

@@ -10,7 +10,7 @@ Cainiao to grupa logistyczna Alibaby: wysyła za granicę paczki sprzedawców z 
 
 ## Numer przesyłki Cainiao: jak wygląda
 
-Cainiao nie publikuje jednego formatu numeru. Jego strona przyjmuje tylko litery i cyfry, do 100 numerów naraz („Wprowadź do 100 numerów śledzenia w jednym wyszukiwaniu”), oddzielonych Enterem, przecinkiem albo średnikiem. Przykład na samej stronie to numer pocztowy: dwie litery, dziewięć cyfr i HK. Kształty, z wymyślonymi cyframi:
+Cainiao nie publikuje jednego formatu numeru. Jego strona przyjmuje tylko litery i cyfry, do 100 numerów naraz („Wprowadź do 100 numerów śledzenia w jednym wyszukiwaniu”), oddzielonych Enterem, przecinkiem albo średnikiem. Przykład na samej stronie to [numer pocztowy](guide:tracking-number-formats): dwie litery, dziewięć cyfr i HK. Kształty, z wymyślonymi cyframi:
 
 | Numer | Czyj to numer |
 | --- | --- |
@@ -22,7 +22,7 @@ Cainiao nie publikuje jednego formatu numeru. Jego strona przyjmuje tylko litery
 | `LP123456785HK` | Też numer pocztowy (Hongkong Post): mimo LP to nie numer LP Cainiao. |
 | `YT1234567890123456` | Nie Cainiao, tylko [YunExpress](carrier:yunexpress). |
 
-Strona Cainiao odpowiada też na inne kształty, na przykład AP i 14 cyfr. Gdzie numer pojawia się poza AliExpress, żadna strona Cainiao nie mówi, i nigdzie nie opisuje SMS-ów do odbiorców ani nazwy ich nadawcy. Nie masz numeru? Poproś o niego sklep. Na błędny numer polska strona odpowiada `Nieprawidłowy numer przesyłki`, a gdy nic nie pokazuje, Cainiao prosi, by sprawdzić, czy to na pewno numer Cainiao lub AliExpress.
+Strona Cainiao odpowiada też na inne kształty, na przykład AP i 14 cyfr. Gdzie numer pojawia się poza AliExpress, żadna strona Cainiao nie mówi, i nigdzie nie opisuje SMS-ów do odbiorców ani nazwy ich nadawcy. Nie masz numeru? Poproś o niego sklep albo sprawdź, [gdzie jeszcze go szukać](guide:find-tracking-number). Na błędny numer polska strona odpowiada `Nieprawidłowy numer przesyłki`, a gdy nic nie pokazuje, Cainiao prosi, by sprawdzić, czy to na pewno numer Cainiao lub AliExpress.
 
 ## Global Cainiao śledzenie: co znaczą statusy
 
@@ -43,11 +43,11 @@ Stronę global.cainiao.com przełączysz na polski przyciskiem języka w prawym 
 
 `Carrier update` to komunikat Cainiao: paczka jest w drodze. `Accepted for transportation by postal service` znaczy, że po przekazaniu przejął ją partner pocztowy, a nie że to pierwszy skan; `Delivery Carrier Accepted`, że ma ją przewoźnik na miejscu. Linie w rodzaju `Arrived in transit country/region` mówią, że paczka jedzie przez kraj trzeci. Już przy statusie `Leaving Origin` (paczka opuściła kraj nadania) pomoc Cainiao pisze, żeby się nie martwić, jeśli nie jedzie prosto do kraju docelowego. `Processing delay at sorting center` to opóźnienie, nie błąd.
 
-Linia o punkcie odbioru znaczy, że paczkę pokwitował punkt, nie Ty: `Package delivered` pojawia się dopiero, gdy ją odbierzesz. `Delivery failed` zamyka doręczenie jako nieudane po wszystkich próbach.
+Linia o punkcie odbioru znaczy, że paczkę pokwitował punkt, nie Ty: `Package delivered` pojawia się dopiero, gdy ją odbierzesz. `Delivery failed` zamyka doręczenie jako nieudane po wszystkich próbach. Etapy, przez które przechodzi każda paczka, opisuje poradnik [statusy przesyłek krok po kroku](guide:tracking-statuses).
 
 ## Paczka Cainiao w Polsce: doręczenie, punkty i automaty
 
-Cainiao pisze, że oferuje lokalne doręczanie paczek w dziewięciu krajach i regionach, nie mówiąc, w których, a jako przykłady miejsc z lokalnym doręczaniem podaje Hiszpanię, Francję i Polskę. Podaje też, że ma w Polsce własne automaty paczkowe do samodzielnego odbioru. Na tym informacje się kończą: żadna strona Cainiao nie mówi, kto doręcza w Polsce, ani nie opisuje prób doręczenia, czasu przechowania w punkcie, doręczeń w sobotę czy podpisu przy odbiorze.
+Cainiao pisze, że oferuje lokalne doręczanie paczek w dziewięciu krajach i regionach, nie mówiąc, w których, a jako przykłady miejsc z lokalnym doręczaniem podaje Hiszpanię, Francję i Polskę. Podaje też, że ma w Polsce własne automaty paczkowe do samodzielnego odbioru. Na tym informacje się kończą: żadna strona Cainiao nie mówi, kto doręcza w Polsce, ani nie opisuje prób doręczenia, czasu przechowania w punkcie, doręczeń w sobotę czy podpisu przy odbiorze. Kogo możesz zobaczyć na ostatnim odcinku paczki z AliExpress, opisuje poradnik o [śledzeniu paczki z Chin](guide:tracking-from-china).
 
 Kto ma Twoją paczkę, pokazuje śledzenie: po `Received by local delivery company` albo `Delivery Carrier Accepted` przejął ją przewoźnik w kraju docelowym. Jeśli nadał jej własny numer, strona Cainiao pokazuje go pod numerem głównym, a przycisk kontaktu pokazuje dane przewoźnika, gdy Cainiao je ma. Według AliExpress przez zaznaczone miejsce przejdziesz na stronę tego przewoźnika z jego kontaktem; o czas przechowania i odbiór pytaj właśnie jego.
 

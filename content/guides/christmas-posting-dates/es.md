@@ -4,7 +4,7 @@ description: Hasta qué día enviar un paquete para que llegue en Navidad o Reye
 slug: fecha-limite-envio-paquetes-navidad
 picture: Una hoja de calendario con un día de diciembre rodeado con un círculo, una furgoneta de reparto que lleva un paquete atado con un lazo rojo bajo la nieve y Pip corriendo a su lado.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Ninguna empresa de transporte en España ha publicado aún sus fechas límite para la Navidad de 2026, y en la web de Correos no hay tabla de Navidad, ni de este año ni del pasado: con Correos, haz la cuenta con sus plazos de entrega. La única fecha oficial de 2025 es la de GLS: enviar como tarde el lunes 22 de diciembre para entregar en la Península el miércoles 24. Las tablas de abajo dan la fecha límite de cada empresa tal como estaba el viernes 9 de octubre de 2026, con la del año pasado cuando la de este año aún no ha salido.
@@ -19,7 +19,7 @@ A 9 de octubre, la página de Navidad de GLS sigue titulada «Navidad 2025: Plaz
 | GLS | BusinessParcel, Península, entrega después de Navidad | Sin anunciar todavía (2025: martes 23 de diciembre, entrega estimada el viernes 26) |
 | GLS | EconomyParcel, y envíos a Baleares, Canarias, Ceuta y Melilla | Sin anunciar todavía (2025: no estaban en su tabla) |
 | Correos | Paq Estándar, Paq Premium y cartas | Sin anunciar todavía (2025: no encontramos ninguna) |
-| Correos Express, SEUR, MRW y NACEX | Todos los servicios | Sin anunciar todavía (2025: no encontramos ninguna) |
+| [Correos Express](carrier:correos-express), SEUR, MRW y [NACEX](carrier:nacex) | Todos los servicios | Sin anunciar todavía (2025: no encontramos ninguna) |
 
 ### Cuánto tarda cada una en la Península
 
@@ -91,7 +91,7 @@ Ni Correos ni las demás publican una fecha de Navidad por país. Correos aconse
 
 ## Compras online: deja tiempo para la aduana
 
-Estas fechas y plazos cuentan desde que el paquete está en manos de la empresa de transporte, así que el último día para pedir en una tienda llega antes. Por eso GLS sugiere «realizar tus pedidos en un plazo prudencial». Con GLS, si el seguimiento sigue en `Etiqueta creada`, la tienda ha grabado el envío pero aún no se lo ha entregado a GLS.
+Estas fechas y plazos cuentan desde que el paquete está en manos de la empresa de transporte, así que el último día para pedir en una tienda llega antes. Por eso GLS sugiere «realizar tus pedidos en un plazo prudencial». Con GLS, si el seguimiento sigue en `Etiqueta creada`, la tienda ha grabado el envío pero aún no se lo ha entregado a GLS. Para los demás estados, mira [qué significa cada uno](guide:tracking-statuses).
 
 Un paquete de fuera de la UE pasa además por la aduana, que puede retenerlo, y desde China el viaje puede durar semanas. Ninguna de estas empresas da fecha de Navidad para paquetes que llegan del extranjero: pide pronto y fíate del plazo de entrega que te dé la tienda. Mira [cómo seguir un paquete que viene de China](guide:tracking-from-china) y [qué pasa cuando un paquete está retenido en aduanas](guide:customs).
 
@@ -110,7 +110,7 @@ Para Correos, el Black Friday es «el pistoletazo de salida de la temporada más
 | Correos Express | Sin anunciar |
 
 :::steps
-- Mira el seguimiento de la empresa | En su web o en su app, con el número del correo de envío.
+- Mira el seguimiento de la empresa | En su web o en su app, con el [número del correo de envío](guide:find-tracking-number).
 - Cuenta los días sin reparto | En los días de arriba, puede que el paquete no se mueva.
 - Lee los avisos de servicio | Correos y Correos Express publican ahí los retrasos, por lluvias intensas o por la situación de un país.
 - ¿Sigue parado después de Navidad? | Mira [por qué no se actualiza el seguimiento](guide:tracking-not-updating).

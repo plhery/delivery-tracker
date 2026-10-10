@@ -10,7 +10,7 @@ BRT è un corriere espresso italiano del gruppo Geopost, come DPD. Per seguire i
 
 ## Numero di tracciamento BRT: dove si trova e com'è fatto
 
-Il BRTcode è negli SMS e nelle e-mail di presa in carico, sulla lettera di vettura BRT e sul tagliando di lasciato avviso. Nessun messaggio? Forse il mittente non ha dato i tuoi contatti a BRT: chiedi il numero al negozio.
+Il BRTcode è negli SMS e nelle e-mail di presa in carico, sulla lettera di vettura BRT e sul tagliando di lasciato avviso. Nessun messaggio? Forse il mittente non ha dato i tuoi contatti a BRT: chiedi il numero al negozio, o guarda [dove altro può trovarsi il codice](guide:find-tracking-number).
 
 Le pagine di BRT indicano lunghezze diverse e il riquadro di brt.it accetta «12, 14, 15 o 19 cifre», quindi conta la forma (cifre inventate):
 
@@ -29,7 +29,7 @@ Le stesse forme le usano altri corrieri: 14 cifre anche DPD in Svizzera, Germani
 
 ## Stati del tracciamento BRT: cosa significano
 
-Il tracciamento su vas.brt.it si apre in italiano e si può passare a English, Français o Deutsch. Nessuna pagina di BRT elenca gli stati: qui sotto trovi le diciture della versione inglese; la versione italiana e myBRT possono usare parole diverse. Anche in inglese le colonne restano Data, Ora, Filiale ed Evento, e la filiale accanto a ogni stato è quella a cui chiedere informazioni.
+Il tracciamento su vas.brt.it si apre in italiano e si può passare a English, Français o Deutsch. Nessuna pagina di BRT elenca gli stati: qui sotto trovi le diciture della versione inglese; la versione italiana e myBRT possono usare parole diverse. Anche in inglese le colonne restano Data, Ora, Filiale ed Evento, e la filiale accanto a ogni stato è quella a cui chiedere informazioni. Le fasi che ogni pacco attraversa, con qualsiasi corriere, le trovi in [cosa vogliono dire gli stati della spedizione](guide:tracking-statuses).
 
 | Stato BRT (versione inglese) | Cosa vuol dire per te |
 | --- | --- |

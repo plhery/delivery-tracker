@@ -4,7 +4,7 @@ description: Dove si trova il codice tracking tra e-mail, ordine, SMS e ricevuta
 slug: dove-si-trova-il-codice-tracking
 picture: Un'e-mail di spedizione con il codice RR123456785CH evidenziato in giallo, un'etichetta con il codice a barre accanto e Pip che sorride.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Di solito il codice tracking è nell'e-mail o nell'SMS di spedizione, oppure nel tuo ordine sul sito o nell'app del negozio, un clic dopo il numero d'ordine. Se il pacco l'hai spedito tu, è sulla ricevuta dello sportello o nell'e-mail di conferma. Nessun corriere cerca un pacco per nome e cognome, ma puoi seguirlo lo stesso con l'avviso lasciato dal corriere, con l'account gratuito che alcuni corrieri offrono per i pacchi in arrivo o chiedendo il codice al mittente.
@@ -31,6 +31,7 @@ Hai trovato l'e-mail ma non capisci quale numero è quello giusto? Incollala tut
 | eBay.it | **Cronologia acquisti**, come link accanto all'oggetto. Se hai comprato senza account: l'e-mail «Ordine confermato» → **Vedi i dettagli dell'ordine** → **Mostra i dettagli della spedizione** |
 | Shein | **I miei ordini** → l'ordine → **Tracciare il mio ordine**, quando l'ordine è già stato spedito |
 | Temu | **I tuoi ordini** → **Traccia**, accanto all'ordine |
+| AliExpress | **My Orders** → l'ordine → **Tracking**; AliExpress ti rimanda anche al tracking di [Cainiao](carrier:cainiao) |
 | Vinted | Nella conversazione dell'ordine → **Traccia il pacco**, dove puoi anche copiare il numero di tracciamento |
 | Zalando | Il link di tracking nell'e-mail di conferma della spedizione, oppure nella sezione **Il mio account** |
 
@@ -40,10 +41,12 @@ Hai ordinato su AliExpress o in un altro negozio cinese? Leggi [come tracciare u
 
 ### Sull'avviso lasciato dal corriere
 
-- **BRT** (ex Bartolini): il BRTcode, oltre che negli SMS e nelle e-mail, è anche «sul tagliando lasciato dal corriere dopo un tentativo di consegna». Lo cerchi sul sito di BRT come sempre.
+- **[BRT](carrier:brt)** (ex Bartolini): il BRTcode, oltre che negli SMS e nelle e-mail, è anche «sul tagliando lasciato dal corriere dopo un tentativo di consegna». Lo cerchi sul sito di BRT come sempre.
 - **FedEx**: la ricerca accetta anche i numeri degli «avvisi di tentata consegna».
 - **Poste Italiane**: il portalettere lascia un avviso di giacenza per il ritiro in Ufficio Postale. Se lo perdi, puoi averne un duplicato telefonando al Servizio Clienti.
 - **La Posta**, in Ticino: l'«Invito di ritiro» ha un codice di ritiro che funziona nella ricerca, dove il campo chiede il «Numero d'invio o codice di ritiro». Di norma hai sette giorni per ritirare un pacco (15 per gli invii internazionali), e il termine si può prolungare.
+- **[Planzer](carrier:planzer)**, in Svizzera: il codice di consegna sull'avviso apre il portale destinatari, ma per seguire il pacco serve il numero di spedizione, che trovi nel messaggio «A breve riceverà una spedizione».
+- **[Quickpac](carrier:quickpac)**, in Svizzera: il numero di 18 cifre è anche sulla scheda per il ritiro lasciata nella bucalettere.
 
 ## Come tracciare un pacco senza codice
 
@@ -80,7 +83,7 @@ Se il mittente ti dà un suo riferimento, per esempio il numero di un ordine d'a
 
 No, non sulle pagine di tracking: Poste, BRT, GLS, DHL, UPS e la Posta chiedono tutti un codice. E il codice serve anche al telefono: l'Assistenza Clienti di Poste ti dice a che punto è una spedizione, ma ti chiede il codice invio.
 
-L'unica cosa simile è un account del corriere come quelli qui sopra, legato ai tuoi dati. Nemmeno i tracker universali possono farlo, Peek compreso: per chiedere al corriere serve un codice.
+L'unica cosa simile è un account del corriere come quelli qui sopra, legato ai tuoi dati. Nemmeno i [tracker universali](guide:universal-tracker) possono farlo, Peek compreso: per chiedere al corriere serve un codice.
 
 > Un sito che promette di trovare tutti i pacchi spediti al tuo nome o al tuo indirizzo non usa il tracking di un corriere: nessun corriere lo offre al pubblico. Non dargli i tuoi dati.
 
@@ -156,6 +159,8 @@ Ancora niente? Chiedi al mittente o al negozio di ricontrollare codice e corrier
 - [GLS Italia: Ricerca spedizione](https://gls-group.com/IT/it/servizi-online/ricerca-spedizioni/) – riferimento spedizione, ID collo, Rif. DDT
 - [La Posta: Monitorare gli invii](https://www.post.ch/it/ricezione/monitorare-gli-invii) – I miei invii, invii che si possono monitorare, invii spediti con il proprio account
 - [La Posta: Invito di ritiro](https://www.post.ch/it/ricezione/invito-di-ritiro) – codice di ritiro, sette giorni (15 per gli invii internazionali), proroga
+- [Planzer Pacchi: Contatti](https://www.planzer-paket.ch/it/contatti/) – messaggio con il numero di spedizione, codice di consegna sull'avviso
+- [Quickpac: FAQ](https://quickpac.ch/en/faq) – numero di 18 cifre, scheda per il ritiro
 - [UPS Italia: UPS My Choice](https://www.ups.com/it/it/track/ups-my-choice) – iscrizione gratuita, nessun numero di ricerca, ultimi quattro mesi
 - [UPS Svizzera: UPS My Choice](https://www.ups.com/ch/de/track/ups-my-choice) – la pagina svizzera in tedesco
 - [UPS Italia: Ricerca pacco](https://www.ups.com/track?loc=it_IT) – ricerca per numero di riferimento, dettagli perlopiù nascosti
@@ -170,6 +175,8 @@ Ancora niente? Chiedi al mittente o al negozio di ricontrollare codice e corrier
 - [Shein Italia: Come tracciare il mio ordine](https://m.shein.com/it/How-to-track-my-order-a-496.html) – I miei ordini, Tracciare il mio ordine
 - [Shein: Where is my order?](https://m.shein.com/it/faq/detail?id=21338) – senza codice l'ordine è ancora in magazzino
 - [Temu Italia: Come tracciare il mio ordine?](https://www.temu.com/it/support/c3/how-to-track-my-order-f-48-s-153.html) – I tuoi ordini, Traccia, da 1 a 3 giorni lavorativi
+- [AliExpress: How to track my package?](https://service.aliexpress.com/page/knowledge?pageId=82&knowledge=1060063468&language=it) – My Orders, Tracking
+- [AliExpress: Delivered but not received](https://service.aliexpress.com/page/knowledge?pageId=82&knowledge=1060071162&language=en) – tracking sul sito di Cainiao
 - [App Store: myBRT](https://apps.apple.com/it/app/mybrt/id6670557801) – cosa fa l'app di BRT, senza parlare di pacchi in arrivo aggiunti da soli
 - [App Store: GLS](https://apps.apple.com/it/app/gls/id433857450) – cosa fa l'app di GLS Italia, senza parlare di pacchi in arrivo aggiunti da soli
 - [InPost Italia: App InPost](https://inpost.it/app-inpost) – gratis, spedizioni collegate al numero di telefono o all'e-mail, senza inserire codici

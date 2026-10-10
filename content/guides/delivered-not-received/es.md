@@ -2,9 +2,9 @@
 title: Paquete entregado pero no recibido: qué hacer
 description: Pone «entregado» y no tienes el paquete: qué comprobar primero, a quién reclamar, quién es responsable y los plazos de Amazon, Vinted, Wallapop y eBay.
 slug: paquete-entregado-pero-no-recibido
-picture: Una puerta cerrada, un aviso con un tic verde, el contorno vacío de una caja con un interrogante sobre el felpudo y Pip, preocupado.
+picture: Una puerta cerrada, una notificación con un tic verde, el contorno vacío de una caja con un interrogante sobre el felpudo y Pip, preocupado.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Si el seguimiento pone «Entregado» pero no tienes el paquete, no lo des por perdido: «entregado» es un escaneo en la PDA del repartidor, no la prueba de que llegó a tus manos. Mira si el seguimiento dice dónde o con quién se quedó, busca en los sitios de siempre y date un margen. Si sigue sin aparecer, reclama a la tienda, no al transportista: en España, si compraste a una empresa, el paquete es responsabilidad del vendedor hasta que lo tengas en tus manos.
@@ -35,7 +35,7 @@ Dónde puede estar, según quién lo lleve:
 - Mira la prueba | Busca en el seguimiento una firma, un nombre o el punto de recogida, y revisa la dirección de tu pedido.
 - Busca en los sitios de siempre | Pregunta en casa. Mira el buzón, el rellano y el portal, pregunta a los vecinos y al conserje, y busca un aviso de llegada, una nota de paso o un SMS con un código de taquilla.
 - Date un día | Algunos transportistas reparten hasta las 22:00, y a veces el escaneo «Entregado» se adelanta a la entrega real.
-- Reclama a la tienda | Por escrito, con el número de pedido, el de seguimiento y lo que ya has comprobado. Pide que lo investigue y te lo reenvíe o te devuelva el dinero, y guarda una copia.
+- Reclama a la tienda | Por escrito, con el número de pedido, el [número de seguimiento](guide:find-tracking-number) y lo que ya has comprobado. Pide que lo investigue y te lo reenvíe o te devuelva el dinero, y guarda una copia.
 - Abre el caso a tiempo | En una plataforma, antes de que cierre el plazo: 2 días en Vinted (14 si el vendedor es Pro), 48 horas en Wallapop, 30 días en eBay.
 - Después, tu banco o PayPal | Si nadie lo soluciona, pide la devolución del cargo de la tarjeta o abre una disputa en PayPal.
 :::
@@ -90,7 +90,7 @@ La Garantía de la A a la Z vale aunque el seguimiento ponga «entregado»: los 
 
 Pero la devolución del cargo cierra la vía de la plataforma: si devuelves un cargo, Amazon no te reembolsa con la Garantía de la A a la Z, y eBay puede cerrar tu caso.
 
-¿Compraste en AliExpress, Temu o Shein? Sus plazos están en [cómo seguir un paquete que viene de China](guide:tracking-from-china).
+¿Compraste en AliExpress, Temu o Shein? Sus plazos están en [cómo seguir un paquete que viene de China](guide:tracking-from-china). Si lo llevaba Cainiao, mira [qué hacer cuando lo da por entregado](carrier:cainiao).
 
 ## ¿Puedo reclamar yo a la empresa de transporte?
 
@@ -119,7 +119,7 @@ A veces, como último recurso:
 
 ### ¿Puede Peek encontrar mi paquete?
 
-No. [Peek](/) solo muestra lo que publica el transportista y no puede contactar con él ni reclamar por ti. Eso sí, consulta el seguimiento hasta una vez cada 2 minutos cuando un paquete está en reparto y puede mandarte un aviso, así llegas a la puerta poco después del escaneo «Entregado».
+No. Como cualquier [localizador universal](guide:universal-tracker), [Peek](/) solo muestra lo que publica el transportista y no puede contactar con él ni reclamar por ti. Eso sí, consulta el seguimiento hasta una vez cada 2 minutos cuando un paquete está en reparto y puede enviarte una notificación, así llegas a la puerta poco después del escaneo «Entregado».
 
 ### ¿Tengo que denunciar el robo a la policía?
 

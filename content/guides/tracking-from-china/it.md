@@ -4,14 +4,14 @@ description: Perché il tracking di AliExpress, Temu e Shein resta fermo o cambi
 slug: tracciare-pacco-dalla-cina
 picture: Un aereo traccia un arco tratteggiato sul globo, da una puntina rossa a quella verde di casa, e Pip viaggia tra due furgoni.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Un pacco AliExpress, Temu o Shein passa di mano più volte: un'azienda logistica cinese lo manda in aereo verso l'Europa, la dogana lo controlla e alla fine te lo consegnano Poste Italiane, un corriere o, in Ticino, la Posta, spesso con un codice nuovo. Ognuno scansiona solo il suo tratto, quindi metti in conto fino a 11 giorni prima del primo aggiornamento, nessuna notizia durante il volo e un'attesa dopo «arrivato nel paese di destinazione». Segui il tracking del negozio, poi quello del corriere locale: con le spedizioni più economiche il tracking può fermarsi lì per sempre.
 
 ## Come si traccia un pacco AliExpress, Temu o Shein?
 
-Parti dall'ordine, sul sito o nell'app del negozio. Shein, per esempio, ti manda il codice per e-mail e lo mostra in «Il mio account», alla voce «I miei ordini»; AliExpress ti rimanda anche al sito di tracking di Cainiao, la società che gestisce la sua logistica. Ma il tracking è preciso solo quanto le scansioni che riceve: nessun tracker, Peek compreso, può mostrare una scansione che il corriere non ha pubblicato. I buchi dipendono dal percorso:
+Parti dall'ordine, sul sito o nell'app del negozio. Shein, per esempio, ti manda il codice per e-mail e lo mostra in «Il mio account», alla voce «I miei ordini»; AliExpress ti rimanda anche al sito di tracking di [Cainiao](carrier:cainiao), la società che gestisce la sua logistica. Ma il tracking è preciso solo quanto le scansioni che riceve: nessun tracker, Peek compreso, può mostrare una scansione che il corriere non ha pubblicato. I buchi dipendono dal percorso:
 
 :::journey
 - shop | Venditore | Lo affida a un'azienda logistica cinese. Fino a 11 giorni senza scansioni
@@ -59,7 +59,7 @@ Qui sotto trovi gli stati come li scrive Cainiao in inglese; se il tuo tracking 
 | `Security Check Failed` | Non ha superato il controllo di sicurezza e non può partire. Scrivi al venditore. |
 | `Unclaimed`, `Storage term expired` | Nessuno l'ha ritirato in tempo: torna al mittente. |
 
-«In consegna» e gli altri stati di tutti i giorni: [cosa vogliono dire gli stati della spedizione](guide:tracking-statuses).
+Altre righe di Cainiao, come `Carrier update`, le spiega la [pagina sul tracking Cainiao](carrier:cainiao). «In consegna» e gli altri stati di tutti i giorni: [cosa vogliono dire gli stati della spedizione](guide:tracking-statuses).
 
 ## Perché il codice di tracking AliExpress o Temu è cambiato?
 
@@ -73,7 +73,7 @@ Con i codici delle poste è diverso. L'Unione postale universale prevede un solo
 
 ### Di quale corriere è il mio codice?
 
-Oltre a Cainiao vedrai YunExpress, 4PX, Yanwen (che vende perfino linee con il nome di Temu e di AliExpress) e CNE, che tra i suoi clienti indica Temu:
+Oltre a Cainiao vedrai [YunExpress](carrier:yunexpress), 4PX, Yanwen (che vende perfino linee con il nome di Temu e di AliExpress) e CNE, che tra i suoi clienti indica Temu:
 
 | Il codice è fatto così | Di solito |
 | --- | --- |

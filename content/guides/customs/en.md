@@ -4,7 +4,7 @@ description: What "held at customs" means, how long it can last, what you pay in
 slug: parcel-held-at-customs
 picture: A customs booth with a striped barrier, a stamped document with a tick, and Pip waiting patiently before the barrier.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 "Held at customs" usually means your parcel (or package) is in the routine import check for goods from abroad, not that it was seized. If it stays held, the carrier may be waiting for you to pay a charge or send an invoice. Check the carrier's own website or app, never a link in a text.
@@ -41,7 +41,7 @@ Mostly you don't: start with the carrier (step 4). In Canada, even Canada Post c
 
 ## How long can a parcel be held at customs?
 
-Nobody promises a time. The CBSA releases most mail after an initial inspection, which "can take less than a day". Canada Post says times vary with the parcel, its paperwork and the volume at customs.
+Nobody promises a time. The CBSA releases most mail after an initial inspection, which "can take less than a day". Canada Post says times vary with the parcel, its paperwork and the volume at customs. For a YunExpress parcel from China, see [how long YunExpress says a customs check adds](carrier:yunexpress).
 
 A parcel stays longer when:
 
@@ -49,6 +49,8 @@ A parcel stays longer when:
 - customs doesn't accept the declared value (ABF);
 - a charge is unpaid: Canada Post and couriers in Canada hold the parcel until you pay;
 - the goods may be restricted: the CBSA inspects again or calls in an agency such as Health Canada.
+
+Ordering Christmas gifts from abroad? [Leave time for customs](guide:christmas-posting-dates) and order early.
 
 Don't leave it too long:
 
@@ -130,7 +132,7 @@ Customs authorities warn too:
 - **The CBSA** never initiates a request for your Social Insurance Number or card number by phone, text or email; a call demanding duty with threats of jail is a scam.
 - **ABF** warns of scam calls that seem to come from its Regional Office numbers.
 
-Safest is step 1 above: open the carrier's site or app yourself.
+Safest is step 1 above: open the carrier's site or app yourself. The same goes for [any delivery text you didn't ask for](guide:universal-tracker).
 
 > Tapped the link and typed your card details? Call your bank now, even if you never pressed submit, as the U.S. Postal Inspection Service advises.
 

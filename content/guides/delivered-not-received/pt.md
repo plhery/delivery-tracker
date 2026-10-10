@@ -4,7 +4,7 @@ description: A encomenda aparece como entregue e não está lá? O que verificar
 slug: encomenda-dada-como-entregue-nao-recebi
 picture: Uma porta fechada, uma notificação com um visto verde, o contorno vazio de uma caixa no tapete e o Pip preocupado.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Se o seguimento diz que a encomenda foi entregue mas não a recebeste, não a dês já como perdida: «entregue» é um registo no terminal do estafeta, não a prova de que chegou às tuas mãos. Vê no seguimento quem assinou ou com quem ficou, procura nos sítios do costume e espera um dia. Se continuar sem aparecer, fala com a loja, não com a transportadora: em Portugal, quando compras a uma empresa, a encomenda corre por conta e risco da loja até a teres fisicamente nas mãos.
@@ -35,7 +35,7 @@ O seguimento nunca chegou a dizer «entregue»? Vê [porque é que o tracking n�
 - Vê a prova de entrega | Procura no seguimento quem assinou ou o nome de um vizinho e confirma a morada que deste na encomenda.
 - Procura nos sítios do costume | Pergunta a quem vive contigo e aos vizinhos. Vê a caixa do correio, a receção ou a portaria, e procura um aviso de entrega.
 - Espera um dia | Algumas transportadoras entregam até às 22h00, lembra a Amazon, e a leitura «entregue» pode ser feita antes de a encomenda chegar. Cacifo InPost vazio: aí não esperes, avisa a InPost nas 24 horas seguintes.
-- Fala com a loja | Dá o número da encomenda, o número de seguimento e o que já verificaste. Pede-lhe que a procure junto da transportadora e, se não aparecer, que a volte a enviar ou te reembolse.
+- Fala com a loja | Dá o número da encomenda, o [número de seguimento](guide:find-tracking-number) e o que já verificaste. Pede-lhe que a procure junto da transportadora e, se não aparecer, que a volte a enviar ou te reembolse.
 - Abre um caso a tempo | Se compraste numa plataforma, antes de o prazo acabar: 2 dias na Vinted, 30 no eBay e na Etsy.
 - Por fim, o pagamento | Se ninguém resolver, abre uma disputa no PayPal ou pede ao banco que conteste a compra.
 :::
@@ -89,7 +89,7 @@ A Amazon deixa-te recorrer à Garantia de A a Z mesmo quando a entrega aparece c
 
 Atenção: se pedires um estorno ao banco, a via da plataforma fecha-se. A Amazon deixa de reembolsar pela Garantia de A a Z, o eBay pode fechar o caso e a Etsy diz que já não podes abrir um.
 
-Compraste no AliExpress, na Temu ou na Shein? Os prazos destas lojas estão no guia [como seguir uma encomenda da China](guide:tracking-from-china).
+Compraste no AliExpress, na Temu ou na Shein? Os prazos destas lojas estão no guia [como seguir uma encomenda da China](guide:tracking-from-china). Se o seguimento é da [Cainiao](carrier:cainiao) ou da [YunExpress](carrier:yunexpress), vê também o que as páginas delas dizem sobre uma encomenda dada como entregue.
 
 ## Posso reclamar diretamente junto da transportadora?
 
@@ -102,6 +102,8 @@ Compraste no AliExpress, na Temu ou na Shein? Os prazos destas lojas estão no g
 | DPD | Pouco: as condições regem a relação entre a DPD e o expedidor, normalmente a loja. Indemnização até 10 € por kg, no máximo 300 € por encomenda | Por escrito, até 30 dias depois da expedição |
 | GLS | Contactá-la pelo formulário de contacto ou pela central de atendimento, 219 667 100 | Não indicado |
 | InPost | Reclamar tu, pelos canais da InPost; cacifo vazio: com uma fotografia do cacifo. A indemnização por perda é tratada com o remetente | Cacifo vazio: 24 horas depois da entrega registada. Perda total: a partir de 30 dias depois da notificação de envio |
+
+Se a encomenda veio pela [Correos Express](carrier:correos-express) ou pela [NACEX](carrier:nacex), o que podes fazer está na página de cada uma.
 
 ### Os CTT pagam uma encomenda perdida?
 
@@ -119,7 +121,7 @@ Muitas vezes, como último recurso:
 
 ### O Peek consegue encontrar a minha encomenda?
 
-Não. O [Peek](/) só mostra o que a transportadora publica e não pode contactá-la nem fazer reclamações por ti. Mas, no último troço, verifica o seguimento até de 2 em 2 minutos e pode avisar-te, para chegares à porta pouco depois de aparecer «entregue».
+Não. O [Peek](/), como qualquer [serviço de seguimento](guide:universal-tracker), só mostra o que a transportadora publica e não pode contactá-la nem fazer reclamações por ti. Mas, no último troço, verifica o seguimento até de 2 em 2 minutos e pode enviar-te uma notificação, para chegares à porta pouco depois de aparecer «entregue».
 
 ### Devo apresentar queixa à polícia se a encomenda foi roubada?
 

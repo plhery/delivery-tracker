@@ -4,7 +4,7 @@ description: An Anfang, Länge und Endung der Sendungsnummer erkennst du oft den
 slug: sendungsnummer-welcher-paketdienst
 picture: Drei Etiketten mit Sendungsnummern, in farbige Teile zerlegt, eine Lupe auf dem Ländercode CH, und Pip schaut neugierig zu.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Buchstaben und Länge einer Sendungsnummer verraten oft, welcher Paketdienst dein Paket hat. Beginnt sie mit `1Z` und hat 18 Zeichen, ist es UPS. 18 Ziffern ab `99`, gedruckt wie `99.34.123456.12345678`, kommen von der Schweizerischen Post, und 13 Zeichen wie `RR123456785CH` (zwei Buchstaben, neun Ziffern, zwei Buchstaben) stammen meist von einer nationalen Post, deren Land in den letzten zwei Buchstaben steht. Schwierig wird es bei reinen Ziffern: 10, 14 oder 22 Stellen passen jeweils zu mehreren Paketdiensten. Dann entscheidet die Versandmail oder ein Tracker, der die infrage kommenden Paketdienste durchprobiert.
@@ -20,7 +20,7 @@ Vier Schritte, in dieser Reihenfolge:
 - Probier es aus | Gib die Nummer bei jedem Paketdienst ein, der infrage kommt. Der Paketdienst, der dazu Scans anzeigt, hat dein Paket.
 :::
 
-Keine Lust auf Detektivarbeit? Füge die Nummer, einen Link vom Paketdienst oder gleich die ganze Versandmail in [Peek](/) ein: Die Nummer wird herausgefischt und der Paketdienst unter mehr als 3.500 automatisch erkannt.
+Keine Lust auf Detektivarbeit? Füge die Nummer, einen Link vom Paketdienst oder gleich die ganze Versandmail in [Peek](/) ein: Die Nummer wird herausgefischt und der Paketdienst unter mehr als 3.500 automatisch erkannt. Wie solche Tracker eine Nummer zuordnen, erklärt [Paketverfolgung aller Anbieter](guide:universal-tracker).
 
 ## Wie sieht eine Sendungsnummer von DHL, Hermes, DPD oder UPS aus?
 
@@ -37,8 +37,11 @@ Das schreiben die Paketdienste selbst und der internationale Poststandard über 
 | UPS | `1Z` plus 16 Buchstaben und Ziffern, 18 Zeichen insgesamt, etwa `1Z999AA10123456784`, ein Beispiel mit gültiger UPS-Prüfziffer |
 | Österreichische Post | 22 Ziffern oder das Postformat aus zwei Buchstaben, neun Ziffern und zwei Buchstaben |
 | Schweizerische Post | 18 Ziffern ab `99` auf Paketen von Geschäftskunden, gedruckt wie `99.34.123456.12345678`, oder das Postformat mit `CH` am Ende |
+| [Quickpac](carrier:quickpac) | 18 Ziffern, sagt Quickpac, aber nicht, wie sie beginnen. In Peeks Paketdienst-Daten: ab `44` |
+| [Planzer](carrier:planzer) | kein Format veröffentlicht. In Peeks Paketdienst-Daten 20 Ziffern ab `91346097`, eine geteilte Planzer-Sendung 13 Ziffern ab `99990` |
 | Amazon | kein Format veröffentlicht, mehr dazu weiter unten |
-| YunExpress | `YT` + 16 Ziffern; `YT` + 13 Ziffern ist YTO Express |
+| [YunExpress](carrier:yunexpress) | `YT` + 16 Ziffern; `YT` + 13 Ziffern ist YTO Express |
+| [Cainiao](carrier:cainiao) (AliExpress) | `DOFR` oder `CNFR` plus 13 Ziffern und `HD`; `LP` oder `CNG` plus 14 Ziffern sind wahrscheinlich Cainiao, aber nicht sicher. So steht es in Peeks Paketdienst-Daten, Cainiao selbst beschreibt diese Formen nicht |
 | China Post, EMS | das Postformat mit `CN` am Ende. Internationale EMS-Nummern beginnen mit `E` |
 
 Bei Hermes merkst du sofort, wenn die Länge nicht stimmt. Die Sendungsverfolgung meldet dann `Sendungsnummer muss aus 14-20 Zeichen bestehen (Buchstaben, Zahlen).`
@@ -56,7 +59,7 @@ Eine feste Länge gibt es nicht. Hier die Längen, die die Paketdienste selbst n
 | 10 Ziffern | DHL Express; bei DHL die kürzeste mögliche Länge |
 | 13 Zeichen | jede Post im Postformat, etwa `RR123456785CH` |
 | 14 Stellen | DPD; auch bei Hermes möglich |
-| 18 Ziffern | Schweizerische Post, ab `99` |
+| 18 Ziffern | Schweizerische Post, ab `99`; Quickpac |
 | 20 Ziffern | DHL, etwa seine Testnummern ab `00340434` |
 | 22 Ziffern | Österreichische Post; USPS bei Paketen aus den USA |
 | 14 bis 20 Zeichen | Hermes |
@@ -139,9 +142,10 @@ Findet die Sendungsverfolgung nichts, ist die Nummer nicht unbedingt falsch abge
 - [UPS: sample package label](https://www.pld-certify.ups.com/CerttoolHelp/PLD0200/WebHelp_pld0200/LeadPackage.htm) – die 1Z-Nummer
 - [Österreichische Post: Startseite, Häufig gestellte Fragen](https://www.post.at/) – 22 Ziffern oder Postformat
 - [Schweizerische Post: Anleitung Barcode für Geschäftskunden](https://www.post.ch/-/media/post/gk/dokumente/1864-anleitung-barcodes-gk.pdf?sc_lang=de) – 18 Ziffern ab 99, die Punkte im Klartext
+- [Quickpac: FAQ (auf Englisch)](https://quickpac.ch/en/faq) – jedes Paket hat eine 18-stellige Nummer
 - [USPS: Publication 199, Intelligent Mail package barcode](https://postalpro.usps.com/pub199) – 22 Ziffern
 - [Amazon.de: Lieferungen von Amazon Logistics](https://www.amazon.de/gp/help/customer/display.html?nodeId=GEW3XT9JEMBLTKRV) – Sendungsverfolgung unter Meine Bestellungen
-- [Universal Parcel Scraper: carrier catalog](https://github.com/plhery/universal-parcel-scraper/blob/main/data/catalog.json) – JJD, JD, 0034043, H, TBA und Ländercode plus 10 Ziffern in Peeks Paketdienst-Daten, dazu YT + 16 Ziffern (YunExpress) und YT + 13 Ziffern (YTO Express)
+- [Universal Parcel Scraper: carrier catalog](https://github.com/plhery/universal-parcel-scraper/blob/main/data/catalog.json) – JJD, JD, 0034043, H, TBA und Ländercode plus 10 Ziffern in Peeks Paketdienst-Daten, dazu YT + 16 Ziffern (YunExpress), YT + 13 Ziffern (YTO Express), 44 (Quickpac), 91346097 und 99990 (Planzer) sowie DOFR, CNFR, LP und CNG (Cainiao)
 - [YunExpress: YunTrack](https://www.yuntrack.com/) – Nummern ab YT
 - [Cainiao: Help centre](https://global.cainiao.com/helpDoc.htm) – beim Economy-Versand keine Sendungsverfolgung nach der Übergabe
 - [bpost: Kann ich mein Paket online verfolgen?](https://www.bpost.be/de/faq/kann-ich-mein-paket-online-verfolgen) – Strichcodes mit U lassen sich nicht verfolgen

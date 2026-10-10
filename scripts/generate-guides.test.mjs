@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { CARRIER_CATALOG } from 'universal-parcel-scraper';
-import { carriersModule, guidesModule, readCarriers, readGuides } from './generate-guides.mjs';
+import { carriersModule, guidesModule, readCarrierIndex, readCarriers, readGuides } from './generate-guides.mjs';
 
 const content = fileURLToPath(new URL('../content/guides', import.meta.url));
 const generated = fileURLToPath(new URL('../src/generated/guides.ts', import.meta.url));
@@ -74,7 +74,8 @@ test('a folder the list does not name, and an id that is no slug, are refused', 
 });
 
 test('a guide links a carrier’s page only in a language the carrier is written in', () => {
-  const carriers = [{ id: 'some-carrier', languages: ['en', 'fr'] }];
+  // The guides already link the carriers that have pages; one more is written in English and French only.
+  const carriers = [...readCarrierIndex(), { id: 'some-carrier', languages: ['en', 'fr'] }];
   const directory = copy(({ edit }) => {
     edit('en', /\n## /, '\nAsk [the carrier](carrier:some-carrier).\n\n## ');
     edit('fr', /\n## /, '\nDemande au [transporteur](carrier:some-carrier).\n\n## ');

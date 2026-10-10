@@ -4,7 +4,7 @@ description: Co oznaczają statusy przesyłek: od „przygotowana przez nadawcę
 slug: statusy-przesylek-co-oznaczaja
 picture: Kręta trasa z odhaczonymi przystankami (etykieta z kodem kreskowym, magazyn, samolot), furgonetka na obecnym przystanku, dom jeszcze przed nią i pędzący Pip.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Status przesyłki to ostatni skan przewoźnika w kilku słowach i zwykle niczego od Ciebie nie wymaga. „Przygotowana przez nadawcę” znaczy, że przewoźnik nie ma jeszcze Twojej paczki, „w trasie” albo „w tranzycie”, że jest gdzieś między dwoma skanami, a „wydana do doręczenia”, że jedzie już do Ciebie. Działać musisz tylko w kilku sytuacjach: po nieudanej próbie doręczenia, gdy paczka czeka w automacie albo punkcie, gdy trzeba zapłacić należności celne i gdy status brzmi „doręczona”, a paczki nie ma.
@@ -45,7 +45,7 @@ Nie. Sprzedawca wydrukował etykietę i przesłał dane, nic więcej. InPost prz
 
 Paczka nadana w automacie też nie od razu rusza: `Paczka nadana w automacie Paczkomat.` znaczy, że czeka, aż doręczyciel wyjmie ją ze skrytki i zawiezie do oddziału InPost.
 
-Jeśli pierwszy status długo się nie zmienia, napisz do sprzedawcy, nie do przewoźnika: paczka wciąż jest u sprzedawcy. Tak samo radzi Cainiao przy zamówieniach z Chin bez danych śledzenia: zamówienie „jest przetwarzane”, a po szczegóły trzeba się zwrócić do sprzedawcy.
+Jeśli pierwszy status długo się nie zmienia, napisz do sprzedawcy, nie do przewoźnika: paczka wciąż jest u sprzedawcy. Tak samo radzi [Cainiao](carrier:cainiao) przy zamówieniach z Chin bez danych śledzenia: zamówienie „jest przetwarzane”, a po szczegóły trzeba się zwrócić do sprzedawcy.
 
 ## Przesyłka w trasie albo w tranzycie: co to znaczy?
 
@@ -67,7 +67,7 @@ Status `Przyjęta w Oddziale Docelowym.` to dobry znak: według InPost paczka �
 
 - **Opuściła kraj nadania.** Paczka jest w drodze samolotem, statkiem albo pociągiem. Po drodze nikt jej nie skanuje, więc do następnego skanu, zwykle już w kraju docelowym, bywa cicho.
 - **Odprawa celna.** Każdą przesyłkę pocztową z towarem spoza Unii Europejskiej trzeba zgłosić do urzędu celnego, bez względu na wartość, ale paczkę do 150 euro Poczta Polska zgłasza za Ciebie. Gdy brakuje danych albo opis towaru jest niejasny, paczka może na jakiś czas utknąć w magazynie pocztowo-celnym. Po odprawie jedzie do doręczenia, a należności Poczta Polska pobiera przy doręczeniu albo przed odbiorem. Działaj tylko wtedy, gdy poczta albo urząd celny o coś poprosi. Ile zapłacisz, łącznie z cłem 3 euro za każdy rodzaj produktu, wyjaśnia poradnik [paczka zatrzymana przez urząd celny](guide:customs).
-- **Przewoźnik w Polsce.** Ostatni odcinek często przejmuje inna firma. Przy ekonomicznej wysyłce Cainiao pisze, że jego śledzenie kończy się na przekazaniu „przewoźnikowi w kraju/regionie docelowym”, a o dalsze statusy trzeba pytać tego przewoźnika. Paczek od Temu, AliExpress i Shein DPD nie przekierowuje; gdy już je ma, możesz je najwyżej skierować do punktu DPD Pickup na trasie kuriera. Zamawiasz w Chinach? Zobacz, jak [śledzić paczkę z Chin](guide:tracking-from-china).
+- **Przewoźnik w Polsce.** Ostatni odcinek często przejmuje inna firma, czasem [pod nowym numerem](guide:tracking-number-formats). Przy ekonomicznej wysyłce Cainiao pisze, że jego śledzenie kończy się na przekazaniu „przewoźnikowi w kraju/regionie docelowym”, a o dalsze statusy trzeba pytać tego przewoźnika. U [YunExpress](carrier:yunexpress) ten moment opisuje `Delivered to local carrier`: mimo słowa „Delivered” paczka trafiła do przewoźnika, nie do Ciebie. Paczek od Temu, AliExpress i Shein DPD nie przekierowuje; gdy już je ma, możesz je najwyżej skierować do punktu DPD Pickup na trasie kuriera. Zamawiasz w Chinach? Zobacz, jak [śledzić paczkę z Chin](guide:tracking-from-china).
 
 ## Czy „wydana do doręczenia” znaczy, że paczka będzie dziś?
 

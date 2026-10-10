@@ -4,14 +4,14 @@ description: Why tracking from China goes quiet or changes number, who delivers 
 slug: parcel-tracking-from-china
 picture: A plane's dotted arc over the globe from a red pin to a green home pin, and Pip travelling between two vans.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 A parcel (or package) from AliExpress, Temu or Shein changes hands: a Chinese logistics firm flies it out, your country's customs checks it, and your local post or courier delivers it, often under a new number. Each company scans only its own leg, so expect up to 11 days before the first scan, silence during the flight and a wait after "arrived at destination country". Follow the shop's tracking, then the local carrier's; on the cheapest shipping, tracking can stop at that handover for good.
 
 ## How accurate is AliExpress tracking?
 
-As accurate as its scans (Temu's and Shein's too): no tracker, Peek included, can show a scan the carrier hasn't published. AliExpress points you to Cainiao's tracking site. The gaps come from the route:
+As accurate as its scans (Temu's and Shein's too): no tracker, Peek included, can show a scan the carrier hasn't published ([what trackers can't see](guide:universal-tracker)). AliExpress points you to [Cainiao](carrier:cainiao)'s tracking site. The gaps come from the route:
 
 :::journey
 - shop | Seller | Hands it to a Chinese logistics firm. Up to 11 days without a scan
@@ -62,14 +62,14 @@ Out for delivery and other everyday statuses: [what tracking statuses mean](guid
 Three usual reasons:
 
 - **AliExpress combined your orders.** It says a number shared by several orders means their shipping was upgraded.
-- **One order, several parcels.** Shein's UK page says most of its stock is in China, so an order can split. Temu gives each parcel its own delivery time, and the tracking number once it's ready.
+- **One order, several parcels.** Shein's UK page says most of its stock is in China, so an order can split. Temu gives each parcel its own delivery time, and the tracking number once it's ready ([where to find it](guide:find-tracking-number)).
 - **A local courier took over** with its own label and number. Cainiao shows that number on its tracking page when it publishes one; from then on, check the courier's own site.
 
 Postal numbers are the exception. The Universal Postal Union allows "only one S10 identifier" per item, so a China Post number usually works on your own post's site too.
 
 ### Which company does my number belong to?
 
-Besides Cainiao, you'll see YunExpress, 4PX and Yanwen (which even sells lines named after Temu and AliExpress):
+Besides Cainiao, you'll see [YunExpress](carrier:yunexpress), 4PX and Yanwen (which even sells lines named after Temu and AliExpress):
 
 | The number looks like | Usually |
 | --- | --- |
@@ -111,6 +111,8 @@ It depends on the line you paid for. Cainiao counts calendar days; Shein counts 
 | Shein Ireland | Standard 6–10 business days |
 | Shein Canada | A delivery window, shown as dates |
 | Shein Australia | Standard 5–9 business days, Express 3–7 |
+
+Buying for Christmas? Order early: carriers give [Christmas posting dates](guide:christmas-posting-dates) for parcels you send, not for ones coming in from abroad.
 
 ## Will you pay customs on top?
 

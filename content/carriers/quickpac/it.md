@@ -6,7 +6,7 @@ published: 2026-10-10
 updated: 2026-10-10
 ---
 
-Quickpac è un servizio pacchi svizzero, dal 2024 parte di Planzer Paket (Planzer Pacchi in italiano), che porta ai privati i pacchi di negozi e aziende in zone selezionate della Svizzera. Il numero di 18 cifre te lo dà il mittente, di solito nell'e-mail di spedizione, ed è stampato anche sotto il codice a barre del pacco. Inseriscilo nel [tracking di Quickpac](https://quickpac.ch/de/tracking), una pagina in tedesco con il riquadro di ricerca in italiano se il tuo browser è in italiano, o incollalo nel box qui sopra.
+Quickpac è un servizio pacchi svizzero, dal 2024 parte di [Planzer Paket](carrier:planzer) (Planzer Pacchi in italiano), che porta ai privati i pacchi di negozi e aziende in zone selezionate della Svizzera. Il numero di 18 cifre te lo dà il mittente, di solito nell'e-mail di spedizione, ed è stampato anche sotto il codice a barre del pacco. Inseriscilo nel [tracking di Quickpac](https://quickpac.ch/de/tracking), una pagina in tedesco con il riquadro di ricerca in italiano se il tuo browser è in italiano, o incollalo nel box qui sopra.
 
 ## Quickpac tracking number: dove trovi il numero
 
@@ -21,9 +21,9 @@ Alcuni numeri svizzeri si somigliano. Con cifre inventate:
 | `441234567890123456` | Quickpac: 18 cifre che iniziano con 44. |
 | `44.12.345678.90123456` | Lo stesso, con i punti che aggiunge il riquadro di Quickpac. |
 | `990000000000000000` | Non è Quickpac: Peek lo attribuisce alla Posta Svizzera (18 cifre che iniziano con 99 o 98). |
-| `91346097000000000000` | [Planzer](carrier:planzer): 20 cifre che iniziano con 91346097. |
+| `91346097000000000000` | Planzer: 20 cifre che iniziano con 91346097. |
 
-Se il mittente l'ha concordato, Quickpac passa alla Posta i pacchi che non riesce a consegnare, e il riquadro può mostrare un link «Post tracking». Un numero che inizia con 44 ma ha 17 o 19 cifre di solito ha perso o guadagnato una cifra. Nessun numero? Chiedilo al mittente o leggi [dove si trova il codice tracking](guide:find-tracking-number).
+Se il mittente l'ha concordato, Quickpac passa alla Posta i pacchi che non riesce a consegnare, e il riquadro può mostrare un link «Post tracking». Un numero che inizia con 44 ma ha 17 o 19 cifre di solito ha perso o guadagnato una cifra; per un numero di forma diversa, leggi [come capire il corriere dal numero](guide:tracking-number-formats). Nessun numero? Chiedilo al mittente o leggi [dove si trova il codice tracking](guide:find-tracking-number).
 
 ## Stati del tracking Quickpac: cosa significano
 
@@ -38,7 +38,7 @@ I pacchi Quickpac si seguono sul sito di tracking di Planzer e nel riquadro di q
 | `Shipped` | Consegnato, non «spedito dal negozio». |
 | `Delivered`, `Shipment delivered` | Consegnato. |
 
-`Shipped` è quello che inganna: sul sito di Planzer in inglese vuol dire consegnato.
+`Shipped` è quello che inganna: sul sito di Planzer in inglese vuol dire consegnato. Come si chiamano le stesse fasi con la Posta e altri corrieri lo trovi in [stati della spedizione](guide:tracking-statuses).
 
 Con il browser in italiano il sito di Planzer mostra gli stati in italiano, ma i testi esatti per i pacchi Quickpac non sono documentati. Si conoscono solo alcune etichette della pagina, non i testi degli stati: «Data di consegna sconosciuta» quando non c'è ancora un giorno di consegna, «Consegna prevista» accanto al giorno in cui il pacco è atteso, «Consegnato» per un pacco consegnato (nel riquadro di Quickpac «Consegnato:» con la data). Se il pacco aspetta in un punto di ritiro, il riquadro scrive «Il pacco si trova presso il seguente punto di ritiro» e indica il «Termine per il ritiro», l'ultimo giorno per prenderlo.
 

@@ -4,7 +4,7 @@ description: Bis wann musst du Pakete und Briefe für Weihnachten abgeben? Die F
 slug: weihnachten-paket-letzter-termin
 picture: Ein Kalenderblatt mit einem eingekreisten Dezembertag, ein Lieferwagen, der ein Paket mit roter Schleife durch fallenden Schnee fährt, und Pip, der nebenher eilt.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 DHL und die Deutsche Post haben ihre Weihnachtstermine für 2026 noch nicht veröffentlicht: 2025 war der letzte Tag für Pakete, Päckchen und Briefe innerhalb Deutschlands Samstag, 20. Dezember. GLS nennt für 2026 schon Montag, 21. Dezember, 12 Uhr, und die Schweizerische Post Mittwoch, 23. Dezember, für A-Post und PostPac Priority. Die Tabellen zeigen die Frist jedes Paketdiensts, wie sie am Freitag, 9. Oktober 2026 auf seinen eigenen Seiten stand, und das Datum vom Vorjahr, wo das neue noch fehlt.
@@ -28,7 +28,7 @@ Bisher hat nur GLS seine Fristen für 2026 veröffentlicht. DHL schreibt auf sei
 
 Was hinter den Daten steckt:
 
-- **Hermes** verspricht bis Heiligabend einen ersten Zustellversuch, keine sichere Zustellung.
+- **Hermes** verspricht bis Heiligabend einen ersten Zustellversuch, keine sichere Zustellung. Was nach einem verpassten Versuch zu tun ist, steht unter [Sendungsstatus erklärt](guide:tracking-statuses).
 - **DPD** riet 2025, alle Pakete bis 12 Uhr im Pickup Paketshop abzugeben. Den 23. Dezember für Express und Priority nennt die deutsche Mitteilung den „letzten Abgabetermin“, die englische dagegen den letzten Zustelltag.
 - **DHL** empfahl 2025, auf Inseln und in ländliche Gebiete 1 bis 2 Tage früher einzuliefern. Für Geschäftskunden sind das DHL Kleinpaket und Sperrgut nicht Teil des Versprechens.
 - **Verpackung:** Folien oder Geschenkband außen gelten bei DHL als Sperrgut, und Hermes warnt, dass Außendeko für die Sortieranlagen zum Hindernis werden kann. Pack das Geschenk also innen hübsch ein.
@@ -92,7 +92,7 @@ Ins Ausland gelten je nach Zielland deutlich frühere Fristen, schreibt DHL. Die
 
 Diese Fristen gelten für Sendungen, die schon beim Paketdienst liegen. Der letzte Bestelltag eines Shops liegt also früher.
 
-Ein Paket von außerhalb der EU, in der Schweiz aus dem Ausland, geht außerdem durch den Zoll, der es aufhalten kann, und aus China ist es oft Wochen unterwegs. Keiner der Paketdienste hier nennt einen Weihnachtstermin für Pakete aus dem Ausland. Bestell also früh und richte dich nach der Lieferzeit, die der Shop angibt. Mehr dazu in [Paket aus China verfolgen](guide:tracking-from-china) und [Paket beim Zoll](guide:customs).
+Ein Paket von außerhalb der EU, in der Schweiz aus dem Ausland, geht außerdem durch den Zoll, der es aufhalten kann, und aus China ist es oft Wochen unterwegs. Keiner der Paketdienste hier nennt einen Weihnachtstermin für Pakete aus dem Ausland. Bestell also früh und richte dich nach der Lieferzeit, die der Shop angibt. Mehr dazu in [Paket aus China verfolgen](guide:tracking-from-china) und [Paket beim Zoll](guide:customs). Was Cainiao und YunExpress Händlern als Laufzeit nennen, steht unter [Cainiao Sendungsverfolgung](carrier:cainiao) und [YunExpress Sendungsverfolgung](carrier:yunexpress).
 
 Voll wird es schon vor Dezember: DHL zählt 2026 Singles Day (Mittwoch, 11. November), Black Friday (Freitag, 27. November) und Cyber Monday (Montag, 30. November) zu den Spitzentagen. GLS erwartet die größten Mengen rund um die Cyber Week und in der Woche vor Weihnachten.
 

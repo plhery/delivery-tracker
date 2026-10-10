@@ -4,7 +4,7 @@ description: Do kiedy nadać paczkę, żeby doszła przed Wigilią: terminy InPo
 slug: do-kiedy-wyslac-paczke-przed-swietami
 picture: Kartka z kalendarza z zakreślonym jednym grudniowym dniem, samochód dostawczy wiozący przez padający śnieg paczkę przewiązaną czerwoną wstążką i biegnący obok Pip.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Żaden przewoźnik w Polsce nie podał jeszcze terminów na święta 2026. W 2025 roku Poczta Polska radziła nadać paczkę najpóźniej w niedzielę 21 grudnia, a InPost gwarantował dostawę do Paczkomatu do wtorku 23 grudnia dla paczek nadanych do poniedziałku 22 grudnia. Tabele poniżej podają termin każdego przewoźnika z jego własnej strony, sprawdzony w piątek 9 października 2026 r., a tam, gdzie tegorocznego jeszcze nie ma, zeszłoroczny.
@@ -73,9 +73,9 @@ Na co uważać:
 
 ## Zakupy w internecie: zostaw czas na odprawę celną
 
-Terminy z tabel dotyczą paczek, które są już u przewoźnika, więc ostatni dzień na zamówienie w sklepie przypada wcześniej. InPost ostrzega: jeśli status przesyłki to `Przesyłka utworzona` albo `W trakcie przygotowania`, „paczka może nie dotrzeć do Ciebie przed świętami”. DPD radzi zamawiać prezenty „z co najmniej kilkudniowym wyprzedzeniem” przed Wigilią. Najwięcej paczek jest tuż przed świętami: dla Poczty Polskiej w 2025 r. rekordowy był tydzień od 15 do 21 grudnia.
+Terminy z tabel dotyczą paczek, które są już u przewoźnika, więc ostatni dzień na zamówienie w sklepie przypada wcześniej. InPost ostrzega: jeśli [status przesyłki](guide:tracking-statuses) to `Przesyłka utworzona` albo `W trakcie przygotowania`, „paczka może nie dotrzeć do Ciebie przed świętami”. DPD radzi zamawiać prezenty „z co najmniej kilkudniowym wyprzedzeniem” przed Wigilią. Najwięcej paczek jest tuż przed świętami: dla Poczty Polskiej w 2025 r. rekordowy był tydzień od 15 do 21 grudnia.
 
-Paczka spoza UE przechodzi też odprawę celną, która może ją zatrzymać, a z Chin podróż potrafi trwać tygodniami. Gwarancja InPost nie obejmuje paczek nadanych z zagranicy, a żadna ze stron przewoźników z tego poradnika nie podaje świątecznego terminu dla przesyłek z innych krajów. Zamów więc wcześnie i kieruj się terminem dostawy, który podaje sklep. Przeczytaj, [jak śledzić paczkę z Chin](guide:tracking-from-china) i [co się dzieje, gdy paczka utknie w urzędzie celnym](guide:customs).
+Paczka spoza UE przechodzi też odprawę celną, która może ją zatrzymać, a z Chin podróż potrafi trwać tygodniami. Gwarancja InPost nie obejmuje paczek nadanych z zagranicy, a żadna ze stron przewoźników z tego poradnika nie podaje świątecznego terminu dla przesyłek z innych krajów. Zamów więc wcześnie i kieruj się terminem dostawy, który podaje sklep. Przeczytaj, [jak śledzić paczkę z Chin](guide:tracking-from-china) i [co się dzieje, gdy paczka utknie w urzędzie celnym](guide:customs). Jakie czasy dostawy z Chin podają sprzedawcom sami przewoźnicy, przeczytasz na stronach o [Cainiao](carrier:cainiao) i [YunExpress](carrier:yunexpress).
 
 ## Co zrobić, gdy świąteczna paczka się spóźnia?
 
@@ -91,7 +91,7 @@ Nie zdążysz z terminem? W 2025 r. Poczta Polska dawała jeszcze poniedziałek 
 | GLS | Nie ogłoszono jeszcze. GLS doręcza od poniedziałku do piątku |
 
 :::steps
-- Sprawdź śledzenie u przewoźnika | Na jego stronie albo w aplikacji, z numerem z maila o wysyłce.
+- Sprawdź śledzenie u przewoźnika | Na jego stronie albo w aplikacji, z [numerem z maila o wysyłce](guide:find-tracking-number).
 - Uwzględnij dni wolne | W dni z tabeli paczka może w ogóle nie ruszyć.
 - Czytaj komunikaty przewoźnika | Tam piszą o opóźnieniach: ORLEN Paczka uprzedzała 31 grudnia 2025 r. o możliwych opóźnieniach z powodu intensywnych opadów śniegu.
 - Paczka stoi po świętach? | Przeczytaj, [dlaczego status przesyłki się nie zmienia](guide:tracking-not-updating).

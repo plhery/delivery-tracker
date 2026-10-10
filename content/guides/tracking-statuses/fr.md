@@ -4,7 +4,7 @@ description: Ce que veut dire chaque étape du suivi d'un colis, de « pris en c
 slug: etapes-suivi-colis-signification
 picture: Une route sinueuse aux étapes cochées (étiquette, dépôt, avion), une camionnette à l'étape en cours, une maison plus loin et Pip qui file.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Un statut de suivi résume en quelques mots le dernier scan du transporteur, et la plupart ne te demandent rien. « En préparation chez l'expéditeur » veut dire que le transporteur n'a pas encore ton colis, « en cours d'acheminement » qu'il est quelque part entre deux scans, et « en cours de livraison » qu'il est dans la camionnette du jour. Seuls quelques-uns demandent une action de ta part : un avis de passage, un colis en instance, des frais de douane, ou un « livré » alors que rien n'est arrivé.
@@ -39,7 +39,7 @@ Mêmes étapes, autres mots. Pour La Poste, ce sont les libellés de la frise de
 
 ## « En préparation chez l'expéditeur » ou « étiquette créée » : le colis est-il parti ?
 
-Non : le vendeur a créé une étiquette et transmis les données, rien de plus. Chez UPS et FedEx, `Étiquette créée` ne change qu'une fois le colis remis au transporteur. À La Poste suisse, `Transmission des données par l'expéditeur` veut dire que l'envoi ne lui a normalement pas encore été remis ; chez Colis Privé, `Colis attendu par Colis Privé`, qu'il n'a pas encore reçu le colis.
+Non : le vendeur a créé une étiquette et transmis les données, rien de plus. Chez UPS et FedEx, `Étiquette créée` ne change qu'une fois le colis remis au transporteur. À La Poste suisse, `Transmission des données par l'expéditeur` veut dire que l'envoi ne lui a normalement pas encore été remis ; chez [Colis Privé](carrier:colis-prive), `Colis attendu par Colis Privé`, qu'il n'a pas encore reçu le colis.
 
 Chez bpost, `en préparation` a deux sens : soit l'expéditeur prépare encore le colis, soit bpost l'a déjà mais doit encore le trier. Selon bpost, la plupart des colis sont traités dans les 5 jours après que l'expéditeur l'a choisi.
 
@@ -63,7 +63,7 @@ Pour un Colissimo envoyé et livré en France métropolitaine, La Poste annonce 
 
 - **Départ du pays.** Le colis prend l'avion, le bateau ou le train, sans scan en route. Chez La Poste, `Pris en charge dans le pays d'expédition` et `En cours de traitement dans le pays de destination` encadrent ce trajet. La Poste suisse affiche `Arrivée au poste frontalier dans le pays de destination` : le colis est là, mais doit peut-être encore passer la douane. Et `Date de distribution inconnue` veut simplement dire que l'envoi vient de l'étranger ou y part, ou qu'il n'est pas arrivé comme annoncé.
 - **Douane.** `Les formalités d'importation sont en cours` (La Poste) concerne les colis venus d'un pays hors UE, et ceux qui voyagent entre la métropole et l'outre-mer. La douane vérifie la légalité, la valeur déclarée et le respect des normes, ce qui « peut parfois prendre quelques jours » ; s'il manque un document, le suivi l'indique et La Poste te contacte. En Suisse, tu verras `L'envoi a été remis à la douane`, `En cours de dédouanement`, puis `Libéré par la Douane suisse` : le colis part alors vers la distribution. La Poste suisse compte trois à quatre jours ouvrés si les informations sont complètes. Aucun de ces transporteurs ne donne de durée maximale. N'agis que si on te le demande, pour payer des frais ou fournir un document ; lis [colis bloqué en douane](guide:customs).
-- **Transporteur local.** Une société fait le long trajet, une autre le dernier kilomètre. Pour un envoi international, le suivi de La Poste peut indiquer le nom de ce « partenaire » et la référence du colis chez lui : si le suivi s'arrête, cherche le numéro chez celui qui livre. Commande AliExpress, Temu ou Shein ? Lis [suivre un colis venu de Chine](guide:tracking-from-china).
+- **Transporteur local.** Une société fait le long trajet, une autre le dernier kilomètre. Pour un envoi international, le suivi de La Poste peut indiquer le nom de ce « partenaire » et la référence du colis chez lui : si le suivi s'arrête, cherche le numéro chez celui qui livre. Commande AliExpress, Temu ou Shein ? Lis [suivre un colis venu de Chine](guide:tracking-from-china). Les lignes en anglais de [Cainiao](carrier:cainiao) et de [YunExpress](carrier:yunexpress) sont traduites sur leurs pages.
 
 ## « En cours de livraison » : le colis arrive-t-il aujourd'hui ?
 
@@ -79,14 +79,14 @@ Deux statuts prêtent à confusion. Chez La Poste, `Arrivé sur le site de distr
 
 Toujours rien le soir ? Regarde si la date a bougé : chez FedEx, `Livraison mise à jour` signale une nouvelle date ou une nouvelle adresse, et Chronopost prévient par e-mail ou dans son suivi quand la date est reportée.
 
-[Peek](/) vérifie un colis jusqu'à toutes les 10 minutes, et jusqu'à toutes les 2 minutes sur le dernier kilomètre. Tu peux régler ses alertes sur « Jour de livraison uniquement ».
+[Peek](/) vérifie un colis jusqu'à toutes les 10 minutes, et jusqu'à toutes les 2 minutes sur le dernier kilomètre. Tu peux régler ses notifications sur « Jour de livraison uniquement ».
 
 ## « Destinataire absent » ou « avis de passage » : que faire ?
 
 Là, il faut agir : personne n'a pu prendre le colis, ou le livreur n'a pas pu entrer.
 
 :::steps
-- Lis l'avis | Papier, SMS ou e-mail : où est parti le colis, et le numéro à donner.
+- Lis l'avis | Papier, SMS ou e-mail : où est parti le colis, et [le numéro à donner](guide:find-tracking-number).
 - Vérifie le délai | De 5 à 15 jours selon le transporteur et le lieu, souvent en jours calendaires.
 - Reprogramme ou redirige | Sur le site ou l'app du transporteur : autre jour, voisin, point relais.
 - Va le chercher | Avec une pièce d'identité et l'avis ou le code-barres. Si quelqu'un y va à ta place, donne-lui une procuration.
@@ -117,7 +117,7 @@ Pas toujours. Ça veut dire que le livreur l'a scanné comme remis ou déposé :
 - **Dans un lieu sûr ou chez un voisin.** bpost le fait si tu l'as choisi dans tes préférences, Chronopost si tu l'as choisi avec Predict. Sans signature exigée, UPS laisse le colis dans un endroit sûr et protégé (porche, porte latérale, garage), avec une photo du lieu sur son suivi.
 - **Au guichet.** `Remis au guichet` (La Poste suisse) : dans une filiale, une filiale en partenariat ou un point PickPost.
 
-Attention à `Distribué à l'expéditeur` chez La Poste : c'est un retour arrivé chez le vendeur. Rien à la porte ? Cherche dans le suivi complet une photo, un nom ou un lieu, puis lis [colis livré mais pas reçu](guide:delivered-not-received).
+Attention à `Distribué à l'expéditeur` chez La Poste : c'est un retour arrivé chez le vendeur. Sur le suivi en anglais de [Planzer](carrier:planzer), qui sert aussi aux colis [Quickpac](carrier:quickpac), `Shipped` veut dire livré, pas expédié. Rien à la porte ? Cherche dans le suivi complet une photo, un nom ou un lieu, puis lis [colis livré mais pas reçu](guide:delivered-not-received).
 
 ## « Anomalie » ou « exception de livraison » : le colis est-il perdu ?
 

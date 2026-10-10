@@ -4,7 +4,7 @@ description: Jak działa śledzenie przesyłek wszystkich firm, czego nie widzi 
 slug: sledzenie-przesylek-wszystkich-firm
 picture: Pięć furgonetek w różnych kolorach, których kropkowane trasy zbiegają się w jednej liście na telefonie, i rozpromieniony Pip w otwartym pudełku.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Uniwersalny tracker paczek to strona albo aplikacja, w której śledzisz przesyłki wszystkich firm w jednym miejscu: wklejasz numer od dowolnego przewoźnika, a tracker sam ustala, czyj to numer, pobiera skany i trzyma wszystkie Twoje paczki na jednej liście. Pokazuje tylko te skany, które zapisał przewoźnik, więc nigdy nie wie więcej niż on. Trackery różnią się tym, czego chcą od Ciebie w zamian: konta, dostępu do skrzynki mailowej, abonamentu za powiadomienia albo cierpliwości do reklam.
@@ -22,7 +22,7 @@ Tak, i może nawet już masz coś takiego: oprócz uniwersalnych trackerów pacz
 
 ## Jak zobaczyć wszystkie paczki, które do Ciebie idą?
 
-Zacznij od darmowych aplikacji, które same przypisują Ci paczki:
+Zacznij od darmowych aplikacji, które same przypisują Ci paczki, także gdy [nie masz numeru przesyłki](guide:find-tracking-number):
 
 | Aplikacja | Co pokazuje | Powiadomienia |
 | --- | --- | --- |
@@ -107,7 +107,7 @@ Paczki z zagranicy często zmieniają przewoźnika, a lokalna firma, jak czytamy
 - home | U Ciebie | Ostatnie skany bywają tylko pod numerem B
 :::
 
-Trackery, które wiążą ze sobą numery (na przykład ParcelsApp), połączą A z B, jeśli B pojawi się w danych pierwszego przewoźnika. Jeśli się nie pojawi, poszukaj nowego numeru w pełnej historii przesyłki i sprawdź go na stronie firmy, która doręcza w Polsce, na przykład Poczty Polskiej, InPost albo DPD. O zamówieniach z chińskich platform piszemy w poradniku [śledzenie paczki z Chin](guide:tracking-from-china).
+Trackery, które wiążą ze sobą numery (na przykład ParcelsApp), połączą A z B, jeśli B pojawi się w danych pierwszego przewoźnika. Jeśli się nie pojawi, poszukaj nowego numeru w pełnej historii przesyłki i sprawdź go na stronie firmy, która doręcza w Polsce, na przykład Poczty Polskiej, InPost albo DPD. Gdzie szukać numeru B przy paczkach z Chin, podpowiadają strony o [śledzeniu Cainiao](carrier:cainiao) i [YunExpress](carrier:yunexpress). O zamówieniach z chińskich platform piszemy w poradniku [śledzenie paczki z Chin](guide:tracking-from-china).
 
 ## Czego tracker nie zobaczy
 

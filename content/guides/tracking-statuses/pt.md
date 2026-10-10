@@ -4,7 +4,7 @@ description: De «Aguarda entrada nos CTT» a «Entregue»: o que quer dizer cad
 slug: estados-da-encomenda-significado
 picture: Um percurso sinuoso com paragens marcadas com um visto (etiqueta, armazém, avião), uma carrinha na paragem atual, uma casa mais à frente e o Pip a correr.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Um estado de seguimento é a última leitura da transportadora resumida em poucas palavras, e a maioria não te pede nada. `Aguarda entrada nos CTT` quer dizer que os CTT ainda não têm a tua encomenda, `Em trânsito` que está algures entre duas leituras, e `Em entrega` que já vai no percurso de hoje. Só alguns precisam de ti: uma entrega não conseguida, uma encomenda à espera de ser levantada, taxas da alfândega para pagar e um «Entregue» sem nada à porta.
@@ -38,6 +38,8 @@ As mesmas etapas, com outras palavras:
 | Para levantar | `No ponto de entrega` (o aviso diz onde e até quando) | `Colocada no Locker ou Ponto Pack` | `Entregue a um local UPS Access Point` |
 | Entregue | `Entregue` | `Entregue` | `Entregue` |
 
+Os estados em espanhol da [Correos Express](carrier:correos-express) e da [NACEX](carrier:nacex) estão traduzidos nas páginas delas. Os da [Cainiao](carrier:cainiao) e da [YunExpress](carrier:yunexpress), em inglês, também.
+
 ## «Aguarda entrada nos CTT»: a transportadora já tem a encomenda?
 
 Não: a loja imprimiu uma etiqueta e mandou os dados, mais nada. Os CTT explicam que receberam informação eletrónica sobre o envio, que este «pode ainda estar a ser preparado pelo expedidor» e que ainda não entrou na rede dos CTT. A InPost diz o mesmo de `Preparado pelo remetente`: a etiqueta existe, mas a encomenda ainda não saiu, e é normal ficar assim algumas horas. Na UPS, `Etiqueta Criada` só muda quando o envio já anda na rede da UPS, e na FedEx `Etiqueta criada` quer dizer que o expedidor ainda está a preparar o volume.
@@ -62,7 +64,7 @@ A GLS entrega geralmente em 24 horas dentro de Portugal, e entre 24 e 96 horas n
 
 - **Saída do país de origem.** Nos CTT, `Em exportação` quer dizer que o envio está em processo aduaneiro no país de origem, antes de seguir para o destino. No Portal de Desalfandegamento dos CTT, `Expedição do país de origem` significa que já saiu e vem a caminho de Portugal, e `Chegada a Portugal` que chegou.
 - **Alfândega.** `Em importação` quer dizer que está em processo aduaneiro no país de destino. Em vários estados do Portal de Desalfandegamento, como `Em validação CTT` ou `Controlo documental ou físico`, os CTT só te pedem que esperes por um e-mail, e nenhuma das transportadoras deste guia dá um prazo máximo para a alfândega. Age quando te pedem alguma coisa: com `Em validação de informação ou informação em falta` tens de iniciar o processo no portal, e `Aguarda pagamento` é o último passo. Os prazos, o que pagas e o que vem depois de `Conclusão com autorização de saída` estão em [encomenda retida na alfândega](guide:customs).
-- **Transportadora local.** Uma empresa faz a viagem longa, outra o último troço, e as leituras desta podem aparecer só no site dela: a DHL remete para o seguimento da transportadora no país de destino. Compraste no AliExpress, na Temu ou na Shein? Vê [como seguir uma encomenda da China](guide:tracking-from-china).
+- **Transportadora local.** Uma empresa faz a viagem longa, outra o último troço, e as leituras desta podem aparecer só no site dela: a DHL remete para o seguimento da transportadora no país de destino. Essa transportadora pode até dar à encomenda [um número novo](guide:tracking-number-formats). Compraste no AliExpress, na Temu ou na Shein? Vê [como seguir uma encomenda da China](guide:tracking-from-china).
 
 ## «Em entrega», «em distribuição» ou «saiu para entrega»: chega hoje?
 
@@ -76,7 +78,7 @@ Normalmente, sim:
 
 Um estado que engana: na InPost, `Chegada ao centro local de distribuição` quer dizer que a encomenda está no centro mais próximo do destino, prestes a sair para distribuição ou a ser colocada num ponto InPost. Ainda não vai na carrinha.
 
-No [Peek](/), esta etapa chama-se «Em distribuição»: no último troço, o seguimento é verificado até de 2 em 2 minutos, e os alertas podem ficar só para o dia da entrega.
+No [Peek](/), esta etapa chama-se «Em distribuição»: no último troço, o seguimento é verificado até de 2 em 2 minutos, e as notificações podem ficar só para o dia da entrega.
 
 ## «Entrega não conseguida»: e agora?
 

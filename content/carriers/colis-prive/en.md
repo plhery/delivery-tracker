@@ -10,7 +10,7 @@ Colis Privé is a French parcel carrier for online shops, delivering in France, 
 
 ## Colis Privé tracking number: where to find it
 
-Colis Privé's help lists four places: the shop's order confirmation email, Colis Privé's notifications (sent only if the shop switched them on), your account on the shop's website and the delivery notice. The reference the shop gives can differ from the tracking number. Its official emails come only from livraison@notification.colisprive.com.
+Colis Privé's help lists four places: the shop's order confirmation email, Colis Privé's notifications (sent only if the shop switched them on), your account on the shop's website and the delivery notice. The reference the shop gives can [differ from the tracking number](guide:find-tracking-number). Its official emails come only from livraison@notification.colisprive.com.
 
 The number is 12 letters and digits:
 
@@ -20,11 +20,11 @@ The number is 12 letters and digits:
 | One letter, eleven digits | `A12345678901` |
 | Twelve digits | `987654321098` |
 
-The tracking also asks for the delivery postcode; a number it doesn't recognise sends you back to the empty form. Twelve digits alone also fit FedEx, Mondial Relay and others, `CC` plus ten digits points to Relais Colis and `FR` plus ten digits to Amazon Logistics. Check which carrier your email names, or see [tracking number formats](guide:tracking-number-formats). Colis Privé Store orders have an order number (the order reference) that usually starts with HS or 2R, and they're tracked only on colisprive-store.com with that reference.
+The tracking also asks for the delivery postcode; a number it doesn't recognise sends you back to the empty form. Twelve digits alone also fit FedEx, Mondial Relay, [BRT](carrier:brt) and others, `CC` plus ten digits points to Relais Colis and `FR` plus ten digits to Amazon Logistics. Check which carrier your email names, or see [tracking number formats](guide:tracking-number-formats). Colis Privé Store orders have an order number (the order reference) that usually starts with HS or 2R, and they're tracked only on colisprive-store.com with that reference.
 
 ## Colis Privé tracking statuses: what the French words mean
 
-Peek reads Colis Privé's tracking in French, one dated sentence per step; its English help pages use labels such as `in transit` instead. In the order a parcel meets them:
+Peek reads Colis Privé's tracking in French, one dated sentence per step; its English help pages use labels such as `in transit` instead ([what those mean](guide:tracking-statuses)). In the order a parcel meets them:
 
 | Colis Privé's words | What it means for you |
 | --- | --- |

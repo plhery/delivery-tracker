@@ -4,7 +4,7 @@ description: Dein Paket hängt im Zoll? Was der Status bedeutet, wie lange die A
 slug: paket-beim-zoll-dauer-kosten
 picture: Ein Zollhäuschen mit gestreifter Schranke, ein abgestempeltes Dokument mit Häkchen und Pip, der geduldig vor der Schranke wartet.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 „Paket beim Zoll“ heißt meistens: Dein Paket steckt in der ganz normalen Einfuhrkontrolle für Waren aus dem Ausland. Beschlagnahmt ist es deshalb nicht. Bleibt es dort hängen, wartet der Paketdienst oft darauf, dass du Einfuhrabgaben zahlst oder eine Rechnung nachreichst. Schau auf der Website oder in der App des Paketdienstes nach, nie über einen Link aus einer SMS.
@@ -53,6 +53,8 @@ Ein Paket bleibt länger liegen, wenn:
 - die Deutsche Post das Paket an ein Zollamt weitergeleitet hat, weil noch Fragen zu klären sind: Dort wartet es auf dich (Zoll);
 - die Ware beschränkt oder verboten ist, etwa Heilmittel, Waffen oder Markenfälschungen (BAZG).
 
+Wie viel länger eine Zollkontrolle dauern kann, schätzt YunExpress in seinem Blog für Händler: mehr dazu auf der [Seite zu YunExpress](carrier:yunexpress).
+
 Lass es nicht zu lange liegen:
 
 | Land | Fristen |
@@ -61,7 +63,7 @@ Lass es nicht zu lange liegen:
 | Österreich | Bis zu dem Datum in der Benachrichtigung über das Zollhindernis. Danach geht das Paket zurück, wird vernichtet oder der Zollbehörde übergeben |
 | Schweiz | Antwortest du auf eine Wertabklärung nicht innerhalb von 3 Werktagen, kostet sie CHF 20.–. Online zahlen kannst du 20 Tage lang, danach kommt eine Mahnung mit QR-Rechnung |
 
-Keine Lust, ständig neu zu laden? Füge die Sendungsnummer in [Peek](/) ein: Dort wird sie tagsüber bis zu alle 10 Minuten geprüft, und du bekommst eine Meldung, sobald sich der Status ändert. Die Abgaben zahlen oder den Zoll beschleunigen kann Peek allerdings nicht. Tut sich lange nichts und kommt keine Aufforderung, lies, [warum sich die Sendungsverfolgung nicht aktualisiert](guide:tracking-not-updating).
+Keine Lust, ständig neu zu laden? Füge die Sendungsnummer in [Peek](/) ein: Dort wird sie tagsüber bis zu alle 10 Minuten geprüft, und du bekommst eine Mitteilung, sobald sich der Status ändert. Die Abgaben zahlen oder den Zoll beschleunigen kann Peek allerdings nicht. Tut sich lange nichts und kommt keine Aufforderung, lies, [warum sich die Sendungsverfolgung nicht aktualisiert](guide:tracking-not-updating).
 
 ### Wie lange dauert es nach der Verzollung?
 
@@ -109,7 +111,7 @@ Das hängt von deinem Land und von der Kasse ab:
 - **Österreich:** Hat die Kasse die österreichische Umsatzsteuer berechnet (IOSS), fallen laut Post bis 150 € weder Einfuhrumsatzsteuer noch Importtarif an. Die 3 € Zoll gelten laut BMF aber auch für IOSS-Pakete.
 - **Schweiz:** Versandhändler (seit 2019) und Plattformen (seit 2025) mit mindestens CHF 100'000 Umsatz aus Kleinsendungen sind in der Schweiz selbst mehrwertsteuerpflichtig. Laut BAZG unterliegen dann auch ihre Lieferungen aus dem Ausland der Schweizer MWST, selbst kleine. Bei anderen Shops werden Abgaben bis CHF 5.– nicht erhoben.
 
-Wie solche Bestellungen reisen, steht in [Paket aus China verfolgen](guide:tracking-from-china).
+Wie solche Bestellungen reisen, steht in [Paket aus China verfolgen](guide:tracking-from-china), und was Cainiao bei AliExpress-Paketen am Zoll von dir erwartet, unter [Cainiao Sendungsverfolgung](carrier:cainiao).
 
 ## Ist die Zoll-SMS echt oder Fake?
 
@@ -127,7 +129,7 @@ Unter den Fake-SMS, die die Verbraucherzentrale zeigt, sind kleine Beträge wie 
 - **Das Finanzministerium (BMF)** in Österreich warnt vor Betrügern, die sich etwa als Zollamt Österreich ausgeben. Echte Bescheide kommen per Post oder in die FinanzOnline-Databox, und nach Passwörtern, Kartendaten oder Kontoinformationen fragt die Finanzverwaltung nie.
 - **Das BAZG** (Schweiz) schickt nie Zahlungsaufforderungen per E-Mail oder SMS und ruft nie vorher an. Bekannte Fake-Absender sind etwa `notification@ezv.admin.ch` und `zoll-paket-dienste@schweiz-zoll.ch`.
 
-Am sichersten ist Schritt 1 oben: Öffne die Seite oder App des Paketdienstes selbst.
+Am sichersten ist Schritt 1 oben: Öffne die Seite oder App des Paketdienstes selbst. Auch eine Sendungsnummer in der SMS beweist nichts, mehr dazu unter [Paket-SMS mit Sendungsnummer](guide:universal-tracker).
 
 > Auf den Link getippt und Kartendaten eingegeben? Beobachte deine Abbuchungen, informiere vorsorglich deine Bank und lass die Karte im Zweifel sperren, rät die Verbraucherzentrale.
 

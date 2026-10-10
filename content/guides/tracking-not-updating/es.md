@@ -4,7 +4,7 @@ description: Por qué el seguimiento de un paquete deja de actualizarse, cuánto
 slug: seguimiento-no-se-actualiza
 picture: Un calendario con varios días tachados, una línea de progreso que se queda a medias y Pip esperando, un poco aburrido.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Si el seguimiento no se actualiza, casi siempre es porque nadie ha escaneado tu paquete últimamente, no porque esté parado. Los transportistas lo escanean en sus centros y al cruzar fronteras, no en la carretera: un trayecto largo, un vuelo, la aduana o un fin de semana pueden dejarte días sin una línea nueva. Preocúpate solo cuando haya pasado el plazo del propio transportista (Correos acepta reclamaciones por un Paq Estándar a partir de 4 días desde que lo admitió; InPost, por demora, si el pedido tarda más de 5 días desde el aviso de envío), y aun entonces, escribe primero a la tienda: es ella quien contrató el envío.
@@ -15,7 +15,7 @@ El seguimiento muestra escaneos, no movimiento, y un paquete solo se escanea en 
 
 - **Sin escaneos entre centros.** UPS avisa de que, si un envío recorre una distancia larga, es probable que no se vuelva a escanear hasta llegar a su centro de destino. GLS recuerda que usa varios centros de distribución, así que la ruta no siempre es directa.
 - **Fines de semana y festivos.** GLS reparte de lunes a viernes (los sábados, solo con su servicio Express Saturday), e InPost no lleva paquetes a sus Punto Pack y Lockers ni sábados, ni domingos, ni festivos. Muchos plazos se cuentan en días laborables: los 25 días de Vinted, por ejemplo, no incluyen fines de semana ni festivos.
-- **Mal tiempo y temporada alta.** Entre los motivos más habituales de retraso, Amazon cita el mal tiempo, las retenciones de tráfico, los picos de demanda en fiestas y los retrasos en aduana de los paquetes internacionales.
+- **Mal tiempo y temporada alta.** Entre los motivos más habituales de retraso, Amazon cita el mal tiempo, las retenciones de tráfico, los [picos de demanda en fiestas](guide:christmas-posting-dates) y los retrasos en aduana de los paquetes internacionales.
 - **Direcciones y etiquetas con problemas.** DHL cita códigos postales mal escritos, números de portal que faltan, etiquetas escritas a mano que no se leen bien, etiquetas despegadas y embalajes dañados: el paquete puede acabar donde no toca o quedar apartado para clasificarlo a mano, con varios días de retraso. Correos llama «envío estacionado» al que no puede entregar por una incidencia: datos del destinatario insuficientes, una dirección incorrecta o un paquete roto. Lo deja estacionado 5 días naturales a la espera de que se corrijan los datos, y puedes corregirlos tú en «Gestión de estacionados» con el número de envío y el PIN que te manda por SMS o correo electrónico.
 
 ## Mi paquete lleva días en tránsito: ¿cuánto es normal?
@@ -51,7 +51,7 @@ DHL dice que, según el país de destino, es completamente normal que un paquete
 - **Aduana:** varios días laborables, según lo completa que esté la documentación, dice DHL. En España no solo pasa por aduana lo que viene de fuera de la UE: según Correos, también lo que llega a la Península y Baleares desde Canarias, Ceuta o Melilla, y lo que llega a esos tres territorios desde cualquier otro sitio. Más en [paquetes retenidos en aduanas](guide:customs).
 - **Cuando toma el relevo un transportista local:** DHL avisa de que puede haber huecos en el seguimiento y recomienda probar el mismo número en la web de seguimiento del país de destino.
 
-¿Has pedido en AliExpress, Temu o Shein? Mira [cómo seguir un paquete que viene de China](guide:tracking-from-china).
+¿Has pedido en AliExpress, Temu o Shein? Mira [cómo seguir un paquete que viene de China](guide:tracking-from-china) y, si lo lleva Cainiao, [qué hacer si su seguimiento se para](carrier:cainiao).
 
 ### En reparto y no llega
 
@@ -119,7 +119,7 @@ Dentro de España, va lento. Correos da al Paq Estándar de 48 a 72 horas (5 dí
 
 ### ¿Puedo hacer que el seguimiento se actualice antes?
 
-No, y una app de seguimiento tampoco: solo muestra lo que publica el transportista. [Peek](/) sigue consultando al transportista por ti y puede mandarte un aviso cuando aparece un escaneo nuevo, así no tienes que estar recargando la página.
+No, y una [app de seguimiento](guide:universal-tracker) tampoco: solo muestra lo que publica el transportista. [Peek](/) sigue consultando al transportista por ti y puede enviarte una notificación cuando aparece un escaneo nuevo, así no tienes que estar recargando la página.
 
 ### Mi número de seguimiento no aparece en Correos
 

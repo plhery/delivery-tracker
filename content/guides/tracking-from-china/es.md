@@ -4,14 +4,14 @@ description: Por qué el seguimiento de AliExpress, Temu o Shein se para o cambi
 slug: seguimiento-paquete-de-china
 picture: Un avión traza un arco punteado sobre el globo, de un marcador rojo al marcador verde de casa, y Pip viaja entre dos furgonetas.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Un paquete de AliExpress, Temu o Shein cambia de manos por el camino: una empresa logística china lo saca del país, la Aduana lo revisa al llegar y Correos u otra empresa de reparto te lo entrega, a menudo con otro número. Cada una solo escanea su tramo, así que es normal pasar hasta 11 días sin un primer escaneo, no ver nada durante el vuelo y volver a esperar cuando ya ha llegado al país de destino. Sigue primero el número de la tienda y luego el de la empresa de reparto. Con el envío más barato, el seguimiento puede cortarse ahí para siempre.
 
 ## ¿Es fiable el seguimiento de AliExpress?
 
-Tanto como sus escaneos, y lo mismo vale para Temu y Shein: ningún localizador, tampoco Peek, puede mostrar un escaneo que la empresa no haya publicado. AliExpress te manda a la web de seguimiento de Cainiao, su empresa logística. Los huecos vienen del recorrido:
+Tanto como sus escaneos, y lo mismo vale para Temu y Shein: ningún [localizador](guide:universal-tracker), tampoco Peek, puede mostrar un escaneo que la empresa no haya publicado. AliExpress te manda a la web de seguimiento de [Cainiao](carrier:cainiao), su empresa logística. Los huecos vienen del recorrido:
 
 :::journey
 - shop | Vendedor | Lo entrega a una empresa logística china. Hasta 11 días sin escaneos
@@ -71,7 +71,7 @@ Los números postales son la excepción. La Unión Postal Universal solo permite
 
 ### ¿De qué empresa es mi número?
 
-Además de Cainiao, verás YunExpress, 4PX y Yanwen (que incluso vende líneas con el nombre de Temu y de AliExpress):
+Además de Cainiao, verás [YunExpress](carrier:yunexpress), 4PX y Yanwen (que incluso vende líneas con el nombre de Temu y de AliExpress):
 
 | El número es así | Suele ser |
 | --- | --- |
@@ -109,7 +109,7 @@ Depende del envío que hayas pagado. Cainiao cuenta días naturales; Shein, día
 | Temu | De 1 a 3 días para preparar el pedido, y luego un plazo para cada paquete cuando sale |
 | Shein España | De 1 a 3 días para preparar el pedido. Luego, Estándar, de 8 a 11 días laborables; Exprés, de 7 a 10; punto de recogida, de 8 a 11; Económico, de 10 a 12 |
 
-Shein marca con «Almacén UE» los artículos que pueden salir de un almacén en Europa. Lo demás sale de fuera de Europa, y Shein avisa de que eso puede retrasar el pedido.
+Shein marca con «Almacén UE» los artículos que pueden salir de un almacén en Europa. Lo demás sale de fuera de Europa, y Shein avisa de que eso puede retrasar el pedido. ¿Es un regalo de Navidad? Pídelo pronto y mira [las fechas límite de Navidad](guide:christmas-posting-dates).
 
 ## ¿Tendrás que pagar aduanas aparte?
 

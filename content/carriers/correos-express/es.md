@@ -25,7 +25,7 @@ Si el buscador responde «Lo sentimos, no se ha encontrado ningún envío con el
 
 ## Estados del seguimiento de Correos Express: qué significa cada uno
 
-El buscador muestra el historial en tres columnas, «Fechas/hora», «Población» y «Estado», con los estados casi siempre en mayúsculas. Esta tabla los ordena según el recorrido habitual de un paquete, del registro a la entrega o la devolución:
+El buscador muestra el historial en tres columnas, «Fechas/hora», «Población» y «Estado», con los estados casi siempre en mayúsculas. Esta tabla los ordena según el [recorrido habitual de un paquete](guide:tracking-statuses), del registro a la entrega o la devolución:
 
 | Estado | Qué significa para ti |
 | --- | --- |
@@ -84,11 +84,11 @@ Canales oficiales para España, según su web el 9 de octubre de 2026:
 
 Para reclamar, las condiciones de transporte dan el mismo teléfono y la web, pero están escritas para el remitente y admiten una sola reclamación por envío: ponte de acuerdo con la tienda.
 
-> Correos Express dice que nunca te pedirá datos bancarios ni claves de su web y que no tiene líneas 807; si dudas, llama al 900 122 333. En 2022 el INCIBE alertó de SMS falsos que imitaban su aviso de entrega fallida y pedían pagar 1,98 € de aduana en un enlace. No lo abras y, si ya pagaste, llama cuanto antes a tu banco.
+> Correos Express dice que nunca te pedirá datos bancarios ni claves de su web y que no tiene líneas 807; si dudas, llama al 900 122 333. En 2022 el INCIBE alertó de [SMS falsos](guide:customs) que imitaban su aviso de entrega fallida y pedían pagar 1,98 € de aduana en un enlace. No lo abras y, si ya pagaste, llama cuanto antes a tu banco.
 
 ## Seguir un envío de Correos Express con Peek
 
-[Peek](/) reconoce el transportista por el número. Varios transportistas comparten los números de 16 cifras, así que pregunta a los más probables uno tras otro. Uno de 23 cifras apunta a Correos Express. Si no te ofrece Correos Express, repasa las cifras.
+[Peek](/) reconoce el transportista por el número. Varios transportistas comparten los [números de 16 cifras](guide:tracking-number-formats), así que pregunta a los más probables uno tras otro. Uno de 23 cifras apunta a Correos Express. Si no te ofrece Correos Express, repasa las cifras.
 
 Peek consulta el seguimiento cada 10 minutos, y cada 2 minutos en el último tramo, y puede enviarte notificaciones en cada escaneo, solo en los pasos importantes o solo el día de entrega. Verás el estado, el historial con el lugar de cada escaneo en un mapa y la entrega prevista, solo mientras el paquete siga en camino. No guarda la prueba de entrega, los datos de contacto ni los comentarios de entrega, y no puede hablar con Correos Express por ti.
 

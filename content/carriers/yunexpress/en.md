@@ -10,7 +10,7 @@ YunExpress, also written Yun Express, is a Shenzhen logistics company that ships
 
 ## YunExpress tracking number: YT and 16 digits
 
-Yuntrack asks for "your YunExpress tracking number (starting with YT)" and gives no length. Invented examples:
+Yuntrack asks for "your YunExpress tracking number (starting with YT)" and gives no length. Invented examples, with [other carriers' look-alikes](guide:tracking-number-formats):
 
 | Number | Peek reads it as |
 | --- | --- |
@@ -43,11 +43,11 @@ Yuntrack is in English only. It files each parcel under a tab (`Processing`, `Tr
 
 `Transit` means on the way; the latest scan gives the step. YunExpress doesn't explain `Alert`, its tab for parcels with a problem: read the line under it and ask the shop if nothing changes.
 
-After `Delivered to local carrier`, the local carrier's own lines follow, in English too. DPD's `Sender goods issue` is a data record filed while the parcel is still in China, not a problem with your goods. Yuntrack's page code also has a progress line (`Pickup`, `Departed from origin`, `Arrived at destination`, `Local carrier on the way`, `Delivered successfully`); its `Pickup` is the collection from the seller, not a pickup point.
+After `Delivered to local carrier`, the local carrier's own lines follow, in English too ([what they mean](guide:tracking-statuses)). DPD's `Sender goods issue` is a data record filed while the parcel is still in China, not a problem with your goods. Yuntrack's page code also has a progress line (`Pickup`, `Departed from origin`, `Arrived at destination`, `Local carrier on the way`, `Delivered successfully`); its `Pickup` is the collection from the seller, not a pickup point.
 
 ## Who delivers YunExpress parcels in the UK and US
 
-YunExpress flies parcels out of China, has them cleared through customs, then hands them to a local carrier. Its pages name no delivery partner for the UK or Ireland; for the US, its Chinese site offers sellers a last-mile service, CIRRO-E-COMMERCE, without saying which parcels it carries. The lines after `Delivered to local carrier` sometimes name the carrier that has yours. In the US, some scans name GOFO, a last-mile carrier.
+YunExpress flies parcels out of China, has them cleared through customs, then hands them to a local carrier, [the usual route for parcels from China](guide:tracking-from-china). Its pages name no delivery partner for the UK or Ireland; for the US, its Chinese site offers sellers a last-mile service, CIRRO-E-COMMERCE, without saying which parcels it carries. The lines after `Delivered to local carrier` sometimes name the carrier that has yours. In the US, some scans name GOFO, a last-mile carrier.
 
 YunExpress says nothing to recipients about delivery attempts, cards, holding times or rescheduling; for those, check the local carrier named in the tracking.
 
@@ -59,7 +59,7 @@ YunExpress gives recipients no steps, claim form or deadline for a stalled, late
 
 Stuck at `Customs inspection - Import`? YunExpress's blog for sellers says being picked doesn't by itself mean a long hold; the level of check decides. A document check usually adds a few working days to about a week; a scan or physical inspection often one to two weeks, sometimes with storage or inspection fees; a review by the authorities weeks to over a month. What you may owe is in [parcel held at customs](guide:customs).
 
-Marked delivered but not there? The tracking page may offer a proof of delivery; then ask the local carrier and the shop. `Returned` means it's going back; YunExpress publishes no return rules for recipients, so ask the shop.
+Marked delivered but not there? The tracking page may offer a proof of delivery; then ask the local carrier and the shop, and see [what else to check](guide:delivered-not-received). `Returned` means it's going back; YunExpress publishes no return rules for recipients, so ask the shop.
 
 ## YunExpress contact number and customer service
 

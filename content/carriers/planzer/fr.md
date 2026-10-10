@@ -23,7 +23,7 @@ Planzer ne publie aucun format de numéro. Voici les formes que Peek connaît, a
 | `441234567890123456` | [Quickpac](carrier:quickpac), qui fait partie de Planzer Paket depuis 2024 : 18 chiffres commençant par 44. |
 | `99.60.987654.98765432` | La Poste suisse : 18 chiffres, plus long que la forme à points de Planzer. |
 
-Copie-colle le numéro plutôt que de le taper : avec un chiffre de trop, un numéro Planzer passe pour un numéro d'Australia Post.
+Copie-colle le numéro plutôt que de le taper : avec un chiffre de trop, un numéro Planzer passe pour un numéro d'Australia Post. Pour reconnaître d'autres numéros, lis [à quel transporteur appartient un numéro de suivi](guide:tracking-number-formats).
 
 ## Suivi Planzer : ce que veulent dire les statuts
 
@@ -43,7 +43,7 @@ Le portail destinataire de Planzer (tracking.app.planzer.ch) s'affiche en franç
 
 `Shipped` est le piège : sur le suivi de Planzer en anglais, il veut dire livré, l'étape que la version française affiche `Livré`. Rien devant ta porte ? Voir plus bas.
 
-Dans le catalogue de Peek, les numéros commençant par 99990 sont des envois partagés, lus sur trackandtrace.planzergroup.com. Cette page s'ouvre en allemand ; le français se choisit, mais seules ses étapes allemandes ont été relevées : `Erfasst` (enregistré), `Abholung` (pris en charge chez l'expéditeur, pas retiré par toi), `Umschlaglager` (au centre de transbordement), `In Auslieferung` (en livraison) et `Ausgeliefert` (livré).
+Dans le catalogue de Peek, les numéros commençant par 99990 sont des envois partagés, lus sur trackandtrace.planzergroup.com. Cette page s'ouvre en allemand ; le français se choisit, mais seules ses étapes allemandes ont été relevées : `Erfasst` (enregistré), `Abholung` (pris en charge chez l'expéditeur, pas retiré par toi), `Umschlaglager` (au centre de transbordement), `In Auslieferung` (en livraison) et `Ausgeliefert` (livré). Pour les autres transporteurs, vois [les statuts de suivi expliqués](guide:tracking-statuses).
 
 ## Livraison Planzer : horaires, avis de passage et points colis
 

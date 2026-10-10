@@ -23,7 +23,7 @@ A NACEX não diz onde aparece o número, nem publica um SMS de exemplo ou o nome
 | O que tens | O que é |
 | --- | --- |
 | `1234/12345678` | Um número NACEX: segue-o tal como está. |
-| `123412345678` | Sem a barra, o Peek não o reconhece como NACEX e só propõe outras transportadoras possíveis. Se for da NACEX, falta a barra, que a caixa da NACEX mostra depois do quarto algarismo, embora a NACEX não fixe o comprimento. |
+| `123412345678` | Sem a barra, o Peek não o reconhece como NACEX e só propõe [outras transportadoras possíveis](guide:tracking-number-formats). Se for da NACEX, falta a barra, que a caixa da NACEX mostra depois do quarto algarismo, embora a NACEX não fixe o comprimento. |
 | `2345678901` | Até 10 algarismos: talvez a «referência alternativa» impressa na etiqueta; a NACEX não diz onde a escrever. |
 
 Um número só com algarismos, de 16 ou 23 dígitos, pode ser da [Correos Express](carrier:correos-express), outra transportadora espanhola. Se a NACEX responder «Não existe nenhum envio introduzido no sistema…», confirma os algarismos e a barra e, como a própria mensagem sugere, fala com a agência NACEX mais próxima.
@@ -47,7 +47,7 @@ A NACEX não publica uma lista dos seus estados. O formulário de seguimento apa
 | `Solucionado sin OK` | «Resolvido sem OK»: fechado sem entrega, por exemplo com uma devolução. |
 | `Entregado` | «Entregue». |
 
-As linhas `Solución de entrega…` são acordos, não finais: a encomenda volta a andar. Os estados que pedem ação são `Contacta con agencia` e `Solucionado sin OK`: contacta a agência ou pergunta à NACEX ou à loja o que aconteceu. `Sin estado` («sem estado») é uma nota administrativa, como uma mensagem enviada a ti ou o limite de tentativas atingido; a linha anterior continua a dizer onde está a encomenda.
+As linhas `Solución de entrega…` são acordos, não finais: a encomenda volta a andar. Os estados que pedem ação são `Contacta con agencia` e `Solucionado sin OK`: contacta a agência ou pergunta à NACEX ou à loja o que aconteceu. `Sin estado` («sem estado») é uma nota administrativa, como uma mensagem enviada a ti ou o limite de tentativas atingido; a linha anterior continua a dizer onde está a encomenda. As etapas que todas as transportadoras partilham estão em [estados da encomenda](guide:tracking-statuses).
 
 ## Levantar encomenda NACEX: ausência, pontos de recolha e cacifos
 

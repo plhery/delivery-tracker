@@ -10,7 +10,7 @@ YunExpress, pisany też Yun Express, to firma logistyczna z Shenzhen, która wys
 
 ## YunExpress numer śledzenia: YT i 16 cyfr
 
-Yuntrack prosi o „your YunExpress tracking number (starting with YT)”, czyli numer zaczynający się od YT, i nie podaje jego długości. Peek rozpoznaje numer YunExpress po YT i 16 cyfrach. Przykłady z wymyślonymi cyframi:
+Yuntrack prosi o „your YunExpress tracking number (starting with YT)”, czyli numer zaczynający się od YT, i nie podaje jego długości. Peek rozpoznaje numer YunExpress po YT i 16 cyfrach, a jak odróżnić go od numerów innych firm, wyjaśnia poradnik [jaki kurier po numerze przesyłki](guide:tracking-number-formats). Przykłady z wymyślonymi cyframi:
 
 | Numer | Czyj to numer |
 | --- | --- |
@@ -43,11 +43,11 @@ Yuntrack działa tylko po angielsku, także w przeglądarce ustawionej na polski
 
 Najwięcej zamieszania robi `Delivered to local carrier`: „Delivered” znaczy tu tylko, że YunExpress oddał paczkę przewoźnikowi w kraju docelowym. Potem pojawiają się już linie tego przewoźnika, również po angielsku. Jeśli na początku historii widzisz `Sender goods issue`, to linia od DPD: zapis danych utworzony, gdy paczka była jeszcze w Chinach, a nie problem z Twoim towarem.
 
-`Transit` oznacza tylko, że paczka jest w drodze; gdzie dokładnie, mówi najnowsza linia. Czym jest `Alert`, YunExpress nie wyjaśnia: przeczytaj linię pod spodem i napisz do sklepu, jeśli nic się nie zmienia. W kodzie strony yuntrack jest też pasek postępu (`Pickup`, `Departed from origin`, `Arrived at destination`, `Local carrier on the way`, `Delivered successfully`). Jego `Pickup` to odebranie paczki od sprzedawcy w Chinach, a nie paczka „do odbioru” w punkcie.
+`Transit` oznacza tylko, że paczka jest w drodze; gdzie dokładnie, mówi najnowsza linia. Czym jest `Alert`, YunExpress nie wyjaśnia: przeczytaj linię pod spodem i napisz do sklepu, jeśli nic się nie zmienia. W kodzie strony yuntrack jest też pasek postępu (`Pickup`, `Departed from origin`, `Arrived at destination`, `Local carrier on the way`, `Delivered successfully`). Jego `Pickup` to odebranie paczki od sprzedawcy w Chinach, a nie paczka „do odbioru” w punkcie. Ogólne etapy drogi paczki, od nadania po zwrot, opisuje [poradnik o statusach przesyłki](guide:tracking-statuses).
 
 ## Kto doręcza paczki YunExpress w Polsce
 
-YunExpress wiezie paczki z Chin samolotem, a po odprawie celnej w kraju docelowym przekazuje je lokalnemu przewoźnikowi. Według własnych danych ma linię do Polski od 2018 roku, a od 2020 roku jest oficjalnym partnerem logistycznym Allegro. Kto doręcza w Polsce, na swoich stronach nie podaje; pisze tylko ogólnie o „premium global carrier networks”. W historiach YunExpress pojawiają się linie DHL (`Shipment in transit to DHL`) i DPD, ale bez zapisu, z którego kraju. Kto ma Twoją paczkę, pokazują linie po `Delivered to local carrier` i kolumna „Last Mile Tracking”.
+YunExpress wiezie paczki z Chin samolotem, a po odprawie celnej w kraju docelowym przekazuje je lokalnemu przewoźnikowi. Według własnych danych ma linię do Polski od 2018 roku, a od 2020 roku jest oficjalnym partnerem logistycznym Allegro. Kto doręcza w Polsce, na swoich stronach nie podaje; pisze tylko ogólnie o „premium global carrier networks”. W historiach YunExpress pojawiają się linie DHL (`Shipment in transit to DHL`) i DPD, ale bez zapisu, z którego kraju. Kto ma Twoją paczkę, pokazują linie po `Delivered to local carrier` i kolumna „Last Mile Tracking”. Jak śledzić paczkę dalej u przewoźnika w Polsce, opisuje poradnik o [śledzeniu paczki z Chin](guide:tracking-from-china).
 
 Liczby prób doręczenia, awizo, czasu przechowania ani zmiany terminu YunExpress dla odbiorców nigdzie nie opisuje. Jeśli kurier Cię nie zastał, sprawdź zasady awizowania, przechowania i odbioru u lokalnego przewoźnika, którego nazwa stoi w śledzeniu.
 
@@ -63,7 +63,7 @@ Utknęła na `Customs inspection - Import`? Na blogu dla sprzedawców YunExpress
 
 Przy płatności PayPalem YunExpress przekazuje dane śledzenia do PayPala, jeśli sprzedawca to włączył, a tam, jak podaje YunExpress, służą one jako dowód w sporach. Jakie zasady wtedy obowiązują, sprawdź u PayPala.
 
-Status mówi, że doręczona, a paczki nie ma? Strona śledzenia może pokazać potwierdzenie doręczenia, ale najpierw pyta o imię i nazwisko odbiorcy. Potem zapytaj lokalnego przewoźnika i sklep. `Returned` znaczy, że paczka wraca. YunExpress nie publikuje zasad zwrotu dla odbiorców, więc zapytaj sklep.
+Status mówi, że doręczona, a paczki nie ma? Strona śledzenia może pokazać potwierdzenie doręczenia, ale najpierw pyta o imię i nazwisko odbiorcy. Potem zapytaj lokalnego przewoźnika i sklep. Co jeszcze sprawdzić, podpowiada poradnik [paczka doręczona, a jej nie ma](guide:delivered-not-received). `Returned` znaczy, że paczka wraca. YunExpress nie publikuje zasad zwrotu dla odbiorców, więc zapytaj sklep.
 
 ## YunExpress kontakt: e-mail i telefon
 

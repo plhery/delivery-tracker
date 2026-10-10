@@ -4,7 +4,7 @@ description: O que significa uma encomenda retida na alfândega, quanto tempo de
 slug: encomenda-retida-na-alfandega
 picture: Uma cabine de alfândega com uma cancela às riscas, um documento carimbado com um visto e o Pip à espera, paciente, diante da cancela.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 «Retida na alfândega» quer quase sempre dizer que a tua encomenda está no controlo normal das mercadorias que chegam de fora da União Europeia, e não que foi apreendida. Se continuar retida, a transportadora pode estar à espera de que pagues os encargos ou envies uma fatura: nos CTT, isso trata-se no Portal de Desalfandegamento. Confirma sempre no site ou na app da transportadora, nunca num link recebido por SMS.
@@ -32,10 +32,10 @@ Muitas vezes, nada. Para saberes:
 - Abre o seguimento da transportadora | Escreve tu ctt.pt no navegador ou abre a App CTT. Nunca uses um link recebido por SMS ou e-mail.
 - Vê se te pedem alguma coisa | Um aviso de desalfandegamento ou os estados `Documentação insuficiente` e `Aguarda pagamento` querem dizer que estão à tua espera. Sem isso, ainda não há nada a fazer.
 - Faz o que te pedem | No Portal de Desalfandegamento dos CTT, indica o número do objeto, confirma os dados, carrega a fatura e paga por MB WAY, Multibanco ou Payshop.
-- Pergunta aos CTT, depois à loja | Continua parada? São os CTT que tratam do processo junto da AT. A loja pode dar-te a fatura ou o número do objeto.
+- Pergunta aos CTT, depois à loja | Continua parada? São os CTT que tratam do processo junto da AT. A loja pode dar-te a fatura ou o [número do objeto](guide:find-tracking-number).
 :::
 
-O número do objeto (2 letras, 9 algarismos e 2 letras) vem no aviso que recebeste. Os CTT recomendam usar o portal num computador: no telemóvel, o campo do número pode dar erro e, nesse caso, ajuda escolher nas definições do navegador a versão «site - computador».
+O número do objeto ([2 letras, 9 algarismos e 2 letras](guide:tracking-number-formats)) vem no aviso que recebeste. Os CTT recomendam usar o portal num computador: no telemóvel, o campo do número pode dar erro e, nesse caso, ajuda escolher nas definições do navegador a versão «site - computador».
 
 ### Preciso de contactar a alfândega?
 
@@ -45,7 +45,7 @@ Deixaste passar o prazo? Se o Seguir objeto ainda mostra a encomenda em Portugal
 
 ## Quanto tempo demora uma encomenda a sair da alfândega?
 
-Ninguém promete um prazo. Os CTT dão-te 20 dias, desde que a encomenda chega a Portugal, para iniciares o desalfandegamento, mas não garantem que o processo fique concluído nesses 20 dias: não o deixes para o fim. Com as regras em vigor desde 1 de julho de 2026, avisam também que pode demorar mais do que o habitual.
+Ninguém promete um prazo. Os CTT dão-te 20 dias, desde que a encomenda chega a Portugal, para iniciares o desalfandegamento, mas não garantem que o processo fique concluído nesses 20 dias: não o deixes para o fim. Com as regras em vigor desde 1 de julho de 2026, avisam também que pode demorar mais do que o habitual. Se é um presente de Natal, encomenda cedo: vê [os prazos de envio no Natal](guide:christmas-posting-dates).
 
 Podes ganhar tempo: se deste o telemóvel ou o e-mail ao comprar e a loja os associou ao envio, os CTT avisam-te logo que a encomenda sai do país de origem, e podes adiantar o processo antes de ela chegar. Sem esses contactos, o aviso vai por carta, já com a encomenda na alfândega em Portugal.
 
@@ -66,7 +66,7 @@ Não deixes passar os prazos:
 
 A data e a hora exatas estão no portal, no separador «Desalfandegar», na coluna «Data Limite».
 
-Não te apetece estar sempre a atualizar a página? Cola o número do objeto no [Peek](/): ele verifica o seguimento até de 10 em 10 minutos e manda-te um alerta quando o estado muda, mas não paga os encargos nem apressa a alfândega. Se nada mexe há muito tempo e não aparece nenhum pedido, vê [porque é que o tracking não atualiza](guide:tracking-not-updating).
+Não te apetece estar sempre a atualizar a página? Cola o número do objeto no [Peek](/): ele verifica o seguimento até de 10 em 10 minutos e envia-te uma notificação quando o estado muda, mas não paga os encargos nem apressa a alfândega. Se nada mexe há muito tempo e não aparece nenhum pedido, vê [porque é que o tracking não atualiza](guide:tracking-not-updating).
 
 ### Depois da autorização de saída, quanto tempo demora?
 
@@ -120,7 +120,7 @@ Depende do que a loja cobrou na compra. O resumo da encomenda ou a fatura costum
 - **Só o preço da compra:** pagas no Portal de Desalfandegamento o IVA, os 3 € por tipo de produto e o Serviço CTT.
 - **Só o IVA, sem os direitos:** atenção. Os CTT não te podem cobrar os direitos à parte, não conseguem submeter o processo à AT e a encomenda é devolvida. Esclarece isto com a loja antes de comprar.
 
-Os CTT aconselham ainda a confirmar de onde sai a mercadoria antes de comprar: é isso que conta, não o país da loja. Para saberes como viajam estas encomendas, vê [como seguir uma encomenda da China](guide:tracking-from-china).
+Os CTT aconselham ainda a confirmar de onde sai a mercadoria antes de comprar: é isso que conta, não o país da loja. Para saberes como viajam estas encomendas, vê [como seguir uma encomenda da China](guide:tracking-from-china). Se vêm pela [Cainiao](carrier:cainiao) ou pela [YunExpress](carrier:yunexpress), as leituras da alfândega em inglês estão explicadas nas páginas delas.
 
 ## Recebi um SMS a pedir taxas alfandegárias: é burla?
 

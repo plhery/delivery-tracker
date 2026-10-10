@@ -4,7 +4,7 @@ description: Dónde encontrar el número de seguimiento de un pedido y cómo loc
 slug: localizar-paquete-sin-numero-de-seguimiento
 picture: Un correo de envío con el número RR123456785CH resaltado en amarillo, una etiqueta con código de barras al lado y Pip sonriendo.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Lo normal es que el número de seguimiento esté en el correo o el SMS que te manda la tienda cuando envía el pedido, o en el propio pedido, en su web o su app, a un clic del número de pedido. Si el paquete lo has enviado tú, está en el recibo o el justificante que te dieron al dejarlo. Ni Correos ni SEUR ni GLS buscan envíos por nombre o DNI, pero aún puedes seguir el paquete con el aviso de llegada, con la cuenta de algunos transportistas o pidiéndole el número al remitente.
@@ -21,7 +21,7 @@ El número de seguimiento se crea para el remitente, y si te llega es gracias a 
 - El remitente | Si no tienes el número, «debes ponerte en contacto con el remitente para que te lo proporcione», dice SEUR.
 :::
 
-No siempre se llama igual: Correos habla de «código de envío» o «número de envío», MRW de «número de envío», InPost de «número de expedición» y casi todas las tiendas de «número de seguimiento». ¿Tienes el correo pero no sabes cuál de todos los números es el bueno? Pega el correo entero en [Peek](/) y él se encarga de encontrar el número de seguimiento y el transportista.
+No siempre se llama igual: Correos habla de «código de envío» o «número de envío», MRW de «número de envío», InPost de «número de expedición» y casi todas las tiendas de «número de seguimiento»; [NACEX](carrier:nacex) lo pide en dos partes, «Agencia» y «Albarán». ¿Tienes el correo pero no sabes cuál de todos los números es el bueno? Pega el correo entero en [Peek](/) y él se encarga de encontrar el número de seguimiento y el transportista.
 
 ### En tu pedido de Amazon, Temu, Shein y otras tiendas
 
@@ -37,7 +37,7 @@ No siempre se llama igual: Correos habla de «código de envío» o «número de
 
 ¿No hay número? Puede que todavía no lo haya, o que no vaya a haberlo nunca. Temu pide esperar de 1 a 3 días hábiles a que su almacén prepare el pedido. Amazon avisa de que algunos paquetes, «como los envíos internacionales estándar», pueden no tener seguimiento. eBay solo lo muestra si el vendedor usa un servicio con seguimiento y añade el número en eBay. Y Vinted no rastrea los paquetes con envío personalizado: en esos pedidos, es el vendedor quien debería pasarte el número.
 
-¿Has pedido en AliExpress o en otra tienda china? Mira [cómo seguir un paquete que viene de China](guide:tracking-from-china).
+¿Has pedido en AliExpress o en otra tienda china? Mira [cómo seguir un paquete que viene de China](guide:tracking-from-china) y, para AliExpress, [dónde está el número de Cainiao](carrier:cainiao).
 
 ### En el aviso de llegada
 
@@ -85,7 +85,7 @@ Por nombre o DNI, no: las webs de seguimiento piden el número. Por teléfono, s
 - **GLS:** para saber dónde está tu paquete pide «el número de seguimiento de GLS y el código postal de destino»; sin número, te manda a la tienda.
 - **InPost:** «Si no dispones de número de expedición, puedes contactar con el remitente para que te lo comunique».
 
-Lo más parecido son las cuentas de arriba: miSEUR y la app de GLS te muestran los envíos asociados a tu móvil, pero solo los suyos y solo en tu cuenta. Las apps de seguimiento, Peek incluido, tampoco pueden: necesitan un número para preguntárselo al transportista.
+Lo más parecido son las cuentas de arriba: miSEUR y la app de GLS te muestran los envíos asociados a tu móvil, pero solo los suyos y solo en tu cuenta. Las [apps de seguimiento](guide:universal-tracker), Peek incluido, tampoco pueden: necesitan un número para preguntárselo al transportista.
 
 > Si una web promete encontrar todos los paquetes enviados a tu nombre, a tu DNI o a tu dirección, no está usando el seguimiento de ningún transportista: ninguno ofrece eso al público. No le des tus datos.
 

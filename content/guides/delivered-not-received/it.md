@@ -4,7 +4,7 @@ description: Il tracking dice consegnato ma il pacco non c'è? I controlli da fa
 slug: pacco-consegnato-ma-non-ricevuto
 picture: Una porta chiusa, una notifica con la spunta verde, la sagoma vuota di un pacco sullo zerbino e Pip preoccupato.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Se il tracking dice consegnato ma il pacco non ce l'hai, non darlo per perso: «consegnato» è una scansione sul palmare del corriere, non la prova che il pacco è arrivato a te. Cerca nel tracking una foto o un nome, guarda nei soliti posti e aspetta un giorno. Se non salta fuori, scrivi al venditore, non al corriere: in Italia, se hai comprato da un'azienda, il pacco resta a rischio del venditore finché non lo hai materialmente in mano. In Ticino questa tutela non c'è, ma per un pacco spedito in Svizzera con la Posta puoi aprire tu una ricerca.
@@ -22,7 +22,7 @@ Dove lo può lasciare il corriere:
 | Corriere | Conta come consegnato anche |
 | --- | --- |
 | Poste Italiane | Un familiare, un convivente, un collaboratore familiare o il portiere, se c'è (servizio postale universale). Con Poste Delivery Business, un vicino o un Punto Poste, se il negozio li ha scelti |
-| BRT (ex Bartolini) | Un vicino che hai indicato tu, purché abiti allo stesso indirizzo, o un BRT-fermopoint |
+| [BRT (ex Bartolini)](carrier:brt) | Un vicino che hai indicato tu, purché abiti allo stesso indirizzo, o un BRT-fermopoint |
 | Amazon | Il luogo sicuro delle tue istruzioni di consegna, una porta, il portico o il garage, dietro piante o mobili, un familiare, un vicino, la portineria |
 | La Posta (Svizzera) | La cassetta delle lettere, se il pacco ci sta. Un vicino dello stesso edificio o di quello accanto, o un luogo sicuro e al riparo dalle intemperie, se li hai indicati tu |
 
@@ -36,7 +36,7 @@ Il tracking non ha mai detto consegnato? Leggi [perché il tracking non si aggio
 - Controlla la prova | Cerca nel tracking una foto, una firma o il nome di chi l'ha ricevuto, e controlla l'indirizzo dell'ordine.
 - Cerca nei soliti posti | Chiedi in casa e al portiere. Guarda nella cassetta delle lettere (il bucalettere, in Ticino), dai vicini, nell'androne e intorno a porte e garage, e cerca un avviso di passaggio o un invito di ritiro.
 - Aspetta un po' | Amazon chiede di aspettare 48 ore: la maggior parte dei pacchi in ritardo, dice, arriva entro quel tempo.
-- Scrivi al venditore | Dagli numero d'ordine, numero di tracking e cosa hai controllato. Chiedigli di aprire una verifica con il corriere, poi un nuovo invio o il rimborso.
+- Scrivi al venditore | Dagli numero d'ordine, [numero di tracking](guide:find-tracking-number) e cosa hai controllato. Chiedigli di aprire una verifica con il corriere, poi un nuovo invio o il rimborso.
 - Apri una richiesta in tempo | Se hai comprato su una piattaforma, fallo prima che scada il termine: 2 giorni su Vinted (14 con un Seller Pro), 30 su eBay ed Etsy.
 - Poi il pagamento | Se nessuno risolve, contesta il pagamento con PayPal o con chi ti ha emesso la carta, entro i loro termini.
 :::
@@ -70,9 +70,9 @@ In Italia il rischio passa a te prima solo in tre casi:
 
 ## Che prova di consegna puoi chiedere?
 
-- **Una foto.** Amazon.it ti invita a guardare la foto della consegna e, per gli articoli venduti e spediti da Amazon, verifica i dettagli «comprese le coordinate della posizione e le foto». Con Poste Delivery Business il negozio può pagare l'«Attestazione di consegna con foto». La Posta fotografa i pacchi che deposita e mette la «prova di deposito» in «I miei invii», per ora solo in alcune regioni.
+- **Una foto.** Amazon.it ti invita a guardare la foto della consegna e, per gli articoli venduti e spediti da Amazon, verifica i dettagli «comprese le coordinate della posizione e le foto». Con Poste Delivery Business il negozio può pagare l'«Attestazione di consegna con foto». La Posta fotografa i pacchi che deposita e mette la «prova di deposito» in «I miei invii», per ora solo in alcune regioni. Per i pacchi di [Planzer](carrier:planzer) e [Quickpac](carrier:quickpac) c'è la «Conferma di consegna» nel portale di Planzer Pacchi, a volte con una foto, se il mittente lo prevede.
 - **Una firma o un nome.** BRT mostra ai clienti abbonati la lettera di vettura firmata, con giorno, ora e nome di chi ha ricevuto il pacco (P.O.D. Image): chiedila al venditore. Poste offre al mittente anche la prova di consegna digitalizzata (Digipod).
-- **Non un punto GPS del corriere.** Nessuna pagina dei corrieri che abbiamo letto offre coordinate come prova: ne parla solo Amazon.
+- **Di rado un punto GPS del corriere.** Tra i corrieri di cui abbiamo letto le pagine, solo Planzer scatta come prova una foto con i dati GPS; per il resto, di coordinate parla solo Amazon.
 
 Con la Posta svizzera, per contestare la consegna di un invio nazionale basta confermare a voce o per iscritto, anche per e-mail, di non averlo ricevuto; per un invio internazionale serve lo scritto. E se la Posta dice di averlo lasciato nel corridoio del condominio? Per il TCS qui le opinioni si dividono: meglio cercare con la Posta un accordo sul risarcimento.
 
@@ -122,7 +122,7 @@ Spesso sì, come ultima strada:
 
 ### Peek può trovare il mio pacco?
 
-No. [Peek](/) mostra solo quello che pubblica il corriere e non può contattarlo né fare reclamo per te. Però, quando il pacco è in consegna, lo ricontrolla fino a ogni 2 minuti e può mandarti un avviso: così arrivi alla porta poco dopo la scansione «consegnato».
+No. [Peek](/) mostra solo quello che pubblica il corriere e non può contattarlo né fare reclamo per te. Però, quando il pacco è in consegna, lo ricontrolla fino a ogni 2 minuti e può mandarti una notifica: così arrivi alla porta poco dopo la scansione «consegnato». Cosa non può vedere nessun tracker lo spiega [la guida al tracking universale](guide:universal-tracker).
 
 ### Pacco rubato: serve la denuncia?
 
@@ -145,6 +145,7 @@ Puoi farla, ma nessuna delle regole qui sopra la pone come condizione per il rim
 - [La Posta: Domande e risposte sulla ricezione](https://www.post.ch/it/aiuto-e-contatto/ricezione) – cassetta e vicini, ricerca entro un anno o sei mesi, contestazione scritta
 - [La Posta: Gestire e ricevere pacchi](https://www.post.ch/it/ricezione/gestire-un-invio/invio-singolo) – deposito in luogo sicuro, vicino dello stesso edificio o accanto, «Nessun deposito», prova di deposito
 - [La Posta: Danneggiamento o smarrimento](https://www.post.ch/it/spedire-pacchi/danneggiamento-o-smarrimento) – ricerca del destinatario, conferma a voce o per iscritto, filiale
+- [Planzer Pacchi: Contatti](https://www.planzer-paket.ch/it/contatti/) – «Conferma di consegna» nel portale, con la foto se il mittente la prevede
 - [Ombud-PostCom: Procedura](https://www.ombud-postcom.ch/vorgehen-1-2) – tentativo con il fornitore, CHF 20, termini legali
 - [Amazon.it: Trova un pacco mancante che risulta essere stato consegnato](https://www.amazon.it/gp/help/customer/display.html?nodeId=GCU8BWGTQNJKQEBS) – scansione anticipata, 22:00, posti da controllare, 48 ore e pacchi in ritardo, coordinate e foto, 30 giorni
 - [Amazon.it: Che cos'è la Garanzia dalla A alla Z?](https://www.amazon.it/gp/help/customer/display.html?nodeId=GQ37ZCNECJKTFYQV) – 3 giorni, 48 ore, 90 giorni, «Problema con l'ordine», storno di addebito

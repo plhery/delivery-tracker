@@ -4,14 +4,14 @@ description: E-mail d'expédition, commande, avis de passage, preuve de dépôt 
 slug: ou-trouver-numero-de-suivi
 picture: Un e-mail d'expédition où le numéro RR123456785CH est surligné en jaune, une étiquette à code-barres à côté, et Pip qui sourit.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Ton numéro de suivi se trouve en général dans l'e-mail ou le SMS d'expédition de la boutique, ou dans le détail de ta commande sur son site ou son app, à un clic du numéro de commande. Si c'est toi qui as envoyé le colis, il figure sur ta preuve de dépôt ou ton bordereau. Aucun transporteur ne retrouve un colis à partir de ton nom ou de ton adresse, mais un avis de passage, le compte gratuit de certains transporteurs ou l'expéditeur peuvent quand même te permettre de le suivre.
 
 ## Où trouver mon numéro de suivi ?
 
-La Poste le dit simplement : le numéro est « communiqué par votre expéditeur », ou arrive dans un e-mail de La Poste. C'est donc en général l'expéditeur qui te le transmet. Selon le transporteur, il s'appelle aussi numéro d'envoi (La Poste, La Poste suisse), n° d'expédition (Mondial Relay) ou code-barres (bpost). Cherche dans cet ordre :
+La Poste le dit simplement : le numéro est « communiqué par votre expéditeur », ou arrive dans un e-mail de La Poste. C'est donc en général l'expéditeur qui te le transmet. Selon le transporteur, il s'appelle aussi numéro d'envoi (La Poste, La Poste suisse, [Planzer](carrier:planzer)), numéro du colis ([Quickpac](carrier:quickpac)), n° d'expédition (Mondial Relay) ou code-barres (bpost). Cherche dans cet ordre :
 
 :::steps
 - Tes e-mails et SMS | Cherche « expédié », « expédition », « suivi » ou le nom de la boutique, sans oublier les spams.
@@ -34,7 +34,7 @@ Tu as l'e-mail, mais tu ne sais pas quel numéro est le bon ? Colle l'e-mail en 
 
 Pas de numéro ? Il n'y en a peut-être pas encore, ou pas du tout. Amazon prévient que « certaines expéditions, comme les expéditions internationales standard, ne sont pas traçables ». Chez un vendeur tiers sur Amazon, comme sur eBay, le suivi n'apparaît que si l'envoi est suivi et que le vendeur a transmis le numéro.
 
-Commande passée sur AliExpress, Temu ou Shein ? Lis notre guide sur [le suivi d'un colis venant de Chine](guide:tracking-from-china).
+Commande passée sur AliExpress, Temu ou Shein ? Lis notre guide sur [le suivi d'un colis venant de Chine](guide:tracking-from-china). Sur AliExpress, la page de [Cainiao](carrier:cainiao) te dit où le numéro apparaît dans ta commande.
 
 ### Sur l'avis de passage
 
@@ -82,7 +82,7 @@ Non, pas sur la page de suivi d'un transporteur, et pas non plus en appelant son
 - **DHL**, pour ses colis en Allemagne : le suivi n'est possible qu'avec un numéro valide, et même son service client ne peut pas consulter le statut d'un envoi sans lui.
 - **FedEx** : sans numéro d'envoi ni numéro de référence, « veuillez contacter l'expéditeur ».
 
-Ce qui s'en rapproche le plus, c'est le compte d'un transporteur (tableau ci-dessus) : ton numéro de téléphone peut y servir, par exemple dans l'app Mondial Relay si tu l'as enregistré dans ton profil. Les sites de suivi n'y arrivent pas non plus, Peek compris : il lui faut un numéro à demander au transporteur.
+Ce qui s'en rapproche le plus, c'est le compte d'un transporteur (tableau ci-dessus) : ton numéro de téléphone peut y servir, par exemple dans l'app Mondial Relay si tu l'as enregistré dans ton profil. Les [sites de suivi universels](guide:universal-tracker) n'y arrivent pas non plus, Peek compris : il lui faut un numéro à demander au transporteur.
 
 > Un site qui propose de retrouver tous les colis envoyés à ton nom, ton adresse ou ton numéro de téléphone n'utilise pas le suivi d'un transporteur : aucun ne l'offre au public. Ne lui donne pas tes coordonnées.
 
@@ -114,7 +114,7 @@ Ce sont deux numéros différents. DHL le précise : le numéro de commande est 
 - home | Avis de passage | Si tu étais absent, l'avis porte souvent un numéro qui marche aussi
 :::
 
-Pour les distinguer : un numéro accompagné du mot « commande » est celui de la boutique et ne marchera pas sur le site du transporteur, alors qu'un numéro de suivi vient avec le nom d'un transporteur ou un lien vers sa page de suivi. Quelques repères : chez La Poste, un numéro d'envoi compte 13 caractères ou 14 chiffres ; chez Mondial Relay, 8 chiffres le plus souvent, parfois 10 ou 12 ; chez Colis Privé, 12 caractères. `1Z999AA10123456784` est un numéro UPS, et beaucoup d'envois postaux portent le format postal international à 13 caractères, comme `RR123456785CH`. Le guide des [formats de numéros de suivi](guide:tracking-number-formats) t'aide à savoir à quel transporteur appartient un numéro.
+Pour les distinguer : un numéro accompagné du mot « commande » est celui de la boutique et ne marchera pas sur le site du transporteur, alors qu'un numéro de suivi vient avec le nom d'un transporteur ou un lien vers sa page de suivi. Quelques repères : chez La Poste, un numéro d'envoi compte 13 caractères ou 14 chiffres ; chez Mondial Relay, 8 chiffres le plus souvent, parfois 10 ou 12 ; chez [Colis Privé](carrier:colis-prive), 12 caractères. `1Z999AA10123456784` est un numéro UPS, et beaucoup d'envois postaux portent le format postal international à 13 caractères, comme `RR123456785CH`. Le guide des [formats de numéros de suivi](guide:tracking-number-formats) t'aide à savoir à quel transporteur appartient un numéro.
 
 ## Mon numéro de suivi ne donne rien : est-ce le bon numéro ?
 

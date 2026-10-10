@@ -4,7 +4,7 @@ description: Pacco fermo da giorni? Perché il tracking non si aggiorna, quanto 
 slug: tracking-non-si-aggiorna
 picture: Un calendario con diversi giorni barrati, una linea di avanzamento che si ferma a metà e Pip che aspetta, un po' annoiato.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Se il tracking non si aggiorna, di solito vuol dire solo che nessuno ha scansionato il pacco di recente, non che si è fermato. I corrieri lo scansionano nei centri di smistamento e alle frontiere, non lungo la strada: un viaggio lungo, un volo, la dogana o un fine settimana possono lasciarti per giorni senza aggiornamenti. Preoccupati solo quando è passato il termine del corriere (con Poste Delivery Standard il reclamo si può fare dal 6° giorno lavorativo dopo la spedizione; con la Posta svizzera, per un invio nazionale, la ricerca si chiede quando il tempo di consegna abituale è superato di oltre due giorni). E anche allora scrivi prima al venditore: il cliente del corriere è lui.
@@ -36,7 +36,7 @@ Nessun corriere dice per quanti giorni, al massimo, il tracking può restare mut
 Da qualche ora a qualche giorno. Se il tracking è fermo alla prima riga, il corriere forse non ha ancora il pacco: quella riga di solito nasce dal programma con cui il venditore stampa l'etichetta, non da una scansione.
 
 - **Poste Italiane:** `Presa in carico` vuol dire che Poste ha accettato la spedizione, che a breve entrerà nel ciclo di lavorazione. Per un codice molto recente Poste mostra `Tracciatura non disponibile` e consiglia di riprovare dopo qualche ora.
-- **BRT:** se il codice è giusto ma compare `BRTcode non riconosciuto`, «la spedizione potrebbe non esserci ancora stata affidata», e BRT consiglia di riprovare più tardi.
+- **[BRT](carrier:brt):** se il codice è giusto ma compare `BRTcode non riconosciuto`, «la spedizione potrebbe non esserci ancora stata affidata», e BRT consiglia di riprovare più tardi.
 - **UPS:** `Etichetta creata` vuol dire che UPS ha i dati della spedizione dal mittente, ma non ancora il pacco.
 - **La Posta (Svizzera):** `Notifica dell'invio da parte dello speditore (inoltro dei dati)` vuol dire che il mittente ha creato il numero d'invio e trasmesso i dati. Di norma, in quel momento il pacco non è ancora alla Posta.
 - **DHL:** gli aggiornamenti compaiono di solito 24-48 ore dopo che hai ricevuto il codice, quando il pacco arriva in una struttura DHL. In Germania un pacco può metterci fino a 24 ore a comparire nel tracking.
@@ -52,7 +52,7 @@ Per i pacchi che spedisce dalla Germania all'estero, DHL dice che è del tutto n
 - **Dogana:** alcuni giorni lavorativi, a seconda di documenti e dati, dice DHL. Poste mostra `In attesa di sdoganamento` e avverte che potrebbero contattarti per altri documenti. La Posta svizzera parla di tre o quattro giorni lavorativi, se i dati sono completi e corretti. Tutti i dettagli in [pacco fermo in dogana](guide:customs).
 - **Subentra un corriere locale:** DHL avverte che il tracking può avere dei buchi e consiglia di provare lo stesso numero sul tracking del Paese di destinazione. Con Poste Delivery International Standard, per esempio, `In transito presso il Centro di lavorazione Internazionale` è l'ultima traccia sul sito di Poste: da lì il pacco passa a una posta estera.
 
-Hai ordinato su AliExpress, Temu o Shein? Leggi [come tracciare un pacco dalla Cina](guide:tracking-from-china).
+Hai ordinato su AliExpress, Temu o Shein? Leggi [come tracciare un pacco dalla Cina](guide:tracking-from-china). Con le spedizioni economiche, il tracking di [Cainiao](carrier:cainiao) può fermarsi proprio al passaggio al corriere locale.
 
 ### «In consegna» e poi più niente
 
@@ -118,7 +118,7 @@ Per un pacco spedito in Italia è tanto: Poste consegna il 90% dei Poste Deliver
 
 ### Posso far aggiornare il tracking prima?
 
-No, e non può farlo nemmeno un tracker: mostra solo quello che pubblica il corriere. [Peek](/) ricontrolla il corriere fino a ogni 10 minuti e può mandarti un avviso quando arriva una nuova scansione, così non devi più ricaricare la pagina.
+No, e non può farlo nemmeno un tracker: mostra solo quello che pubblica il corriere. [Peek](/) ricontrolla il corriere fino a ogni 10 minuti e può mandarti una notifica quando arriva una nuova scansione, così non devi più ricaricare la pagina.
 
 ### «Spedizione non trovata»: perché il codice non funziona?
 
@@ -150,6 +150,7 @@ Il pacco forse non è ancora stato scansionato, il codice può essere di un altr
 - [Zalando.it: Dov'è il mio pacco?](https://www.zalando.it/faq/where-is-my-parcel.html) – link di tracking attivo quando il corriere ha il pacco
 - [Vinted: Le informazioni sul tracciamento non si aggiornano](https://www.vinted.it/help/1368) – 25 giorni lavorativi esclusi fine settimana e giorni festivi
 - [Etsy: How to open a case](https://help.etsy.com/hc/en-us/articles/5745586898199-How-to-Open-a-Case) – 30 giorni
+- [Cainiao: testi del sito in italiano](https://lang.alicdn.com/mcms/global-track/0.0.10/global-track.json) – avviso sulla spedizione economica, tracking fermo al passaggio al corriere locale
 - [AliExpress: How to open dispute?](https://service.aliexpress.com/page/knowledge?pageId=82&knowledge=1060015227&language=en) – 15 giorni
 - [Normattiva: Codice del consumo, art. 61](https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2005-09-06;206~art61) – 30 giorni, termine supplementare, rimborso
 - [Normattiva: Codice del consumo, art. 63](https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2005-09-06;206~art63) – passaggio del rischio

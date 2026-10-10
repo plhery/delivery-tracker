@@ -4,7 +4,7 @@ description: What each tracking status means, in the order your parcel meets it,
 slug: tracking-status-meanings
 picture: A winding route with ticked stops (label, depot, plane), a van at the current stop, a house ahead and Pip hurrying.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 A tracking status is the carrier's latest scan in a few words, and most ask nothing of you. "Label created" means the carrier doesn't have your parcel yet, "in transit" means it's somewhere between two scans, and "out for delivery" means it's on today's van. Only a few need you: a missed delivery, a parcel waiting for pickup, a customs charge and a "delivered" with nothing at the door.
@@ -61,7 +61,7 @@ Evri typically delivers 1 to 3 days after receiving a parcel, while Australia Po
 
 - **Left the country.** It's booked onto a flight, ship or train. For a parcel heading to Germany, DHL warns the next update can be several days away. Royal Mail's `OE` (Office of Exchange) means it reached import customs. On an item from abroad, Australia Post's `It's on its way` means it's in Australia.
 - **Customs.** `In customs` (Royal Mail) or `Item held by customs` (Canada Post) is usually routine: Canada Post calls it standard for every international parcel, screened by the Canada Border Services Agency, and can't step in. DHL speaks of several business days; none of these carriers gives a general maximum. Once released, Canada Post's tracking says it has cleared customs. Act only on a request, such as Royal Mail's `Fee to pay`; see [parcels held at customs](guide:customs).
-- **Local carrier.** UPS's `Transferred to Post Office for Delivery` means the post office does the last leg: allow an extra day or two. DHL points you to the destination carrier's tracking. Ordered from AliExpress, Temu or Shein? See [tracking a parcel from China](guide:tracking-from-china).
+- **Local carrier.** UPS's `Transferred to Post Office for Delivery` means the post office does the last leg: allow an extra day or two. DHL points you to the destination carrier's tracking. The local carrier can give the parcel [a number of its own](guide:tracking-number-formats). Ordered from AliExpress, Temu or Shein? See [tracking a parcel from China](guide:tracking-from-china), and [Cainiao's own wordings](carrier:cainiao) for AliExpress parcels.
 
 ## Does "out for delivery" mean it arrives today?
 

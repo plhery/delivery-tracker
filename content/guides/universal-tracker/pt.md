@@ -4,10 +4,10 @@ description: Como funciona o seguimento universal de encomendas, o que nenhum se
 slug: seguir-todas-as-encomendas
 picture: Cinco carrinhas coloridas cujos caminhos tracejados acabam numa lista num telemóvel, e o Pip, radiante, numa caixa aberta.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
-Um serviço universal de seguimento (ou de rastreio) de encomendas é um site ou uma app que aceita o número de seguimento de qualquer transportadora, descobre de quem é, vai buscar as leituras e junta todas as tuas encomendas numa só lista. Só mostra as leituras que a transportadora registou, por isso nunca vai à frente dela. O que muda de um serviço para outro é o que te pede em troca: uma conta, acesso ao teu e-mail, uma assinatura para teres alertas ou paciência para os anúncios.
+Um serviço universal de seguimento (ou de rastreio) de encomendas é um site ou uma app que aceita o número de seguimento de qualquer transportadora, descobre de quem é, vai buscar as leituras e junta todas as tuas encomendas numa só lista. Só mostra as leituras que a transportadora registou, por isso nunca vai à frente dela. O que muda de um serviço para outro é o que te pede em troca: uma conta, acesso ao teu e-mail, uma assinatura para teres notificações ou paciência para os anúncios.
 
 ## Há alguma app para seguir todas as encomendas num só lugar?
 
@@ -42,13 +42,13 @@ Outras opções, com os seus limites:
 
 ## Qual é a melhor app para seguir encomendas?
 
-Nenhuma é a melhor para toda a gente: depende das tuas transportadoras e do que aceitas dar em troca dos alertas. Verifica tu mesmo estes pontos, incluindo o que esta página afirma:
+Nenhuma é a melhor para toda a gente: depende das tuas transportadoras e do que aceitas dar em troca das notificações. Verifica tu mesmo estes pontos, incluindo o que esta página afirma:
 
 | O que verificar | Onde ver | Atenção a |
 | --- | --- | --- |
 | Conta | Adiciona uma encomenda sem iniciar sessão | Os limites sem conta: o modo convidado da AfterShip fica-se pelos 3 envios |
 | Anúncios | App Store: «Contém Publicidade», por baixo da «Idade». Google Play: «Contém anúncios», por baixo do nome | Os dois rótulos assentam no que o programador declara |
-| Alertas | A ficha da app ou as páginas de ajuda | A Parcel reserva as notificações push a quem paga |
+| Notificações | A ficha da app ou as páginas de ajuda | A Parcel reserva as notificações push a quem paga |
 | O teu e-mail | Ligar o Gmail ou o Outlook, ou só reencaminhar um e-mail | Se ligares a conta, a Shop procura nos e-mails dos últimos 30 dias e continua a verificar |
 | Os teus dados | A «Privacidade da app» na App Store, a «Segurança dos dados» no Google Play, a política de privacidade | Na App Store, essa informação «não foi confirmada pela Apple». Todos os serviços têm de passar o teu número à transportadora |
 | Quanto tempo guarda os dados | A política de privacidade | A Deliveries guarda os e-mails reencaminhados até dez dias; no Google Play, a ficha da ParcelsApp diz «Não é possível eliminar os dados» |
@@ -79,9 +79,9 @@ Quase todos seguem cinco passos:
 :::steps
 - Colas | Um número de seguimento, a ligação da transportadora ou o e-mail de envio. A ligação é o mais seguro: diz qual é a transportadora.
 - Lê o formato | As letras, o comprimento e o dígito de controlo encurtam a lista. `1Z999AA10123456784` começa pelo `1Z` da UPS; `RR123456785CH` tem o formato de 13 caracteres que os operadores postais partilham, como os CTT.
-- Desempata | Alguns formatos servem a várias transportadoras: um número só com 14 algarismos pode ser da DPD, da SEUR, da BRT ou da Hermes alemã, entre outras. Pergunta a mais do que uma, ou deixa-te escolher.
+- Desempata | Alguns formatos servem a várias transportadoras: um número só com 14 algarismos pode ser da DPD, da SEUR, da BRT ou da Hermes alemã, e um de 16, da [Correos Express](carrier:correos-express) ou da TNT, entre outras. Pergunta a mais do que uma, ou deixa-te escolher.
 - Vai buscar as leituras | À transportadora ou a outro serviço de seguimento, para um só histórico.
-- Volta a verificar | A intervalos regulares, e avisa-te quando há novidades.
+- Volta a verificar | A intervalos regulares, e envia-te uma notificação quando há novidades.
 :::
 
 Para leres um número por tua conta, vê [como saber qual é a transportadora pelo número](guide:tracking-number-formats).
@@ -110,7 +110,7 @@ Nos envios internacionais, a encomenda muda muitas vezes de mãos, e a transport
 - home | A tua porta | As últimas leituras podem estar só no número B
 :::
 
-Os serviços que ligam números, como a ParcelsApp, juntam A e B quando B aparece nos dados da primeira transportadora. Se nunca aparecer, procura um número novo no histórico completo e experimenta-o no site da transportadora local. Para encomendas do AliExpress, da Temu ou da Shein, vê [como seguir uma encomenda da China](guide:tracking-from-china).
+Os serviços que ligam números, como a ParcelsApp, juntam A e B quando B aparece nos dados da primeira transportadora. Se nunca aparecer, procura um número novo no histórico completo e experimenta-o no site da transportadora local. A [Cainiao](carrier:cainiao) e a [YunExpress](carrier:yunexpress) podem mostrar o número B no seu próprio seguimento. Para encomendas do AliExpress, da Temu ou da Shein, vê [como seguir uma encomenda da China](guide:tracking-from-china).
 
 ## O que um serviço de seguimento não consegue ver
 
@@ -179,5 +179,5 @@ Pode, e costuma trazer uma ligação. Os CTT mantêm uma página de alertas de p
 - [Play Console: Ads declaration (em inglês)](https://support.google.com/googleplay/android-developer/answer/9859455?hl=en) – rótulo de anúncios
 - [UPS: Sample package label (em inglês)](https://www.pld-certify.ups.com/CerttoolHelp/PLD0200/WebHelp_pld0200/LeadPackage.htm) – números 1Z
 - [UPU: Standards (em inglês)](https://www.upu.int/en/postal-solutions/programmes-services/standards) – números postais de 13 caracteres
-- [Universal Parcel Scraper: catálogo de transportadoras](https://github.com/plhery/universal-parcel-scraper/blob/main/data/catalog.json) – forma de 14 algarismos partilhada
+- [Universal Parcel Scraper: catálogo de transportadoras](https://github.com/plhery/universal-parcel-scraper/blob/main/data/catalog.json) – formas de 14 e 16 algarismos partilhadas
 :::

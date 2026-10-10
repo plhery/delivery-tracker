@@ -4,7 +4,7 @@ description: Cosa vuol dire pacco fermo in dogana, quanto dura lo sdoganamento, 
 slug: pacco-fermo-in-dogana
 picture: Una cabina della dogana con la sbarra a strisce, un documento timbrato con una spunta e Pip che aspetta paziente davanti alla sbarra.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 «Fermo in dogana» di solito vuol dire che il tuo pacco sta passando il controllo di routine previsto per la merce che arriva da fuori UE (in Ticino, da qualsiasi Paese estero), non che è stato sequestrato. Se resta fermo a lungo, forse il corriere aspetta che tu paghi dazio e IVA o che gli mandi una fattura. Per saperlo apri tu il sito o l'app del corriere, mai il link di un SMS.
@@ -37,11 +37,11 @@ Spesso niente. Per capirlo:
 
 ### Pacco bloccato in dogana: chi chiamare?
 
-Quasi mai la dogana: comincia dal corriere (passo 4). Poste sdogana solo i pacchi postali che viaggiano secondo la Convenzione dell'Unione postale universale, quindi per un pacco DHL, UPS o FedEx chiedi a loro. In Ticino l'UDSC dice di non poter dare informazioni sullo stato di un invio; per lo sdoganamento postale la Posta risponde al +41 848 48 48 47, dal lunedì al venerdì dalle 8.00 alle 17.30.
+Quasi mai la dogana: comincia dal corriere (passo 4). Poste sdogana solo i pacchi postali che viaggiano secondo la Convenzione dell'Unione postale universale, quindi per un pacco DHL, UPS o FedEx chiedi a loro. Non sai quale corriere ha il pacco? Spesso [lo dice il numero di tracking](guide:tracking-number-formats). In Ticino l'UDSC dice di non poter dare informazioni sullo stato di un invio; per lo sdoganamento postale la Posta risponde al +41 848 48 48 47, dal lunedì al venerdì dalle 8.00 alle 17.30.
 
 ## Quanto tempo può restare un pacco in dogana?
 
-Poste non indica tempi. La Posta svizzera parla di tre o quattro giorni lavorativi, se tutte le informazioni sono complete e corrette; se ne mancano, fa degli accertamenti e il pacco può tardare.
+Poste non indica tempi. La Posta svizzera parla di tre o quattro giorni lavorativi, se tutte le informazioni sono complete e corrette; se ne mancano, fa degli accertamenti e il pacco può tardare. Nel suo blog per i venditori, [YunExpress](carrier:yunexpress) parla di tempi da qualche giorno lavorativo a oltre un mese, a seconda del controllo.
 
 Un pacco resta fermo più a lungo quando:
 
@@ -59,7 +59,7 @@ Non lasciarlo lì troppo a lungo:
 | Ticino, La Posta | 20 giorni per pagare online, con fino a tre promemoria; poi arriva per posta una QR-fattura |
 | Ticino, dati mancanti | Se rispondi per iscritto entro tre giorni lavorativi l'accertamento è gratis; dal quarto giorno la Posta addebita CHF 20.– |
 
-Per non dover ricaricare la pagina ogni ora, incolla il numero di tracciamento su [Peek](/): lo controlla fino a ogni 10 minuti e ti manda un avviso quando lo stato cambia, ma non può pagare al posto tuo né accelerare la dogana. Se per giorni non succede niente e non arriva nessuna richiesta, leggi [perché il tracking non si aggiorna](guide:tracking-not-updating).
+Per non dover ricaricare la pagina ogni ora, incolla il numero di tracciamento su [Peek](/): lo controlla fino a ogni 10 minuti e ti manda una notifica quando lo stato cambia, ma non può pagare al posto tuo né accelerare la dogana. Se per giorni non succede niente e non arriva nessuna richiesta, leggi [perché il tracking non si aggiorna](guide:tracking-not-updating).
 
 ### Rilasciato dalla dogana: quando arriva?
 
@@ -106,7 +106,7 @@ Dipende da dove vivi e da cosa hai pagato al checkout:
 - **Italia:** sì, anche sotto i 150 €. L'IVA si paga su tutte le spedizioni commerciali da fuori UE dal 1° luglio 2021, il dazio di 3 € per articolo dal 1° luglio 2026. Se il sito ti ha fatto pagare l'IVA all'acquisto (il sistema IOSS), alla consegna non la paghi di nuovo; il resto lo paghi a Poste o al corriere, se il venditore non l'ha già saldato.
 - **Ticino:** dal 1° gennaio 2025 le piattaforme con almeno 100 000 franchi di cifra d'affari in piccoli invii devono applicare l'IVA svizzera. Per il resto paghi quando IVA e dazi superano i 5 franchi, più il prezzo della Posta. Se un ordine arriva in più pacchi e la Posta se ne accorge (per esempio da «1 di 5 pacchi»), sdogana sul valore complessivo quando è il totale, e non il singolo pacco, a superare la soglia.
 
-Per capire come viaggiano questi ordini, leggi [seguire un pacco dalla Cina](guide:tracking-from-china).
+Per capire come viaggiano questi ordini, leggi [seguire un pacco dalla Cina](guide:tracking-from-china). Se il tracking è di [Cainiao](carrier:cainiao), `Import customs clearance started` vuol dire che il pacco è alla dogana del tuo Paese.
 
 ## SMS sulla dogana o «pacco in giacenza»: è una truffa?
 
@@ -159,5 +159,7 @@ Per segnalare un falso:
 - [UDSC: Informazioni su acquisti in Internet, invii postali e di corriere](https://www.bazg.admin.ch/it/acquisti-online-invii-postali-informazioni) – chi dichiara e chi fattura
 - [UDSC: Vendita per corrispondenza e imposizione delle piattaforme](https://www.bazg.admin.ch/it/regelung-vat-vendita-per-corrispondenza-e-imposizione-delle-piattaforme) – piattaforme dal 2025
 - [UDSC: Attenzione alle truffe via e-mail e sms](https://www.bazg.admin.ch/it/avviso-di-truffe-via-e-mail-e-per-sms) – nessuna richiesta di pagamento per e-mail o SMS, falsi mittenti
+- [YunExpress: 為什麼你的包裹會被海關抽查？](https://hk.yunexpress.com/blog/2179/) – durata dei controlli doganali
+- [Cainiao: Logistics Status Explanation](https://global.cainiao.com/helpDoc.htm?slug=phdx0i) – Import customs clearance started
 - [Peek: home page](https://peektracker.com/it) – «Controllato fino a ogni 10 min»
 :::

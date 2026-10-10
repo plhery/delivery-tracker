@@ -10,7 +10,7 @@ YunExpress, che trovi scritto anche Yun Express, è un'azienda di logistica di S
 
 ## Numero di tracciamento YunExpress: inizia con YT
 
-Yuntrack chiede «your YunExpress tracking number (starting with YT)», cioè il numero che inizia con YT, senza dirne la lunghezza, e nemmeno le altre pagine di YunExpress dicono quante cifre seguono. Peek riconosce come YunExpress i numeri con YT seguito da 16 cifre. Ecco come legge alcune forme, con cifre inventate:
+Yuntrack chiede «your YunExpress tracking number (starting with YT)», cioè il numero che inizia con YT, senza dirne la lunghezza, e nemmeno le altre pagine di YunExpress dicono quante cifre seguono. Peek riconosce come YunExpress i numeri con YT seguito da 16 cifre. YT però non è solo di YunExpress: vedi [come capire il corriere dal numero](guide:tracking-number-formats). Ecco come Peek legge alcune forme, con cifre inventate:
 
 | Numero | Per Peek |
 | --- | --- |
@@ -41,7 +41,7 @@ Yuntrack è solo in inglese, senza scelta della lingua, e in inglese arrivano an
 | `Preparing for delivery` | Se invece passa a GOFO, in Italia: il pacco è in deposito, prima che parta il corriere. |
 | `Delivered by Mailbox` | Lasciato nella tua cassetta delle lettere. |
 
-Quello che confonde di più è `Delivered to local carrier`: «delivered» qui vuol dire solo che YunExpress ha passato il pacco al corriere del Paese di destinazione. Dopo arrivano le righe di quel corriere, anche loro in inglese.
+Quello che confonde di più è `Delivered to local carrier`: «delivered» qui vuol dire solo che YunExpress ha passato il pacco al corriere del Paese di destinazione. Dopo arrivano le righe di quel corriere, anche loro in inglese. Le fasi comuni a ogni corriere sono spiegate in [stati della spedizione](guide:tracking-statuses).
 
 `Transit` vuol dire soltanto in viaggio: dove, lo dice l'ultima riga. Cosa finisca sotto `Alert` YunExpress non lo spiega: leggi la riga sotto e scrivi al negozio se non cambia più niente. Nel codice della pagina di yuntrack c'è anche una barra di avanzamento (`Pickup`, `Departed from origin`, `Arrived at destination`, `Local carrier on the way`, `Delivered successfully`). Il suo `Pickup` è il ritiro dal venditore, non un ritiro che tocca a te.
 
@@ -49,7 +49,7 @@ Quello che confonde di più è `Delivered to local carrier`: «delivered» qui v
 
 YunExpress porta i pacchi in aereo fuori dalla Cina, li fa sdoganare nel Paese di destinazione e poi li affida a un corriere locale. Dice di avere una linea dedicata verso l'Italia dal 2017 e verso la Svizzera dal 2020. Sulle sue pagine però non nomina nessun partner per la consegna in Italia o in Ticino, solo in generale «premium global carrier networks».
 
-Nelle cronologie YunExpress compaiono righe di Poste Italiane e di GOFO in Italia, un corriere dell'ultimo miglio nato nel 2023, ma YunExpress non li presenta come partner. Chi ha il tuo pacco lo dicono le righe dopo `Delivered to local carrier` e la colonna «Last Mile Tracking».
+Nelle cronologie YunExpress compaiono righe di Poste Italiane e di GOFO in Italia, un corriere dell'ultimo miglio nato nel 2023, ma YunExpress non li presenta come partner. Chi ha il tuo pacco lo dicono le righe dopo `Delivered to local carrier` e la colonna «Last Mile Tracking». Come passano di mano i pacchi dalla Cina lo spiega la guida [tracciare un pacco dalla Cina](guide:tracking-from-china).
 
 Su tentativi di consegna, avvisi, giacenza o nuova data, YunExpress non pubblica nulla per i destinatari. Se non eri in casa, guarda quale corriere compare nel tracking: valgono le sue regole per avviso, giacenza e ritiro.
 
@@ -65,7 +65,7 @@ Fermo su `Customs inspection - Import`? Nel suo blog per i venditori, YunExpress
 
 Hai pagato con PayPal? Se il venditore l'ha attivato, YunExpress passa il tracking a PayPal, dove secondo YunExpress serve come prova nelle contestazioni. Quali regole valgano, lo dice PayPal.
 
-Risulta consegnato ma non c'è? La pagina di tracciamento può offrire una prova di consegna, per cui chiede il nome del destinatario. Poi chiedi al corriere locale e al negozio. `Returned` vuol dire che il pacco torna indietro: YunExpress non pubblica regole di reso per i destinatari, quindi chiedi al negozio.
+Risulta consegnato ma non c'è? La pagina di tracciamento può offrire una prova di consegna, per cui chiede il nome del destinatario. Poi chiedi al corriere locale e al negozio; i passi successivi sono in [pacco consegnato ma non ricevuto](guide:delivered-not-received). `Returned` vuol dire che il pacco torna indietro: YunExpress non pubblica regole di reso per i destinatari, quindi chiedi al negozio.
 
 ## YunExpress contatti: telefono, e-mail e servizio clienti
 

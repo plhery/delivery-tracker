@@ -10,7 +10,7 @@ Cainiao est le groupe logistique d'Alibaba : il achemine à l'étranger les coli
 
 ## Numéro de suivi Cainiao : LP, CNG, DOFR ou numéro postal
 
-Aucune page de Cainiao ne donne la forme des numéros LP, CNG, DOFR ou CNFR. Son site accepte jusqu'à 100 numéros à la fois, un par ligne, et prévient : « N'entrez pas de caractères autres que des lettres ou des chiffres. » L'exemple qu'il montre sur sa page de suivi est un numéro postal : deux lettres, neuf chiffres, puis HK. Les formes à connaître, avec des chiffres inventés :
+Aucune page de Cainiao ne donne la forme des numéros LP, CNG, DOFR ou CNFR. Son site accepte jusqu'à 100 numéros à la fois, un par ligne, et prévient : « N'entrez pas de caractères autres que des lettres ou des chiffres. » L'exemple qu'il montre sur sa page de suivi est [un numéro postal](guide:tracking-number-formats) : deux lettres, neuf chiffres, puis HK. Les formes à connaître, avec des chiffres inventés :
 
 | Numéro | À qui il appartient |
 | --- | --- |
@@ -43,7 +43,7 @@ Le site de Cainiao s'ouvre en anglais tant que tu n'as pas choisi une autre lang
 
 `Carrier update` est un avis de Cainiao : le colis est en route. `Accepted for transportation by postal service` veut dire qu'un partenaire postal le prend en charge après la remise, pas qu'il s'agit du premier scan du colis ; `Delivery Carrier Accepted`, que le transporteur local l'a. La ligne du point de retrait est signée par le point, pas par toi. Et `Processing delay at sorting center` est un retard, pas une anomalie.
 
-Le centre d'aide de Cainiao explique en français ses grands statuts, avec deux faux amis. `En attente de prise en charge par le transporteur` : le transporteur a reçu le message et ira chercher le colis plus tard. Mais `Ramassage` et `En attente de ramassage` parlent de toi : le premier veut dire que le colis est en cours de livraison ou à l'agence locale et que tu peux planifier la livraison ou le retrait, le second qu'il attend au bureau de poste que tu viennes le chercher, ou qu'il est en route vers ce bureau. `Arrivée à destination` : il est dans ton pays mais doit encore être dédouané. `Non trouvé` : numéro incorrect, invalide ou expiré, ou colis pas encore accepté par le transporteur.
+Le centre d'aide de Cainiao explique en français ses grands statuts, avec deux faux amis. `En attente de prise en charge par le transporteur` : le transporteur a reçu le message et ira chercher le colis plus tard. Mais `Ramassage` et `En attente de ramassage` parlent de toi : le premier veut dire que le colis est en cours de livraison ou à l'agence locale et que tu peux planifier la livraison ou le retrait, le second qu'il attend au bureau de poste que tu viennes le chercher, ou qu'il est en route vers ce bureau. `Arrivée à destination` : il est dans ton pays mais doit encore être dédouané. `Non trouvé` : numéro incorrect, invalide ou expiré, ou colis pas encore accepté par le transporteur. Après la remise, les statuts de ta poste ou du transporteur local sont expliqués dans [les étapes du suivi d'un colis](guide:tracking-statuses).
 
 ## Cainiao livraison : consignes, points relais et livraison manquée
 
@@ -55,9 +55,9 @@ Cainiao France ne publie pour les destinataires ni nombre de tentatives, ni dur�
 
 ## Colis Cainiao non reçu, perdu ou bloqué : que faire
 
-**Pas encore de suivi.** Selon la FAQ de Cainiao, le suivi s'actualise « au maximum 11 jours » après l'envoi ; si rien n'a bougé « 12 jours après l'expédition », tu peux contacter le vendeur.
+**Pas encore de suivi.** Selon la FAQ de Cainiao, le suivi s'actualise « au maximum 11 jours » après l'envoi ; si rien n'a bougé « 12 jours après l'expédition », tu peux contacter le vendeur. Les autres silences, pendant le vol ou à la douane, sont expliqués dans [le suivi d'un colis venu de Chine](guide:tracking-from-china).
 
-**Bloqué dans ton pays.** Après `Arrivée à destination`, Cainiao explique en général un silence par le pays de destination, qui n'a pas transmis ses mises à jour, et suggère de demander au bureau de poste local. Une adresse ou un téléphone invalide peut aussi retarder le colis : la FAQ en français conseille alors de contacter « le partenaire de livraison du dernier kilomètre ». En douane, « Les destinataires doivent prendre contact avec les douanes pour coopérer avec le dédouanement. » Voir aussi [pourquoi un suivi de colis ne bouge plus](guide:tracking-not-updating).
+**Bloqué dans ton pays.** Après `Arrivée à destination`, Cainiao explique en général un silence par le pays de destination, qui n'a pas transmis ses mises à jour, et suggère de demander au bureau de poste local. Une adresse ou un téléphone invalide peut aussi retarder le colis : la FAQ en français conseille alors de contacter « le partenaire de livraison du dernier kilomètre ». En douane, « Les destinataires doivent prendre contact avec les douanes pour coopérer avec le dédouanement. » Délais et frais de douane, pays par pays : [colis bloqué en douane](guide:customs). Voir aussi [pourquoi un suivi de colis ne bouge plus](guide:tracking-not-updating).
 
 **Très en retard ou perdu.** Cainiao demande d'attendre la dernière date de livraison promise. Ensuite, pour une commande AliExpress, passe par « Aide », puis « Service client », ou par « Litiges et rapports » sur AliExpress. Aucune page de Cainiao ne propose de formulaire de réclamation aux destinataires : le remboursement passe par AliExpress ou le vendeur.
 

@@ -4,7 +4,7 @@ description: Wo die Sendungsnummer steht – in der Versandmail, auf der Quittun
 slug: sendungsnummer-finden-paket-ohne-nummer
 picture: Eine Versandmail, in der die Sendungsnummer RR123456785CH gelb markiert ist, daneben ein Etikett mit Strichcode, und Pip lächelt.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Deine Sendungsnummer steht meist in der Versandmail oder SMS des Shops. Sonst findest du sie in deiner Bestellung auf der Website oder in der App des Shops, meist nur einen Klick von der Bestellnummer entfernt. Hast du das Paket selbst verschickt, steht sie auf der Quittung, die du bei der Abgabe bekommen hast. Nach deinem Namen oder deiner Adresse sucht kein Paketdienst. Weiterhelfen können dir aber eine Benachrichtigungskarte, das kostenlose Kundenkonto mancher Paketdienste oder der Absender.
@@ -35,7 +35,7 @@ Die Mail ist da, aber welche Nummer ist die richtige? Füge einfach die ganze Ma
 
 Keine Nummer zu sehen? Vielleicht gibt es noch keine oder überhaupt keine. Temu schreibt: „Die Bearbeitung durch das Lager kann 1-3 Werktage in Anspruch nehmen.“ Laut Amazon.de sind „Großbriefe der Deutschen Post und internationale Standardlieferungen“ nicht verfolgbar. Und bei eBay siehst du eine Nummer nur, wenn der Verkäufer einen Versandservice mit Sendungsverfolgung nutzt und die Nummer bei eBay hochlädt. Auf den österreichischen und Schweizer Seiten der Shops können die Menünamen leicht abweichen.
 
-Bei AliExpress oder einem anderen Shop in China bestellt? Lies, wie du ein [Paket aus China verfolgst](guide:tracking-from-china).
+Bei AliExpress oder einem anderen Shop in China bestellt? Lies, wie du ein [Paket aus China verfolgst](guide:tracking-from-china). Für Pakete von [Cainiao](carrier:cainiao) und [YunExpress](carrier:yunexpress) gibt es eigene Seiten, die auch zeigen, wo die Nummer steht.
 
 ### Auf der Benachrichtigungskarte
 
@@ -47,6 +47,8 @@ Was dir die Karte bringt, hängt vom Paketdienst ab:
 - **DHL Express**: Auf der Karte steht eine Sendungs-Referenznummer. Mit ihr buchst du kostenlos eine zweite Zustellung.
 - **DHL**: Fehlt die Karte, schickt DHL sie dir in den nächsten Tagen per Post. Liegt das Paket in einer Filiale, brauchst du sie zum Abholen gar nicht: Dein Personalausweis reicht.
 - **Hermes**: Statt einer Karte schickt Hermes manchmal eine E-Mail.
+- **Quickpac**, Karte „Abholinformation“: Darauf steht die Sendungsnummer, wie die Seite zum [Quickpac Tracking](carrier:quickpac) erklärt.
+- **Planzer Paket**, Zustellkarte: Der Zustellschlüssel darauf öffnet das Empfängerportal, ist aber keine Sendungsnummer. Welche Codes es bei Planzer gibt, steht unter [Planzer Sendungsverfolgung](carrier:planzer).
 
 ## Wie verfolge ich ein Paket ohne Sendungsnummer?
 
@@ -85,7 +87,7 @@ Nennt dir der Absender seine eigene Referenz, etwa eine Auftrags- oder Rechnungs
 
 Nein, weder auf der Tracking-Seite eines Paketdienstes noch am Telefon. DHL schreibt dazu: „Eine Sendungsverfolgung ist nur mit einer gültigen Sendungsnummer möglich.“ Und: „Leider hat auch der Kundenservice keine Möglichkeit, ohne die Sendungsnummer den Status Ihrer Sendung abzufragen.“
 
-Am nächsten kommt dem ein Konto beim Paketdienst, wie oben beschrieben. Die Österreichische Post etwa gleicht Name und Adresse aus den Versanddaten mit deinem Post Account ab, aber eben nur für dich selbst und erst, wenn du registriert bist. Auch Paket-Tracker wie Peek können nicht nach Namen suchen: Sie brauchen eine Nummer, um beim Paketdienst nachzufragen.
+Am nächsten kommt dem ein Konto beim Paketdienst, wie oben beschrieben. Die Österreichische Post etwa gleicht Name und Adresse aus den Versanddaten mit deinem Post Account ab, aber eben nur für dich selbst und erst, wenn du registriert bist. Auch [Paket-Tracker](guide:universal-tracker) wie Peek können nicht nach Namen suchen: Sie brauchen eine Nummer, um beim Paketdienst nachzufragen.
 
 > Eine Website, die verspricht, alle Pakete an deinen Namen oder deine Adresse zu finden, nutzt keine Sendungsverfolgung eines Paketdienstes: So etwas bietet kein Paketdienst öffentlich an. Gib dort keine Daten ein.
 

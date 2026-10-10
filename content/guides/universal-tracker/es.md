@@ -1,13 +1,13 @@
 ---
 title: Seguimiento universal de paquetes: todos en un solo sitio
-description: Qué es un localizador universal de envíos, de dónde saca los datos de cada transportista y qué mirar antes de elegir uno: privacidad, anuncios y avisos.
+description: Qué es un localizador universal de envíos, de dónde saca los datos de cada transportista y qué mirar antes de elegir uno: privacidad, anuncios y notificaciones.
 slug: seguimiento-universal-de-paquetes
 picture: Cinco furgonetas de distintos colores cuyos caminos punteados llegan a una sola lista en un móvil, y Pip asoma radiante de una caja abierta.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
-El seguimiento universal de paquetes reúne todos tus envíos en una sola web o app, sea cual sea el transportista: el localizador averigua de quién es cada número, recoge sus escaneos y los guarda en una lista. Solo enseña lo que el transportista ha registrado, así que nunca va por delante de él. Unos y otros se diferencian en lo que te piden a cambio: una cuenta, acceso a tu correo, una suscripción para los avisos o paciencia con los anuncios.
+El seguimiento universal de paquetes reúne todos tus envíos en una sola web o app, sea cual sea el transportista: el localizador averigua de quién es cada número, recoge sus escaneos y los guarda en una lista. Solo enseña lo que el transportista ha registrado, así que nunca va por delante de él. Unos y otros se diferencian en lo que te piden a cambio: una cuenta, acceso a tu correo, una suscripción para las notificaciones o paciencia con los anuncios.
 
 ## ¿Hay una app para seguir todos tus paquetes en un solo sitio?
 
@@ -27,9 +27,9 @@ Empieza por lo que ya te dan los transportistas con los que más tratas. Cada un
 | Empresa | Qué te ofrece | Qué necesitas |
 | --- | --- | --- |
 | Correos | En su app, la sección «Actividad» muestra de forma automática los envíos en los que figuras como remitente o destinatario, también los de Vinted, Wallapop o AliExpress, sin teclear códigos | Una cuenta Correos ID. Sin ella, el modo invitado te deja consultar el seguimiento |
-| GLS | En su app, con una cuenta My GLS, los envíos de GLS que llevan tu número de teléfono aparecen solos, con avisos de cómo van | Registrarte con tu móvil y escribirlo bien cuando compras. Sin cuenta, el número de seguimiento y el código postal |
-| SEUR | miSEUR recupera en tu perfil los pedidos asociados a tu email o a tu móvil, con avisos del estado de cada envío | Registrarte en miSEUR |
-| InPost | Su app sigue envíos a domicilio, a Lockers y a Punto Pack, y te avisa cuando cambian de estado | El número de seguimiento de cada envío |
+| GLS | En su app, con una cuenta My GLS, los envíos de GLS que llevan tu número de teléfono aparecen solos, con notificaciones de cómo van | Registrarte con tu móvil y escribirlo bien cuando compras. Sin cuenta, el número de seguimiento y el código postal |
+| SEUR | miSEUR recupera en tu perfil los pedidos asociados a tu email o a tu móvil, con notificaciones del estado de cada envío | Registrarte en miSEUR |
+| InPost | Su app sigue envíos a domicilio, a Lockers y a Punto Pack, y te envía notificaciones cuando cambian de estado | El número de seguimiento de cada envío |
 | Amazon | Sus pedidos se siguen en «Mis pedidos», con la información de sus socios de entrega | Tu cuenta de Amazon |
 
 Otras opciones, con sus límites:
@@ -41,13 +41,13 @@ Otras opciones, con sus límites:
 
 ## ¿Cuál es la mejor app para el seguimiento de paquetes?
 
-Ninguna es la mejor para todo el mundo: depende de tus transportistas y de lo que estés dispuesto a dar a cambio de los avisos. Compruébalo tú mismo, incluido lo que dice esta página:
+Ninguna es la mejor para todo el mundo: depende de tus transportistas y de lo que estés dispuesto a dar a cambio de las notificaciones. Compruébalo tú mismo, incluido lo que dice esta página:
 
 | Qué mirar | Dónde | Ojo con |
 | --- | --- | --- |
 | Cuenta | Añade un paquete sin iniciar sesión | Los límites sin cuenta: el modo invitado de AfterShip se queda en 3 envíos |
 | Anuncios | App Store: «Contiene: Publicidad», en la «Ficha técnica», debajo de la edad. Google Play: «Contiene anuncios», bajo el nombre | Las dos etiquetas se basan en lo que declara el desarrollador |
-| Avisos | La ficha de la app o sus páginas de ayuda | Parcel reserva las notificaciones push a quien paga la suscripción |
+| Notificaciones | La ficha de la app o sus páginas de ayuda | Parcel reserva las notificaciones push a quien paga la suscripción |
 | Tu correo | «Conectar Gmail u Outlook» frente a «reenviar un correo» | Shop revisa los correos de los últimos 30 días y sigue mirando |
 | Tus datos | En el App Store, «Datos usados para rastrearte» y «Datos vinculados contigo»; en Google Play, «Seguridad de los datos»; y la política de privacidad | Apple avisa de que esa información «no ha sido verificada por Apple». Todos los localizadores tienen que pasar tu número a otros |
 | Cuánto tiempo guarda tus datos | La política de privacidad | Deliveries guarda los correos reenviados hasta diez días; en Google Play, Parcels dice que «los datos no se pueden eliminar» |
@@ -74,11 +74,11 @@ Los precios cambian: mira «Compras dentro de la app» en la ficha del App Store
 Casi todos siguen cinco pasos:
 
 :::steps
-- Pegas | Un número de seguimiento, el enlace del transportista o el correo de envío. El enlace es lo más seguro: dice quién es el transportista.
+- Pegas | Un [número de seguimiento](guide:find-tracking-number), el enlace del transportista o el correo de envío. El enlace es lo más seguro: dice quién es el transportista.
 - Mira el formato | Las letras, la longitud y el dígito de control acotan la lista. `1Z999AA10123456784` empieza por el `1Z` de UPS; `RR123456785CH` tiene el formato de 13 caracteres que comparten los operadores postales.
 - Sopesa los candidatos | Algunos formatos encajan con varios transportistas: un número de 14 cifras puede ser de SEUR, DPD, BRT o Hermes Alemania, entre otros. Pregunta a más de uno o te deja elegir.
 - Recoge los escaneos | Del transportista o de otro localizador, en un solo historial.
-- Vuelve a mirar | Cada cierto tiempo, y te avisa si hay algo nuevo.
+- Vuelve a mirar | Cada cierto tiempo, y te notifica si hay algo nuevo.
 :::
 
 Para leer un número por tu cuenta, mira [los formatos de número de seguimiento](guide:tracking-number-formats).
@@ -107,13 +107,13 @@ En los envíos internacionales, el paquete suele cambiar de manos y, según las 
 - home | Tu puerta | Los últimos escaneos quizá solo salgan con el número B
 :::
 
-Los localizadores que enlazan números, como ParcelsApp, unen A y B cuando B aparece en los datos del primer transportista. Si nunca aparece, busca un número nuevo en el historial completo y pruébalo en la web del transportista local. Para pedidos de AliExpress y otras tiendas chinas, mira [cómo seguir un paquete que viene de China](guide:tracking-from-china).
+Los localizadores que enlazan números, como ParcelsApp, unen A y B cuando B aparece en los datos del primer transportista. [YunExpress](carrier:yunexpress), por ejemplo, puede mostrar B en su columna «Last Mile Tracking». Si nunca aparece, busca un número nuevo en el historial completo y pruébalo en la web del transportista local. Para pedidos de AliExpress y otras tiendas chinas, mira [cómo seguir un paquete que viene de China](guide:tracking-from-china).
 
 ## Lo que un localizador no puede ver
 
 Nada que el transportista no haya publicado. ParcelsApp lo dice claro: no puede crear un escaneo que la empresa no haya registrado. Además, un localizador ve cada escaneo después que el transportista, y los retrasos se suman:
 
-- Correos Express avisa de que, si un envío se acaba de registrar, «puede tardar unas horas en aparecer información», y de que cada actualización también puede tardar unas horas, sobre todo cuando el paquete va de un centro logístico a otro.
+- [Correos Express](carrier:correos-express) avisa de que, si un envío se acaba de registrar, «puede tardar unas horas en aparecer información», y de que cada actualización también puede tardar unas horas, sobre todo cuando el paquete va de un centro logístico a otro.
 - Parcel dice que su app va hasta 90 minutos por detrás de la web del transportista, 45 de media.
 
 **Los transportistas también ponen límites.** Desde el 1 de abril de 2026, el servicio postal de Estados Unidos (USPS) liga el acceso a sus datos de seguimiento al identificador del remitente que va en el código de barras, y los servicios de terceros tienen que pagar una cuota mensual. 17TRACK avisa de que las consultas de USPS sin verificar se frenarán, se cobrarán o se bloquearán. Si un número enseña poco en un localizador, mira la web del transportista.
@@ -143,7 +143,7 @@ Sí, y suele traer un enlace. Correos cuenta que pedir un pago o completar la di
 - [App Store: Correos](https://apps.apple.com/es/app/id6478281790) – modo invitado
 - [App Store: GLS](https://apps.apple.com/es/app/id1581091038) – My GLS, envíos ligados a tu teléfono
 - [SEUR: nota de prensa sobre miSEUR (2023)](https://saladeprensa.seur.com/2023/10/30/seur-estrena-el-entorno-digital-miseur-una-plataforma-pionera-y-unica-para-la-gestion-de-envios/) – pedidos asociados a tu email o móvil
-- [App Store: InPost](https://apps.apple.com/es/app/id6748218565) – seguimiento y avisos
+- [App Store: InPost](https://apps.apple.com/es/app/id6748218565) – seguimiento y notificaciones
 - [Amazon.es: Entregas de Amazon Logistics](https://www.amazon.es/gp/help/customer/display.html?nodeId=GEW3XT9JEMBLTKRV) – Mis pedidos
 - [Correos Express: Seguimiento y entrega](https://www.correosexpress.es/es/atencion-al-cliente/seguimiento-envio) – unas horas para aparecer
 - [Correos: Qué es el phishing](https://www.correos.es/es/es/atencion-al-cliente/seguridad-de-la-informacion/phishing) – excusas habituales, sin pagos por SMS
@@ -161,7 +161,7 @@ Sí, y suele traer un enlace. Correos cuenta que pedir un pago o completar la di
 - [App Store: 17TRACK](https://apps.apple.com/es/app/id1004956012) – publicidad, suscripciones, idiomas
 - [17TRACK: USPS tracking (en inglés)](https://www.17track.net/en/uspsTracking) – límites de USPS
 - [17TRACK: Privacy Policy (en inglés)](https://www.17track.net/privacy-en.html) – responsable, servidores
-- [App Store: AfterShip](https://apps.apple.com/es/app/id507014023) – publicidad, avisos gratis
+- [App Store: AfterShip](https://apps.apple.com/es/app/id507014023) – publicidad, notificaciones gratis
 - [Google Play: AfterShip](https://play.google.com/store/apps/details?id=com.aftership.AfterShip&hl=es&gl=ES) – datos compartidos
 - [AfterShip: Guest mode (en inglés)](https://support.aftership.com/en/tracking/articles/15441925-track-shipments-in-guest-mode) – tres envíos
 - [App Store: Deliveries](https://apps.apple.com/es/app/id290986013) – precios, idiomas

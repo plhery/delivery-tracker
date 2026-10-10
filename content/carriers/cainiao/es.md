@@ -18,10 +18,10 @@ La web de seguimiento de Cainiao admite hasta 100 números por búsqueda («Intr
 | `CNG12345678900000` | CNG y 14 cifras: probablemente Cainiao. |
 | `CNG12345678975001` | Lo mismo, pero acaba en algo parecido a un código postal francés: Cainiao o, quizá, Colis Privé. |
 | `DOFR1234567890123HD` | DOFR o CNFR, 13 cifras y HD: Cainiao. |
-| `RR123456785CN` | Un número postal: la web de Cainiao sigue este formato, pero también el correo de origen, aquí China Post. |
+| `RR123456785CN` | [Un número postal](guide:tracking-number-formats): la web de Cainiao sigue este formato, pero también el correo de origen, aquí China Post. |
 | `YT1234567890123456` | No es de Cainiao, sino de [YunExpress](carrier:yunexpress). |
 
-El seguimiento de Cainiao también responde a otros formatos, como AP y 14 cifras. Ninguna página de Cainiao dice dónde aparece el número fuera de AliExpress, y no se ha encontrado con qué nombre firma Cainiao sus SMS. En España, Ecoscooting, la empresa cuyo teléfono y correo da Cainiao España, escribe a los destinatarios por correo y, si el paquete va a un punto de recogida, también por SMS. Para compras en China en general, mira [seguimiento de paquetes de China](guide:tracking-from-china).
+El seguimiento de Cainiao también responde a otros formatos, como AP y 14 cifras. Ninguna página de Cainiao dice [dónde aparece el número](guide:find-tracking-number) fuera de AliExpress, y no se ha encontrado con qué nombre firma Cainiao sus SMS. En España, Ecoscooting, la empresa cuyo teléfono y correo da Cainiao España, escribe a los destinatarios por correo y, si el paquete va a un punto de recogida, también por SMS. Para compras en China en general, mira [seguimiento de paquetes de China](guide:tracking-from-china).
 
 Si la web responde `No es un número de seguimiento válido` o no muestra nada, Cainiao pide comprobar primero que el número sea de verdad de Cainiao o de AliExpress.
 
@@ -42,7 +42,7 @@ La web de Cainiao sale en español si lo eliges con el botón de idioma, arriba 
 | `Arrived at pick-up point. Package available for collection.` | Te espera en un punto de recogida. |
 | `Package delivered` | Entregado a ti, o recogido por ti en el punto. |
 
-`Carrier update` es un aviso de Cainiao: el paquete sigue en tránsito. `Accepted for transportation by postal service` es un socio postal que se hace cargo tras un traspaso, no el primer escaneo, y `Delivery Carrier Accepted` significa que ya lo tiene la empresa local. La línea del punto de recogida la firma el punto, no tú: `Package delivered` llega cuando lo recoges. `Processing delay at sorting center` es un retraso, no un fallo. `Delivery failed` cierra la entrega como fallida después de los intentos.
+`Carrier update` es un aviso de Cainiao: el paquete [sigue en tránsito](guide:tracking-statuses). `Accepted for transportation by postal service` es un socio postal que se hace cargo tras un traspaso, no el primer escaneo, y `Delivery Carrier Accepted` significa que ya lo tiene la empresa local. La línea del punto de recogida la firma el punto, no tú: `Package delivered` llega cuando lo recoges. `Processing delay at sorting center` es un retraso, no un fallo. `Delivery failed` cierra la entrega como fallida después de los intentos.
 
 ## Entrega fallida de Cainiao, puntos de recogida y taquillas en España
 
@@ -60,7 +60,7 @@ Cainiao, por su parte, no da un número de días. Su estado `Undelivered` cubre 
 
 **Todavía sin seguimiento.** Según el FAQ de Cainiao, el seguimiento suele aparecer como mucho 11 días después del envío; si a los 12 días no cambia, pregunta al vendedor. Mientras, la web en español puede decir `Sin actualización del seguimiento`, y `Not Found` también puede ser un número mal escrito. Si el vendedor no envía en el plazo del pedido, AliExpress cierra el pedido y te devuelve todo el dinero.
 
-**Parado al llegar a España.** El FAQ de Cainiao dice que suele faltar la información del país de destino y aconseja preguntar a la oficina de correos local. Una dirección o un teléfono incorrectos también lo retrasan; para ese caso, el FAQ en inglés manda a la oficina de correos y su versión francesa, a la empresa de reparto de última milla. En aduanas, Cainiao pide al destinatario que contacte con la aduana. Con envío económico, el `Aviso de seguimiento` dice: «El seguimiento con envío económico solo se actualiza a la entrega al transportista del país/región de destino». Pregunta al vendedor qué empresa es. Más en [el seguimiento de mi paquete no se actualiza](guide:tracking-not-updating).
+**Parado al llegar a España.** El FAQ de Cainiao dice que suele faltar la información del país de destino y aconseja preguntar a la oficina de correos local. Una dirección o un teléfono incorrectos también lo retrasan; para ese caso, el FAQ en inglés manda a la oficina de correos y su versión francesa, a la empresa de reparto de última milla. En aduanas, Cainiao pide al destinatario que [contacte con la aduana](guide:customs). Con envío económico, el `Aviso de seguimiento` dice: «El seguimiento con envío económico solo se actualiza a la entrega al transportista del país/región de destino». Pregunta al vendedor qué empresa es. Más en [el seguimiento de mi paquete no se actualiza](guide:tracking-not-updating).
 
 **Muy retrasado o perdido.** Cainiao pide esperar hasta la última fecha de entrega prometida. Después, para un pedido de AliExpress, abre en AliExpress «Help->Customer Service» o «Disputes&Reports» (así, en inglés, lo escribe Cainiao). Si Ecoscooting no puede entregarlo, recibes el correo «Aviso importante: Su paquete no puede ser entregado», con el que puedes pedir el reembolso al vendedor. Ninguna página de Cainiao da un formulario, un plazo ni un trámite de reclamación para destinatarios: el reembolso pasa por AliExpress o por la tienda.
 

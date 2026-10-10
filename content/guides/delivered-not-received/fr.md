@@ -4,7 +4,7 @@ description: Le suivi dit « livré » mais rien n'est arrivé ? Où chercher, c
 slug: colis-livre-mais-non-recu
 picture: Une porte fermée, une notification avec une coche verte, la silhouette d'un colis en pointillés sur le paillasson et Pip, inquiet.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Si le suivi indique « livré » mais que tu n'as rien reçu, ne considère pas encore le colis comme perdu : « livré » est un scan sur le terminal du livreur, pas la preuve que le colis est entre tes mains. Cherche une photo ou un nom dans le suivi, fais le tour des endroits habituels et laisse passer un jour. S'il manque toujours, adresse-toi au vendeur, pas au transporteur : en France et en Belgique, un colis acheté à un professionnel reste à ses risques tant que tu ne l'as pas en main.
@@ -23,9 +23,11 @@ Où chaque transporteur peut le laisser :
 | --- | --- |
 | Colissimo (FR) | Dans ta boîte aux lettres, ou remis à « toute personne présente » à ton adresse, gardien ou concierge compris. Au-delà de 5 kg, contre signature ou contre un code reçu par SMS ou e-mail |
 | Chronopost (FR) | En lieu sûr : boîte aux lettres, pas-de-porte, voisin ou gardien. Chronopost conseille aussi de regarder « sous le porche, sur la terrasse » |
-| Colis Privé (FR) | Dans ta boîte aux lettres, ou remis à un gardien, un voisin ou « un tiers de confiance » |
+| [Colis Privé](carrier:colis-prive) (FR) | Dans ta boîte aux lettres, ou remis à un gardien, un voisin ou « un tiers de confiance » |
 | bpost (BE) | Dans ta boîte aux lettres, sans sonner, pour un petit colis. Ou selon tes préférences : Point d'enlèvement, lieu sûr, voisin |
 | La Poste suisse | Remis à toute personne présente à ton domicile, ou à un voisin si personne n'est là. Trop grand pour la boîte, déposé dans « un lieu sûr et protégé des intempéries », sauf si tu as choisi « Pas de dépôt » |
+
+Colis [Planzer](carrier:planzer) ou [Quickpac](carrier:quickpac) ? Leurs pages disent quoi vérifier, dont la « Confirmation de livraison » du portail de Planzer.
 
 Le suivi n'a jamais dit « livré » ? Lis [pourquoi le suivi ne bouge plus](guide:tracking-not-updating) ou [ce que veulent dire les statuts de suivi](guide:tracking-statuses).
 
@@ -35,7 +37,7 @@ Le suivi n'a jamais dit « livré » ? Lis [pourquoi le suivi ne bouge plus](gui
 - Regarde la preuve | Cherche dans le suivi une photo, le nom de la personne qui a signé ou celui d'un voisin, et vérifie l'adresse de ta commande.
 - Fais le tour | Demande à tout le monde chez toi. Regarde dans la boîte aux lettres, chez les voisins et le gardien, et cherche un avis de passage. Au point relais, fais chercher le colis à ton nom.
 - Laisse passer un jour | Amazon demande d'attendre 48 heures, le temps qu'un colis scanné trop tôt arrive vraiment.
-- Écris au vendeur | Donne les numéros de commande et de suivi, et ce que tu as vérifié. Demande une enquête, puis un nouvel envoi ou un remboursement.
+- Écris au vendeur | Donne [les numéros de commande et de suivi](guide:find-tracking-number), et ce que tu as vérifié. Demande une enquête, puis un nouvel envoi ou un remboursement.
 - Ouvre un litige à temps | Sur une plateforme, avant la fin du délai : 2 jours sur Vinted, 30 sur eBay et Etsy.
 - Puis ta banque | Si personne ne règle le problème, demande une rétrofacturation à ta banque ou ouvre un litige PayPal, dans leurs délais.
 :::
@@ -75,7 +77,7 @@ En France, le vendeur. S'il dit avoir livré, « c'est à lui d'en apporter la p
 - **Une photo.** bpost montre la photo du lieu sûr dans l'app My bpost ou dans Track & Trace. La Poste suisse photographie les colis déposés (« preuve de dépôt » dans « Mes envois »), pour l'instant dans certaines régions seulement.
 - **Une signature ou un code.** Au-delà de 5 kg, Colissimo livre contre signature ou contre un code confidentiel, dont la concordance « vaut signature ». Avec le code Pickup Pass, Chronopost dit pouvoir « garantir la remise en mains propres ».
 - **Un simple scan.** Jusqu'à 5 kg, Colissimo ne demande aucune signature : l'enregistrement dans son système fait preuve de la distribution. Les conditions de La Poste suisse disent la même chose de ses scans.
-- **Pas une position GPS.** Aucune page de transporteur que nous avons lue ne présente des coordonnées GPS comme preuve.
+- **Rarement une position GPS.** Parmi les transporteurs dont nous avons lu les pages, seul Planzer joint ses données GPS à la photo qui sert de preuve.
 
 Si tu contestes, l'expéditeur d'un envoi bpost avec garantie peut te demander de confirmer par e-mail ou par un document signé que tu n'as rien reçu. La Poste suisse lance une recherche si le destinataire confirme, oralement ou par écrit, ne pas avoir reçu l'envoi.
 
@@ -93,7 +95,7 @@ Amazon accepte une demande au titre de la garantie A à Z même quand le suivi a
 
 Attention : demander un rejet de débit à ta banque te prive de la protection de la plateforme. Amazon refuse alors tout remboursement au titre de la garantie A à Z, eBay peut clôturer ton litige et Etsy prévient que « vous ne pourrez pas ouvrir de litige ».
 
-Commande passée sur AliExpress, Temu ou Shein ? Leurs délais sont dans [suivre un colis venu de Chine](guide:tracking-from-china).
+Commande passée sur AliExpress, Temu ou Shein ? Leurs délais sont dans [suivre un colis venu de Chine](guide:tracking-from-china). Colis [Cainiao](carrier:cainiao) ou [YunExpress](carrier:yunexpress) ? Leur page dit qui contacter quand il est indiqué livré.
 
 ## Peut-on réclamer directement au transporteur ?
 
@@ -126,7 +128,7 @@ Souvent, en dernier recours :
 
 ### Peek peut-il retrouver mon colis ?
 
-Non. [Peek](/) ne montre que ce que le transporteur publie, et ne peut ni le contacter ni réclamer à ta place. En revanche, il vérifie le suivi jusqu'à toutes les 2 minutes sur le dernier kilomètre et peut t'envoyer une alerte : tu peux ainsi aller voir à ta porte juste après le scan « livré ».
+Non. [Peek](/), comme tout [suivi de colis universel](guide:universal-tracker), ne montre que ce que le transporteur publie, et ne peut ni le contacter ni réclamer à ta place. En revanche, il vérifie le suivi jusqu'à toutes les 2 minutes sur le dernier kilomètre et peut t'envoyer une notification : tu peux ainsi aller voir à ta porte juste après le scan « livré ».
 
 ### Faut-il porter plainte pour un colis volé ?
 

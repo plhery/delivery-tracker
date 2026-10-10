@@ -4,7 +4,7 @@ description: Onde está o número de seguimento no e-mail, na conta da loja ou n
 slug: onde-encontrar-numero-de-seguimento
 picture: Um e-mail de envio com o número RR123456785CH destacado a amarelo, uma etiqueta com código de barras ao lado e o Pip a sorrir.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 O número de seguimento costuma vir no e-mail ou no SMS que a loja te manda quando a encomenda sai, ou está na página da encomenda, no site ou na app, a um clique do número da encomenda. Se foste tu a enviar, está no talão que te deram ao balcão. Nenhuma transportadora procura uma encomenda pelo teu nome ou pela tua morada, mas o aviso deixado na caixa do correio, a app de algumas transportadoras ou o próprio remetente podem ajudar-te a segui-la.
@@ -35,7 +35,7 @@ Encontraste o e-mail, mas não sabes qual dos números é o certo? Cola-o inteir
 
 Não está lá número nenhum? Pode ainda não existir, ou nunca vir a existir. A Temu avisa que o armazém pode levar 1 a 3 dias úteis a processar a encomenda antes de haver número. A Amazon diz que algumas embalagens, «como entregas internacionais padrão», poderão não ser rastreáveis, e só mostra o seguimento de um vendedor externo se ele o partilhar e se tiveres escolhido uma opção de entrega rastreável. Na Vinted, só há seguimento para artigos comprados com o botão «Comprar agora» e enviados segundo as instruções da app.
 
-Compraste no AliExpress ou noutra loja chinesa? Vê [como seguir uma encomenda da China](guide:tracking-from-china).
+Compraste no AliExpress ou noutra loja chinesa? Vê [como seguir uma encomenda da China](guide:tracking-from-china); onde está o número no AliExpress, di-lo a página da [Cainiao](carrier:cainiao).
 
 ### No aviso deixado na caixa do correio
 
@@ -118,7 +118,7 @@ Não. A DHL alemã di-lo claramente: o número da encomenda é dado pela loja e 
 
 Para os distinguir: no e-mail da loja, um número com a palavra «encomenda» ou «pedido» ao lado costuma ser da loja e não funciona no site da transportadora; o número de seguimento vem com o nome de uma transportadora ou com uma ligação para a página de seguimento dela. Mas atenção às palavras, porque nem todos as usam da mesma maneira: na DPD, o «número de encomenda» é precisamente o número de seguimento, e a Amazon.es, em português, chama «números de referência» aos números de seguimento.
 
-Quanto ao aspeto: `1Z999AA10123456784` é um número da UPS, o da DPD tem 14 algarismos e os CTT usam normalmente o formato postal internacional de 13 caracteres, com 2 letras, 9 algarismos e 2 letras, o mesmo de `RR123456785CH`. Em [como saber qual é a transportadora](guide:tracking-number-formats) vês a que transportadora pertence cada número.
+Quanto ao aspeto: `1Z999AA10123456784` é um número da UPS, o da DPD tem 14 algarismos, o da [NACEX](carrier:nacex) tem quatro algarismos, uma barra e oito algarismos, e os CTT usam normalmente o formato postal internacional de 13 caracteres, com 2 letras, 9 algarismos e 2 letras, o mesmo de `RR123456785CH`. Em [como saber qual é a transportadora](guide:tracking-number-formats) vês a que transportadora pertence cada número.
 
 ## O número não dá resultados: é o número certo?
 

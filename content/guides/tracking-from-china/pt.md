@@ -4,14 +4,14 @@ description: Como seguir uma encomenda do AliExpress, da Temu ou da Shein até P
 slug: rastrear-encomenda-da-china
 picture: Um avião traça um arco pontilhado sobre o globo, de um marcador vermelho até ao marcador verde de casa, e o Pip viaja entre duas carrinhas.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Uma encomenda do AliExpress, da Temu ou da Shein muda de mãos pelo caminho: uma empresa de logística chinesa leva-a de avião, a alfândega verifica-a à chegada e os CTT ou outra transportadora entregam-na, muitas vezes com um número novo. Cada empresa só regista leituras no seu troço do percurso. Por isso, conta com até 11 dias sem nenhuma leitura no início, silêncio durante o voo e uma espera depois de «arrived at destination country». Segue primeiro o tracking da loja e depois o da transportadora local. No envio mais barato, o seguimento pode acabar de vez nessa troca.
 
 ## O tracking do AliExpress é fiável?
 
-Tão fiável como as leituras que tem, tal como o da Temu e o da Shein: nenhum site de seguimento, nem o Peek, consegue mostrar uma leitura que a transportadora não publicou. O AliExpress manda-te para o site de seguimento da Cainiao, a empresa de logística do grupo Alibaba. Os silêncios vêm do próprio percurso:
+Tão fiável como as leituras que tem, tal como o da Temu e o da Shein: nenhum site de seguimento, nem o Peek, consegue mostrar uma leitura que a transportadora não publicou. O AliExpress manda-te para o site de seguimento da [Cainiao](carrier:cainiao), a empresa de logística do grupo Alibaba. Os silêncios vêm do próprio percurso:
 
 :::journey
 - shop | Vendedor | Entrega-a a uma empresa de logística chinesa. Até 11 dias sem leituras
@@ -66,13 +66,13 @@ Há três razões habituais:
 
 - **O AliExpress juntou as tuas encomendas.** Segundo o AliExpress, um número partilhado por várias encomendas quer dizer que o envio delas passou a um serviço melhor.
 - **Uma encomenda, vários volumes.** A Temu dá a cada volume o seu prazo de entrega e, quando está pronto, o seu número de seguimento.
-- **Passou para uma transportadora local**, com etiqueta e número próprios. A Cainiao mostra esse número na página de seguimento quando o publica. A partir daí, segue-a no site dessa transportadora.
+- **Passou para uma transportadora local**, com etiqueta e número próprios. A Cainiao mostra esse número na página de seguimento quando o publica. A partir daí, segue-a no site dessa transportadora. Alguns [serviços de seguimento](guide:universal-tracker) juntam os dois números quando o novo aparece nos dados da primeira transportadora.
 
 Os números postais são a exceção. A União Postal Universal só permite um identificador S10 por objeto, por isso um número dos correios chineses costuma funcionar também no «Seguir objeto» dos CTT.
 
 ### De que empresa é o meu número?
 
-Além da Cainiao, é comum aparecerem a YunExpress, a 4PX e a Yanwen (que até vende linhas com o nome da Temu e do AliExpress):
+Além da Cainiao, é comum aparecerem a [YunExpress](carrier:yunexpress), a 4PX e a Yanwen (que até vende linhas com o nome da Temu e do AliExpress):
 
 | Formato do número | Normalmente é |
 | --- | --- |
@@ -108,6 +108,8 @@ Depende da linha que pagaste. A Cainiao conta dias seguidos; a Shein conta dias 
 | Linhas da Cainiao | Premium de 5 a 10 dias para países como Espanha; Standard de 10 a 18 dias; Economy de 20 a 45 dias |
 | Temu | 1 a 3 dias para preparar e depois um prazo para cada volume, quando é enviado |
 | Shein Portugal | Envio padrão de 6 a 10 dias úteis, Ponto Pickup de 6 a 11. A etiqueta «Entregue em 5 dias úteis/Envio Rápido» quer dizer que o artigo pode sair de um armazém na Europa |
+
+É um presente de Natal? Vê também [os prazos de envio no Natal](guide:christmas-posting-dates).
 
 ## Vais pagar alfândega além do preço?
 

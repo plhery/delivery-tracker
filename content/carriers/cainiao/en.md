@@ -18,7 +18,7 @@ No Cainiao page gives the LP, CNG, DOFR or CNFR shapes. Its site takes letters a
 | `CNG12345678900000` | CNG and 14 digits: likely Cainiao. |
 | `CNG12345678975001` | The same, ending in what looks like a French postcode: Cainiao, or possibly [Colis Privé](carrier:colis-prive). |
 | `DOFR1234567890123HD` | DOFR or CNFR, 13 digits, then HD: Cainiao. |
-| `RR123456785CN` | A postal number: Cainiao's site tracks this shape, but so does the post, here China Post. |
+| `RR123456785CN` | A [postal number](guide:tracking-number-formats): Cainiao's site tracks this shape, but so does the post, here China Post. |
 | `YT1234567890123456` | Not Cainiao but [YunExpress](carrier:yunexpress). |
 
 Cainiao's tracking also answers other shapes, such as AP and 14 digits. No Cainiao page says where the number appears outside AliExpress, and none mentions texts to recipients: see [how to find your tracking number](guide:find-tracking-number). If the site shows no tracking, Cainiao asks you to check that it really is a Cainiao or AliExpress number.
@@ -33,20 +33,20 @@ The main lines, in the order a parcel meets them:
 | `Received by logistics company` | The first carrier scan. |
 | `Export customs clearance complete` | Export clearance is done; the parcel is in transit. |
 | `Departed from departure country/region` | Leaving the origin country. |
-| `Import customs clearance started` | At customs in your country. |
+| `Import customs clearance started` | At customs in your country ([what happens there](guide:customs)). |
 | `Received by local delivery company` | Handed to the carrier that will deliver it, not to you. |
 | `Out for delivery` | Out for delivery: the last mile. |
 | `Delivery attempt unsuccessful.Unable to deliver to mailbox` | An attempt failed; the reason follows the first sentence. |
 | `Arrived at pick-up point. Package available for collection.` | Waiting for you at a pickup point. |
 | `Package delivered` | Delivered to you, or picked up by you. |
 
-`Carrier update` is a Cainiao notice: the parcel is in transit. `Accepted for transportation by postal service` is a postal partner taking over after the hand-off, not a first scan; `Delivery Carrier Accepted` means the local carrier has it. The pickup-point line is signed for by the pickup point, not by you; `Package delivered` follows when you pick it up. `Processing delay at sorting center` is a hold-up, not a fault. `Delivery failed` closes the delivery after its attempts.
+`Carrier update` is a Cainiao notice: the parcel is in transit. `Accepted for transportation by postal service` is a postal partner taking over after the hand-off, not a first scan; `Delivery Carrier Accepted` means the local carrier has it. The pickup-point line is signed for by the pickup point, not by you; `Package delivered` follows when you pick it up. `Processing delay at sorting center` is a hold-up, not a fault. `Delivery failed` closes the delivery after its attempts. For the local carrier's own statuses, see [what tracking statuses mean](guide:tracking-statuses).
 
 ## Cainiao delivery attempt unsuccessful, pickup points and lockers
 
 Cainiao says it delivers locally in nine countries and regions without naming them, and elsewhere names Spain, France and Poland, where it has its own lockers. For the UK, Ireland and the US, no Cainiao page names the local carrier or gives rules on delivery attempts. After the handover, the tracking page's "View Contact Information" button shows the local carrier's details when Cainiao has them.
 
-Cainiao's `Tracking notice` says economy shipping "doesn't include tracking after a package has been handed to a destination country/region's carrier." For that carrier's name, ask the seller.
+Cainiao's `Tracking notice` says economy shipping "doesn't include tracking after a package has been handed to a destination country/region's carrier." For that carrier's name, ask the seller, or see [who usually delivers parcels from China](guide:tracking-from-china) in your country.
 
 Cainiao's `Undelivered` covers nobody home, an address the driver couldn't find or a delivery rescheduled or put off at your request; it advises asking the carrier for a re-delivery or picking the parcel up. `Awaiting Collection` and `First Notification to recipient` also mean it's waiting for you. Pick it up at once, Cainiao advises, "or it might be returned to the sender."
 

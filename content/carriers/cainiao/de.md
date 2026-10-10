@@ -22,7 +22,7 @@ Die Formen LP, CNG, DOFR und CNFR beschreibt keine Cainiao-Seite. Die Tracking-S
 | `LP123456785HK` | Ebenfalls eine Postnummer (Hongkong Post), trotz LP keine LP-Nummer von Cainiao. |
 | `YT1234567890123456` | Keine Cainiao-Nummer, sondern [YunExpress](carrier:yunexpress). |
 
-Cainiaos Sendungsverfolgung kennt noch andere Formen, etwa AP mit 14 Ziffern. Wo die Nummer außerhalb von AliExpress steht, sagt keine Cainiao-Seite, und eine SMS von Cainiao an Empfänger oder einen Absendernamen dafür beschreibt Cainiao nirgends. Hast du keine Nummer, frag den Shop danach. Zeigt die Seite gar nichts, bittet Cainiao dich zu prüfen, ob es wirklich eine Cainiao- oder AliExpress-Nummer ist.
+Cainiaos Sendungsverfolgung kennt noch andere Formen, etwa AP mit 14 Ziffern. Wo die Nummer außerhalb von AliExpress steht, sagt keine Cainiao-Seite, und eine SMS von Cainiao an Empfänger oder einen Absendernamen dafür beschreibt Cainiao nirgends. Hast du keine Nummer, frag den Shop danach, oder lies, [wo du die Sendungsnummer findest](guide:find-tracking-number). Zeigt die Seite gar nichts, bittet Cainiao dich zu prüfen, ob es wirklich eine Cainiao- oder AliExpress-Nummer ist. Woran du das erkennst, erklärt [Sendungsnummern erkennen](guide:tracking-number-formats).
 
 ## Cainiao Sendungsverfolgung: was die Status bedeuten
 
@@ -43,7 +43,7 @@ Die Tracking-Seite lässt sich über den Sprachknopf oben rechts auf Deutsch ums
 
 Vor dem ersten Scan zeigt die deutsche Seite den Hinweis `Kein Tracking-Update` und bittet, auf den Versand zu warten oder den Verkäufer zu fragen. `Carrier update` ist ein Hinweis von Cainiao: Das Paket ist unterwegs. Mit `Accepted for transportation by postal service` übernimmt ein Postpartner nach der Übergabe, das ist kein erster Scan; `Delivery Carrier Accepted` heißt, der Paketdienst vor Ort hat es. Zeilen wie `Arrived in transit country/region` bedeuten, dass das Paket über ein Drittland reist. Geht es nach dem Verlassen des Absenderlands nicht direkt ins Zielland, ist das laut Cainiaos Hilfe zu `Leaving Origin` kein Grund zur Sorge. `Processing delay at sorting center` ist eine Verzögerung, kein Fehler.
 
-Die Abholstellen-Zeile heißt, dass die Abholstelle das Paket quittiert hat, nicht du; `Package delivered` folgt erst, wenn du es abholst. `Delivery failed` schließt die Zustellung nach den Versuchen als gescheitert ab.
+Die Abholstellen-Zeile heißt, dass die Abholstelle das Paket quittiert hat, nicht du; `Package delivered` folgt erst, wenn du es abholst. `Delivery failed` schließt die Zustellung nach den Versuchen als gescheitert ab. Was die Status des Paketdiensts vor Ort in seiner eigenen Sendungsverfolgung bedeuten, steht unter [Sendungsstatus erklärt](guide:tracking-statuses).
 
 ## Cainiao in Deutschland, Österreich und der Schweiz: Zustellung und Abholung
 
@@ -95,7 +95,7 @@ Das sagt Cainiao nicht: Für Deutschland, Österreich und die Schweiz nennt kein
 
 ### Wie lange braucht ein Cainiao-Paket nach Deutschland?
 
-Das hängt von der Versandart ab, die der Händler bucht. Cainiao verspricht Händlern, nicht dir für eine bestimmte Bestellung, mit Standard 10 bis 18 Kalendertage in wichtige Länder, nach Deutschland am schnellsten 7 Tage ab Abholung, und mit Economy 20 bis 45 Kalendertage. Ein genaueres Zeitfenster zeigt die Tracking-Seite, wenn Cainiao eines hat.
+Das hängt von der Versandart ab, die der Händler bucht. Cainiao verspricht Händlern, nicht dir für eine bestimmte Bestellung, mit Standard 10 bis 18 Kalendertage in wichtige Länder, nach Deutschland am schnellsten 7 Tage ab Abholung, und mit Economy 20 bis 45 Kalendertage. Ein genaueres Zeitfenster zeigt die Tracking-Seite, wenn Cainiao eines hat. Die Lieferzeiten von AliExpress, Temu und Shein vergleicht [Paket aus China verfolgen](guide:tracking-from-china).
 
 ### Hat Cainiao eine Telefonnummer für Deutschland?
 

@@ -4,7 +4,7 @@ description: Where to find your tracking number in a shipping email, order page 
 slug: how-to-find-tracking-number
 picture: A shipping email with the tracking number RR123456785CH highlighted in yellow, a barcode label beside it, and a smiling Pip.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 You'll usually find your tracking number in the shop's shipping email or text, or in your order on its website or app, one click past the order number. If you sent the parcel yourself, it's on your post office receipt. No carrier will track a package by your name or address, but a missed-delivery card, some carriers' free accounts for incoming parcels, or the sender can still get you tracking.
@@ -36,7 +36,7 @@ Found the email but can't tell which number is which? Paste the whole thing into
 
 No number there? There may be none yet, or none at all. Temu asks you to allow "1-3 business days for warehouse processing" first. Amazon warns that "standard international deliveries" might not be trackable, and eBay shows a number only if the seller used a tracked service and uploaded it.
 
-Ordered from AliExpress or another shop in China? See [tracking a parcel from China](guide:tracking-from-china).
+Ordered from AliExpress or another shop in China? See [tracking a parcel from China](guide:tracking-from-china). On AliExpress, the number is under **My Orders** → the order → **Tracking**, and [Cainiao's page](carrier:cainiao) shows what it looks like.
 
 ### On a missed-delivery card
 
@@ -167,6 +167,7 @@ Still nothing? Ask the sender or the shop, as DHL advises. For each status, see 
 - [Etsy: What's the status of my order](https://help.etsy.com/hc/en-us/articles/115015521948-What-s-the-Status-of-My-Order) – Purchases, View Receipt
 - [Temu: How to track my order](https://www.temu.com/uk/support/c3/how-to-track-my-order-f-48-s-153.html) – Track, 1 to 3 days
 - [Shein: Where is my order](https://m.shein.com/us/faq/detail?id=21338) – My orders
+- [AliExpress: How to track my package?](https://service.aliexpress.com/page/knowledge?pageId=82&knowledge=1060063468&language=en) – My Orders, Tracking
 - [Vinted: Tracking a parcel](https://www.vinted.co.uk/help/100-tracking-a-parcel) – Track parcel, 48 hours
 - [UPU: S10 standard](https://www.upu.int/UPU/media/upu/files/postalSolutions/programmesAndServices/standards/S10-12.pdf) – the 13-character postal format
 :::

@@ -4,7 +4,7 @@ description: Qué significan los estados de un envío, en el orden en que aparec
 slug: estados-de-envio-significado
 picture: Una ruta con curvas y paradas ya completadas (etiqueta, almacén, avión), una furgoneta en la parada actual, una casa más adelante y Pip corriendo.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Un estado de seguimiento es el último escaneo del transportista resumido en pocas palabras, y casi ninguno te pide nada. «Pre-admisión» o «Etiqueta creada» quieren decir que el transportista aún no tiene tu paquete; «En tránsito», que está en algún punto entre dos escaneos, y «En reparto», que va hoy con el repartidor. Solo unos pocos te necesitan: un intento de entrega fallido, un paquete que te espera en una oficina o un punto de recogida, un pago de aduanas y un «Entregado» cuando a ti no te ha llegado nada.
@@ -65,7 +65,7 @@ GLS suele entregar los envíos nacionales en 24 horas laborables desde que tiene
 
 - **Sale del país.** Lo cargan en un avión, un barco o un tren. DHL explica que viaja dentro de un contenedor y que los paquetes se vuelven a escanear uno a uno ya en el país de destino. En el seguimiento de Correos verás líneas como `Salida de oficina de cambio` y, ya en el país de llegada, `Salida de oficina de cambio de destino`.
 - **Aduanas.** Según Correos, pasa por aduanas todo lo que llega a la Península y Baleares desde fuera de la UE o desde Canarias, Ceuta y Melilla, y todo lo que entra en esos tres territorios. En su seguimiento verás `Inicio de tramitación aduanera` o `Pendiente de tramitación aduanera`. Casi siempre es un trámite: DHL, en su web alemana, habla de varios días laborables según la documentación, y ningún transportista da un máximo general. Desde el 1 de julio de 2026, una compra de hasta 150 € que llega de fuera de la UE a la Península, Baleares o Canarias paga un arancel de 3 € por cada tipo de producto, aunque la tienda ya te haya cobrado el IVA. Correos lo muestra como `Arancel UE`, con su importe, y no entrega el paquete sin cobrarlo, salvo que el vendedor lo pagara por adelantado. Paga solo lo que te pidan: entrando tú en la App de Correos o en la web Mi Oficina hasta que empiece la entrega, o después al cartero o en la oficina. El resto está en [paquetes retenidos en aduanas](guide:customs).
-- **Transportista local.** Cuando otra empresa hace el último tramo, DHL te remite al seguimiento del transportista del país de destino. ¿Has pedido en AliExpress, Temu o Shein? Mira [cómo seguir un paquete que viene de China](guide:tracking-from-china).
+- **Transportista local.** Cuando otra empresa hace el último tramo, DHL te remite al seguimiento del transportista del país de destino. ¿Has pedido en AliExpress, Temu o Shein? Mira [cómo seguir un paquete que viene de China](guide:tracking-from-china). Si su seguimiento sale en inglés, las páginas de [Cainiao](carrier:cainiao) y [YunExpress](carrier:yunexpress) explican qué significan sus estados.
 
 ## ¿«En reparto» significa que llega hoy?
 
@@ -78,7 +78,7 @@ Normalmente, sí:
 
 Ojo con un estado que despista: en una entrega a domicilio, `Alta en la unidad de reparto` significa que el paquete ha llegado a la unidad de Correos que lo entregará «en cuanto sea posible», no que ya vaya en la furgoneta.
 
-[Peek](/) consulta el seguimiento hasta una vez cada 2 minutos cuando un paquete está en reparto (y hasta una vez cada 10 minutos el resto del tiempo), y puedes dejar sus avisos en «Solo el día de entrega».
+[Peek](/) consulta el seguimiento hasta una vez cada 2 minutos cuando un paquete está en reparto (y hasta una vez cada 10 minutos el resto del tiempo), y puedes dejar sus notificaciones en «Solo el día de entrega».
 
 ## «Intento de entrega» o «ausente»: ¿y ahora qué?
 
@@ -118,7 +118,7 @@ No siempre. Significa que el repartidor lo ha escaneado como entregado:
 
 ## ¿Una incidencia significa que se ha perdido?
 
-No. Correos llama «envío estacionado» al que tiene una incidencia que impide entregarlo: un paquete roto o dañado, datos del destinatario insuficientes, una dirección incorrecta o desconocida, que nadie se haga cargo o que falte el prerregistro. Lo guarda 5 días naturales a la espera de que se corrijan los datos, y puedes corregirlos tú en «Gestión de estacionados» con el número de envío y el PIN que te manda por SMS o email. Si no tienes PIN, habla con la empresa que te lo envía: ella se encarga del trámite.
+No. Correos llama «envío estacionado» al que tiene una incidencia que impide entregarlo: un paquete roto o dañado, datos del destinatario insuficientes, una dirección incorrecta o desconocida, que nadie se haga cargo o que falte el prerregistro. Lo guarda 5 días naturales a la espera de que se corrijan los datos, y puedes corregirlos tú en «Gestión de estacionados» con el [número de envío](guide:find-tracking-number) y el PIN que te manda por SMS o email. Si no tienes PIN, habla con la empresa que te lo envía: ella se encarga del trámite.
 
 En SEUR, `EL ENVÍO HA SUFRIDO UN RETRASO Y ES POSIBLE QUE SE DEMORE LA ENTREGA…` avisa de un retraso, no de una pérdida. UPS usa `Excepción` cuando algo inesperado puede cambiar la fecha de entrega, y da el motivo en «Progreso del envío», dentro del detalle del seguimiento.
 

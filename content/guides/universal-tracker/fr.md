@@ -1,13 +1,13 @@
 ---
 title: Suivi de colis universel : tous tes colis au même endroit
-description: Comment marche un suivi de colis universel, ce qu'il ne voit pas, et 17TRACK, ParcelsApp, AfterShip et d'autres comparés : compte, pubs, alertes, prix.
+description: Comment marche un suivi de colis universel, ce qu'il ne voit pas, et 17TRACK, ParcelsApp, AfterShip et d'autres comparés : compte, pubs, notifications, prix.
 slug: suivi-colis-universel-tous-transporteurs
 picture: Cinq camionnettes de couleurs différentes dont les pointillés mènent à une seule liste sur un téléphone, et Pip, radieux, dans un carton ouvert.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
-Un suivi de colis universel (ou « tracker de colis ») est un site ou une app qui accepte le numéro de suivi de n'importe quel transporteur, trouve à qui il appartient, va chercher les scans et range tous tes colis dans une seule liste. Il n'affiche que ce que le transporteur a enregistré : il n'est donc jamais en avance sur lui. Ce qui change d'un service à l'autre, c'est ce qu'il te demande en échange : un compte, l'accès à ta boîte mail, un abonnement pour les alertes, ou de la patience face aux pubs.
+Un suivi de colis universel (ou « tracker de colis ») est un site ou une app qui accepte le numéro de suivi de n'importe quel transporteur, trouve à qui il appartient, va chercher les scans et range tous tes colis dans une seule liste. Il n'affiche que ce que le transporteur a enregistré : il n'est donc jamais en avance sur lui. Ce qui change d'un service à l'autre, c'est ce qu'il te demande en échange : un compte, l'accès à ta boîte mail, un abonnement pour les notifications, ou de la patience face aux pubs.
 
 ## Peut-on suivre tous ses colis dans une seule app ?
 
@@ -37,19 +37,21 @@ Les autres options, avec leurs limites :
 - **PayPal** ajoute tes achats « que vous ayez payé avec PayPal ou non ». Son aide cite la France parmi les pays concernés, mais ni la Belgique ni la Suisse.
 - **Shop** ajoute automatiquement les commandes Shopify et Shop Pay, ne les suit que dans son app, et n'accepte que les e-mails transférés « rédigés en anglais ».
 
+Pas de numéro du tout ? Lis [comment suivre un colis sans numéro](guide:find-tracking-number).
+
 ## Quelle application de suivi de colis choisir ?
 
-Aucune n'est la meilleure pour tout le monde : tout dépend de tes transporteurs et de ce que tu acceptes de céder pour avoir des alertes. Vérifie toi-même ces points, y compris ce qu'affirme cette page :
+Aucune n'est la meilleure pour tout le monde : tout dépend de tes transporteurs et de ce que tu acceptes de céder pour avoir des notifications. Vérifie toi-même ces points, y compris ce qu'affirme cette page :
 
 | Point | Où regarder | À surveiller |
 | --- | --- | --- |
 | Compte | Ajoute un colis sans te connecter | Le mode invité d'AfterShip s'arrête à 3 envois |
 | Pubs | App Store : « Publicité » sous « Contient », rubrique « Âge ». Google Play : « Contient des annonces » | Les deux reposent sur les réponses du développeur. AfterShip déclare « Publicité » mais sa description promet « Pas de publicité » |
-| Alertes | La fiche ou les pages d'aide | Parcel réserve les notifications push au Premium |
+| Notifications | La fiche ou les pages d'aide | Parcel réserve les notifications push au Premium |
 | Ta boîte mail | « Connecter Gmail ou Outlook » ou « transférer un e-mail » | Shop parcourt tes e-mails des 30 derniers jours, puis continue de vérifier les nouveaux |
 | Tes données | « Confidentialité de l'app » sur l'App Store, « Sécurité des données » sur Google Play, la politique de confidentialité | Sur l'App Store, ces informations « n'ont pas été vérifiées par Apple ». Tout service de suivi transmet ton numéro à d'autres |
 | Durée de conservation | La politique de confidentialité | Deliveries garde les e-mails transférés jusqu'à dix jours ; Parcels affiche sur Google Play « Impossible de supprimer les données » |
-| Tes transporteurs | Sa liste de transporteurs | Cherche Colissimo, Mondial Relay, Colis Privé, bpost ou La Poste suisse plutôt que le total : 17TRACK annonce plus de 2 500 transporteurs sur l'App Store, plus de 2 800 sur sa page USPS |
+| Tes transporteurs | Sa liste de transporteurs | Cherche Colissimo, Mondial Relay, [Colis Privé](carrier:colis-prive), bpost ou La Poste suisse plutôt que le total : 17TRACK annonce plus de 2 500 transporteurs sur l'App Store, plus de 2 800 sur sa page USPS |
 | Langue | Les « Langues » de la fiche, puis l'app | La fiche de Route n'indique que l'anglais. Celle de 17TRACK aussi, mais sa description promet une « interface multilingue » et son site existe en français |
 
 ## Gratuit ou payant : les principaux services comparés
@@ -99,7 +101,7 @@ Pour décoder un numéro toi-même, lis [à quel transporteur appartient un num�
 
 ### Pourquoi deux sites de suivi ne disent pas la même chose
 
-Chacun a ses sources et son rythme. ParcelsApp l'explique : les nouvelles informations peuvent arriver à des moments différents, et un service peut trouver le transporteur local avant un autre. Le site du transporteur reste la référence.
+Chacun a ses sources et son rythme. ParcelsApp l'explique : les nouvelles informations peuvent arriver à des moments différents, et un service peut trouver le transporteur local avant un autre. Le site du transporteur reste la référence. Pour lire ses lignes, vois [ce que veut dire chaque statut](guide:tracking-statuses).
 
 ## Que se passe-t-il quand le colis change de transporteur ?
 
@@ -113,7 +115,7 @@ Un colis international passe souvent de main en main. Le transporteur local, pr�
 - home | Chez toi | Les derniers scans n'apparaissent parfois que sous le numéro B
 :::
 
-Les services qui relient les numéros, comme ParcelsApp, font le lien entre A et B quand B apparaît dans les données du premier transporteur. Sinon, cherche un nouveau numéro dans l'historique complet et essaie les deux sur les sites officiels des transporteurs concernés, par exemple ceux de La Poste, de bpost ou de La Poste suisse. Pour une commande passée sur un site chinois, lis [suivre un colis venu de Chine](guide:tracking-from-china).
+Les services qui relient les numéros, comme ParcelsApp, font le lien entre A et B quand B apparaît dans les données du premier transporteur. Sinon, cherche un nouveau numéro dans l'historique complet et essaie les deux sur les sites officiels des transporteurs concernés, par exemple ceux de La Poste, de bpost ou de La Poste suisse. Pour une commande passée sur un site chinois, lis [suivre un colis venu de Chine](guide:tracking-from-china). Chez [Cainiao](carrier:cainiao) comme chez [YunExpress](carrier:yunexpress), le numéro B peut apparaître sur la page de suivi du premier transporteur.
 
 ## Ce qu'un suivi universel ne peut pas voir
 
@@ -122,7 +124,7 @@ Tout ce que le transporteur n'a pas publié. ParcelsApp le dit sans détour : il
 - bpost prévient qu'elle reçoit parfois le code-barres de l'expéditeur avec du retard : en attendant, My bpost ne reconnaît pas le colis.
 - Parcel dit avoir jusqu'à 90 minutes de retard sur le site du transporteur, 45 en moyenne.
 
-Le vrai « temps réel » vient du transporteur : dans de plus en plus de régions, La Poste suisse donne aux clients de « Mes envois » une plage horaire de 40 à 90 minutes, puis le trajet du colis en direct pendant les dernières minutes.
+Le vrai « temps réel » vient du transporteur : dans de plus en plus de régions, La Poste suisse donne aux clients de « Mes envois » une plage horaire de 40 à 90 minutes, puis le trajet du colis en direct pendant les dernières minutes. Le cadre de suivi de [Quickpac](carrier:quickpac) propose parfois une « Livraison en direct de l'envoi ».
 
 **Les transporteurs peuvent aussi fermer la porte.** Depuis le 1er avril 2026, la poste américaine (USPS) fait payer l'accès à ses données de suivi aux services qui n'expédient pas le colis, et 17TRACK prévient que les recherches USPS non vérifiées seront ralenties, facturées ou bloquées. L'app Deliveries, elle, n'affiche plus La Poste suisse que dans une vue web. Si un numéro n'affiche presque rien, va voir directement sur le site du transporteur.
 

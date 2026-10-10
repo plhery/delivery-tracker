@@ -16,7 +16,7 @@ A Correos Express não publica o formato do número. A página portuguesa de apo
 | --- | --- |
 | `1234 5678 9012 3452` | 16 dígitos: Correos Express, mas também DHL eCommerce, Canada Post, TNT e Evri UK. |
 | `12345678901234567890123` | 23 dígitos: Correos Express. Com 000 nas posições 15 a 17, o Peek toma-o por um número da Australia Post. |
-| `RR123456785ES` | Letras e algarismos: os Correos, o correio espanhol, não a Correos Express. |
+| `RR123456785ES` | Letras e algarismos, no [formato postal](guide:tracking-number-formats): os Correos, o correio espanhol, não a Correos Express. |
 | `0123/45678901` | Com uma barra: a [NACEX](carrier:nacex), outra transportadora. |
 
 A Correos Express não diz onde as lojas põem o número nem publica o nome com que assina os SMS, por isso procura no e-mail de envio da loja ou na página da encomenda ([onde encontrar o número de seguimento](guide:find-tracking-number)).
@@ -44,7 +44,7 @@ O localizador espanhol mostra os estados em espanhol, e é esse que o Peek lê. 
 
 `ENTREGADO EN PUNTO DE CONVENIENCIA` engana: *entregado* quer dizer entregue, mas ao ponto, não a ti. Espera por `DISPONIBLE EN PUNTO DE CONVENIENCIA` e pelo PIN.
 
-A FAQ portuguesa explica `ESTACIONADO`: «Significa que tentamos entregar a sua encomenda, mas não foi possível concluir a entrega, e o seu envio encontra-se atualmente nas nossas instalações.» A Correos Express não explica `EN DESTINO`, `NUEVO REPARTO`, `ENTREGADO EN PUNTO DE CONVENIENCIA`, `ADMITIDO EN OFICINA DE CORREOS` (aceite numa estação dos Correos) nem `EN ALMACÉN` (em armazém): esses significados são traduções literais ou leitura do Peek.
+A FAQ portuguesa explica `ESTACIONADO`: «Significa que tentamos entregar a sua encomenda, mas não foi possível concluir a entrega, e o seu envio encontra-se atualmente nas nossas instalações.» A Correos Express não explica `EN DESTINO`, `NUEVO REPARTO`, `ENTREGADO EN PUNTO DE CONVENIENCIA`, `ADMITIDO EN OFICINA DE CORREOS` (aceite numa estação dos Correos) nem `EN ALMACÉN` (em armazém): esses significados são traduções literais ou leitura do Peek. As etapas comuns a todas as transportadoras estão em [o que quer dizer cada estado do seguimento](guide:tracking-statuses).
 
 ## Levantar encomenda Correos Express: segunda tentativa, morada e Ponto Correos
 

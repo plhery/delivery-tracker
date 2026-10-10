@@ -4,7 +4,7 @@ description: Co znaczy „paczka zatrzymana przez urząd celny”, ile trwa odpr
 slug: paczka-zatrzymana-przez-urzad-celny
 picture: Budka celna z pasiastym szlabanem, dokument z okrągłą pieczątką i ptaszkiem, a przed szlabanem cierpliwie czeka Pip.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 „Paczka zatrzymana przez urząd celny” zwykle oznacza, że Twoja przesyłka spoza Unii Europejskiej przechodzi rutynową odprawę celną, a nie że ktoś ją skonfiskował. Jeśli utknęła na dłużej, Poczta Polska albo kurier może czekać na Twoją zapłatę, pełnomocnictwo lub dokumenty. Sprawdź to na stronie albo w aplikacji przewoźnika, nigdy przez link z SMS-a.
@@ -46,7 +46,7 @@ Przygotuj numer magazynowy, bo bez niego nie dostaniesz informacji. Jeśli pisze
 
 ## Ile trwa odprawa celna paczki?
 
-Nikt nie gwarantuje terminu. W większości przypadków formalności załatwia sama Poczta Polska, a gdy urząd celny obsłuży jej zgłoszenie, paczka trafia do doręczenia, piszą Poczta i KAS.
+Nikt nie gwarantuje terminu. W większości przypadków formalności załatwia sama Poczta Polska, a gdy urząd celny obsłuży jej zgłoszenie, paczka trafia do doręczenia, piszą Poczta i KAS. Prezenty spoza UE zamawiaj więc wcześnie, radzi poradnik [do kiedy wysłać paczkę przed świętami](guide:christmas-posting-dates).
 
 Paczka czeka dłużej, gdy:
 
@@ -116,7 +116,7 @@ Tak, od 1 lipca 2026 r. również za tanie zamówienia, ale część należnośc
 - **Brak numeru IOSS:** jeśli w elektronicznej deklaracji nie ma poprawnego numeru IOSS, Poczta Polska zgłasza paczkę z naliczeniem VAT i nie odpowiada za ten błąd. Napisz wtedy do sprzedawcy.
 - **„To prezent”:** zwolnienie do 45 euro obejmuje tylko okazjonalne przesyłki od osoby prywatnej do osoby prywatnej, nie zamówienia ze sklepu.
 
-Jak takie zamówienia podróżują, opisuje poradnik o [śledzeniu paczki z Chin](guide:tracking-from-china).
+Jak takie zamówienia podróżują, opisuje poradnik o [śledzeniu paczki z Chin](guide:tracking-from-china). Co znaczą angielskie statusy odprawy w śledzeniu takich paczek, przeczytasz na stronach o [Cainiao](carrier:cainiao) i [YunExpress](carrier:yunexpress).
 
 ## SMS o dopłacie do paczki albo o cle: jak rozpoznać oszustwo?
 
@@ -149,7 +149,7 @@ Jak zgłosić oszustwo:
 Gdy odmówisz przyjęcia paczki albo zapłaty, Poczta Polska odsyła ją do nadawcy i unieważnia zgłoszenie celne, a cło, VAT i jej opłata zostają umorzone. Zwroty pieniędzy i reklamacje:
 
 - **Opłata pobrana niesłusznie albo za dużo:** złóż reklamację w Poczcie Polskiej na ereklamacje.poczta-polska.pl. Odpowiedź dostaniesz w ciągu 30 dni, a nienależną opłatę Poczta zwraca najpóźniej 30 dni od uznania reklamacji.
-- **Błąd w wysokości cła lub VAT:** to sprawa dla urzędu celno-skarbowego, nie dla Poczty. Najpierw pobierz poświadczone zgłoszenie celne (PZC) ze strony emonitoring.poczta-polska.pl, najwcześniej 7 dni po doręczeniu. Potrzebujesz numeru przesyłki i kwoty należności bez opłaty pocztowej.
+- **Błąd w wysokości cła lub VAT:** to sprawa dla urzędu celno-skarbowego, nie dla Poczty. Najpierw pobierz poświadczone zgłoszenie celne (PZC) ze strony emonitoring.poczta-polska.pl, najwcześniej 7 dni po doręczeniu. Potrzebujesz [numeru przesyłki](guide:find-tracking-number) i kwoty należności bez opłaty pocztowej.
 
 :::sources
 - [Poczta Polska: Zmiany w opłatach dla przesyłek spoza Unii Europejskiej od 1 lipca 2026 r.](https://www.poczta-polska.pl/news/zmiany-w-oplatach-dla-przesylek-spoza-unii-europejskiej-od-1-lipca-2026-r/) – 3 euro za rodzaj produktu, przykłady, prezenty do 45 euro, magazyn pocztowo-celny, odmowa przyjęcia

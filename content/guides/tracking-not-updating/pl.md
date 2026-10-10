@@ -4,7 +4,7 @@ description: Paczka stoi w miejscu? Sprawdź, dlaczego status przesyłki się ni
 slug: status-przesylki-sie-nie-zmienia
 picture: Kalendarz z kilkoma skreślonymi dniami, linia postępu urwana w połowie i Pip, który czeka, trochę znudzony.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Jeśli status przesyłki się nie zmienia, zwykle znaczy to tylko tyle, że nikt ostatnio nie zeskanował Twojej paczki, a nie że stoi w miejscu. Przewoźnicy skanują paczki w sortowniach i na granicach, nie w trasie, więc długi przejazd, lot, odprawa celna albo weekend to czasem kilka dni bez nowego wpisu. Martw się dopiero wtedy, gdy minie termin podany przez samego przewoźnika (Poczta Polska przyjmuje reklamację zaginionej paczki pocztowej po 14 dniach od nadania, a DPD uznaje paczkę za utraconą 30 dni po terminie doręczenia). I nawet wtedy najpierw napisz do sprzedawcy: to on jest klientem przewoźnika.
@@ -14,7 +14,7 @@ Jeśli status przesyłki się nie zmienia, zwykle znaczy to tylko tyle, że nikt
 Śledzenie pokazuje skany, a nie ruch paczki. A paczkę skanuje się tylko w niektórych miejscach:
 
 - **Między sortowniami nikt nie skanuje.** InPost opisuje drogę paczki tak: kurier zabiera ją do oddziału, stamtąd jedzie do sortowni, a potem w trasę do miasta docelowego. Paczki, które jadą daleko, trafiają jeszcze do Sortowni Głównej, czyli wielkiego centrum logistycznego. Gdy paczka już jedzie, następny skan pojawi się dopiero w kolejnym z tych miejsc.
-- **Weekendy i święta.** Kurierzy DPD doręczają w soboty tylko paczki z usługą dodatkową Sobota. Poczta Polska, odliczając 14 dni do reklamacji, pomija dni ustawowo wolne od pracy, a Vinted liczy dni robocze bez weekendów i świąt.
+- **Weekendy i święta.** Kurierzy DPD doręczają w soboty tylko paczki z usługą dodatkową Sobota. Poczta Polska, odliczając 14 dni do reklamacji, pomija dni ustawowo wolne od pracy, a Vinted liczy dni robocze bez weekendów i świąt. Przerwy świąteczne przewoźników znajdziesz w poradniku [do kiedy wysłać paczkę przed świętami](guide:christmas-posting-dates).
 - **Pogoda i korki.** Amazon pisze, że pogoda i ruch drogowy mogą opóźnić dostawę.
 - **Spóźniona aktualizacja.** Wśród powodów, dla których brakuje informacji o śledzeniu, Amazon wymienia opóźnienie w aktualizacji bazy danych. Vinted uprzedza, że status u niego bywa inny niż na stronie przewoźnika.
 - **Etykieta, której maszyna nie odczyta.** Niemiecki DHL wymienia literówkę w kodzie pocztowym, brak numeru domu, nieczytelne pismo, odklejoną etykietę i uszkodzone opakowanie. Paczka może wtedy pojechać nie tam, gdzie trzeba, albo trafić do ręcznego sortowania, a to potrafi ją opóźnić o kilka dni.
@@ -54,7 +54,7 @@ DHL w Niemczech pisze, że zależnie od kraju docelowego to zupełnie normalne, 
 - **Odprawa celna:** według GLS odprawa przesyłki prywatnej trwa od kilku godzin do dwóch dni roboczych, a przy komplikacjach, na przykład gdy trzeba złożyć dodatkowe wyjaśnienia, nawet do miesiąca. DHL mówi o kilku dniach roboczych, zależnie od tego, czy dokumenty i dane są kompletne. Więcej w poradniku [paczka zatrzymana przez urząd celny](guide:customs).
 - **Paczkę przejmuje inny przewoźnik:** DHL uprzedza o przerwach w śledzeniu i radzi sprawdzić ten sam numer także na stronie przewoźnika w kraju docelowym.
 
-Zamówienie z AliExpress, Temu albo Shein? Zobacz, jak [śledzić paczkę z Chin](guide:tracking-from-china).
+Zamówienie z AliExpress, Temu albo Shein? Zobacz, jak [śledzić paczkę z Chin](guide:tracking-from-china). Przy paczce [Cainiao](carrier:cainiao) albo [YunExpress](carrier:yunexpress) sprawdź też, do kogo pisać, gdy utknie.
 
 ### Wydana do doręczenia, a potem cisza
 

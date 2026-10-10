@@ -4,7 +4,7 @@ description: Why parcel tracking stops updating, how long a gap is normal at eac
 slug: tracking-not-updating
 picture: A calendar with several days crossed out, a progress line that stops halfway, and Pip waiting, a little bored.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Tracking not updating usually means nobody has scanned your parcel (or package) lately, not that it has stopped moving. Carriers scan at depots and borders, not on the road, so a long drive, a flight, customs or a weekend can leave days without a new line. Worry only once the carrier's own waiting time has passed (7 days after mailing for a USPS search, 10 working days after the due date for a Royal Mail 1st or 2nd Class claim), and even then, ask the seller first: it's the carrier's customer.
@@ -14,7 +14,7 @@ Tracking not updating usually means nobody has scanned your parcel (or package) 
 Tracking shows scans, not movement, and a parcel is scanned only at certain points:
 
 - **No scan between hubs.** UPS says a parcel going a long way likely won't be scanned again until its destination hub. Canada Post typically scans a parcel when it's mailed and when it goes out for delivery, and says several days can pass in between.
-- **Weekends and holidays.** USPS delivers Monday to Saturday; on Sunday, only Priority Mail Express and Amazon parcels. Royal Mail counts Saturday as a working day for 1st and 2nd Class, but not Sunday or public holidays.
+- **Weekends and holidays.** USPS delivers Monday to Saturday; on Sunday, only Priority Mail Express and Amazon parcels. Royal Mail counts Saturday as a working day for 1st and 2nd Class, but not Sunday or public holidays. Around Christmas, check [carriers' days off](guide:christmas-posting-dates).
 - **Weather and busy seasons.** Amazon's common reasons for late deliveries include bad weather, heavy traffic, holiday demand and customs.
 - **A label the machines can't read.** DHL names postcode typos, missing house numbers, hard-to-read handwriting, labels that came off and damaged packaging. The parcel may then be misrouted or sorted by hand, delaying it several days.
 
@@ -53,7 +53,7 @@ DHL says it's completely normal, depending on the destination country, for a par
 - **A local carrier takes over:** DHL warns of gaps in tracking and suggests trying the same number on the destination country's tracker.
 - **UPS hands it to the post:** after `Transferred to Post Office for Delivery`, allow an extra day or two.
 
-Ordered from AliExpress, Temu or Shein? See [tracking a parcel from China](guide:tracking-from-china).
+Ordered from AliExpress, Temu or Shein? See [tracking a parcel from China](guide:tracking-from-china), and [Cainiao's tracking](carrier:cainiao) for AliExpress parcels.
 
 ### Out for delivery, then nothing
 
@@ -118,7 +118,7 @@ Within one country, it's slow: USPS gives Ground Advantage 2 to 5 business days,
 
 ### Can I make tracking update sooner?
 
-No, and nor can a tracker: it only shows what the carrier publishes. [Peek](/) keeps checking with the carrier and can notify you when a new scan lands, so you can stop refreshing.
+No, and nor can a tracker: [it only shows what the carrier publishes](guide:universal-tracker). [Peek](/) keeps checking with the carrier and can notify you when a new scan lands, so you can stop refreshing.
 
 ### My tracking number isn't working
 

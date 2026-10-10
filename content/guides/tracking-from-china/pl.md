@@ -4,14 +4,14 @@ description: Jak śledzić paczkę z Chin: czemu numer się zmienia, kto doręcz
 slug: sledzenie-paczki-z-chin
 picture: Samolot leci przerywanym łukiem nad kulą ziemską, od czerwonej pinezki do zielonej, oznaczającej dom, a Pip podróżuje między dwiema furgonetkami.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Paczka z AliExpress, Temu albo Shein przechodzi z rąk do rąk: chińska firma logistyczna wysyła ją samolotem, celnicy ją sprawdzają, a w Polsce doręcza ją Poczta Polska, InPost albo inny przewoźnik, często pod nowym numerem. Każda z tych firm skanuje tylko swój odcinek. Licz się więc z tym, że pierwszy skan pojawi się nawet po 11 dniach, w czasie lotu śledzenie zamilknie, a po statusie „arrived at destination country” paczka jeszcze trochę poczeka. Śledź najpierw numer ze sklepu, a potem numer polskiego przewoźnika. Przy najtańszej wysyłce śledzenie może się urwać na dobre właśnie przy tym przekazaniu.
 
 ## Jak śledzić paczkę z Chin i czy śledzenie jest dokładne?
 
-Śledzenie w AliExpress, Temu i Shein jest tak dokładne, jak skany przewoźników. Żaden tracker, także Peek, nie pokaże skanu, którego przewoźnik nie opublikował. AliExpress odsyła Cię do strony śledzenia Cainiao. Luki w śledzeniu biorą się z samej trasy:
+Śledzenie w AliExpress, Temu i Shein jest tak dokładne, jak skany przewoźników. Żaden tracker, także Peek, nie pokaże skanu, którego przewoźnik nie opublikował. AliExpress odsyła Cię do strony śledzenia [Cainiao](carrier:cainiao). Luki w śledzeniu biorą się z samej trasy:
 
 :::journey
 - shop | Sprzedawca | Przekazuje paczkę chińskiej firmie logistycznej. Do 11 dni bez skanu
@@ -55,21 +55,21 @@ Jeśli po tym statusie nic się nie dzieje, to według Cainiao zwykle kraj docel
 | `Security Check Failed` | Nie przeszła kontroli bezpieczeństwa i nie może zostać wysłana. Napisz do sprzedawcy. |
 | `Unclaimed`, `Storage term expired` | Nikt jej nie odebrał w terminie, więc wraca do nadawcy. |
 
-Status „wydana do doręczenia” i inne codzienne statusy wyjaśnia [poradnik o statusach przesyłki](guide:tracking-statuses).
+Status „wydana do doręczenia” i inne codzienne statusy wyjaśnia [poradnik o statusach przesyłki](guide:tracking-statuses). Więcej angielskich linii z objaśnieniami znajdziesz na stronie o [śledzeniu Cainiao](carrier:cainiao).
 
 ## Dlaczego zmienił się numer przesyłki?
 
 Zwykle z jednego z trzech powodów:
 
 - **AliExpress połączył Twoje zamówienia.** Według AliExpress wspólny numer kilku zamówień oznacza, że ich wysyłkę zmieniono na szybszą i odbierzesz je razem. W Polsce AliExpress oznacza w wynikach wyszukiwania ikoną „Combine Delivery” produkty, które łączy w jedną wysyłkę, gdy zamawiasz je naraz za ponad 5 USD.
-- **Jedno zamówienie, kilka paczek.** Temu podaje czas dostawy osobno dla każdej paczki, a numer przesyłki dopiero wtedy, gdy jest gotowy.
+- **Jedno zamówienie, kilka paczek.** Temu podaje czas dostawy osobno dla każdej paczki, a [numer przesyłki](guide:find-tracking-number) dopiero wtedy, gdy jest gotowy.
 - **Paczkę przejął przewoźnik w Polsce** z własną etykietą i numerem. Cainiao pokazuje ten numer na swojej stronie śledzenia, o ile go udostępni. Od tej chwili sprawdzaj stronę tego przewoźnika.
 
 Wyjątkiem są numery pocztowe. Światowy Związek Pocztowy dopuszcza tylko jeden numer S10 na przesyłkę, więc numer China Post zwykle działa też w śledzeniu Poczty Polskiej.
 
 ### Cainiao, YunExpress, 4PX: co to za firmy?
 
-Poza Cainiao zobaczysz YunExpress, 4PX i Yanwen (Yanwen ma nawet linie z Temu i AliExpress w nazwie). To chińskie firmy logistyczne, które wiozą paczkę do Europy, a nie polscy kurierzy:
+Poza Cainiao zobaczysz [YunExpress](carrier:yunexpress), 4PX i Yanwen (Yanwen ma nawet linie z Temu i AliExpress w nazwie). To chińskie firmy logistyczne, które wiozą paczkę do Europy, a nie polscy kurierzy:
 
 | Numer wygląda tak | Zwykle |
 | --- | --- |
@@ -94,7 +94,7 @@ To zależy od linii wysyłki:
 | Temu | Pocztę Polską, która w czerwcu 2025 r. ogłosiła „partnerstwo strategiczne” z Temu. W grudniu 2025 r. Poczta podała, że przesyłki Temu są nadawane głównie jako paczki Pocztex. |
 | Shein | Shein nie podaje przewoźnika na stronie o wysyłce do Polski. Do wyboru masz wysyłkę standardową albo do automatu paczkowego lub punktu odbioru. |
 
-Gdy w śledzeniu pojawi się nazwa polskiego przewoźnika albo jego numer, dalej śledź paczkę u niego.
+Gdy w śledzeniu pojawi się nazwa polskiego przewoźnika albo jego numer, dalej śledź paczkę u niego. Niektóre trackery [same połączą oba numery](guide:universal-tracker), jeśli drugi pojawi się w danych pierwszego przewoźnika.
 
 ## Ile idzie paczka z Chin do Polski?
 

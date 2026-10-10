@@ -4,7 +4,7 @@ description: Até quando enviar uma encomenda para chegar a tempo do Natal com o
 slug: prazos-envio-encomendas-natal
 picture: Uma página de calendário com um dia de dezembro assinalado com um círculo, uma carrinha de entregas a levar uma encomenda atada com uma fita vermelha debaixo de neve, e o Pip a correr ao lado.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Os CTT, a DPD e a GLS ainda não publicaram datas limite para o Natal de 2026, e em 2025 também não publicaram nenhuma. Os CTT dão prazos indicativos: cerca de 1 dia útil com Correio Azul no continente, 3 com Correio Normal ou Encomenda Postal, e 7 a 15 com Encomenda Postal para os Açores, por isso conta para trás a partir de quinta-feira, 24 de dezembro, e envia com folga. As tabelas dão o prazo de cada transportadora tal como o verificámos na sexta-feira, 9 de outubro de 2026, e dizem se houve data no ano passado.
@@ -89,9 +89,9 @@ Para o estrangeiro também não há datas de Natal, nem por país: nenhuma das t
 
 ## Compras online: deixa tempo para a alfândega
 
-Estes prazos contam desde que a encomenda está na transportadora: a data limite de encomenda de uma loja vem antes. Os CTT aconselham: «Verifique os prazos de entrega antes de finalizar a compra. Se é um presente de Natal, confirme se chega antes da data.»
+Estes prazos contam desde que a encomenda está na transportadora: a data limite de encomenda de uma loja vem antes. Os CTT aconselham: «Verifique os prazos de entrega antes de finalizar a compra. Se é um presente de Natal, confirme se chega antes da data.» Se a loja envia pela [Correos Express](carrier:correos-express) ou pela [NACEX](carrier:nacex), os prazos de entrega estão nas páginas delas.
 
-Uma encomenda de fora da União Europeia passa também pela alfândega, que a pode reter, e da China a viagem pode levar semanas. Nenhuma das páginas citadas dá uma data de Natal para encomendas que chegam do estrangeiro: encomenda cedo e guia-te pela estimativa da loja. Vê [como seguir uma encomenda da China](guide:tracking-from-china) e [o que acontece na alfândega](guide:customs).
+Uma encomenda de fora da União Europeia passa também pela alfândega, que a pode reter, e da China a viagem pode levar semanas (os prazos da [Cainiao](carrier:cainiao) e da [YunExpress](carrier:yunexpress) estão nas páginas delas). Nenhuma das páginas citadas dá uma data de Natal para encomendas que chegam do estrangeiro: encomenda cedo e guia-te pela estimativa da loja. Vê [como seguir uma encomenda da China](guide:tracking-from-china) e [o que acontece na alfândega](guide:customs).
 
 ## E se a tua encomenda de Natal se atrasar?
 
@@ -106,7 +106,7 @@ Nenhuma das três diz ainda se recolhe ou entrega na quinta-feira, 24, na sexta-
 | GLS Portugal | Ainda não anunciado (2025: nenhum aviso) |
 
 :::steps
-- Vê o seguimento da transportadora | No site ou na app, com o código de seguimento do e-mail de envio.
+- Vê o seguimento da transportadora | No site ou na app, com o [código de seguimento](guide:find-tracking-number) do e-mail de envio.
 - Conta só os dias úteis | Fins de semana e feriados não entram nos prazos dos CTT, e na época alta podem esticar.
 - Lê os alertas | Os CTT publicam atrasos por país e para as ilhas na página de alertas de envios.
 - Continua parada depois do Natal? | Vê [porque é que o tracking não atualiza](guide:tracking-not-updating).
@@ -114,7 +114,7 @@ Nenhuma das três diz ainda se recolhe ou entrega na quinta-feira, 24, na sexta-
 
 > Nas alturas de maior tráfego, os CTT chamam a atenção para esquemas de phishing. Se um SMS te pedir um pagamento para entregar um presente, não carregues no link: abre tu o site ou a app da transportadora, e vê [como reconhecer um SMS falso](guide:customs).
 
-Estás à espera de um presente? Cola o código no [Peek](/) e escolhe nas notificações «Só no dia da entrega»: verifica o seguimento até de 2 em 2 minutos quando a encomenda sai para entrega, mas não a faz chegar mais cedo.
+Estás à espera de um presente? Cola o código no [Peek](/) e escolhe nas notificações «Só no dia da entrega»: verifica o seguimento até de 2 em 2 minutos quando a encomenda sai para entrega, mas não a faz chegar mais cedo. Com vários presentes a caminho, vê [como seguir todas as encomendas num só lugar](guide:universal-tracker).
 
 :::sources
 - [CTT: Pesquisa «natal» no site](https://www.ctt.pt/home/pesquisa?q=natal) – sem datas limite de Natal

@@ -4,7 +4,7 @@ description: Colis retenu en douane : ce que ça veut dire, combien de temps ça
 slug: colis-bloque-en-douane
 picture: Un poste de douane avec une barrière rayée, un document tamponné et coché, et Pip qui attend sagement devant la barrière.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 « Bloqué en douane » veut le plus souvent dire que ton colis passe les formalités habituelles d'importation, pas qu'il a été saisi. S'il reste bloqué, le transporteur attend peut-être que tu paies des frais ou que tu envoies une facture. Vérifie sur son site ou son app, en tapant toi-même l'adresse, jamais en suivant un lien reçu par SMS.
@@ -32,7 +32,7 @@ Souvent, rien. Pour en avoir le cœur net :
 - Ouvre le suivi du transporteur | Tape toi-même son adresse ou ouvre son app, jamais un lien reçu par SMS ou par e-mail.
 - Cherche une demande | Un montant à payer, un bouton de paiement ou une demande de documents : il attend quelque chose de toi. Sinon, rien à faire pour l'instant.
 - Fais ce qu'il demande | Paie sur son propre site ou au guichet, ou envoie la facture ou la confirmation de commande qu'il réclame.
-- Demande au transporteur, puis au vendeur | Toujours bloqué ? La douane française et l'OFDF renvoient vers le transporteur. Le vendeur peut te fournir la facture ou le bon numéro de suivi.
+- Demande au transporteur, puis au vendeur | Toujours bloqué ? La douane française et l'OFDF renvoient vers le transporteur. Le vendeur peut te fournir la facture ou [le bon numéro de suivi](guide:find-tracking-number).
 :::
 
 ### Faut-il contacter la douane ?
@@ -58,7 +58,7 @@ Ne laisse pas traîner :
 | Belgique | Sans réponse à une demande de documents de bpost, le colis repart chez l'expéditeur après 14 jours |
 | Suisse | 20 jours pour payer en ligne, puis un rappel papier avec QR-facture. Détermination de la valeur gratuite si tu réponds par écrit sous trois jours ouvrables, CHF 20.– ensuite |
 
-Tu en as assez d'actualiser la page ? Colle le numéro dans [Peek](/) : il vérifie le suivi jusqu'à toutes les 10 minutes et t'envoie une alerte quand le statut change. Il ne peut ni payer les frais à ta place ni accélérer le dédouanement. Si rien ne bouge depuis longtemps et qu'aucune demande n'apparaît, lis [pourquoi un suivi ne bouge plus](guide:tracking-not-updating).
+Tu en as assez d'actualiser la page ? Colle le numéro dans [Peek](/) : il vérifie le suivi jusqu'à toutes les 10 minutes et t'envoie une notification quand le statut change. Il ne peut ni payer les frais à ta place ni accélérer le dédouanement. Si rien ne bouge depuis longtemps et qu'aucune demande n'apparaît, lis [pourquoi un suivi ne bouge plus](guide:tracking-not-updating).
 
 ### Colis dédouané : quand vais-je le recevoir ?
 
@@ -105,7 +105,7 @@ Depuis le 1er juillet 2026, les achats en ligne hors UE de 150 € maximum paien
 - **Belgique :** si la TVA a été payée à l'avance à la boutique, les frais de bpost tombent à 0 €. Sinon, bpost encaisse les frais d'importation avant même de présenter le colis à la douane.
 - **Suisse :** TVA et droits dès que les taxes dépassent CHF 5.–, où que tu commandes. Depuis 2025, les plateformes qui font au moins CHF 100 000.– de chiffre d'affaires en petits envois doivent appliquer la TVA suisse (2019 pour la vente par correspondance). Si la commande entière dépasse le seuil mais pas chacun de ses colis, La Poste suisse dédouane sur la valeur totale quand elle repère un envoi groupé (« colis 1/5 », par exemple).
 
-Dans l'UE, les 3 € s'appliquent même si la boutique a encaissé la TVA (IOSS), précise la [douane française](https://www.douane.gouv.fr/fiche/droit-de-douane-forfaitaire-de-3-euros-sur-les-ventes-distance-de-biens-importes) : s'ils ne figurent pas dans ton total, ils peuvent t'être demandés à l'arrivée. Pour le trajet de ces commandes, lis [suivre un colis venu de Chine](guide:tracking-from-china).
+Dans l'UE, les 3 € s'appliquent même si la boutique a encaissé la TVA (IOSS), précise la [douane française](https://www.douane.gouv.fr/fiche/droit-de-douane-forfaitaire-de-3-euros-sur-les-ventes-distance-de-biens-importes) : s'ils ne figurent pas dans ton total, ils peuvent t'être demandés à l'arrivée. Pour le trajet de ces commandes, lis [suivre un colis venu de Chine](guide:tracking-from-china). Ton colis voyage avec [Cainiao](carrier:cainiao) ou [YunExpress](carrier:yunexpress) ? Leur page explique leurs statuts de douane en anglais.
 
 ## Comment reconnaître un faux SMS de frais de douane ?
 

@@ -4,7 +4,7 @@ description: When to send for Christmas with Royal Mail, Evri, USPS, UPS, FedEx,
 slug: christmas-posting-dates
 picture: A December calendar page with one day circled, a van carrying a red-ribboned parcel through falling snow, and Pip hurrying alongside.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Royal Mail hasn't published its 2026 Christmas dates yet: in 2025, the last days to post in the UK were Wednesday 17 December for 2nd Class, Saturday 20 December for 1st Class and Tuesday 23 December for Special Delivery Guaranteed. In the US, USPS says to send by Thursday 17 December 2026 with Ground Advantage or First-Class Mail, and by Saturday 19 December with Priority Mail Express. The tables below give each carrier's own deadline as checked on Friday 9 October 2026, with last year's date where this year's is not out yet.
@@ -118,7 +118,7 @@ International dates come earlier, and carriers ask you to post as early as you c
 
 These dates are for parcels already with the carrier, so a shop's own last order date comes earlier.
 
-A parcel from outside your country also passes through customs, which can hold it, and from China the trip can take weeks. None of the carrier pages here gives a Christmas date for parcels coming in from abroad, so order early and go by the shop's delivery estimate. See [tracking a parcel from China](guide:tracking-from-china) and [what happens at customs](guide:customs).
+A parcel from outside your country also passes through customs, which can hold it, and from China the trip can take weeks: [Cainiao](carrier:cainiao) tells sellers 20 to 45 days for its Economy line. None of the carrier pages here gives a Christmas date for parcels coming in from abroad, so order early and go by the shop's delivery estimate. See [tracking a parcel from China](guide:tracking-from-china) and [what happens at customs](guide:customs).
 
 ## What if your Christmas parcel is late?
 
@@ -134,7 +134,7 @@ Sent after the last date? Australia Post delivers such items as quickly as it ca
 | An Post, Canada Post | Not announced yet |
 
 :::steps
-- Check the carrier's own tracking | On its site or app, with the number from your shipping email.
+- Check the carrier's own tracking | On its site or app, with [the number from your shipping email](guide:find-tracking-number).
 - Allow for days off | On the days above, the parcel may not move at all.
 - Read the service alerts | Evri, FedEx and Canada Post post disruptions there, such as bad weather.
 - Still stuck after Christmas? | See [why tracking stops updating](guide:tracking-not-updating).
@@ -161,4 +161,5 @@ Waiting for a gift? Paste its number into [Peek](/) and set its notifications to
 - [Canada Post: Service alerts](https://www.canadapost-postescanada.ca/cpc/en/our-company/news-and-media/service-alerts.page) – suspensions
 - [Australia Post: Christmas sending dates](https://auspost.com.au/christmas) – 2026 dates, 2.30pm, interstate days
 - [Australia Post: Public holiday services](https://auspost.com.au/about-us/corporate-information/public-holiday-services) – days off
+- [Cainiao: Cross-border Express Delivery](https://www.cainiao.com/en/global-express.html) – Economy delivery times
 :::

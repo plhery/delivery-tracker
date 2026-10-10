@@ -10,7 +10,7 @@ BRT is an Italian express courier, part of the Geopost group like DPD. Track a p
 
 ## BRT tracking number and where to find it
 
-The BRTcode is in BRT's SMS and emails, on the waybill and on the paper notice left after a missed attempt.
+The BRTcode is in BRT's SMS and emails, on the waybill and on the paper notice left after a missed attempt. No message? See [where else to find a tracking number](guide:find-tracking-number).
 
 BRT's own pages disagree on the length, so go by the shape:
 
@@ -25,7 +25,7 @@ BRT's 3-digit security code, used to change a delivery, isn't a tracking number.
 
 Nothing found on brt.it? The number may be mistyped, archived after 30 days or not yet in BRT's network. BRT's [Advanced Search](https://vas.brt.it/vas/sped_numspe_par.htm) covers 12 months, or 2 for parcel IDs.
 
-Fourteen digits also fit DPD in Germany, Switzerland and the UK, and twelve fit Mondial Relay, Colis Privé and others, so check which carrier the shop's email or the SMS names. More in [tracking number formats](guide:tracking-number-formats).
+Fourteen digits also fit DPD in Germany, Switzerland and the UK, and twelve fit Mondial Relay, [Colis Privé](carrier:colis-prive) and others, so check which carrier the shop's email or the SMS names. More in [tracking number formats](guide:tracking-number-formats).
 
 ## What BRT's tracking statuses mean
 
@@ -33,7 +33,7 @@ BRT's tracking at vas.brt.it opens in Italian, with a switch to English; these a
 
 | BRT's status | What it means for you |
 | --- | --- |
-| `SHIPPING INFO SENT TO BRT` | BRT has the sender's details, not the parcel yet. |
+| `SHIPPING INFO SENT TO BRT` | BRT has the sender's details, not the parcel yet: a ["label created" status](guide:tracking-statuses). |
 | `COLLECTED` | BRT has collected it from the sender. |
 | `DEPARTED` | It has left a BRT branch or hub. |
 | `ARRIVED AT DEPOT` | It's at the branch named in the Filiale column. |

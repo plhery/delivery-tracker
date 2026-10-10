@@ -4,10 +4,10 @@ description: Was eine Sendungsverfolgung für alle Paketdienste kann, wie sie fu
 slug: paketverfolgung-aller-anbieter
 picture: Fünf bunte Lieferwagen, deren gepunktete Wege alle in einer Liste auf einem Handy enden, und Pip, der strahlend aus einem offenen Karton schaut.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
-Eine Paketverfolgung aller Anbieter, kurz Paket-Tracker, ist eine Website oder App, die Sendungsnummern jedes Paketdienstes annimmt, selbst erkennt, woher eine Nummer stammt, die Scans abruft und alle deine Pakete in einer Liste sammelt. Sie zeigt nur Scans, die der Paketdienst erfasst hat, und ist ihm deshalb nie voraus. Die Tracker unterscheiden sich vor allem darin, was sie von dir wollen: ein Konto, Zugriff auf dein Postfach, ein Abo für Benachrichtigungen oder Geduld mit Werbung.
+Eine Paketverfolgung aller Anbieter, kurz Paket-Tracker, ist eine Website oder App, die Sendungsnummern jedes Paketdienstes annimmt, selbst erkennt, woher eine Nummer stammt, die Scans abruft und alle deine Pakete in einer Liste sammelt. Sie zeigt nur Scans, die der Paketdienst erfasst hat, und ist ihm deshalb nie voraus. Die Tracker unterscheiden sich vor allem darin, was sie von dir wollen: ein Konto, Zugriff auf dein Postfach, ein Abo für Mitteilungen oder Geduld mit Werbung.
 
 ## Gibt es eine Sendungsverfolgung für alle Paketdienste?
 
@@ -30,6 +30,8 @@ Fang mit dem kostenlosen Angebot deiner Post an:
 | Österreich | Post App, „Meine Sendungen“ im Post Account | Die App sammelt alle Lieferungen in einer Übersicht und meldet Statusänderungen per Push. Die e-Benachrichtigung kommt, wenn der Absender Versanddaten übermittelt hat, die zu deinem Post Account passen. Wurde das Paket von einer Privatperson, in einer Postfiliale oder bei einem Post Partner aufgegeben, fehlen diese Daten meist, außer bei einer Paketmarke |
 | Schweiz | „Meine Sendungen“ im Kundenportal „Meine Post“ | Kostenlose Infos zu allen Sendungen an die Adresse in deinem Kundenkonto, per E-Mail und Push in der Post-App, auf Wunsch per SMS. In immer mehr Gebieten meist mit einem Zeitfenster von 40 bis 90 Minuten |
 
+Ähnliche Dienste von DPD, Hermes und UPS stellt [Sendungsnummer finden](guide:find-tracking-number) vor.
+
 Andere Möglichkeiten, mit ihren Grenzen:
 
 - **Gmail** verfolgt Pakete laut Google nur bei teilnehmenden Paketdiensten in den USA, und nur mit eingeschalteten smarten Funktionen. Die sind im Europäischen Wirtschaftsraum und in der Schweiz standardmäßig aus.
@@ -39,13 +41,13 @@ Andere Möglichkeiten, mit ihren Grenzen:
 
 ## Welche App ist die beste für die Sendungsverfolgung?
 
-Keine ist für alle die beste: Es hängt von deinen Paketdiensten ab und davon, was du für Benachrichtigungen in Kauf nimmst. Prüf diese Punkte selbst, auch bei den Angaben auf dieser Seite:
+Keine ist für alle die beste: Es hängt von deinen Paketdiensten ab und davon, was du für Mitteilungen in Kauf nimmst. Prüf diese Punkte selbst, auch bei den Angaben auf dieser Seite:
 
 | Prüfpunkt | So prüfst du es | Achte auf |
 | --- | --- | --- |
 | Konto | Füge ein Paket hinzu, ohne dich anzumelden | Grenzen ohne Konto: Bei AfterShip ist im Gastmodus nach 3 Sendungen Schluss |
 | Werbung | App Store: „Enthält Werbung“ unter „Altersfreigabe“. Google Play: „Enthält Werbung“ unter dem Namen der App | Beide Angaben macht der Entwickler selbst, und sie können der Beschreibung widersprechen: AfterShip schreibt dort „Keine Werbeanzeigen“, der App Store zeigt „Enthält Werbung“ |
-| Benachrichtigungen | App-Beschreibung oder Hilfeseiten | Parcel schickt Push-Benachrichtigungen nur im Premium-Abo |
+| Mitteilungen | App-Beschreibung oder Hilfeseiten | Parcel schickt Push-Mitteilungen nur im Premium-Abo |
 | Dein Postfach | Musst du Gmail oder Outlook verbinden, oder reicht es, eine E-Mail weiterzuleiten? | Shop durchsucht nach dem Verbinden die E-Mails der letzten 30 Tage und schaut danach laufend weiter |
 | Deine Daten | „App-Datenschutz“ im App Store, „Datensicherheit“ bei Google Play, die Datenschutzerklärung | Im App Store steht dazu: „Diese Informationen wurden von Apple nicht verifiziert.“ Jeder Tracker gibt deine Nummer weiter |
 | Wie lange Daten gespeichert bleiben | Die Datenschutzerklärung, bei Google Play „Datensicherheit“ | Lieferungen hebt weitergeleitete E-Mails bis zu zehn Tage auf. Bei Google Play steht für die Android-App von ParcelsApp „Daten können nicht gelöscht werden“ |
@@ -54,17 +56,17 @@ Keine ist für alle die beste: Es hängt von deinen Paketdiensten ab und davon, 
 
 ## Kostenlos oder mit Abo: Tracker im Vergleich
 
-Die meisten kosten erst einmal nichts, haben dann aber Werbung, eine Obergrenze oder keine Push-Benachrichtigungen. Die Liste ist alphabetisch, ohne Rangfolge, und stützt sich auf die eigenen Seiten der Anbieter und ihre Einträge im deutschen App Store (Stand: Anfang Oktober 2026). Peek, das diesen Ratgeber herausgibt, steht wie die anderen in der Liste.
+Die meisten kosten erst einmal nichts, haben dann aber Werbung, eine Obergrenze oder keine Push-Mitteilungen. Die Liste ist alphabetisch, ohne Rangfolge, und stützt sich auf die eigenen Seiten der Anbieter und ihre Einträge im deutschen App Store (Stand: Anfang Oktober 2026). Peek, das diesen Ratgeber herausgibt, steht wie die anderen in der Liste.
 
 | Tracker | Konto | Werbung laut Angabe | Kostenlos | Bezahlt in Deutschland |
 | --- | --- | --- | --- | --- |
 | 17TRACK | Nötig, um Nummern zu speichern und zu synchronisieren | Ja | Kontingent nicht angegeben | 3,49 € oder 5,49 € im Monat (Kontingent: 100 oder 200 im Monat) |
 | AfterShip | Gastmodus für bis zu 3 Sendungen | Ja | Mit „Gratis Push-Benachrichtigungen“ | Keine In-App-Käufe aufgeführt |
 | Lieferungen (Deliveries) | Freiwillig, für die Synchronisierung über Junecloud | Keine angegeben | Nicht möglich: Schon zum Start braucht die App ein Abo | 5,49 € im Jahr oder 0,99 € im Monat |
-| Parcel | Keine persönlichen Angaben nötig | Ja | Bis zu 3 Sendungen gleichzeitig, ohne Push-Benachrichtigungen | 6,99 € im Jahr |
-| Parcello | Nicht angegeben | Ja | Mit Werbung, Push-Benachrichtigungen inklusive | Ohne Werbung: 0,99 € im Monat oder 4,99 € im Jahr |
+| Parcel | Keine persönlichen Angaben nötig | Ja | Bis zu 3 Sendungen gleichzeitig, ohne Push-Mitteilungen | 6,99 € im Jahr |
+| Parcello | Nicht angegeben | Ja | Mit Werbung, Push-Mitteilungen inklusive | Ohne Werbung: 0,99 € im Monat oder 4,99 € im Jahr |
 | ParcelsApp (auf dem iPhone „Packages“) | „Keine Registrierung erforderlich“ | Ja | Mit Werbung | Premium ohne Werbung und Grenzen: 4,99 € oder 0,99 €, Laufzeit nicht angegeben |
-| ParcelTrack | Nicht angegeben | Keine angegeben | Mit kostenlosen Push-Benachrichtigungen | Premium für 3,49 €, laut Beschreibung |
+| ParcelTrack | Nicht angegeben | Keine angegeben | Mit kostenlosen Push-Mitteilungen | Premium für 3,49 €, laut Beschreibung |
 | [Peek](/) | Zum Verfolgen nicht nötig; anmelden nur, um Pakete zusammenzuhalten | Keine, laut Datenschutzhinweis | Abfragen pro Tag begrenzt, um Massenabfragen zu verhindern | Gibt es nicht: laut Datenschutzhinweis ein privates, nicht kommerzielles Projekt |
 
 Die Abo-Preise in den App Stores von Deutschland, Österreich und der Schweiz:
@@ -115,7 +117,7 @@ Auf dem Weg aus dem Ausland wechselt ein Paket oft den Paketdienst. Der Paketdie
 - home | Deine Haustür | Die letzten Scans stehen vielleicht nur unter Nummer B
 :::
 
-Tracker, die Nummern verknüpfen, etwa ParcelsApp, verbinden A und B, sobald B in den Daten des ersten Paketdienstes auftaucht. Taucht B dort nie auf, such im vollständigen Verlauf nach einer neuen Nummer und probier sie auf der Seite des Paketdienstes vor Ort aus, etwa bei DHL, der Österreichischen Post oder der Schweizerischen Post. Bei Bestellungen von chinesischen Marktplätzen hilft [Paket aus China verfolgen](guide:tracking-from-china).
+Tracker, die Nummern verknüpfen, etwa ParcelsApp, verbinden A und B, sobald B in den Daten des ersten Paketdienstes auftaucht. Taucht B dort nie auf, such im vollständigen Verlauf nach einer neuen Nummer und probier sie auf der Seite des Paketdienstes vor Ort aus, etwa bei DHL, der Österreichischen Post oder der Schweizerischen Post. Bei Bestellungen von chinesischen Marktplätzen hilft [Paket aus China verfolgen](guide:tracking-from-china). Wo Cainiao und YunExpress die zweite Nummer zeigen, steht auf den Seiten zu [Cainiao](carrier:cainiao) und [YunExpress](carrier:yunexpress).
 
 ## Was ein Tracker nicht sieht
 

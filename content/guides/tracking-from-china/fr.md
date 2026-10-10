@@ -4,14 +4,14 @@ description: Pourquoi le suivi AliExpress, Temu ou Shein ne bouge plus ou change
 slug: suivi-colis-chine-aliexpress-temu-shein
 picture: Au-dessus du globe, un avion file en pointillés d'un repère rouge au repère vert de la maison, et Pip voyage entre deux camionnettes.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Un colis AliExpress, Temu ou Shein change de mains en route : une société logistique chinoise l'expédie hors de Chine, la douane le contrôle à l'arrivée, puis ta poste ou un transporteur local le livre, souvent sous un nouveau numéro. Chacun ne scanne que sa part du trajet. Le premier scan peut mettre jusqu'à 11 jours à apparaître, le suivi reste muet pendant le vol, et il faut encore patienter après « arrivé dans le pays de destination ». Suis le numéro donné par la boutique, puis celui du transporteur local. En livraison économique, le suivi peut s'arrêter pour de bon à ce passage de relais.
 
 ## Le suivi AliExpress est-il fiable ?
 
-Aussi fiable que ses scans (ceux de Temu et de Shein aussi) : aucun site de suivi, Peek compris, ne peut montrer un scan que le transporteur n'a pas publié. AliExpress te renvoie vers le site de suivi de Cainiao, la branche logistique du groupe Alibaba. Les trous dans le suivi viennent du trajet :
+Aussi fiable que ses scans (ceux de Temu et de Shein aussi) : aucun [site de suivi](guide:universal-tracker), Peek compris, ne peut montrer un scan que le transporteur n'a pas publié. AliExpress te renvoie vers le site de suivi de [Cainiao](carrier:cainiao), la branche logistique du groupe Alibaba. Les trous dans le suivi viennent du trajet :
 
 :::journey
 - shop | Vendeur | Le remet à une société logistique chinoise. Jusqu'à 11 jours sans scan
@@ -43,7 +43,7 @@ Si plus rien ne bouge après ce scan, Cainiao explique qu'en général, le suivi
 
 ### Que veulent dire les autres statuts ?
 
-Les lignes de suivi ci-dessous sont en anglais. Sur son site en français, Cainiao traduit les grandes étapes, comme `Départ de l'origine` ou `Non trouvé`.
+Les lignes de suivi ci-dessous sont en anglais. Sur son site en français, Cainiao traduit les grandes étapes, comme `Départ de l'origine` ou `Non trouvé`, et [la page sur le suivi Cainiao](carrier:cainiao) explique d'autres lignes.
 
 | Statut | Ce que ça veut dire |
 | --- | --- |
@@ -71,12 +71,12 @@ Les numéros postaux font exception. L'Union postale universelle ne permet qu'un
 
 ### À quelle société appartient mon numéro ?
 
-À côté de Cainiao, tu croiseras YunExpress, 4PX et Yanwen (qui vend même des lignes au nom de Temu et d'AliExpress) :
+À côté de Cainiao, tu croiseras [YunExpress](carrier:yunexpress), 4PX et Yanwen (qui vend même des lignes au nom de Temu et d'AliExpress) :
 
 | Le numéro ressemble à | En général |
 | --- | --- |
 | `LP` + 14 chiffres | Cainiao (AliExpress) : une forme observée, que Cainiao ne documente pas |
-| `CNG` + 14 chiffres | Cainiao (AliExpress), mais la même forme peut correspondre à Colis Privé |
+| `CNG` + 14 chiffres | Cainiao (AliExpress), mais la même forme peut correspondre à [Colis Privé](carrier:colis-prive) |
 | `YT` + 16 chiffres | YunExpress (`YT` + 13 chiffres, c'est YTO Express) |
 | `4PX` + 13 chiffres + `CN` | 4PX |
 | deux lettres, neuf chiffres, `CN` | China Post ou China EMS |
@@ -108,6 +108,8 @@ Colle l'un ou l'autre numéro dans [Peek](/) : il retrouve le transporteur parmi
 | Shein France | Standard et Point Relais 5 à 9 jours ouvrés, Express 4 à 8 |
 | Shein Belgique | Standard 4 à 8 jours ouvrés, Point Relais 5 à 9 |
 | Shein Suisse | Standard 6 à 8 jours ouvrés |
+
+Pour un cadeau, vois aussi [les dates limites de Noël](guide:christmas-posting-dates).
 
 ## Faut-il payer des frais de douane en plus ?
 

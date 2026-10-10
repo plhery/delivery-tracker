@@ -4,7 +4,7 @@ description: Da «etichetta creata» a «consegnato»: cosa vuol dire ogni stato
 slug: stati-spedizione-cosa-significano
 picture: Un percorso tortuoso con tappe spuntate (etichetta, deposito, aereo), un furgone alla tappa attuale, una casa ancora davanti e Pip che corre.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Uno stato della spedizione è l'ultima scansione del corriere riassunta in poche parole, e quasi sempre non ti chiede niente. «Etichetta creata» vuol dire che il corriere il pacco non ce l'ha ancora, «in transito» che è da qualche parte tra due scansioni, «in consegna» che è sul furgone di oggi. Solo pochi stati ti chiedono di fare qualcosa: una mancata consegna, un pacco in giacenza da ritirare, qualcosa da pagare in dogana e un «consegnato» quando alla porta non c'è niente.
@@ -37,6 +37,8 @@ Stesse tappe, parole diverse:
 | Pronto per il ritiro | Può restare `In consegna` | `Consegnato a una sede UPS Access Point` | `Arrivo al punto di ritiro / ufficio di recapito` |
 | Consegnato | `la spedizione è stata consegnata` | `Consegnato` | `Recapitato da` |
 
+In Svizzera, nel tracking inglese di [Planzer](carrier:planzer) e [Quickpac](carrier:quickpac), `Shipped` vuol dire già consegnato, non spedito.
+
 ## «Etichetta creata»: il corriere ha già il pacco?
 
 No: il venditore ha stampato un'etichetta e mandato i dati al corriere, niente di più. FedEx lo dice chiaro: con `Etichetta creata` il mittente sta ancora preparando il collo, e lo stato si aggiorna quando il collo arriva a FedEx. UPS cambia il suo `Etichetta creata` solo quando ha il pacco e lo ha messo in viaggio nella sua rete. Per la Posta svizzera, con `Notifica dell'invio da parte dello speditore (inoltro dei dati)` il mittente ha generato il numero d'invio, ma di norma il pacco non è ancora alla Posta. Diciture come «spedizione generata, in attesa di ritiro» vogliono dire la stessa cosa.
@@ -55,13 +57,13 @@ Tra un hub e l'altro, il silenzio è normale:
 
 ### Quanto resta in transito un pacco?
 
-In Italia, di solito poco. L'obiettivo di Poste per il Poste Delivery Standard è la consegna entro 5 giorni lavorativi (sabato escluso) nel 90% dei casi; BRT (ex Bartolini) dichiara 1 o 2 giorni lavorativi per il 96% delle spedizioni. In Svizzera un PostPac Priority arriva di norma il giorno feriale successivo, un PostPac Economy entro due giorni lavorativi. Tra Paesi diversi ci vuole di più: per le spedizioni dall'Italia all'estero BRT dichiara da 2 a 10 giorni lavorativi nel 96% dei casi. Fermo da più tempo del previsto? Leggi [perché il tracking non si aggiorna](guide:tracking-not-updating).
+In Italia, di solito poco. L'obiettivo di Poste per il Poste Delivery Standard è la consegna entro 5 giorni lavorativi (sabato escluso) nel 90% dei casi; [BRT (ex Bartolini)](carrier:brt) dichiara 1 o 2 giorni lavorativi per il 96% delle spedizioni. In Svizzera un PostPac Priority arriva di norma il giorno feriale successivo, un PostPac Economy entro due giorni lavorativi. Tra Paesi diversi ci vuole di più: per le spedizioni dall'Italia all'estero BRT dichiara da 2 a 10 giorni lavorativi nel 96% dei casi. Fermo da più tempo del previsto? Leggi [perché il tracking non si aggiorna](guide:tracking-not-updating).
 
 ## Pacchi dall'estero: partenza, dogana, corriere locale
 
 - **Partito dal Paese.** Il pacco viaggia in aereo, in nave o in treno, e nel frattempo non lo scansiona nessuno. La Posta mostra `Arrivo alla frontiera del paese di destinazione`, e avverte che prima del recapito il pacco può dover passare dalla dogana. Può comparire anche `Termine di recapito sconosciuto`: per un invio che arriva dall'estero o ci va, la data non si può prevedere. Se invece spedisci tu con Poste Delivery International Standard, `In transito presso il Centro di lavorazione Internazionale` (il pacco ha lasciato l'Italia) è l'ultima traccia che vedrai.
 - **Dogana.** Su Poste compare `In attesa di sdoganamento`: il pacco è sotto controllo doganale e potrebbero chiederti altri documenti. La Posta scrive `L'invio è stato consegnato alla dogana`, poi `Procedura di sdoganamento postale in corso`, infine `Autorizzato dalla dogana svizzera`, quando passa al recapito nazionale. DHL parla di alcuni giorni lavorativi, la Posta di tre o quattro giorni lavorativi se i dati sono completi e corretti; nessuno dei due dà un massimo. Muoviti solo se ti chiedono un documento o un pagamento; leggi [pacco fermo in dogana](guide:customs).
-- **Corriere locale.** Diciture come «consegnato al corriere locale» o «in transito verso l'operatore dell'ultimo miglio» vogliono dire che l'ultimo tratto lo fa un'altra azienda. DHL ti rimanda al tracking del corriere del Paese di destinazione. Hai ordinato su AliExpress, Temu o Shein? Leggi [come tracciare un pacco dalla Cina](guide:tracking-from-china).
+- **Corriere locale.** Diciture come «consegnato al corriere locale» o «in transito verso l'operatore dell'ultimo miglio» vogliono dire che l'ultimo tratto lo fa un'altra azienda. DHL ti rimanda al tracking del corriere del Paese di destinazione. Hai ordinato su AliExpress, Temu o Shein? Leggi [come tracciare un pacco dalla Cina](guide:tracking-from-china). Le righe in inglese di [Cainiao](carrier:cainiao) e [YunExpress](carrier:yunexpress) sono spiegate nelle pagine dedicate.
 
 ## «In consegna» vuol dire che arriva oggi?
 
@@ -73,7 +75,7 @@ Di solito sì:
 
 Due diciture ingannano. Su Poste, `In consegna` può restare anche dopo che il pacco è stato consegnato, o quando ti aspetta già in un ufficio postale o in un Punto Poste; se la consegna non riesce, torna `In transito`. E `L'invio è stato spartito per il recapito` della Posta vuol dire che un centro l'ha smistato verso la tua località: non è detto che sia già sul furgone. Quanto a «fuori per la consegna», che si legge su alcuni tracking tradotti dall'inglese, è semplicemente «in consegna».
 
-[Peek](/) ricontrolla un pacco in consegna fino a ogni 2 minuti, e il resto del percorso fino a ogni 10 minuti. Puoi impostare gli avvisi su «Solo giorno di consegna».
+[Peek](/) ricontrolla un pacco in consegna fino a ogni 2 minuti, e il resto del percorso fino a ogni 10 minuti. Puoi impostare le notifiche su «Solo giorno di consegna».
 
 ## Tentativo di consegna fallito o pacco in giacenza: cosa fare?
 
@@ -158,6 +160,7 @@ A quel punto decide il venditore: chiedigli di rispedirtelo o di rimborsarti.
 - [La Posta: PostPac Priority](https://www.post.ch/it/spedire-pacchi/pacchi-svizzera/postpac-priority) – giorno feriale successivo
 - [La Posta: PostPac Economy](https://www.post.ch/it/spedire-pacchi/pacchi-svizzera/postpac-economy) – due giorni lavorativi
 - [La Posta: Attuali tentativi di frode](https://site.post.ch/it/chi-siamo/sicurezza/phishing-e-frodi/tentativi-di-frode-attuali) – «Pacco trattenuto presso il terminale», verifica su posta.ch o nella Post-App
+- [Planzer: Tracking](https://tracking.app.planzer.ch/) – `Shipped` nel tracking inglese di Planzer e Quickpac
 - [DHL: What does my shipment status mean?](https://www.dhl.de/en/privatkunden/hilfe-kundenservice/sendungsverfolgung/was-bedeutet-mein-sendungsstatus.html) – stati fermi per ore o giorni
 - [DHL: International shipment status](https://www.dhl.de/en/privatkunden/hilfe-kundenservice/themen/international/sendungsverfolgung/was-bedeutet-mein-sendungsstatus.html) – dogana in alcuni giorni lavorativi, tracking del corriere di destinazione
 - [Peek: home page](https://peektracker.com/it) – «Controllato fino a ogni 10 min» e «Fino a ogni 2 min nell'ultimo miglio»

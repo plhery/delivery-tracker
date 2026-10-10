@@ -10,7 +10,7 @@ Colis Privé est un transporteur de colis français pour les boutiques en ligne,
 
 ## Numéro de suivi Colis Privé : où le trouver
 
-Le numéro se trouve dans l'e-mail de confirmation de commande, sur le site de la boutique ou ton espace client, dans les notifications de Colis Privé (si la boutique les a activées) ou sur l'avis de passage. Attention, la référence d'envoi de la boutique « peut différer du numéro utilisé pour le suivi colis en ligne ». Les e-mails officiels de Colis Privé viennent uniquement de livraison@notification.colisprive.com.
+Le numéro se trouve dans l'e-mail de confirmation de commande, sur le site de la boutique ou ton espace client, dans les notifications de Colis Privé (si la boutique les a activées) ou sur l'avis de passage. Attention, la référence d'envoi de la boutique « peut différer du numéro utilisé pour le suivi colis en ligne ». Pour les distinguer, lis [où trouver ton numéro de suivi](guide:find-tracking-number). Les e-mails officiels de Colis Privé viennent uniquement de livraison@notification.colisprive.com.
 
 Le numéro compte 12 lettres et chiffres :
 
@@ -40,7 +40,7 @@ Le suivi de Colis Privé date chaque étape, sans heure. Voici les mots que Peek
 | `incident` | Un problème que Colis Privé vérifie. |
 | `retourné à l'expéditeur` | Il repart chez la boutique. |
 
-« Colis attendu par Colis Privé » veut dire que c'est Colis Privé qui attend : la boutique a encore le colis ou, précise le site belge, il est en transport international ou en dédouanement. Contacte la boutique. Avec `en cours de distribution par le livreur`, le colis est en tournée, livré de 8 h à 19 h en France, de 12 h à 22 h en Belgique et au Luxembourg. `va être prochainement déposé` annonce un dépôt en relais à la date indiquée, et `subi un retard` annonce un retard. Un `incident` (« adresse erronée, accès impossible, colis bloqué… », selon Colis Privé BeLux) veut dire que des vérifications sont en cours.
+« Colis attendu par Colis Privé » veut dire que c'est Colis Privé qui attend : la boutique a encore le colis ou, précise le site belge, il est en transport international ou [en dédouanement](guide:customs). Contacte la boutique. Avec `en cours de distribution par le livreur`, le colis est en tournée, livré de 8 h à 19 h en France, de 12 h à 22 h en Belgique et au Luxembourg. `va être prochainement déposé` annonce un dépôt en relais à la date indiquée, et `subi un retard` annonce un retard. Un `incident` (« adresse erronée, accès impossible, colis bloqué… », selon Colis Privé BeLux) veut dire que des vérifications sont en cours. Les statuts des autres transporteurs sont expliqués dans [le guide des étapes du suivi](guide:tracking-statuses).
 
 ## Livraison Colis Privé : horaires, avis de passage et point relais
 

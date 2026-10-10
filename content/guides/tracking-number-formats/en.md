@@ -4,7 +4,7 @@ description: Tracking number formats for USPS, UPS, FedEx, DHL, Royal Mail, Evri
 slug: tracking-number-formats-by-carrier
 picture: Three tracking-number labels split into coloured parts, a magnifying glass on the country code CH, and a curious Pip.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 A tracking number's letters and length often tell you which carrier has your parcel or package. `1Z` followed by 16 letters and digits is UPS, 22 digits starting `92` to `95` is USPS, and 13 characters shaped like `RR123456785CH` (two letters, nine digits, two letters) usually belong to a national post, with the issuing country in the last two letters. Plain digits are the hard case: 10, 12 or 14 digits each fit several carriers, so the shipping email, or a tracker that checks the candidates, has the final word.
@@ -38,9 +38,12 @@ Here's what the carriers and the postal standard say about the numbers you're mo
 | An Post | two letters, nine digits, two letters ending `IE` |
 | Canada Post | 16 digits (online labels) or 13 characters ending `CA`; 12 digits for Priority Worldwide |
 | Australia Post | its help page gives no format and calls it a "tracking number, or article ID"; numbers in the postal format end `AU` |
-| YunExpress | `YT` + 16 digits (`YT` + 13 digits is YTO Express) |
+| [YunExpress](carrier:yunexpress) | `YT` + 16 digits (`YT` + 13 digits is YTO Express) |
+| [Cainiao](carrier:cainiao), for AliExpress | no published format; its site takes letters and digits only, and its own example is a postal number ending `HK`. `LP` + 14 digits is likely Cainiao, though not certain, and so is `CNG` + 14 digits |
 | China Post, EMS | the postal format ending `CN`; international EMS numbers start with `E` |
 | Amazon | Amazon publishes no format; `TBA` numbers are covered below |
+
+Elsewhere in Europe, the pages on [Colis Privé](carrier:colis-prive) (France, Belgium and Luxembourg) and [BRT](carrier:brt) (Italy) explain their numbers. For Spain and Portugal, see [Correos Express](carrier:correos-express) and [NACEX](carrier:nacex). For Switzerland, see [Quickpac](carrier:quickpac) and [Planzer](carrier:planzer).
 
 ### Whose tracking number starts with 9 or 420?
 
@@ -107,7 +110,7 @@ If it has 13 characters and ends in two letters, such as `CN`, it's a postal num
 Other numbers travel with a parcel. Some lead back to it, some don't:
 
 - **Order number.** The shop's own reference. DHL reminds you that a tracking number is not an order number.
-- **Missed-delivery cards.** A FedEx door tag (`DT` + 12 digits, US and Canada only), an Evri calling card (8 digits), a Canada Post Delivery Notice Card (15 digits) and the barcode on a USPS PS Form 3849 all lead back to the parcel in their carrier's tracking.
+- **Missed-delivery cards.** A FedEx door tag (`DT` + 12 digits, US and Canada only), an Evri calling card (8 digits), a Canada Post Delivery Notice Card (15 digits) and the barcode on a USPS PS Form 3849 all lead back to the parcel in their carrier's tracking. [What to do after a missed delivery](guide:tracking-statuses) depends on the carrier.
 - **An Post's Trans Ref ID.** It only records your transaction with An Post and tracks nothing.
 
 Have only an order number? [Where to find a tracking number](guide:find-tracking-number) shows where to look in your order.
@@ -127,6 +130,8 @@ A parcel that crosses a border often changes hands, and each company can print i
 - **Postal items** are the easy case: the UPU allows only one S10 number per item, so it usually works on both posts' sites.
 - **FedEx Ground Economy** shipments in the US get a 12-digit FedEx number and a USPS tracking number as well.
 - **AliExpress economy shipping:** Cainiao says tracking stops at the handover to the local carrier, and that the seller can tell you how to reach that carrier. More in [tracking a parcel from China](guide:tracking-from-china).
+
+Some trackers join the two numbers once the first carrier's data shows the new one: see [universal parcel tracking](guide:universal-tracker).
 
 A number that returns nothing isn't always mistyped. Portugal's CTT gives two reasons: the code exists only for customs, or another company delivers the item. If a valid number simply hasn't moved yet, read [why tracking stops updating](guide:tracking-not-updating).
 
@@ -151,10 +156,12 @@ A number that returns nothing isn't always mistyped. Portugal's CTT gives two re
 - [An Post: Track a parcel](https://www.anpost.com/Post-Parcels/Track/Search) – the format and the Trans Ref ID
 - [YunExpress: YunTrack](https://www.yuntrack.com/) – YunExpress's own tracking site
 - [Cainiao: Help centre](https://global.cainiao.com/helpDoc.htm) – no tracking after the handover with economy shipping
+- [Cainiao: Global Express Tracking](https://global.cainiao.com/) – example number
+- [Cainiao: Guidance](https://global.cainiao.com/helpDoc.htm?slug=ofzig4) – letters and digits
 - [bpost: Puis-je suivre mon colis en ligne ?](https://www.bpost.be/fr/faq/puis-je-suivre-mon-colis-en-ligne) – barcodes starting with U cannot be tracked
 - [CTT: Encontrar o código de envio](https://www.ctt.pt/ajuda/particulares/seguir-ou-alterar-entrega/seguir/encontrar-o-codigo-de-envio) – 22 digits, PT codes from abroad, codes that return nothing
 - [Mondial Relay Belgium: Suivi de colis](https://www.mondialrelay.be/fr-be/suivi-de-colis/) – 8, 10 or 12 digits
 - [La Poste: Comment suivre mon colis ou ma lettre](https://aide.laposte.fr/professionnel/contenu/comment-suivre-mon-colis-ou-ma-lettre) – 14 digits
 - [Amazon: Amazon Logistics](https://www.amazon.com/gp/help/customer/display.html?nodeId=GEW3XT9JEMBLTKRV) – shipped with Amazon, tracked in Your Orders
-- [Universal Parcel Scraper: carrier catalog](https://github.com/plhery/universal-parcel-scraper/blob/main/data/catalog.json) – the TBA and YT shapes in Peek's carrier data
+- [Universal Parcel Scraper: carrier catalog](https://github.com/plhery/universal-parcel-scraper/blob/main/data/catalog.json) – the TBA, YT, LP and CNG shapes in Peek's carrier data
 :::

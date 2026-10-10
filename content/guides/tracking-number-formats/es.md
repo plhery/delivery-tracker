@@ -4,7 +4,7 @@ description: Cómo saber de qué empresa es un número de seguimiento por sus le
 slug: que-empresa-es-numero-de-seguimiento
 picture: Tres etiquetas con números de seguimiento divididos en colores, una lupa sobre el código de país CH y Pip, curioso.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Las letras y la longitud de un número de seguimiento suelen decirte qué empresa tiene tu paquete. `1Z` seguido de 16 letras y cifras es UPS, y un código de 13 caracteres como `RR123456785CH` (dos letras, nueve cifras, dos letras) suele ser de Correos o de otro operador postal: las dos últimas letras dicen qué país lo emitió, y `ES` es España. Los números que solo llevan cifras son el caso difícil: 12, 14 o 22 cifras encajan con varias empresas, así que la última palabra la tiene el correo de envío de la tienda, o una web de seguimiento que pruebe con todas las candidatas.
@@ -20,7 +20,7 @@ Cuatro comprobaciones, en este orden:
 - Prueba con los candidatos | Introduce el número en la web de cada transportista posible. El que muestre movimientos de ese número tiene tu paquete.
 :::
 
-Si prefieres ahorrarte el trabajo de detective, pega el número, un enlace del transportista o el correo de envío entero en [Peek](/): encuentra el número y detecta el transportista entre más de 3500.
+Si prefieres ahorrarte el trabajo de detective, pega el número, un enlace del transportista o el correo de envío entero en [Peek](/): encuentra el número y detecta el transportista entre más de 3500. Es lo que hace un [localizador universal de paquetes](guide:universal-tracker).
 
 ## El formato del número de seguimiento en cada empresa
 
@@ -31,19 +31,19 @@ Esto es lo que dicen las empresas y la norma postal sobre los números que más 
 | Empresa | Cómo es el número |
 | --- | --- |
 | Correos | «código de envío». Su ayuda no da formato; según esos datos, es el formato postal acabado en `ES`, o 16 o 23 caracteres que empiezan por `P` o `D` más otra letra (como `PQ`) y acaban en letra. Te llega por correo electrónico, por SMS o por ambos, y en el aviso de llegada |
-| Correos Express | su ayuda no da formato; según esos datos, 16 o 23 cifras |
+| [Correos Express](carrier:correos-express) | su ayuda no da formato; según esos datos, 16 o 23 cifras |
 | SEUR | según esos datos, 7, 14 o 21 cifras, y solo como posibilidad: las de 14 también encajan con DPD |
 | GLS | su página de seguimiento no da longitud y pide también el código postal de destino |
 | MRW | «número de envío», en el justificante si enviaste desde una oficina MRW; según esos datos, 12 cifras, o 5 cifras, una letra y 6 cifras |
-| NACEX | el localizador pide la expedición en dos casillas, «Agencia» y «Albarán»; según esos datos, 4 cifras, una barra y 8 cifras |
+| [NACEX](carrier:nacex) | el localizador pide la expedición en dos casillas, «Agencia» y «Albarán»; su portada pone de ejemplo `0000/00000000` y esos datos reconocen 4 cifras, una barra y 8 cifras, aunque NACEX no publica una longitud fija |
 | TIPSA | «número de envío compuesto por 22 dígitos», junto con el código postal de destino |
 | CTT Express | según esos datos, 22 cifras que empiezan por `00` |
 | InPost (Punto Pack, Locker) | «número de expedición»; su localizador pone de ejemplo `89972378` (8 caracteres). La web de Mondial Relay en España ya lleva a la de InPost |
 | Ecoscooting | según esos datos, `CNESP` y 20 cifras |
 | UPS | `1Z` y 16 letras o cifras, 18 caracteres en total, como `1Z999AA10123456784`, un ejemplo con un dígito de control de UPS válido |
 | DHL Express | 10 cifras, nunca letras, según DHL Express en los Países Bajos |
-| AliExpress, Cainiao | Cainiao no describe sus números; `LP` y `CNG` se explican justo abajo |
-| YunExpress | `YT` y 16 cifras. `YT` y 13 cifras es YTO Express; `YT`, 9 cifras y `GB` es un envío postal de Royal Mail |
+| AliExpress, [Cainiao](carrier:cainiao) | Cainiao no describe sus números; según esos datos, `DOFR` o `CNFR`, 13 cifras y `HD` es de Cainiao, y `LP` y `CNG` se explican justo abajo |
+| [YunExpress](carrier:yunexpress) | Yuntrack pide el número que empieza por `YT`, sin decir cuántas cifras lleva; según esos datos, `YT` y 16 cifras. `YT` y 13 cifras es YTO Express; `YT`, 9 cifras y `GB` es un envío postal de Royal Mail |
 | China Post, EMS | el formato postal acabado en `CN`; los números EMS internacionales empiezan por `E` |
 | Amazon | Amazon no publica ningún formato; `ES` y `TBA` se explican más abajo |
 
@@ -133,7 +133,7 @@ Un paquete que cruza una frontera suele cambiar de manos, y cada empresa puede i
 - **Paack:** se presenta como empresa de paquetería para empresas y tiendas online, con entregas en España y Portugal. Cuando tu pedido entra en sus instalaciones, te manda su propio enlace de seguimiento, y su formulario pide el número de seguimiento y el código postal de entrega.
 - **AliExpress con envío económico:** Cainiao dice que el seguimiento termina al entregar el paquete al transportista local, y que el vendedor puede decirte cómo contactar con ese transportista. Más en [seguir un paquete que viene de China](guide:tracking-from-china).
 
-Un número que no devuelve nada no siempre está mal escrito. Correos Express avisa de que un envío recién registrado puede tardar unas horas en mostrar información, y te pide comprobar que el número «corresponde a Correos Express». CTT, en Portugal, da otros dos motivos: el código solo existe para la aduana, u otra empresa entrega el envío. Si un número válido simplemente no se mueve todavía, lee [por qué el seguimiento no se actualiza](guide:tracking-not-updating).
+Un número que no devuelve nada no siempre está mal escrito. Correos Express avisa de que un envío recién registrado puede tardar unas horas en mostrar información, y te pide comprobar que el número «corresponde a Correos Express». CTT, en Portugal, da otros dos motivos: el código solo existe para la [aduana](guide:customs), u otra empresa entrega el envío. Si un número válido simplemente no se mueve todavía, lee [por qué el seguimiento no se actualiza](guide:tracking-not-updating).
 
 :::sources
 - [UPU: norma S10, Identification of postal items](https://www.upu.int/UPU/media/upu/files/postalSolutions/programmesAndServices/standards/S10-12.pdf) – el formato postal, sus letras, el dígito de control, el código de país y el código de barras añadido en destino
@@ -141,6 +141,7 @@ Un número que no devuelve nada no siempre está mal escrito. Correos Express av
 - [Correos Express: Seguimiento y entrega de tu envío](https://www.correosexpress.es/es/atencion-al-cliente/seguimiento-envio) – número que no funciona, envíos recién registrados
 - [GLS España: Seguimiento de envío](https://gls-group.com/ES/es/recibir-paquetes/seguimiento-envio/) – número de seguimiento y código postal de destino
 - [MRW: Seguimiento de envíos](https://www.mrw.es/seguimiento/) – el número de envío en el justificante
+- [NACEX: Inicio](https://www.nacex.es/) – el ejemplo 0000/00000000 de la casilla de seguimiento
 - [NACEX: Seguimiento de envíos](https://www.nacex.es/irSeguimiento.do) – expedición en Agencia y Albarán, referencia alternativa de hasta 10 dígitos
 - [TIPSA: Localización de envíos](https://www.tip-sa.com/es/localizacion-envios) – 22 dígitos, código postal de destino, referencia e identificador
 - [InPost: Seguimiento del envío](https://www.inpost.es/seguimiento-del-envio/) – número de expedición, ejemplo de 8 caracteres

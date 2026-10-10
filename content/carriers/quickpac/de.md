@@ -23,7 +23,7 @@ Wie Quickpac-Nummern beginnen, steht auf keiner Seite von Quickpac oder Planzer.
 | `990000000000000000` | Die Post: 18 Ziffern, beginnt mit 99 oder 98. |
 | `91346097000000000000` | [Planzer](carrier:planzer): 20 Ziffern, beginnt mit 91346097. |
 
-Ist es mit dem Absender so vereinbart, gibt Quickpac unzustellbare Pakete an die Post weiter. Im Tracking kann dann ein Link „Post Tracking“ erscheinen. Laut Quickpac hat jedes Paket eine 18-stellige Nummer: Zählst du mehr oder weniger Ziffern, prüf die Nummer nochmals. Gar keine Nummer? Ohne sie lässt sich ein Quickpac-Paket nicht verfolgen: Frag den Absender oder lies, wie du [deine Sendungsnummer findest](guide:find-tracking-number).
+Ist es mit dem Absender so vereinbart, gibt Quickpac unzustellbare Pakete an die Post weiter. Im Tracking kann dann ein Link „Post Tracking“ erscheinen. Laut Quickpac hat jedes Paket eine 18-stellige Nummer: Zählst du mehr oder weniger Ziffern, prüf die Nummer nochmals oder schau, [zu welchem Paketdienst sie passt](guide:tracking-number-formats). Gar keine Nummer? Ohne sie lässt sich ein Quickpac-Paket nicht verfolgen: Frag den Absender oder lies, wie du [deine Sendungsnummer findest](guide:find-tracking-number).
 
 ## Quickpac Sendungsverfolgung: was die Status bedeuten
 
@@ -44,6 +44,8 @@ Quickpac-Pakete verfolgst du auf Planzers Tracking-Seite (tracking.app.planzer.c
 `Shipped` führt in die Irre: Bei Planzer steht dieses englische Wort für ein zugestelltes Paket, nicht für ein verschicktes. Mit deutschem Browser beschriftet Planzers Seite zugestellte Pakete mit `Ausgeliefert`, die Box auf quickpac.ch schreibt `Zugestellt` mit dem Datum, und Planzer Paket selbst spricht von `Sendung zugestellt`.
 
 Steht in der Box auf quickpac.ch „Die Paketverfolgung steht zur Zeit leider nicht zur Verfügung“, hat die Box selbst nicht geladen, nicht dein Paket: Versuch es später nochmals.
+
+Gibt Quickpac dein Paket an die Post weiter, steht unter [Sendungsstatus erklärt](guide:tracking-statuses), was ihre Meldungen heißen.
 
 ## Quickpac Zustellung: Deponierung, Abholstelle und verpasste Pakete
 

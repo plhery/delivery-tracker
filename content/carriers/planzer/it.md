@@ -23,7 +23,7 @@ Planzer non pubblica il formato dei suoi numeri. Queste sono le forme che conosc
 | `441234567890123456` | [Quickpac](carrier:quickpac), parte di Planzer Pacchi: 18 cifre che iniziano con 44. |
 | `99.60.987654.98765432` | Posta Svizzera: 18 cifre, più lungo della forma di Planzer con i punti. |
 
-Copia il numero invece di riscriverlo: con una cifra in più, un numero Planzer viene preso per uno di Australia Post.
+Copia il numero invece di riscriverlo: con una cifra in più, un numero Planzer viene preso per uno di Australia Post. Per un numero di altra forma, [la guida ai formati dei codici](guide:tracking-number-formats) aiuta a capire il corriere.
 
 ## Planzer tracciamento pacchi: cosa vogliono dire gli stati
 
@@ -41,7 +41,7 @@ Il portale destinatari (tracking.app.planzer.ch) è in italiano, tedesco, france
 | `Shipped` | Consegnato, non «spedito dal negozio». |
 | `Consegnato`, `Spedizione recapitata`, `Shipment delivered` | Consegnato. |
 
-`Shipped` è quello che inganna: nel tracking inglese di Planzer vuol dire consegnato, lo stesso passaggio che in italiano si legge `Consegnato`. Se compare e a casa non c'è niente, segui i passi più sotto.
+`Shipped` è quello che inganna: nel tracking inglese di Planzer vuol dire consegnato, lo stesso passaggio che in italiano si legge `Consegnato`. Se compare e a casa non c'è niente, segui i passi più sotto. Le stesse fasi con la Posta, Poste o UPS sono spiegate in [stati della spedizione](guide:tracking-statuses).
 
 Le pagine di Planzer non descrivono i numeri che iniziano con 99990: Peek li tratta come spedizioni condivise e li legge dalla pagina trackandtrace.planzergroup.com, che si apre in tedesco, con l'italiano tra le lingue da scegliere. Dei suoi cinque passaggi si conoscono solo le diciture tedesche, non quelle italiane: `Erfasst` (registrata), `Abholung` (presa in carico presso il mittente, non ritirata da te), `Umschlaglager` (al deposito di trasbordo), `In Auslieferung` (in consegna) e `Ausgeliefert` (consegnata).
 

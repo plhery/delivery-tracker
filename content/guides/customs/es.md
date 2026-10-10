@@ -4,7 +4,7 @@ description: Qué significa que un paquete esté retenido en aduanas, cuánto pu
 slug: paquete-retenido-en-aduanas
 picture: Una caseta de aduanas con una barrera a rayas, un documento con un sello redondo y una marca de verificación, y Pip esperando con paciencia ante la barrera.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 «Retenido en aduanas» casi siempre significa que tu paquete está en el trámite normal que pasa todo lo que llega de fuera de la UE, no que te lo hayan incautado. Si no avanza, puede que el transportista esté esperando a que pagues el IVA y el arancel o a que le mandes la factura. Compruébalo en su web o en su app, nunca en un enlace que te llegue por SMS.
@@ -37,11 +37,11 @@ Muchas veces, nada. Para saberlo:
 
 ### ¿Cómo contacto con la aduana por mi paquete?
 
-Casi nunca hace falta: empieza por el transportista. La AEAT tiene una consulta por número de envío que te dice si ya se ha declarado (y entonces no tienes que hacer nada más) o todavía no. Si no, la AEAT aún no tiene información y solo tu transportista puede dártela. Para dudas, la AEAT ofrece un chat y cita telefónica del servicio «Comercio electrónico», y el teléfono de información 901 33 55 33 (o 91 554 87 70). Correos Aduanas atiende en el 91 660 24 54.
+Casi nunca hace falta: empieza por el transportista. La AEAT tiene una consulta por [número de envío](guide:find-tracking-number) que te dice si ya se ha declarado (y entonces no tienes que hacer nada más) o todavía no. Si no, la AEAT aún no tiene información y solo tu transportista puede dártela. Para dudas, la AEAT ofrece un chat y cita telefónica del servicio «Comercio electrónico», y el teléfono de información 901 33 55 33 (o 91 554 87 70). Correos Aduanas atiende en el 91 660 24 54.
 
 ## ¿Cuánto tarda un paquete en salir de aduanas?
 
-Nadie lo promete. Ni Correos ni la AEAT dan un plazo de despacho en sus páginas de aduanas: depende del paquete, de sus papeles y de lo que haya que pagar.
+Nadie lo promete. Ni Correos ni la AEAT dan un plazo de despacho en sus páginas de aduanas: depende del paquete, de sus papeles y de lo que haya que pagar. Para un regalo de Navidad, pide pronto: [fechas límite de envío en Navidad](guide:christmas-posting-dates).
 
 Un paquete se queda más tiempo cuando:
 
@@ -59,7 +59,7 @@ No lo dejes para más tarde:
 | DHL Express | No te lo entrega hasta que pagas los aranceles y tasas que adelantó |
 | Mercancía prohibida | La AEAT puede reexpedirla al origen o destruirla |
 
-Para no estar recargando la página, pega el número en [Peek](/): lo consulta hasta una vez cada 10 minutos y te manda un aviso cuando cambia el estado, aunque no puede pagar por ti ni acelerar la aduana. Si no se mueve en mucho tiempo y nadie te pide nada, mira [por qué no se actualiza el seguimiento](guide:tracking-not-updating).
+Para no estar recargando la página, pega el número en [Peek](/): lo consulta hasta una vez cada 10 minutos y te envía una notificación cuando cambia el estado, aunque no puede pagar por ti ni acelerar la aduana. Si no se mueve en mucho tiempo y nadie te pide nada, mira [por qué no se actualiza el seguimiento](guide:tracking-not-updating).
 
 ### Ya ha pasado la aduana: ¿cuándo me llega?
 
@@ -112,7 +112,7 @@ Depende de desde dónde se envía el pedido y de lo que diga la compra:
 - **Sin nada incluido:** el transportista puede pedirte el 21 % de IVA, el arancel y su gestión antes de entregártelo.
 - **En Canarias:** sigue sin haber IGIC hasta 150 €, pero pagas el arancel.
 
-DHL lo resume así: los aranceles y tasas normalmente no están incluidos en las compras online, aunque el precio incluya el transporte. Para seguir estos pedidos, mira [cómo seguir un paquete que viene de China](guide:tracking-from-china).
+DHL lo resume así: los aranceles y tasas normalmente no están incluidos en las compras online, aunque el precio incluya el transporte. Para seguir estos pedidos, mira [cómo seguir un paquete que viene de China](guide:tracking-from-china). Las páginas de [Cainiao](carrier:cainiao) y [YunExpress](carrier:yunexpress) explican qué significan sus estados de aduana en inglés.
 
 ## ¿Es una estafa el SMS de Correos que pide pagar aduanas?
 
@@ -124,7 +124,7 @@ Casi seguro. Correos cobra aduanas de verdad, pero dice que nunca pide pagos por
 | Correos, más de 150 € | Con un «Aviso de llegada». Inicias tú el trámite en correosaduanas.es y pagas allí el presupuesto que te mandan |
 | Agencia Tributaria | Nunca pide por correo electrónico, SMS o Bizum datos económicos ni números de cuenta o de tarjeta, y no se dirigirá a ti para reclamar el arancel |
 
-INCIBE avisa de los SMS falsos que suplantan a Correos y a Correos Express: dicen que no se ha podido entregar tu paquete porque no se han pagado las tasas de aduana, piden importes pequeños como 1,79 € o 2,64 € y llevan a una web que imita la real para robarte los datos de la tarjeta.
+INCIBE avisa de los SMS falsos que suplantan a Correos y a [Correos Express](carrier:correos-express): dicen que no se ha podido entregar tu paquete porque no se han pagado las tasas de aduana, piden importes pequeños como 1,79 € o 2,64 € y llevan a una web que imita la real para robarte los datos de la tarjeta.
 
 Lo más seguro es el primer paso de arriba: abre tú la web o la app del transportista.
 

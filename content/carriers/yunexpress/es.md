@@ -6,11 +6,11 @@ published: 2026-10-10
 updated: 2026-10-10
 ---
 
-YunExpress, también escrito Yun Express, es una empresa de logística de Shenzhen que envía paquetes pequeños desde China para vendedores online, también los de Amazon, Temu o SHEIN. Para seguir tu paquete, escribe el número que empieza por YT en [yuntrack.com](https://www.yuntrack.com/), su web de seguimiento, o pégalo en la casilla de arriba. La web de YunExpress no habla de SMS ni correos a los destinatarios: busca el número en el correo de envío de la tienda o en la página de tu pedido.
+YunExpress, también escrito Yun Express, es una empresa de logística de Shenzhen que envía [paquetes pequeños desde China](guide:tracking-from-china) para vendedores online, también los de Amazon, Temu o SHEIN. Para seguir tu paquete, escribe el número que empieza por YT en [yuntrack.com](https://www.yuntrack.com/), su web de seguimiento, o pégalo en la casilla de arriba. La web de YunExpress no habla de SMS ni correos a los destinatarios: busca el número en el correo de envío de la tienda o en la página de tu pedido.
 
 ## Número de seguimiento de YunExpress: YT y 16 cifras
 
-Yuntrack pide «your YunExpress tracking number (starting with YT)», es decir, el número que empieza por YT, y no dice cuántas cifras lleva. Peek reconoce como YunExpress las letras YT seguidas de 16 cifras. Con ejemplos inventados:
+Yuntrack pide «your YunExpress tracking number (starting with YT)», es decir, el número que empieza por YT, y no dice cuántas cifras lleva. Peek reconoce como YunExpress las [letras YT seguidas de 16 cifras](guide:tracking-number-formats). Con ejemplos inventados:
 
 | Número | Qué es |
 | --- | --- |
@@ -25,7 +25,7 @@ Cuando una empresa local se hace cargo del reparto, Yuntrack puede mostrar su n�
 
 ## Estados de YunExpress en español: qué significa cada uno
 
-Yuntrack solo está en inglés y no tiene selector de idioma. Cada paquete aparece en una pestaña: `Processing` (en proceso), `Transit` (en tránsito), `Delivered` (entregado), `Not Found` (no encontrado), `Alert` (alerta) o `Returned` (devuelto). Debajo van los escaneos, también en inglés. Los más habituales, ordenados por etapas del viaje; no todos los paquetes pasan por todos:
+Yuntrack solo está en inglés y no tiene selector de idioma. Cada paquete aparece en una pestaña: `Processing` (en proceso), `Transit` (en tránsito), `Delivered` (entregado), `Not Found` (no encontrado), `Alert` (alerta) o `Returned` (devuelto). Debajo van los escaneos, también en inglés. Los más habituales, ordenados por [etapas del viaje](guide:tracking-statuses); no todos los paquetes pasan por todos:
 
 | YunExpress escribe | Qué significa para ti |
 | --- | --- |
@@ -65,7 +65,7 @@ YunExpress no da a los destinatarios pasos, formulario ni plazo para un paquete 
 
 ¿Pagaste con PayPal? Con los vendedores que lo han activado, YunExpress envía el seguimiento a PayPal como prueba para las disputas; las reglas son las de PayPal.
 
-¿Marcado como entregado y no está? La página de seguimiento puede ofrecer una prueba de entrega; después pregunta al transportista local y a la tienda. Con `Returned`, el paquete vuelve al remitente; YunExpress no publica normas de devolución para destinatarios, así que pregunta a la tienda.
+¿[Marcado como entregado y no está](guide:delivered-not-received)? La página de seguimiento puede ofrecer una prueba de entrega; después pregunta al transportista local y a la tienda. Con `Returned`, el paquete vuelve al remitente; YunExpress no publica normas de devolución para destinatarios, así que pregunta a la tienda.
 
 ## YunExpress España: teléfono, contacto y atención al cliente
 

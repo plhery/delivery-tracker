@@ -6,7 +6,7 @@ published: 2026-10-10
 updated: 2026-10-10
 ---
 
-Quickpac est un service de colis suisse, intégré depuis 2024 à Planzer Paket (Planzer Colis en français), qui livre à domicile les colis des boutiques dans certaines zones de Suisse. Ton numéro de suivi à 18 chiffres vient de l'expéditeur, en général dans son e-mail d'expédition, et il est aussi imprimé sous le code-barres du colis. Saisis-le dans [le suivi de Quickpac](https://quickpac.ch/de/tracking), en français si ton navigateur l'est, ou colle-le dans le cadre ci-dessus.
+Quickpac est un service de colis suisse, intégré depuis 2024 à [Planzer Paket](carrier:planzer) (Planzer Colis en français), qui livre à domicile les colis des boutiques dans certaines zones de Suisse. Ton numéro de suivi à 18 chiffres vient de l'expéditeur, en général dans son e-mail d'expédition, et il est aussi imprimé sous le code-barres du colis. Saisis-le dans [le suivi de Quickpac](https://quickpac.ch/de/tracking), en français si ton navigateur l'est, ou colle-le dans le cadre ci-dessus.
 
 ## Numéro de suivi Quickpac : où le trouver
 
@@ -14,14 +14,14 @@ Seules les entreprises expédient avec Quickpac : ton numéro passe donc par l'e
 
 Le cadre de suivi de Quickpac demande le « numéro du colis », le site de Planzer parle de « Numéro d'envoi » : c'est le même. Ce ne sont pas des numéros de suivi : le « Numéro de référence » de Planzer, qui appartient à l'expéditeur, le code de retrait et la clé de livraison d'un avis de passage.
 
-Quelques numéros suisses se ressemblent. Avec des chiffres inventés :
+Quelques [numéros suisses](guide:tracking-number-formats) se ressemblent. Avec des chiffres inventés :
 
 | Numéro | À qui il appartient |
 | --- | --- |
 | `441234567890123456` | Quickpac : 18 chiffres commençant par 44. |
 | `44.12.345678.90123456` | Le même, avec les points qu'ajoute le cadre de suivi de Quickpac. |
 | `990000000000000000` | La Poste suisse : 18 chiffres commençant par 99 ou 98. |
-| `91346097000000000000` | [Planzer](carrier:planzer) : 20 chiffres commençant par 91346097. |
+| `91346097000000000000` | Planzer : 20 chiffres commençant par 91346097. |
 
 Si l'expéditeur l'a prévu, Quickpac confie à La Poste les colis qu'il ne peut pas livrer, et son cadre de suivi affiche un lien « Post Tracking ». Un numéro en 44 de 17 ou 19 chiffres a en général perdu ou gagné un chiffre. Pas de numéro du tout ? Demande-le à l'expéditeur, ou lis [où trouver son numéro de suivi](guide:find-tracking-number).
 
@@ -41,7 +41,7 @@ Un colis Quickpac se suit sur le site de Planzer et dans le cadre de quickpac.ch
 | `Shipped` | Livré, et non « expédié par la boutique ». |
 | `Livré`, `Distribué`, `Colis livré` | Livré. |
 
-`Shipped` est le piège : sur le suivi de Planzer en anglais, il veut dire livré. En français, Planzer affiche `Livré` et le cadre de Quickpac `Distribué` avec la date.
+`Shipped` est le piège : sur le suivi de Planzer en anglais, il veut dire livré. En français, Planzer affiche `Livré` et le cadre de Quickpac `Distribué` avec la date. Pour les étapes en général, lis [ce que veut dire chaque étape du suivi](guide:tracking-statuses).
 
 Le cadre affiche en allemand « Die Paketverfolgung steht zur Zeit leider nicht zur Verfügung » ? C'est le cadre lui-même qui n'a pas chargé, pas ton colis : réessaie plus tard.
 

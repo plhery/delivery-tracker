@@ -4,14 +4,14 @@ description: Warum die Sendungsverfolgung aus China tagelang stehen bleibt oder 
 slug: paket-aus-china-verfolgen
 picture: Ein Flugzeug zieht einen gepunkteten Bogen über den Globus, von einer roten Stecknadel zu einer grünen am Ziel, und Pip reist zwischen zwei Lieferwagen.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Ein Paket von AliExpress, Temu oder Shein geht durch mehrere Hände: Ein chinesisches Logistikunternehmen schickt es per Flugzeug los, der Zoll prüft es, und bei dir stellt es die Post, DHL oder ein anderer Paketdienst zu, oft unter einer neuen Nummer. Jeder scannt nur seine eigene Etappe. Rechne also mit bis zu 11 Tagen bis zum ersten Scan, mit Funkstille während des Flugs und mit Wartezeit nach „Arrived at destination country“. Verfolge erst die Nummer aus dem Shop, dann die des Paketdienstes vor Ort. Beim billigsten Versand ist an dieser Übergabe manchmal endgültig Schluss mit der Sendungsverfolgung.
 
 ## Wie kann ich ein Paket aus China verfolgen?
 
-Über die Sendungsverfolgung des Shops. Die ist aber nur so genau wie die Scans dahinter, bei AliExpress genauso wie bei Temu und Shein: Kein Tracker, auch Peek nicht, kann einen Scan zeigen, den der Paketdienst nicht veröffentlicht hat. AliExpress schickt dich dafür zur Sendungsverfolgung von Cainiao. Die Lücken entstehen unterwegs:
+Über die Sendungsverfolgung des Shops. Die ist aber nur so genau wie die Scans dahinter, bei AliExpress genauso wie bei Temu und Shein: Kein Tracker, auch Peek nicht, kann einen Scan zeigen, den der Paketdienst nicht veröffentlicht hat. AliExpress schickt dich dafür zur Sendungsverfolgung von [Cainiao](carrier:cainiao). Die Lücken entstehen unterwegs:
 
 :::journey
 - shop | Verkäufer | Übergibt es einem chinesischen Logistikunternehmen. Bis zu 11 Tage ohne Scan
@@ -66,7 +66,7 @@ Hat dein Paket schon eine Nummer von DHL oder der Post, spricht deren Sendungsve
 | `Security Check Failed` | Es kann nicht verschickt werden. Sprich mit dem Verkäufer. |
 | `Unclaimed`, `Storage term expired` | Nicht rechtzeitig abgeholt, es geht zurück an den Absender. |
 
-Was „In Zustellung“ und die anderen Alltagsstatus bedeuten, steht in [Sendungsstatus erklärt](guide:tracking-statuses).
+Weitere Meldungen von Cainiao und YunExpress erklären die Seiten zur [Cainiao Sendungsverfolgung](carrier:cainiao) und zur [YunExpress Sendungsverfolgung](carrier:yunexpress). Was „In Zustellung“ und die anderen Alltagsstatus bedeuten, steht in [Sendungsstatus erklärt](guide:tracking-statuses).
 
 ## Warum hat sich meine Sendungsnummer geändert?
 
@@ -74,7 +74,7 @@ Meist aus einem von drei Gründen:
 
 - **AliExpress hat Bestellungen zusammengelegt.** Teilen sich mehrere Bestellungen eine neue Nummer, wurde ihr Versand laut AliExpress hochgestuft.
 - **Eine Bestellung, mehrere Pakete.** Laut Shein können Pakete aus verschiedenen Lagern kommen und dann unterschiedlich lange brauchen. Temu nennt für jedes Paket eine eigene Lieferzeit und die Sendungsnummer, sobald sie feststeht.
-- **Ein Paketdienst vor Ort hat übernommen**, mit eigenem Etikett und eigener Nummer. Veröffentlicht Cainiao diese Nummer, steht sie auf seiner Tracking-Seite. Ab dann schaust du auf der Seite dieses Paketdienstes nach.
+- **Ein Paketdienst vor Ort hat übernommen**, mit eigenem Etikett und eigener Nummer. Veröffentlicht Cainiao diese Nummer, steht sie auf seiner Tracking-Seite. Ab dann schaust du auf der Seite dieses Paketdienstes nach. Wie Tracker mit zwei Nummern umgehen, steht unter [Paketverfolgung aller Anbieter](guide:universal-tracker).
 
 Nummern der Post sind die Ausnahme. Der Weltpostverein erlaubt nur eine S10-Nummer pro Sendung, deshalb funktioniert eine Nummer von China Post meist auch in der Sendungsverfolgung deiner Post.
 
@@ -119,6 +119,8 @@ Das hängt von der Versandart ab, die du bezahlt hast. Cainiao zählt Kalenderta
 | Shein Deutschland | Ein Lieferzeitraum mit Datum. Für eine Standardbestellung Anfang Oktober 2026 waren es 11 bis 14 Kalendertage |
 | Shein Österreich | Standard 6 bis 10 Werktage, Abholung 6 bis 8 |
 | Shein Schweiz | Standard 6 bis 8 Werktage, Versand CHF 5.90 bei Bestellungen unter CHF 39.– |
+
+Für Weihnachtsgeschenke heißt das: früh bestellen. Mehr dazu unter [Weihnachtspost: letzter Termin](guide:christmas-posting-dates).
 
 ## Zahlst du noch Zoll obendrauf?
 

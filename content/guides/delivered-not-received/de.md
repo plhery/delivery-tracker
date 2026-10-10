@@ -2,9 +2,9 @@
 title: Paket zugestellt, aber nicht erhalten: was jetzt tun?
 description: Laut Sendungsverfolgung zugestellt, aber kein Paket da? Wo du suchst, wie lange du wartest, wer haftet und welche Fristen Amazon, eBay und Vinted setzen.
 slug: paket-zugestellt-aber-nicht-erhalten
-picture: Eine geschlossene Haustür, eine Benachrichtigung mit grünem Haken, auf der Fußmatte der gestrichelte Umriss eines Pakets mit Fragezeichen und ein besorgter Pip.
+picture: Eine geschlossene Haustür, eine Mitteilung mit grünem Haken, auf der Fußmatte der gestrichelte Umriss eines Pakets mit Fragezeichen und ein besorgter Pip.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Die Sendungsverfolgung sagt „zugestellt“, aber bei dir ist kein Paket? Dann ist es noch lange nicht verloren: „Zugestellt“ ist nur ein Scan im Handgerät des Zustellers, kein Beweis, dass das Paket bei dir angekommen ist. Schau nach, an wen oder wohin es laut Sendungsverfolgung ging, such die üblichen Stellen ab und warte ein, zwei Tage. Fehlt es dann immer noch, wende dich an den Händler, nicht an den Paketdienst. Der Händler hat den Paketdienst beauftragt, und hast du bei einem Shop bestellt, trägt er in Deutschland und Österreich das Risiko, bis du das Paket wirklich in den Händen hältst.
@@ -70,8 +70,8 @@ Bei dir liegt das Risiko eher, wenn:
 
 - **„Zugestellt an“.** In der DHL-Sendungsverfolgung klickst du auf „Weitere Informationen zur Sendung anzeigen“ und gibst deine Postleitzahl ein. Dann steht da „Empfänger (orig.)“, also du, ein Familienangehöriger, ein Nachbar oder eine sonstige Person, oder „Briefkasten“.
 - **Ein Name und eine Unterschrift.** DHL hält den Namen des Empfängers elektronisch fest, mit dessen digitaler Unterschrift oder einer PIN, laut AGB aber auch mit der digitalen Unterschrift eines Zustellers. Eine fremde Unterschrift ist also nicht unbedingt gefälscht: Sie kann vom Zusteller stammen. DPD zeigt bei einer Nachbarzustellung gegebenenfalls den Namen.
-- **Ein Foto.** Bei Amazon suchst du unter „Meine Bestellungen“ nach einem Zustellungsfoto.
-- **Keine GPS-Koordinaten.** Kein Paketdienst, dessen Seiten wir gelesen haben, bietet Koordinaten als Nachweis an.
+- **Ein Foto.** Bei Amazon suchst du unter „Meine Bestellungen“ nach einem Zustellungsfoto. Bei [Planzer](carrier:planzer) und [Quickpac](carrier:quickpac) schaust du im Portal von Planzer Paket unter „Lieferbestätigung“ nach: Je nach Absender ist dort ein Foto dabei.
+- **Selten GPS-Daten.** Von den Paketdiensten, deren Seiten wir gelesen haben, macht nur Planzer ein Nachweisfoto mit GPS-Daten.
 
 Bestreitest du die Zustellung, musst du das unter Umständen ausdrücklich bestätigen. Der Schweizerischen Post genügt das im Inland mündlich oder schriftlich, etwa per E-Mail. Bei internationalen Sendungen braucht sie es schriftlich.
 
@@ -89,7 +89,7 @@ Bei Amazon kannst du den Antrag also auch stellen, wenn die Lieferung bestätigt
 
 Aber: Eine Rückbuchung beendet den Weg über die Plattform. Widerrufst du bei Amazon eine Lastschrift oder lässt eine Zahlung zurückbuchen, gibt es keine A-bis-z-Erstattung mehr. eBay kann deinen Fall schließen, und bei Etsy kannst du keinen Fall mehr eröffnen.
 
-Bei AliExpress, Temu oder Shein bestellt? Was dort gilt, steht unter [Paket aus China verfolgen](guide:tracking-from-china).
+Bei AliExpress, Temu oder Shein bestellt? Was dort gilt, steht unter [Paket aus China verfolgen](guide:tracking-from-china). Kam es über Cainiao oder YunExpress, steht auf den Seiten zu [Cainiao](carrier:cainiao) und [YunExpress](carrier:yunexpress), wen du dann fragst.
 
 ## Kannst du selbst beim Paketdienst reklamieren?
 
@@ -124,7 +124,7 @@ Oft, als letzter Schritt. Schreib vorher dem Händler, denn Banken wollen sehen,
 
 ### Kann Peek mein Paket finden?
 
-Nein. [Peek](/) zeigt nur, was der Paketdienst veröffentlicht, und kann weder den Paketdienst kontaktieren noch für dich reklamieren. Ist ein Paket in Zustellung, fragt Peek aber bis zu alle 2 Minuten nach und kann dir eine Meldung schicken, sobald es zugestellt ist. So stehst du kurz nach dem Scan an der Tür.
+Nein. [Peek](/) zeigt wie [jeder Paket-Tracker](guide:universal-tracker) nur, was der Paketdienst veröffentlicht, und kann weder den Paketdienst kontaktieren noch für dich reklamieren. Ist ein Paket in Zustellung, fragt Peek aber bis zu alle 2 Minuten nach und kann dir eine Mitteilung schicken, sobald es zugestellt ist. So stehst du kurz nach dem Scan an der Tür.
 
 ### Soll ich den Diebstahl bei der Polizei anzeigen?
 

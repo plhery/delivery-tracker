@@ -14,7 +14,7 @@ Only businesses send with Quickpac, so the number reaches you through the sender
 
 Quickpac calls it the parcel or consignment number, Planzer's tracking site the Shipment Number. These don't track: Planzer's Reference number (the sender's own), a pickup code and the delivery code on Planzer Paket's card.
 
-The examples below use made-up digits:
+The examples below use made-up digits; the last two are [other carriers' numbers](guide:tracking-number-formats):
 
 | Number | Whose it is |
 | --- | --- |
@@ -34,7 +34,7 @@ Quickpac parcels are tracked on Planzer's site and in quickpac.ch's box. Both fo
 | `Recorded` | Quickpac has the parcel's details from the sender. |
 | `Delivery day unknown` | No delivery day is set yet. |
 | `Estimated delivery` | The day it's expected. |
-| `Transferred` | In transit. |
+| `Transferred` | [In transit](guide:tracking-statuses). |
 | `In delivery` | Out for delivery. |
 | `Your consignment is at the following pick-up point` | It's waiting there. `Latest collection date` is your last day. |
 | `Shipped` | Delivered, not "sent by the shop". |

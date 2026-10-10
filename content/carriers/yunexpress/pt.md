@@ -15,7 +15,7 @@ O yuntrack pede «your YunExpress tracking number (starting with YT)» e não di
 | Número | O que é |
 | --- | --- |
 | `YT1234567890123456` | YunExpress (YT e 16 algarismos). |
-| `YT1234567890123` | YTO Express, outra transportadora (YT e 13 algarismos). |
+| `YT1234567890123` | YTO Express, outra transportadora (YT e 13 algarismos): vê [como saber qual é a transportadora](guide:tracking-number-formats). |
 | `YT123456789012345` | Não é YunExpress (YT e 15 algarismos): vê se falta um algarismo. |
 | `LP12345678901234` | Uma referência logística do AliExpress (LP e 14 algarismos): vê a página da [Cainiao](carrier:cainiao). |
 
@@ -43,11 +43,11 @@ O yuntrack só existe em inglês: não tem seletor de idioma nem versão em port
 
 O que mais confunde é `Delivered to local carrier`, em português «entregue à transportadora local»: aqui, «delivered» quer dizer apenas que a YunExpress passou a encomenda à empresa que faz o último troço. Seguem-se as linhas dessa empresa, também em inglês. Se for a DPD, pode aparecer muito cedo `Sender goods issue`: é um registo de dados criado quando a encomenda ainda está na China, não um problema com a tua compra.
 
-O separador de cada encomenda segue o código da última leitura, por isso, em `Transit`, é essa leitura que diz em que passo está a encomenda. A YunExpress não explica o que entra em `Alert`, o separador das encomendas com algum problema: lê a linha por baixo e pergunta à loja se nada mudar. O código da página do yuntrack tem ainda uma barra de progresso (`Pickup`, `Departed from origin`, `Arrived at destination`, `Local carrier on the way`, `Delivered successfully`). O `Pickup` dessa barra é a recolha no vendedor, na China, não um ponto de levantamento para ti.
+O separador de cada encomenda segue o código da última leitura, por isso, em `Transit`, é essa leitura que diz em que passo está a encomenda. A YunExpress não explica o que entra em `Alert`, o separador das encomendas com algum problema: lê a linha por baixo e pergunta à loja se nada mudar. O código da página do yuntrack tem ainda uma barra de progresso (`Pickup`, `Departed from origin`, `Arrived at destination`, `Local carrier on the way`, `Delivered successfully`). O `Pickup` dessa barra é a recolha no vendedor, na China, não um ponto de levantamento para ti. Quando a encomenda passa para uma transportadora em Portugal, vê [o que quer dizer cada estado do seguimento](guide:tracking-statuses).
 
 ## YunExpress Portugal e CTT: quem entrega a encomenda
 
-A YunExpress leva as encomendas da China de avião, trata da alfândega no destino e depois entrega-as a uma transportadora local. Segundo a própria YunExpress, a sua linha Economy Express cobre Portugal, mas não diz quem entrega cá: as suas páginas falam de «premium global carrier networks» e de transportadoras de último troço sem nome. Quem tem a tua, dizem-no as linhas que vêm depois de `Delivered to local carrier` e a coluna «Last Mile Tracking».
+A YunExpress leva [as encomendas da China](guide:tracking-from-china) de avião, trata da alfândega no destino e depois entrega-as a uma transportadora local. Segundo a própria YunExpress, a sua linha Economy Express cobre Portugal, mas não diz quem entrega cá: as suas páginas falam de «premium global carrier networks» e de transportadoras de último troço sem nome. Quem tem a tua, dizem-no as linhas que vêm depois de `Delivered to local carrier` e a coluna «Last Mile Tracking».
 
 Numa notícia de 6 de dezembro de 2021, os CTT descrevem a YunExpress como «parceira e cliente dos CTT, sendo um agregador de tráfego internacional proveniente da Ásia». Na mesma notícia, anunciam com ela uma joint venture para gerir uma rede de cacifos de encomendas em Portugal e Espanha, com 66% para os CTT e 34% para a YunExpress. A notícia não diz que os CTT entregam todas as encomendas YunExpress, e não está confirmado o que é hoje essa rede nem se a tua encomenda pode acabar num desses cacifos.
 
@@ -65,7 +65,7 @@ Para a UE, a YunExpress informou a 18 de junho de 2026 que as encomendas até 15
 
 Pagaste com PayPal? Segundo a YunExpress, o seguimento que partilha com o PayPal é uma base importante para o PayPal tratar as disputas e libertar fundos.
 
-Dada como entregue e não a tens? A página de seguimento pode oferecer uma prova de entrega, que pede o nome do destinatário. Depois pergunta à transportadora local e à loja. `Returned` marca uma encomenda devolvida, mas a YunExpress não publica regras de devolução para quem recebe: pergunta à loja.
+Dada como entregue e não a tens? A página de seguimento pode oferecer uma prova de entrega, que pede o nome do destinatário. Depois pergunta à transportadora local e à loja; o resto está em [encomenda dada como entregue mas não recebi](guide:delivered-not-received). `Returned` marca uma encomenda devolvida, mas a YunExpress não publica regras de devolução para quem recebe: pergunta à loja.
 
 ## YunExpress Portugal contactos: telefone e e-mail
 

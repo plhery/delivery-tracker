@@ -4,7 +4,7 @@ description: Descobre que transportadora tem a tua encomenda pelo número de seg
 slug: como-saber-qual-e-a-transportadora
 picture: Três etiquetas de seguimento divididas em partes coloridas, uma lupa sobre o código de país CH e o Pip, curioso.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 As letras e o comprimento de um número de seguimento dizem muitas vezes que transportadora tem a tua encomenda. `1Z` seguido de 16 letras e algarismos é UPS, e 13 caracteres como `RR123456785CH` (duas letras, nove algarismos, duas letras) costumam ser de um operador postal, com o país que emitiu o número nas duas últimas letras: `PT` é Portugal. Os números só com algarismos são o caso difícil: 10, 12 ou 14 algarismos podem ser de várias transportadoras, e aí quem decide é o e-mail de envio, ou um serviço de seguimento que as experimente uma a uma.
@@ -20,7 +20,7 @@ Quatro passos, por esta ordem:
 - Experimenta nos sites | Introduz o número no site de cada transportadora possível. A que mostrar leituras desse número é a que tem a tua encomenda.
 :::
 
-Se não te apetecer fazer de detetive, cola o número, uma ligação da transportadora ou o e-mail de envio inteiro no [Peek](/): ele encontra o número e deteta a transportadora entre mais de 3500.
+Se não te apetecer fazer de detetive, cola o número, uma ligação da transportadora ou o e-mail de envio inteiro no [Peek](/): ele encontra o número e deteta a transportadora entre mais de 3500. Os outros serviços que juntam várias transportadoras estão em [como seguir todas as encomendas num só lugar](guide:universal-tracker).
 
 ## Como é o número de seguimento de cada transportadora
 
@@ -34,9 +34,12 @@ Eis o que as transportadoras, e a norma postal, dizem sobre os números que mais
 | InPost | «número de expedição»; o exemplo da página de seguimento tem 8 caracteres: `89972378` |
 | DHL | DHL Express: 10 algarismos, nunca letras |
 | UPS | `1Z` + 16 letras e algarismos, 18 caracteres no total, como `1Z999AA10123456784`, um exemplo com um dígito de controlo UPS válido |
+| [Correos Express](carrier:correos-express) | a Correos Express não publica um formato; nos dados de transportadoras que o Peek usa, 16 algarismos (também DHL eCommerce, Canada Post, TNT e Evri UK) ou 23 algarismos, ambos terminados num dígito de controlo; com 000 nas posições 15 a 17, o Peek toma um número de 23 algarismos pela Australia Post |
+| [NACEX](carrier:nacex) | a caixa de seguimento da NACEX mostra `0000/00000000`: quatro algarismos da agência de onde a encomenda partiu, uma barra e oito algarismos do «Nº expedição»; a NACEX não fixa o comprimento |
 | Ecoscooting | a página de seguimento não indica um formato; nos dados de transportadoras que o Peek usa, `CNPRT` + 20 algarismos é Ecoscooting |
 | Amazon | a Amazon não publica um formato; os números `TBA` e `PT…` estão explicados mais abaixo |
-| YunExpress | `YT` + 16 algarismos (`YT` + 13 algarismos é a YTO Express) |
+| [Cainiao](carrier:cainiao) (AliExpress) | a Cainiao não descreve os seus números; nos dados de transportadoras que o Peek usa, `LP` ou `CNG` + 14 algarismos pode ser Cainiao, e `DOFR` ou `CNFR` + 13 algarismos + `HD` é Cainiao |
+| [YunExpress](carrier:yunexpress) | `YT` + 16 algarismos (`YT` + 13 algarismos é a YTO Express) |
 | China Post, EMS | o formato postal terminado em `CN`; os números EMS internacionais começam por `E` |
 
 ### O que significam as letras de um código de envio dos CTT?
@@ -124,7 +127,7 @@ Uma encomenda que atravessa uma fronteira muda muitas vezes de mãos, e cada emp
 - **Nos envios que os CTT mandam para fora**, depois de saírem de Portugal o Seguir objeto só mostra o que os países de trânsito e de destino passam aos CTT, e essa informação pode chegar tarde ou nem chegar.
 - **Nos envios económicos do AliExpress**, a Cainiao diz que o seguimento acaba na entrega à transportadora local, e que o vendedor te pode dizer como contactar essa transportadora. Mais em [como seguir uma encomenda da China](guide:tracking-from-china).
 
-Um número que não dá resultados nem sempre está mal escrito. Os CTT dão duas razões: o número pode servir apenas para fins aduaneiros, ou o envio pode ser entregue em Portugal por outra empresa. Em qualquer dos casos, dizem para contactares o remetente. E a DHL Express avisa que recicla periodicamente os números de carta de porte, por isso o seguimento pode, de vez em quando, misturar dados de dois envios com o mesmo número. Se um número válido simplesmente ainda não se mexeu, lê [porque é que o tracking não atualiza](guide:tracking-not-updating).
+Um número que não dá resultados nem sempre está mal escrito. Os CTT dão duas razões: o número pode servir apenas para [fins aduaneiros](guide:customs), ou o envio pode ser entregue em Portugal por outra empresa. Em qualquer dos casos, dizem para contactares o remetente. E a DHL Express avisa que recicla periodicamente os números de carta de porte, por isso o seguimento pode, de vez em quando, misturar dados de dois envios com o mesmo número. Se um número válido simplesmente ainda não se mexeu, lê [porque é que o tracking não atualiza](guide:tracking-not-updating).
 
 :::sources
 - [UPU: S10 standard, Identification of postal items](https://www.upu.int/UPU/media/upu/files/postalSolutions/programmesAndServices/standards/S10-12.pdf) – o formato postal, as letras, o dígito de controlo, o código de país, o código acrescentado no destino
@@ -141,7 +144,9 @@ Um número que não dá resultados nem sempre está mal escrito. Os CTT dão dua
 - [MyDHL Express Portugal: FAQs Localização e Monitorização](https://mydhl.express.dhl/pt/pt/help-and-support/faqs/tracking-monitoring.html) – números de carta de porte reciclados
 - [UPS: sample package label](https://www.pld-certify.ups.com/CerttoolHelp/PLD0200/WebHelp_pld0200/LeadPackage.htm) – o número 1Z
 - [Amazon.es: Entregas de Amazon Logistics](https://www.amazon.es/gp/help/customer/display.html?nodeId=GEW3XT9JEMBLTKRV&language=pt_PT) – parceiros de transporte locais e regionais, seguimento em Os meus pedidos
-- [Universal Parcel Scraper: carrier catalog](https://github.com/plhery/universal-parcel-scraper/blob/main/data/catalog.json) – os formatos TBA, PT, ES, CNPRT e YT nos dados de transportadoras do Peek
+- [Universal Parcel Scraper: carrier catalog](https://github.com/plhery/universal-parcel-scraper/blob/main/data/catalog.json) – os formatos TBA, PT, ES, CNPRT, YT, LP, CNG, DOFR e CNFR, e os 16 e 23 algarismos da Correos Express, nos dados de transportadoras do Peek
+- [NACEX Portugal: Página inicial](https://www.nacex.pt/) – a forma 0000/00000000 na caixa «Seguimento de envio»
+- [NACEX Portugal: Seguimento](https://www.nacex.pt/irSeguimiento.do) – Agência e Nº expedição
 - [YunExpress: YunTrack](https://www.yuntrack.com/) – números que começam por YT
 - [Cainiao: Help centre](https://global.cainiao.com/helpDoc.htm) – sem seguimento depois da entrega à transportadora local nos envios económicos
 - [bpost: Puis-je suivre mon colis en ligne ?](https://www.bpost.be/fr/faq/puis-je-suivre-mon-colis-en-ligne) – os códigos começados por U não se podem seguir

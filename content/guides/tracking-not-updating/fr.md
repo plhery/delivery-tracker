@@ -4,7 +4,7 @@ description: Ton suivi n'avance plus depuis des jours ? Les raisons, combien de 
 slug: suivi-colis-ne-bouge-plus
 picture: Un calendrier aux jours barrés, une ligne de progression arrêtée à mi-chemin et Pip qui attend, l'air de s'ennuyer.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Un suivi qui ne bouge plus veut en général dire que personne n'a scanné ton colis ces derniers temps, pas qu'il s'est arrêté. Les transporteurs scannent dans les centres de tri et aux frontières, pas sur la route : un long trajet, un vol, la douane ou un week-end peuvent laisser plusieurs jours sans nouvelle ligne. Ne t'inquiète qu'une fois passé le délai du transporteur lui-même (chez Chronopost, plus de 48 heures sans changement ; chez bpost, au moins 5 jours ouvrables pour un envoi vers un pays voisin ; chez La Poste suisse, plus de deux jours de retard sur le délai habituel), et même là, contacte d'abord le vendeur : c'est lui, le client du transporteur.
@@ -14,8 +14,8 @@ Un suivi qui ne bouge plus veut en général dire que personne n'a scanné ton c
 Le suivi montre des scans, pas des déplacements, et un colis n'est scanné qu'à certains endroits :
 
 - **Pas de scan entre deux centres de tri.** UPS prévient qu'un colis qui parcourt une longue distance risque de ne plus être scanné avant d'arriver à son centre de destination.
-- **Les week-ends et les jours fériés.** On compte en jours ouvrables ou ouvrés : Colissimo annonce « 48h soit 2 jours ouvrables » vers la France métropolitaine et Monaco. Chronopost ne compte ni les week-ends ni les jours fériés dans son seuil de 48 heures, et Vinted non plus dans ses jours ouvrés.
-- **La météo, les pics d'activité, l'actualité.** Amazon cite les intempéries, la circulation dense, la forte demande pendant les vacances et les pannes de véhicule ; Colis Privé, la météo défavorable et les problèmes logistiques. Vers l'international et l'outre-mer, Colissimo se dit « fortement dépendant du contexte géopolitique et des capacités de transport international ».
+- **Les week-ends et les jours fériés.** On compte en jours ouvrables ou ouvrés : Colissimo annonce « 48h soit 2 jours ouvrables » vers la France métropolitaine et Monaco. Chronopost ne compte ni les week-ends ni les jours fériés dans son seuil de 48 heures, et Vinted non plus dans ses jours ouvrés. Les jours sans service autour de Noël sont listés dans [les dates limites d'envoi des fêtes](guide:christmas-posting-dates).
+- **La météo, les pics d'activité, l'actualité.** Amazon cite les intempéries, la circulation dense, la forte demande pendant les vacances et les pannes de véhicule ; [Colis Privé](carrier:colis-prive), la météo défavorable et les problèmes logistiques. Vers l'international et l'outre-mer, Colissimo se dit « fortement dépendant du contexte géopolitique et des capacités de transport international ».
 - **Une adresse fausse ou une étiquette illisible.** Colis Privé cite l'erreur dans l'adresse de livraison. DHL détaille : faute de frappe dans le code postal, numéro de rue manquant, étiquette manuscrite difficile à lire, étiquette décollée, emballage ouvert ou abîmé qu'il faut refaire. Le colis peut alors partir au mauvais endroit ou être trié à la main, avec plusieurs jours de retard.
 
 ## Combien de temps un colis peut-il rester bloqué en transit ?
@@ -53,7 +53,7 @@ Pour un colis envoyé à l'étranger, DHL juge tout à fait normal, selon le pay
 - **La douane.** Plusieurs jours ouvrables selon que les documents sont complets ou non, d'après DHL. Les délais Colissimo vers l'international (3 à 15 jours) et vers l'outre-mer (5 à 22 jours) ne comptent pas le passage en douane. Voir aussi [les colis bloqués en douane](guide:customs).
 - **Un transporteur local prend le relais.** bpost donne deux raisons à un statut figé : le colis est retardé, ou « nos collègues à l'étranger ne fournissent pas d'informations Track & Trace ». La Poste suisse prévient que le suivi des envois vers l'étranger n'est pas encore assuré intégralement pour tous les pays. DHL conseille d'essayer le même numéro sur le site de suivi du pays de destination.
 
-Commande passée sur AliExpress, Temu ou Shein ? Lis [comment suivre un colis venu de Chine](guide:tracking-from-china).
+Commande passée sur AliExpress, Temu ou Shein ? Lis [comment suivre un colis venu de Chine](guide:tracking-from-china). Colis suivi chez [Cainiao](carrier:cainiao) ou [YunExpress](carrier:yunexpress) ? Leur page dit où peut apparaître le numéro du transporteur local.
 
 ### En cours de livraison, puis plus rien
 
@@ -118,7 +118,7 @@ En France, c'est long : Colissimo vise 48 heures, soit 2 jours ouvrables, vers l
 
 ### Peut-on accélérer la mise à jour du suivi ?
 
-Non. Un site de suivi non plus : il ne montre que ce que le transporteur publie. [Peek](/) vérifie le suivi jusqu'à toutes les 10 minutes et peut t'envoyer une alerte à chaque nouveau scan, pour que tu n'aies plus à actualiser la page.
+Non. Un [site de suivi universel](guide:universal-tracker) non plus : il ne montre que ce que le transporteur publie. [Peek](/) vérifie le suivi jusqu'à toutes les 10 minutes et peut t'envoyer une notification à chaque nouveau scan, pour que tu n'aies plus à actualiser la page.
 
 ### Mon numéro de suivi ne fonctionne pas
 

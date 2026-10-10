@@ -1,13 +1,13 @@
 ---
 title: Universal parcel tracking: all your parcels in one place
-description: How universal parcel tracking works, what no tracker can see, and how 17TRACK, ParcelsApp, AfterShip and others compare on ads, accounts, alerts and price.
+description: How universal parcel tracking works, what no tracker can see, and how 17TRACK, ParcelsApp, AfterShip and others compare on ads, accounts, notifications and price.
 slug: universal-parcel-tracking
 picture: Five vans in different colours, their dotted paths leading into one list on a phone, and Pip beaming from an open box.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
-A universal parcel tracker (or universal package tracker) is a website or app that takes a tracking number from any carrier, works out whose it is, fetches the scans and keeps all your parcels in one list. It only shows scans the carrier has recorded, so it is never ahead of the carrier. Trackers differ in what they ask of you: an account, your inbox, a subscription for alerts, or your patience with ads.
+A universal parcel tracker (or universal package tracker) is a website or app that takes a tracking number from any carrier, works out whose it is, fetches the scans and keeps all your parcels in one list. It only shows scans the carrier has recorded, so it is never ahead of the carrier. Trackers differ in what they ask of you: an account, your inbox, a subscription for notifications or your patience with ads.
 
 ## Is there an app that tracks all your packages in one place?
 
@@ -43,13 +43,13 @@ Other options, with their limits:
 
 ## Which parcel tracking app is best?
 
-None is best for everyone: it depends on your carriers and what you'll trade for alerts. Check these yourself, this page's claims included:
+None is best for everyone: it depends on your carriers and what you'll trade for notifications. Check these yourself, this page's claims included:
 
 | Check | Where to look | Watch out for |
 | --- | --- | --- |
 | Account | Add one parcel without signing in | Guest caps: AfterShip's stops at 3 shipments |
 | Ads | App Store: "Contains Advertising", under Age Rating. Google Play: "Contains ads" | Both rest on the developer's own answers |
-| Alerts | The listing or help pages | Parcel keeps push alerts for subscribers |
+| Notifications | The listing or help pages | Parcel keeps push notifications for subscribers |
 | Your inbox | "Connect Gmail or Outlook" versus "forward an email" | Shop scans "the last 30 days" and keeps checking |
 | Your data | The privacy label, Google Play's "Data safety", the privacy policy | The App Store label "has not been verified by Apple". Every tracker passes your number on |
 | How long it keeps data | The privacy policy | Deliveries keeps forwarded emails "up to ten days"; ParcelsApp's Android listing says "Data can't be deleted" |
@@ -57,14 +57,14 @@ None is best for everyone: it depends on your carriers and what you'll trade for
 
 ## Free or paid: the main trackers compared
 
-Most start free, but with ads, a cap or no push alerts. Listed alphabetically, not ranked, from each one's own pages and US App Store listing on 7 October 2026. Peek, which publishes this guide, is listed like the others.
+Most start free, but with ads, a cap or no push notifications. Listed alphabetically, not ranked, from each one's own pages and US App Store listing on 7 October 2026. Peek, which publishes this guide, is listed like the others.
 
 | Tracker | Account | Ads, as declared | Free use | Paid (US) |
 | --- | --- | --- | --- | --- |
 | 17TRACK | Needed to save and sync numbers | "Contains Advertising" | Quota not stated | $2.99 or $4.99 a month (quota: 100 or 200 a month) |
-| AfterShip | Guest mode, up to 3 shipments | "Contains Advertising" | Free, with push alerts for "8 major" statuses | No in-app purchases listed |
+| AfterShip | Guest mode, up to 3 shipments | "Contains Advertising" | Free, with push notifications for "8 major" statuses | No in-app purchases listed |
 | Deliveries | Optional, for Junecloud sync | None declared | None: a subscription is needed "to start using the app" | $4.99 a year or $0.99 a month |
-| Parcel | No personal details required | "Contains Advertising" | 3 deliveries, no push alerts | $6.99 a year |
+| Parcel | No personal details required | "Contains Advertising" | 3 deliveries, no push notifications | $6.99 a year |
 | ParcelsApp (Packages on iPhone) | "No registration required" | "Contains Advertising" | With ads | Premium removes ads and limits: $4.49 or $0.99, period not shown |
 | [Peek](/) | Not to track; sign in to keep parcels together | None: it doesn't "serve advertising" | A daily lookup limit against bulk use | None: a "personal, non-commercial project" |
 
@@ -85,9 +85,9 @@ Most trackers work in five steps:
 :::steps
 - You paste | A tracking number, the carrier's link or the shipping email. A link is safest: it names the carrier.
 - It reads the shape | Letters, length and check digit narrow it down. `1Z999AA10123456784` starts with UPS's `1Z`; `RR123456785CH` has the 13-character shape national posts share.
-- It weighs the candidates | Some shapes fit several carriers: a plain 14-digit number can be DPD, SEUR, BRT or Hermes Germany, among others. It asks more than one, or lets you choose.
+- It weighs the candidates | Some shapes fit several carriers: a plain 14-digit number can be DPD, SEUR, [BRT](carrier:brt) or Hermes Germany, among others. It asks more than one, or lets you choose.
 - It fetches the scans | From the carrier or another tracker, into one timeline.
-- It checks again | At set intervals, and alerts you to anything new.
+- It checks again | At set intervals, and notifies you of anything new.
 :::
 
 To read a number yourself, see [tracking number formats](guide:tracking-number-formats).
@@ -156,7 +156,7 @@ Yes, usually by text, with a link. The US Postal Inspection Service says USPS on
 - [App Store: 17TRACK](https://apps.apple.com/us/app/17track-package-tracker/id1004956012) – account, ads, memberships
 - [17TRACK: USPS tracking](https://www.17track.net/en/uspsTracking) – USPS limits, carrier count
 - [17TRACK: Privacy Policy](https://www.17track.net/privacy-en.html) – controller, storage
-- [App Store: AfterShip](https://apps.apple.com/us/app/aftership-package-tracker/id507014023) – ads, free alerts
+- [App Store: AfterShip](https://apps.apple.com/us/app/aftership-package-tracker/id507014023) – ads, free notifications
 - [AfterShip: Guest mode](https://support.aftership.com/en/tracking/articles/15441925-track-shipments-in-guest-mode) – three shipments
 - [App Store: Deliveries](https://apps.apple.com/us/app/deliveries-a-package-tracker/id290986013) – prices
 - [Junecloud: Subscriptions](https://junecloud.com/support/deliveries-ios/subscriptions.html) – subscription to start

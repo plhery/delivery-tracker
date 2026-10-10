@@ -4,7 +4,7 @@ description: Der Status hängt seit Tagen? Die häufigsten Gründe, wie lange Wa
 slug: sendungsverfolgung-aktualisiert-sich-nicht
 picture: Ein Kalender mit mehreren durchgestrichenen Tagen, eine Fortschrittslinie, die auf halbem Weg abbricht, und Pip wartet ein bisschen gelangweilt.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Wenn sich die Sendungsverfolgung nicht aktualisiert, hat meist nur niemand dein Paket gescannt. Stehen geblieben ist es deshalb nicht: Paketdienste scannen in Paketzentren und an Grenzen, nicht auf der Straße, und eine lange Fahrt, ein Flug, der Zoll oder ein Wochenende können Tage ohne neuen Eintrag bedeuten. Sorgen machen musst du dir erst, wenn die Frist des Paketdienstes abgelaufen ist (bei DHL mehr als 5 Werktage ohne neuen Status, bei der Schweizerischen Post im Inland mehr als zwei Tage über der erwarteten Laufzeit). Und auch dann fragst du zuerst den Händler: Er ist der Kunde des Paketdienstes.
@@ -15,7 +15,7 @@ Die Sendungsverfolgung zeigt Scans, keine Bewegung. Gescannt wird dein Paket nur
 
 - **Kein Scan zwischen zwei Paketzentren.** Der DHL-Status `Die Sendung wurde von DHL bearbeitet und wird für den Weitertransport in die Region des Empfängers vorbereitet.` kann laut DHL Stunden oder Tage stehen bleiben. Der nächste sichtbare Status ist erst die Ankunft im Ziel-Paketzentrum. Hermes sagt es allgemein: Es ist normal, dass sich der Status nicht ständig ändert, weil nicht alle Transportschritte aufgeführt sind.
 - **Wochenenden und Feiertage.** DHL rechnet in Werktagen, also Montag bis Samstag ohne Feiertage. Vinted lässt bei seinen Fristen Wochenenden und Feiertage ganz weg.
-- **Hochsaison, Wetter und Stau.** In der Vorweihnachtszeit kann es laut DHL länger dauern. Als weitere Gründe nennt DHL schlechtes Wetter, Stau, Unfälle und Krankheit.
+- **Hochsaison, Wetter und Stau.** In der Vorweihnachtszeit kann es laut DHL länger dauern. Als weitere Gründe nennt DHL schlechtes Wetter, Stau, Unfälle und Krankheit. Die Fristen für Weihnachten stehen unter [Weihnachtspost: letzter Termin](guide:christmas-posting-dates).
 - **Ein Etikett, das die Maschine nicht lesen kann.** DHL sortiert bis zu 50.000 Sendungen pro Stunde automatisch. Scheitert die Anlage an einem Zahlendreher in der Postleitzahl, einer fehlenden Hausnummer, undeutlicher Handschrift oder einem abgelösten Versandaufkleber, wird das Paket von Hand nachbearbeitet oder fehlgeleitet. Dasselbe gilt für eine Verpackung, die unterwegs aufgegangen ist und neu verpackt werden muss. Das kann mehrere Tage kosten. In der Sendungsverfolgung steht dann etwa `Die Sendung wurde im Paketzentrum manuell nachbearbeitet.`
 
 ## Wie lange kann ein Paket festhängen?
@@ -51,7 +51,7 @@ Kommt dein Paket aus dem Ausland, steht bei DHL womöglich `Die Sendung befindet
 - **Zoll:** Die Verzollung kann laut DHL einige Werktage dauern, je nachdem, wie vollständig Unterlagen und Daten sind. Frag nicht beim deutschen Zoll nach dem Status, bittet DHL: Das Paket ist in der Regel gar nicht dort. Mehr dazu unter [Paket beim Zoll](guide:customs).
 - **Der Paketdienst im Zielland übernimmt:** DHL warnt vor Abrissen in der Sendungsverfolgung und rät, die Nummer auch in der Sendungsverfolgung des Ziellands einzugeben. In Österreich erscheint ein Paket aus dem Ausland nach `Sendung ins Zielland weitergeleitet` erst wieder, wenn es in einem Logistikzentrum der Post erfasst wurde.
 
-Bei AliExpress, Temu oder Shein bestellt? Lies, wie du ein [Paket aus China verfolgst](guide:tracking-from-china).
+Bei AliExpress, Temu oder Shein bestellt? Lies, wie du ein [Paket aus China verfolgst](guide:tracking-from-china). Läuft es über Cainiao oder YunExpress, steht auf den Seiten zu [Cainiao](carrier:cainiao) und [YunExpress](carrier:yunexpress), was du tun kannst.
 
 ### Seit Tagen „in Zustellung“
 
@@ -113,7 +113,7 @@ Innerhalb Deutschlands ist das langsam: DHL stellt Pakete in der Regel 1 bis 2 W
 
 ### Wie oft wird die Sendungsverfolgung aktualisiert?
 
-So oft, wie jemand dein Paket scannt. Schneller geht es nicht: Auch der DHL-Kundenservice kann eine Sendung nicht beschleunigen, und ein Tracker zeigt nur, was der Paketdienst veröffentlicht. [Peek](/) fragt tagsüber bis zu alle 10 Minuten beim Paketdienst nach und kann sich melden, sobald ein neuer Scan da ist. Das ständige Neuladen kannst du dir also sparen.
+So oft, wie jemand dein Paket scannt. Schneller geht es nicht: Auch der DHL-Kundenservice kann eine Sendung nicht beschleunigen, und ein [Paket-Tracker](guide:universal-tracker) zeigt nur, was der Paketdienst veröffentlicht. [Peek](/) fragt tagsüber bis zu alle 10 Minuten beim Paketdienst nach und kann sich melden, sobald ein neuer Scan da ist. Das ständige Neuladen kannst du dir also sparen.
 
 ### Meine Sendungsnummer funktioniert nicht
 

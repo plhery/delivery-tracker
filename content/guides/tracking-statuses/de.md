@@ -4,7 +4,7 @@ description: Von „elektronisch angekündigt“ bis „zugestellt“: was die S
 slug: sendungsstatus-bedeutung-aller-meldungen
 picture: Eine kurvige Route mit abgehakten Stationen (Strichcode-Etikett, Depot, Flugzeug), ein Lieferwagen an der aktuellen Station, weiter vorn ein Haus und Pip, der eilig mitläuft.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Ein Sendungsstatus fasst den letzten Scan des Paketdienstes in ein paar Worten zusammen, und meistens musst du nichts tun. „Elektronisch angekündigt“ heißt, dass der Paketdienst dein Paket noch gar nicht hat, „in transit“ oder „unterwegs“, dass es irgendwo zwischen zwei Scans steckt, und „in Zustellung“, dass es heute im Zustellfahrzeug liegt. Gefragt bist du nur in wenigen Fällen: nach einem verpassten Zustellversuch, wenn ein Paket zur Abholung bereitliegt, wenn der Zoll etwas verlangt und wenn „zugestellt“ dasteht, aber nichts da ist.
@@ -64,7 +64,7 @@ DPD braucht innerhalb Deutschlands in der Regel 1 bis 2 Werktage ab der Übergab
 
 - **Ursprungsland verlassen.** DHL bucht den Container mit deinem Paket auf ein Flugzeug, ein Schiff oder einen Zug und nennt dann den Transport, etwa `LH 400` für einen Lufthansa-Flug. Bei Paketen nach Deutschland heißt `Die Sendung befindet sich im Weitertransport zu DHL`, dass DHL das Paket noch nicht hat; bis zum nächsten Status können mehrere Tage vergehen. Die Prüfung bei `Die Sendung wird im Ursprungsland zusätzlich geprüft.` dauert mindestens 2 Werktage. Die Schweizerische Post meldet `Zustelldatum unbekannt`, wenn die Sendung aus dem Ausland kommt, ins Ausland geht oder nicht wie angekündigt eintraf. Und bei der Österreichischen Post heißt `Sendung in Verteilung` auf einem Paket aus dem Ausland: Es ist schon in Österreich.
 - **Zoll.** Bei DHL beginnt die Verzollung mit `Der Zollabfertigungsprozess für den Import ins Zielland/Zielgebiet wurde begonnen.` und kann je nach Unterlagen einige Werktage dauern. DHL bittet, beim deutschen Zoll nicht nach dem Status zu fragen: Das Paket ist meist gar nicht dort. Bei der Schweizerischen Post folgt auf `Im Postverzollungsprozess` der Status `Vom Schweizer Zoll freigegeben`, dann geht das Paket in die Inlandzustellung. Die Schweizerische Post nennt „drei bis vier Arbeitstage“, wenn alle Angaben vollständig und korrekt sind. Eine allgemeine Höchstdauer nennen die Paketdienste nicht. Handeln musst du nur auf Aufforderung, zum Beispiel bei `Die Sendung wurde dem Zoll übergeben. Ein Schreiben mit Ihren Zollinformationen ist auf dem Weg zu Ihnen.` Dann kommt ein Brief mit allem, was du brauchst, um das Paket beim Zollamt abzuholen. Ist er am dritten Werktag noch nicht da, melde dich bei DHL. Mehr dazu: [Paket beim Zoll](guide:customs).
-- **Paketdienst vor Ort.** `Die Weiterleitung des Transportbehälters mit der Sendung ins Zielland/Zielgebiet ist erfolgt.` heißt bei DHL: Der Paketdienst im Zielland hat übernommen, und weitere Scans findest du auch in seiner Sendungsverfolgung. Bei Paketen nach Österreich meldet sich die Post nach `Sendung ins Zielland weitergeleitet` erst wieder, wenn eines ihrer Logistikzentren das Paket erfasst hat. Bei AliExpress, Temu oder Shein bestellt? Lies, wie du ein [Paket aus China verfolgst](guide:tracking-from-china).
+- **Paketdienst vor Ort.** `Die Weiterleitung des Transportbehälters mit der Sendung ins Zielland/Zielgebiet ist erfolgt.` heißt bei DHL: Der Paketdienst im Zielland hat übernommen, und weitere Scans findest du auch in seiner Sendungsverfolgung. Bei Paketen nach Österreich meldet sich die Post nach `Sendung ins Zielland weitergeleitet` erst wieder, wenn eines ihrer Logistikzentren das Paket erfasst hat. Bei AliExpress, Temu oder Shein bestellt? Lies, wie du ein [Paket aus China verfolgst](guide:tracking-from-china). Was Cainiao und YunExpress mit ihren englischen Meldungen meinen, steht unter [Cainiao Sendungsverfolgung](carrier:cainiao) und [YunExpress Sendungsverfolgung](carrier:yunexpress).
 
 ## Heißt „in Zustellung“, dass das Paket heute kommt?
 
@@ -79,7 +79,7 @@ Meistens, ja:
 
 Zwei Stolperfallen: `Sendung in Verteilung` heißt bei der Österreichischen Post noch nicht heute, sondern im Laufe der nächsten Werktage. Und taucht bei DHL der Status mit dem Zustellfahrzeug mehrmals auf, konnte der Zusteller seine Tour nicht beenden, etwa wegen einer Straßensperrung oder eines Unfalls: Dann kann es 1 bis 2 Tage länger dauern.
 
-[Peek](/) prüft bis zu alle 2 Minuten, sobald ein Paket in Zustellung ist, sonst bis zu alle 10 Minuten. Seine Meldungen kannst du auf „Nur am Liefertag“ stellen.
+[Peek](/) prüft bis zu alle 2 Minuten, sobald ein Paket in Zustellung ist, sonst bis zu alle 10 Minuten. Seine Mitteilungen kannst du auf „Nur am Liefertag“ stellen.
 
 ## Zustellversuch verpasst, Karte im Briefkasten: Was jetzt?
 
@@ -100,6 +100,8 @@ Hier bist du gefragt: Niemand konnte das Paket annehmen, auch kein Nachbar. Ande
 | Österreichische Post | `Empfänger nicht angetroffen – benachrichtigt`, mit gelbem Zettel im Briefkasten | Ab dem Folgetag bis zum dritten darauffolgenden Montag; manche Versandhändler setzen 5 Werktage |
 | Schweizerische Post | `Zur Abholung gemeldet (Abholungseinladung)` | In der Regel 7 Tage, 15 bei Sendungen aus dem Ausland; verlängern geht kostenlos und ohne Konto |
 
+Ob der Code auf der Karte auch als Sendungsnummer taugt, steht unter [Sendungsnummer finden](guide:find-tracking-number).
+
 > DHL fragt per SMS nie nach persönlichen Daten und fordert per SMS nie zur Zahlung auf. Eine SMS, die zur Zahlung auffordert und auf eine fremde Seite verlinkt, ist laut DHL gefälscht, auch wenn eine Sendungsnummer drinsteht. Neuen Termin oder Umleitung buchst du nur auf der Website oder in der App des Paketdienstes.
 
 ## „Zur Abholung bereit“: Wo liegt mein Paket?
@@ -115,7 +117,7 @@ Nicht immer. Es heißt, der Zusteller hat es als übergeben oder abgelegt gescan
 - **An jemand anderen.** Bei DHL steht im Feld „Empfänger“, wer angenommen hat: Original-Empfänger, Familienangehörige, Mitarbeiter, Nachbar, sonstige Person oder Briefkasten. Den Namen zeigt dir die Sendungsverfolgung, wenn du die Detailangaben öffnest und deine Postleitzahl eingibst. Kennst du den Nachbarn nicht, warte zwei Tage, ob er sich meldet, dann wende dich an den DHL-Kundenservice.
 - **An einem Ablageort.** Ein DHL-Ablageort muss auf deinem Grundstück liegen, wettergeschützt, für Dritte nicht einsehbar und für den Zusteller frei zugänglich sein. Muss niemand unterschreiben, stellt UPS das Paket an einem sicheren Ort ab, etwa am Seiteneingang oder bei der Garage. Ein Foto vom genauen Ort zeigt UPS auf ups.com/track. Bei der Schweizerischen Post heißt `Zugestellt im Ablagefach/Briefkasten`, dass das Paket im Ablagefach (Milchkasten) liegt.
 
-`Zugestellt am Schalter` meldet die Schweizerische Post, wenn du das Paket in einer Filiale oder PickPost-Stelle bekommen hast. Bei der Österreichischen Post steht `Sendung zugestellt` auch auf Rücksendungen: Dann hat der Absender sein Paket zurück. Nichts da? Schau im vollständigen Verlauf nach einem Namen oder Ort, dann lies [Paket zugestellt, aber nicht erhalten](guide:delivered-not-received).
+`Zugestellt am Schalter` meldet die Schweizerische Post, wenn du das Paket in einer Filiale oder PickPost-Stelle bekommen hast. Bei der Österreichischen Post steht `Sendung zugestellt` auch auf Rücksendungen: Dann hat der Absender sein Paket zurück. Und bei [Planzer](carrier:planzer) und [Quickpac](carrier:quickpac) heißt das englische `Shipped` zugestellt, nicht verschickt. Nichts da? Schau im vollständigen Verlauf nach einem Namen oder Ort, dann lies [Paket zugestellt, aber nicht erhalten](guide:delivered-not-received).
 
 ## „Ausnahme“ oder „Verzögerung“: Ist mein Paket verloren?
 

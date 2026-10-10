@@ -18,11 +18,11 @@ Nenhuma página da Cainiao descreve as formas LP, CNG, DOFR ou CNFR. O site acei
 | `CNG12345678900000` | CNG e 14 algarismos: pode ser Cainiao. |
 | `CNG12345678975001` | O mesmo, terminado no que parece um código postal francês: Cainiao ou talvez a Colis Privé. |
 | `DOFR1234567890123HD` | DOFR ou CNFR, 13 algarismos e HD: Cainiao. |
-| `RR123456785CN` | Um número postal, aqui da China Post. O site da Cainiao também segue esta forma. |
+| `RR123456785CN` | Um [número postal](guide:tracking-number-formats), aqui da China Post. O site da Cainiao também segue esta forma. |
 | `LP123456785HK` | Também postal (Hongkong Post): apesar do LP, não é um número LP da Cainiao. |
 | `YT1234567890123456` | Não é Cainiao, é da [YunExpress](carrier:yunexpress). |
 
-O seguimento da Cainiao responde ainda a outras formas, como AP e 14 algarismos. Nenhuma página da Cainiao diz onde aparece o número fora do AliExpress nem fala de SMS da Cainiao a quem recebe: se não o tens, pede-o à loja. Se o site não mostrar nada, a Cainiao pede que confirmes que é mesmo um número Cainiao ou AliExpress.
+O seguimento da Cainiao responde ainda a outras formas, como AP e 14 algarismos. Nenhuma página da Cainiao diz onde aparece o número fora do AliExpress nem fala de SMS da Cainiao a quem recebe: se não o tens, [vê onde procurar](guide:find-tracking-number) ou pede-o à loja. Se o site não mostrar nada, a Cainiao pede que confirmes que é mesmo um número Cainiao ou AliExpress.
 
 ## Estados do rastreio Cainiao: o que quer dizer cada um
 
@@ -42,13 +42,13 @@ O site muda de idioma no botão do canto superior direito, mas o português fica
 | `Arrived at pick-up point. Package available for collection.` | À tua espera num ponto de levantamento. |
 | `Package delivered` | Entregue, ou levantada por ti. |
 
-No site em português, `No tracking updates yet` aparece como `Sem atualização de rastreamento`, e a Cainiao pede que esperes pelo envio ou perguntes ao vendedor. `Carrier update` é um aviso da Cainiao: vai a caminho. `Accepted for transportation by postal service` é um parceiro postal que a recebe de outra empresa, não a primeira leitura; `Delivery Carrier Accepted` quer dizer que a transportadora local já a tem. `Processing delay at sorting center` é um atraso, não um erro. A linha do ponto de levantamento quer dizer que foi o ponto que assinou, não tu; quando a levantas, vem `Package delivered`. `Delivery failed` fecha a entrega como falhada depois das tentativas.
+No site em português, `No tracking updates yet` aparece como `Sem atualização de rastreamento`, e a Cainiao pede que esperes pelo envio ou perguntes ao vendedor. `Carrier update` é um aviso da Cainiao: vai a caminho. `Accepted for transportation by postal service` é um parceiro postal que a recebe de outra empresa, não a primeira leitura; `Delivery Carrier Accepted` quer dizer que a transportadora local já a tem. `Processing delay at sorting center` é um atraso, não um erro. A linha do ponto de levantamento quer dizer que foi o ponto que assinou, não tu; quando a levantas, vem `Package delivered`. `Delivery failed` fecha a entrega como falhada depois das tentativas. Quando a encomenda passa para uma transportadora portuguesa, vê [o que quer dizer cada etapa do seguimento](guide:tracking-statuses).
 
 ## Cainiao transportadora em Portugal: entregas e levantamento
 
 A Cainiao diz que faz entregas locais em nove países e regiões, sem os nomear; noutra página cita Espanha, França e Polónia, onde tem cacifos próprios. No cainiao.com, «España y Portugal» leva à Cainiao España, que promete às lojas «48 h España peninsular / Portugal» e lista pontos de recolha em «Lisboa (Portugal)». O apoio ao cliente é da Ecoscooting, cujo telefone e e-mail a Cainiao España dá como seus. Nenhuma página diz que todas as encomendas Cainiao para Portugal passam pela Ecoscooting, e nenhuma nomeia os CTT.
 
-Depois de `Received by local delivery company`, é uma transportadora do país de destino que a tem. Se ela lhe der um número próprio, o site da Cainiao mostra-o por baixo do principal, e o botão «View Contact Information» dá os contactos dela quando a Cainiao os tem. Com o envio económico, o seguimento pode parar aí: o `Aviso de rastreamento de transporte econômico` diz que só «é atualizado na entrega para a transportadora do país/região de destino». Para saber quem entrega, a Cainiao manda perguntar ao vendedor.
+Depois de `Received by local delivery company`, é uma transportadora do país de destino que a tem. Se ela lhe der um número próprio, o site da Cainiao mostra-o por baixo do principal, e o botão «View Contact Information» dá os contactos dela quando a Cainiao os tem. Com o envio económico, o seguimento pode parar aí: o `Aviso de rastreamento de transporte econômico` diz que só «é atualizado na entrega para a transportadora do país/região de destino». Para saber quem entrega, a Cainiao manda perguntar ao vendedor. Quem costuma entregar cá as encomendas da China está em [como seguir uma encomenda da China](guide:tracking-from-china).
 
 **Entrega falhada.** O `Undelivered` da Cainiao abrange casos como ninguém em casa, uma entrega adiada ou pedida para mais tarde ou uma morada que não se encontrou; a Cainiao aconselha a combinar nova entrega com a transportadora ou ir buscar a encomenda. `Awaiting Collection` e `First Notification to recipient` também querem dizer que espera por ti. Levanta-a logo, senão pode voltar ao remetente, avisa a Cainiao, sem dizer em quantos dias.
 

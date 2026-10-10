@@ -4,7 +4,7 @@ description: Entro quando spedire per Natale con Poste Italiane, SDA, GLS e BRT 
 slug: spedire-pacco-per-natale-ultimo-giorno
 picture: Una pagina di calendario con un giorno di dicembre cerchiato, un furgone che porta un pacco legato con un nastro rosso sotto la neve e Pip che gli corre accanto.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Poste Italiane non ha ancora pubblicato le date di Natale 2026: nel 2025 garantiva la consegna entro Natale in Italia per i pacchi affidati entro giovedì 18 dicembre con i servizi a 2 giorni lavorativi, ed entro venerdì 19 dicembre con quelli a 1 giorno. In Ticino la Posta ha già le date 2026: mercoledì 23 dicembre per Posta A e PostPac Priority, martedì 22 per PostPac Economy. Le tabelle danno la scadenza di ogni corriere come l'abbiamo verificata venerdì 9 ottobre 2026, con la data dell'anno scorso dove quella di quest'anno non è ancora uscita.
@@ -21,7 +21,7 @@ Nessun corriere italiano ha ancora messo online il calendario di Natale 2026, qu
 | SDA | Corriere espresso in Italia, ora gestito da Poste | Non ancora annunciata (2025: come Poste, giovedì 18 o venerdì 19 dicembre) |
 | GLS Italy | Spedizioni nazionali e internazionali, ultimo giorno con partenze | Non ancora annunciata (2025: lunedì 22 dicembre) |
 | GLS Italy | Logistics Groupage | Non ancora annunciata (2025: lunedì 15 dicembre) |
-| BRT | Tutti i servizi | Nessuna data pubblicata, neanche nel 2025 |
+| [BRT](carrier:brt) | Tutti i servizi | Nessuna data pubblicata, neanche nel 2025 |
 
 > Nel 2025 l'avviso di Natale di Poste è comparso online tra il 12 e il 21 novembre. Prima di spedire, controlla la sua pagina [Aggiornamenti operativi](https://www.poste.it/aggiornamenti-operativi.html).
 
@@ -101,7 +101,7 @@ Hai spedito dopo l'ultima data? Nel 2025 Poste avvisava che le spedizioni affida
 | La Posta | Niente prese in consegna né recapiti venerdì 25 e sabato 26 dicembre, venerdì 1° e sabato 2 gennaio |
 
 :::steps
-- Controlla il tracking del corriere | Sul suo sito o nella sua app, con il numero dell'e-mail di spedizione.
+- Controlla il tracking del corriere | Sul suo sito o nella sua app, con il [numero dell'e-mail di spedizione](guide:find-tracking-number).
 - Tieni conto dei giorni di stop | Nei giorni qui sopra il pacco può restare fermo.
 - Leggi gli avvisi del corriere | Poste li pubblica in «Aggiornamenti operativi», BRT tra le news: per esempio lo sciopero nazionale di venerdì 12 dicembre 2025 o i traghetti per la Sardegna cancellati.
 - Ancora fermo dopo Natale? | Leggi [perché il tracking non si aggiorna](guide:tracking-not-updating).

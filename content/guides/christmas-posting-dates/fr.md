@@ -4,7 +4,7 @@ description: Jusqu'à quand envoyer un colis pour Noël avec Colissimo, Chronopo
 slug: date-limite-envoi-colis-noel
 picture: Une page de calendrier de décembre avec un jour entouré, une camionnette qui emporte un colis noué d'un ruban rouge sous la neige, et Pip qui court à côté.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 La Poste n'a pas encore publié ses dates de Noël 2026 : en 2025, Colissimo demandait de déposer un colis au plus tard le samedi 20 décembre pour une livraison en J+2 en France métropolitaine, et le mardi 23 décembre pour une livraison en J. La Poste suisse, elle, a déjà fixé le mercredi 23 décembre 2026 pour le Courrier A et le PostPac Priority. Les tableaux donnent la date limite de chaque transporteur, vérifiée le vendredi 9 octobre 2026, avec celle de l'an dernier quand celle de cette année n'est pas encore sortie.
@@ -25,7 +25,7 @@ Aucun transporteur français n'a encore publié ses dates 2026. Celles de Coliss
 | Chronopost | Tous services | Pas encore annoncée (2024 : collecte le samedi 21 décembre, livraison le mardi 24) |
 | DPD France | Predict, Classic | Pas encore annoncée (2024 : ramassage le vendredi 20 décembre, livraison pour le réveillon) |
 | Mondial Relay | Point Relais, Locker | Pas de date : envoie une semaine à l'avance, conseille Mondial Relay |
-| Colis Privé | Tous services | Pas encore annoncée (2025 : aucune date trouvée) |
+| [Colis Privé](carrier:colis-prive) | Tous services | Pas encore annoncée (2025 : aucune date trouvée) |
 
 En temps normal, La Poste compte 48 heures (2 jours ouvrables) pour un Colissimo en métropole, et Mondial Relay 3 à 5 jours ouvrés. Vers l'outre-mer, La Poste compte en moyenne 5 à 10 jours pour les Antilles, La Réunion et la Guyane, au moins 10 pour la Polynésie et la Nouvelle-Calédonie, et prévient que la fin d'année peut allonger ces durées. Pour les lettres et les cartes, on n'a trouvé aucune date de Noël chez La Poste : la Lettre verte met 3 jours, à titre indicatif.
 
@@ -100,9 +100,9 @@ Les dates pour l'étranger tombent plus tôt, parfois dès novembre. Pour Coliss
 
 Ces dates valent pour un colis déjà remis au transporteur : la date limite de commande d'une boutique tombe donc plus tôt. Et le rush commence tôt : pour Colissimo, le Black Friday donne « le coup d'envoi » de la fin d'année.
 
-Un colis venu de hors de l'Union européenne (de l'étranger, pour la Suisse) passe aussi par la douane, qui peut le retenir. Depuis la Chine, le trajet peut prendre des semaines. Aucun transporteur cité ici ne donne de date de Noël pour les colis qui arrivent de l'étranger : commande tôt et fie-toi au délai annoncé par la boutique. Pour la suite, lis [suivre un colis venu de Chine](guide:tracking-from-china) et [colis bloqué en douane](guide:customs).
+Un colis venu de hors de l'Union européenne (de l'étranger, pour la Suisse) passe aussi par la douane, qui peut le retenir. Depuis la Chine, le trajet peut prendre des semaines. Aucun transporteur cité ici ne donne de date de Noël pour les colis qui arrivent de l'étranger : commande tôt et fie-toi au délai annoncé par la boutique. Les délais que [Cainiao](carrier:cainiao) et [YunExpress](carrier:yunexpress) annoncent aux vendeurs figurent sur leurs pages. Pour la suite, lis [suivre un colis venu de Chine](guide:tracking-from-china) et [colis bloqué en douane](guide:customs).
 
-Tu pars pour les fêtes ? Colissimo garde un colis 14 jours en bureau de poste, 8 en relais commerçant et 5 en consigne. Mondial Relay, 5 jours calendaires, sans prolongation possible.
+Tu pars pour les fêtes ? Colissimo garde un colis 14 jours en bureau de poste, 8 en relais commerçant et 5 en consigne. Mondial Relay, 5 jours calendaires, sans prolongation possible. Pour Chronopost, bpost ou La Poste suisse, vois [leurs délais de retrait](guide:tracking-statuses).
 
 ## Ton colis de Noël est en retard : que faire ?
 
@@ -117,13 +117,13 @@ Pas encore envoyé et la date est passée ? Un service plus rapide ferme souvent
 | La Poste (France), POST Luxembourg | Pas encore annoncé |
 
 :::steps
-- Ouvre le suivi du transporteur | Sur son site ou son app, avec le numéro de ton e-mail d'expédition.
+- Ouvre le suivi du transporteur | Sur son site ou son app, avec [le numéro de ton e-mail d'expédition](guide:find-tracking-number).
 - Compte les jours fériés | Les jours ci-dessus, le colis peut ne pas bouger du tout.
 - Lis les infos de service | Chronopost publie ses « Flash infos » : en décembre 2025, il y signalait des blocages d'autoroute et des inondations.
 - Toujours bloqué après Noël ? | Lis [pourquoi un suivi ne bouge plus](guide:tracking-not-updating).
 :::
 
-Tu attends un cadeau ? Colle son numéro dans [Peek](/) et choisis les notifications « Jour de livraison uniquement » : il vérifie le suivi jusqu'à toutes les 2 minutes une fois le colis en cours de livraison, sans pouvoir le faire arriver plus tôt.
+Tu attends un cadeau ? Colle son numéro dans [Peek](/) et choisis les notifications « Jour de livraison uniquement » : il vérifie le suivi jusqu'à toutes les 2 minutes une fois le colis en cours de livraison, sans pouvoir le faire arriver plus tôt. Indiqué livré, mais rien à ta porte ? Lis [colis livré mais non reçu](guide:delivered-not-received).
 
 :::sources
 - [Colissimo : Peak Period 2025](https://www.colissimo.entreprise.laposte.fr/actualite/peak-period-colissimo-est-vos-cotes-comme-chaque-annee) – dates 2025, délais de garde

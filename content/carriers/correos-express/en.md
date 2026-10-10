@@ -16,7 +16,7 @@ Correos Express publishes no number format; its tracker asks for the *número de
 | --- | --- |
 | `1234 5678 9012 3452` | 16 digits: Correos Express, but also DHL eCommerce, Canada Post, TNT and Evri UK. |
 | `12345678901234567890123` | 23 digits: Correos Express, unless digits 15 to 17 are 000: Peek's catalog gives those to Australia Post. |
-| `RR123456785ES` | Letters and digits: Correos, the post office, not Correos Express. |
+| `RR123456785ES` | Letters and digits in [the postal format](guide:tracking-number-formats): Correos, the post office, not Correos Express. |
 | `0123/45678901` | With a slash: [NACEX](carrier:nacex), another courier. |
 
 Correos Express doesn't say where you'll find the number and publishes no SMS sender name, so check the shop's shipping email or your order page ([more places to look](guide:find-tracking-number)).
@@ -44,7 +44,7 @@ There's no English tracking. The Spanish tracker shows these statuses in Spanish
 
 `ENTREGADO EN PUNTO DE CONVENIENCIA` misleads: *entregado* means delivered, but to the pickup point, not to you. Wait until the status reads `DISPONIBLE EN PUNTO DE CONVENIENCIA` and have your PIN ready.
 
-Correos Express explains `ESTACIONADO` only in its Portuguese FAQ, and doesn't explain `EN DESTINO`, `Su envío no ha podido ser entregado`, `NUEVO REPARTO`, `ENTREGADO EN PUNTO DE CONVENIENCIA`, `DEVUELTO`, `ADMITIDO EN OFICINA DE CORREOS` (accepted at a Correos post office) or `EN ALMACÉN` (in the warehouse). Those meanings are literal translations or Peek's reading.
+Correos Express explains `ESTACIONADO` only in its Portuguese FAQ, and doesn't explain `EN DESTINO`, `Su envío no ha podido ser entregado`, `NUEVO REPARTO`, `ENTREGADO EN PUNTO DE CONVENIENCIA`, `DEVUELTO`, `ADMITIDO EN OFICINA DE CORREOS` (accepted at a Correos post office) or `EN ALMACÉN` (in the warehouse). Those meanings are literal translations or Peek's reading; for the stages behind them, see [how each tracking stage works](guide:tracking-statuses).
 
 ## Correos Express delivery: change the date, address or parcel shop
 

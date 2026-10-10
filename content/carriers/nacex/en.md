@@ -23,7 +23,7 @@ NACEX doesn't say where recipients find the number or which sender name its SMS 
 | What you have | What it is |
 | --- | --- |
 | `1234/12345678` | A NACEX number: track it as it is. |
-| `123412345678` | Perhaps a NACEX number without its slash (NACEX's example puts it after the fourth digit). |
+| `123412345678` | Perhaps a NACEX number without its slash (NACEX's example puts it after the fourth digit); [12 digits alone fit other carriers too](guide:tracking-number-formats). |
 | `2345678901` | Up to 10 digits: perhaps NACEX's "alternative reference", printed on the label; NACEX doesn't say where to enter it. |
 
 If NACEX answers "There are no delivery notes entered into the system…", check the digits and the slash, then ask your nearest NACEX office, as the message suggests.
@@ -47,7 +47,7 @@ NACEX publishes no list of its statuses. These are the Spanish wordings Peek rea
 | `Solucionado sin OK` | "Solved without OK": closed without a delivery, for example by a return. |
 | `Entregado` | Delivered. |
 
-The `Solución de entrega…` lines are arrangements, not endings: the parcel moves again. `Solucionado sin OK` is the one to act on: ask NACEX or the shop what happened. `Sin estado` ("no status") is an administrative note, such as a message sent to you or the attempt limit reached; the line before shows where things stand.
+The `Solución de entrega…` lines are arrangements, not endings: the parcel moves again. `Solucionado sin OK` is the one to act on: ask NACEX or the shop what happened. `Sin estado` ("no status") is an administrative note, such as a message sent to you or the attempt limit reached; the line before shows where things stand. For the stages every parcel goes through, see [what tracking statuses mean](guide:tracking-statuses).
 
 ## NACEX delivery points and missed deliveries
 

@@ -4,7 +4,7 @@ description: Come funziona un tracking universale, cosa non può vedere e un con
 slug: tracking-universale-pacchi
 picture: Cinque furgoni colorati i cui percorsi tratteggiati finiscono in un'unica lista su un telefono, e Pip che spunta raggiante da una scatola aperta.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Un tracking universale, o multi corriere, è un sito o un'app che accetta il codice di tracking di qualsiasi corriere, riconosce di chi è, recupera le scansioni e tiene tutti i tuoi pacchi in un'unica lista. Mostra solo le scansioni che il corriere ha registrato, quindi non ne sa mai più del corriere. I tracker si distinguono per quello che ti chiedono in cambio: un account, l'accesso alla tua casella di posta, un abbonamento per le notifiche o un po' di pazienza con la pubblicità.
@@ -26,9 +26,11 @@ Comincia dai servizi gratuiti dei corrieri che usi di più:
 
 | Paese | Servizio | Cosa fa |
 | --- | --- | --- |
-| Italia | PostePlus di Poste Italiane | Per chi risiede in Italia ed è registrato su poste.it: avvisi nell'App Poste Italiane, via e-mail, nella Bacheca e via SMS sulle spedizioni Poste indirizzate a te, se il mittente ha abilitato il servizio |
+| Italia | PostePlus di Poste Italiane | Per chi risiede in Italia ed è registrato su poste.it: notifiche nell'App Poste Italiane, via e-mail, nella Bacheca e via SMS sulle spedizioni Poste indirizzate a te, se il mittente ha abilitato il servizio |
 | Italia | App InPost | Dopo che hai attivato l'account, mostra in «I tuoi pacchi» le spedizioni collegate al tuo numero di telefono o al tuo indirizzo e-mail, senza inserire codici |
 | Svizzera (Ticino) | «I miei invii» della Posta | Con un account «La mia Posta», informazioni gratuite su tutti gli invii in arrivo a un indirizzo registrato, via e-mail e con notifica push nella Post-App (SMS opzionale) |
+
+Servono anche a seguire un pacco di cui non hai il codice: [come fare senza codice tracking](guide:find-tracking-number).
 
 Altre strade, con i loro limiti:
 
@@ -81,7 +83,7 @@ La maggior parte dei tracker funziona in cinque passaggi:
 :::steps
 - Incolli | Un codice di tracking, il link del corriere o l'e-mail di spedizione. Il link è la scelta più sicura: contiene il nome del corriere.
 - Legge il formato | Lettere, lunghezza e cifra di controllo restringono il campo. `1Z999AA10123456784` inizia con il `1Z` di UPS; `RR123456785CH` ha il formato a 13 caratteri comune alle poste nazionali.
-- Valuta i candidati | Alcuni formati valgono per più corrieri: un codice di sole 14 cifre può essere di BRT, DPD, SEUR o Hermes Germania, tra gli altri. Allora il tracker ne interroga più d'uno, o ti fa scegliere.
+- Valuta i candidati | Alcuni formati valgono per più corrieri: un codice di sole 14 cifre può essere di [BRT](carrier:brt), DPD, SEUR o Hermes Germania, tra gli altri. Allora il tracker ne interroga più d'uno, o ti fa scegliere.
 - Recupera le scansioni | Dal corriere o da un altro tracker, in un'unica cronologia.
 - Ricontrolla | A intervalli fissi, e ti avvisa quando c'è qualcosa di nuovo.
 :::
@@ -112,7 +114,7 @@ Un pacco dall'estero passa spesso di mano, e il corriere locale «può mantenere
 - home | Casa tua | Le ultime scansioni possono comparire solo sotto il numero B
 :::
 
-I tracker che collegano i numeri, come ParcelsApp, uniscono A e B quando B compare nei dati del primo corriere. Sulla sua pagina Pro, ParcelsApp porta l'esempio di un pacco passato da DHL eCommerce a YunExpress e poi a Poste Italiane. Se B non compare mai, cerca un nuovo numero nella cronologia completa e provalo sul sito del corriere locale, che sia Poste Italiane, BRT o la Posta svizzera. Per gli ordini dai marketplace cinesi leggi [seguire un pacco dalla Cina](guide:tracking-from-china).
+I tracker che collegano i numeri, come ParcelsApp, uniscono A e B quando B compare nei dati del primo corriere. Sulla sua pagina Pro, ParcelsApp porta l'esempio di un pacco passato da DHL eCommerce a [YunExpress](carrier:yunexpress) e poi a Poste Italiane. Se B non compare mai, cerca un nuovo numero nella cronologia completa e provalo sul sito del corriere locale, che sia Poste Italiane, BRT o la Posta svizzera. Per gli ordini dai marketplace cinesi leggi [seguire un pacco dalla Cina](guide:tracking-from-china).
 
 ## Cosa non può vedere un tracker
 
@@ -165,7 +167,7 @@ Sì, e il punto pericoloso è proprio il link. Poste Italiane avverte che un SMS
 - [DHL Developer: Shipment Tracking API (in inglese)](https://developer.dhl.com/api-reference/shipment-tracking) – condizioni per i dati di tracking
 - [DHL: Probleme mit der Sendungsverfolgung (in tedesco)](https://www.dhl.de/de/privatkunden/hilfe-kundenservice/sendungsverfolgung/probleme-loesungen.html) – fino a 24 ore per comparire
 - [USPS: Tracking API Access Control Changes (in inglese)](https://www.usps.com/business/api-access.htm) – accesso legato al Mailer ID, accesso a pagamento
-- [Poste Italiane: PostePlus](https://www.poste.it/posteplus/) – servizio gratuito, residenti in Italia, canali degli avvisi, abilitazione del mittente
+- [Poste Italiane: PostePlus](https://www.poste.it/posteplus/) – servizio gratuito, residenti in Italia, canali delle notifiche, abilitazione del mittente
 - [InPost: App InPost](https://inpost.it/app-inpost) – «I tuoi pacchi», spedizioni collegate a telefono o e-mail
 - [La Posta: Monitorare gli invii](https://www.post.ch/it/ricezione/monitorare-gli-invii) – «I miei invii», e-mail, push, SMS opzionale
 - [Guida di Gmail: Monitoraggio della spedizione in Gmail](https://support.google.com/mail/answer/13073650?hl=it) – solo corrieri negli Stati Uniti

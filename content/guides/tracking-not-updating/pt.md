@@ -4,7 +4,7 @@ description: O seguimento da encomenda não atualiza há dias? Vê as causas mai
 slug: tracking-nao-atualiza-encomenda-parada
 picture: Um calendário com vários dias riscados, uma linha de progresso interrompida a meio e o Pip à espera, um pouco aborrecido.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Quando o tracking não atualiza, normalmente é porque ninguém leu a etiqueta da tua encomenda nos últimos dias, não porque ela tenha parado. As transportadoras registam leituras nos centros operacionais e nas fronteiras, não na estrada: uma viagem longa, um voo, a alfândega ou um fim de semana podem deixar-te dias sem uma linha nova. Só vale a pena preocupares-te quando passar o prazo da própria transportadora (os CTT indicam cerca de 3 dias úteis para uma Encomenda Postal no continente; a InPost aceita uma reclamação por atraso passados mais de 5 dias desde a notificação de envio) e, mesmo assim, fala primeiro com a loja: foi ela que contratou a transportadora.
@@ -15,7 +15,7 @@ O seguimento mostra leituras, não movimento, e uma encomenda só é lida em cer
 
 - **Sem leituras entre centros.** A UPS explica que uma encomenda que vai para longe provavelmente só volta a ser lida no centro de destino. A GLS avisa que trabalha com centros de distribuição e que, por isso, o percurso nem sempre parece direto. Nos CTT, o estado `Em trânsito` aparece várias vezes ao longo do caminho, porque o envio pode passar por vários centros operacionais.
 - **Fins de semana e feriados.** A GLS entrega de segunda a sexta-feira, em horário comercial. Na DPD, a entrega ao sábado é um serviço à parte, até às 13h. Os CTT dão os prazos em dias úteis.
-- **Ilhas, mau tempo e épocas altas.** Para os Açores e a Madeira, os CTT avisam que os prazos podem alargar-se por limitações de transporte. Entre as causas habituais de atraso, a Amazon aponta o mau tempo, o trânsito, a procura nas épocas festivas e a alfândega.
+- **Ilhas, mau tempo e épocas altas.** Para os Açores e a Madeira, os CTT avisam que os prazos podem alargar-se por limitações de transporte. Entre as causas habituais de atraso, a Amazon aponta o mau tempo, o trânsito, a procura nas [épocas festivas](guide:christmas-posting-dates) e a alfândega.
 - **Uma etiqueta que as máquinas não leem.** A DHL aponta códigos postais mal escritos, números de porta em falta, letra difícil de ler, etiquetas descoladas e embalagens danificadas. A encomenda pode ir parar ao sítio errado ou ser triada à mão, com vários dias de atraso.
 
 ## Quanto tempo pode uma encomenda ficar parada?
@@ -50,7 +50,7 @@ A DHL diz que, conforme o país de destino, é completamente normal uma encomend
 - **Alfândega:** vários dias úteis, conforme os documentos, diz a DHL. Nos CTT, `Em importação` quer dizer que a encomenda está em processo aduaneiro no país de destino. Se te pedirem para a desalfandegar, tens 20 dias desde a chegada a Portugal; se o processo não estiver concluído na data limite, a encomenda volta ao remetente, sem retrocesso. Depois da autorização de saída, os CTT estimam 10 dias para a encaminhar para a tua morada. Mais em [encomenda retida na alfândega](guide:customs).
 - **Uma transportadora local fica com ela:** a DHL avisa que o seguimento pode ter falhas e sugere experimentar o mesmo código no seguimento do país de destino. No sentido inverso, os CTT dizem que, quando um envio sai de Portugal, a informação depende do que os países de trânsito e de destino lhes passam, e pode chegar tarde ou nem chegar.
 
-Compraste no AliExpress, na Temu ou na Shein? Vê [como seguir uma encomenda da China](guide:tracking-from-china).
+Compraste no AliExpress, na Temu ou na Shein? Vê [como seguir uma encomenda da China](guide:tracking-from-china). Se a encomenda vem pela [Cainiao](carrier:cainiao) ou pela [YunExpress](carrier:yunexpress), as leituras em inglês estão explicadas nas páginas delas.
 
 ### Em entrega e depois nada
 
@@ -68,7 +68,7 @@ Não há um dia fixo. As transportadoras dizem até quando aceitam uma reclamaç
 | InPost | Atraso: mais de 5 dias desde a notificação de envio. Perda total: 30 dias desde essa notificação | Tu, pelos canais da InPost; a indemnização é acertada com o remetente |
 | GLS | Não publica prazo; se o seguimento não ajudar, formulário de contacto ou central de atendimento | A página para destinatários manda contactar a GLS |
 
-Os 30 dias da CTT Expresso e da DPD passam depressa: se a encomenda vem por uma delas e está parada, avisa a loja cedo.
+Os 30 dias da CTT Expresso e da DPD passam depressa: se a encomenda vem por uma delas e está parada, avisa a loja cedo. Se vem pela [Correos Express](carrier:correos-express) ou pela [NACEX](carrier:nacex), o que cada uma pede quando a encomenda para está na página dela.
 
 ## Devo contactar a loja ou a transportadora?
 
@@ -113,7 +113,7 @@ Dentro de Portugal continental, uma semana é lenta: os CTT indicam cerca de 3 d
 
 ### Posso fazer o tracking atualizar mais depressa?
 
-Não, e um serviço de seguimento também não: só mostra o que a transportadora publica. O [Peek](/) continua a consultar a transportadora e pode avisar-te quando aparece uma leitura nova, por isso podes deixar de atualizar a página.
+Não, e [um serviço de seguimento](guide:universal-tracker) também não: só mostra o que a transportadora publica. O [Peek](/) continua a consultar a transportadora e pode enviar-te uma notificação quando aparece uma leitura nova, por isso podes deixar de atualizar a página.
 
 ### O meu número de seguimento não funciona
 

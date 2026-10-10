@@ -21,7 +21,7 @@ Yuntrack fragt nach „your YunExpress tracking number (starting with YT)“, al
 
 Auch auf Amazon.de kann dein Paket mit YunExpress kommen: Laut YunExpress ist sein Angebot „FBM Ship+“ für Amazon-Händler, die selbst aus China versenden, unter anderem auf der deutschen Amazon-Seite gestartet. Hast du mit PayPal bezahlt und gibt der Händler das Tracking an PayPal weiter, siehst du den Status laut YunExpress auch in der PayPal-App, mit Push-Mitteilungen.
 
-Übernimmt ein Paketdienst vor Ort, kann das Paket eine zweite Nummer bekommen: Yuntrack zeigt sie in der Spalte „Last Mile Tracking“ und auf der Detailseite unter „Additional Notes“. Meldet Yuntrack `Not Found`, prüf das YT und alle 16 Ziffern und lass dir die Nummer vom Shop bestätigen. Findest du gar keine Nummer, hilft dir [Sendungsnummer finden](guide:find-tracking-number).
+Übernimmt ein Paketdienst vor Ort, kann das Paket eine zweite Nummer bekommen: Yuntrack zeigt sie in der Spalte „Last Mile Tracking“ und auf der Detailseite unter „Additional Notes“. Meldet Yuntrack `Not Found`, prüf das YT und alle 16 Ziffern und lass dir die Nummer vom Shop bestätigen. Passt sie nicht, gehört sie vielleicht zu einem anderen Paketdienst: [So erkennst du ihn an der Nummer](guide:tracking-number-formats). Findest du gar keine Nummer, hilft dir [Sendungsnummer finden](guide:find-tracking-number).
 
 ## YunExpress Tracking auf Deutsch: was die Status bedeuten
 
@@ -41,13 +41,13 @@ Yuntrack gibt es nur auf Englisch, auch mit deutsch eingestelltem Browser, und e
 | `Delivered by Mailbox` | In deinen Briefkasten gelegt. |
 | `POD available` | Von DPD: Der Zustellnachweis liegt vor, das Paket ist zugestellt. |
 
-Am verwirrendsten ist `Delivered to local carrier`: „Delivered“ heißt hier nur, dass YunExpress das Paket an den Paketdienst im Zielland weitergegeben hat. Danach folgen dessen Zeilen, auch sie auf Englisch. Steht schon früh `Sender goods issue` im Verlauf, stammt das von DPD: ein Datensatz, angelegt, während das Paket noch in China ist, und kein Problem mit deiner Ware.
+Am verwirrendsten ist `Delivered to local carrier`: „Delivered“ heißt hier nur, dass YunExpress das Paket an den Paketdienst im Zielland weitergegeben hat. Danach folgen dessen Zeilen, auch sie auf Englisch. Was die Status der Paketdienste vor Ort in ihrer eigenen Sendungsverfolgung bedeuten, steht unter [Sendungsstatus erklärt](guide:tracking-statuses). Steht schon früh `Sender goods issue` im Verlauf, stammt das von DPD: ein Datensatz, angelegt, während das Paket noch in China ist, und kein Problem mit deiner Ware.
 
 `Transit` heißt nur unterwegs; welcher Schritt zuletzt kam, zeigt die neueste Zeile. Was unter `Alert` fällt, erklärt YunExpress nicht: Lies die Zeile darunter und frag den Shop, wenn sich nichts mehr tut. Im Seitencode von Yuntrack steckt außerdem eine Fortschrittsleiste (`Pickup`, `Departed from origin`, `Arrived at destination`, `Local carrier on the way`, `Delivered successfully`). Der Schritt `Pickup` meint die Abholung beim Händler, keine Abholstelle für dich.
 
 ## YunExpress Zustellung in Deutschland, Österreich und der Schweiz
 
-YunExpress fliegt die Pakete aus China ins Zielland, lässt sie im Zielland verzollen und übergibt sie dann einem Paketdienst vor Ort. Eigene Linien hat es nach eigenen Angaben seit 2015 nach Deutschland, seit 2018 nach Österreich und seit 2020 in die Schweiz. Einen Zustellpartner für diese Länder nennt es auf seinen Seiten nicht, nur allgemein „premium global carrier networks“. In YunExpress-Verläufen tauchen DHL (`Shipment in transit to DHL`) und Zeilen von DPD auf; aus welchem Land, ist nicht festgehalten. Wer dein Paket hat, zeigen die Zeilen nach `Delivered to local carrier` und die Spalte „Last Mile Tracking“.
+YunExpress fliegt die Pakete aus China ins Zielland, lässt sie im Zielland verzollen und übergibt sie dann einem Paketdienst vor Ort. Eigene Linien hat es nach eigenen Angaben seit 2015 nach Deutschland, seit 2018 nach Österreich und seit 2020 in die Schweiz. Einen Zustellpartner für diese Länder nennt es auf seinen Seiten nicht, nur allgemein „premium global carrier networks“. In YunExpress-Verläufen tauchen DHL (`Shipment in transit to DHL`) und Zeilen von DPD auf; aus welchem Land, ist nicht festgehalten. Wer dein Paket hat, zeigen die Zeilen nach `Delivered to local carrier` und die Spalte „Last Mile Tracking“. Wie die ganze Reise aus China abläuft, zeigt [Paket aus China verfolgen](guide:tracking-from-china).
 
 Die Standardlinie Standard Express nimmt Packstation-Adressen an, wenn das Paket höchstens 60 × 30 × 30 cm misst (sonst sind bis 60 × 40 × 35 cm erlaubt). Auf vorgelagerte Inseln europäischer Länder liefern die Standardlinien laut YunExpress nicht. In der Schweiz stellt die Sparlinie laut YunExpress im ganzen Land zu.
 
@@ -63,7 +63,7 @@ Hängt das Paket bei `Customs inspection - Import`, nennt YunExpress in seinem B
 
 Mit PayPal bezahlt? Bei Händlern, die es eingerichtet haben, gibt YunExpress das Tracking an PayPal weiter, und laut YunExpress dient es dort als Beleg bei Konflikten. Welche Regeln dann gelten, steht bei PayPal.
 
-Als zugestellt markiert, aber nichts da? Die Tracking-Seite kann einen Zustellnachweis anbieten, für den sie nach dem Namen des Empfängers fragt. Frag dann beim Paketdienst vor Ort und beim Shop nach. `Returned` heißt, das Paket geht zurück. Rückgaberegeln für Empfänger veröffentlicht YunExpress nicht, frag also den Shop.
+Als zugestellt markiert, aber nichts da? Die Tracking-Seite kann einen Zustellnachweis anbieten, für den sie nach dem Namen des Empfängers fragt. Frag dann beim Paketdienst vor Ort und beim Shop nach. Was sonst hilft, steht unter [Paket zugestellt, aber nicht erhalten](guide:delivered-not-received). `Returned` heißt, das Paket geht zurück. Rückgaberegeln für Empfänger veröffentlicht YunExpress nicht, frag also den Shop.
 
 ## YunExpress Kontakt: Telefonnummer und E-Mail
 

@@ -23,13 +23,13 @@ NACEX no dice dónde aparece el número ni con qué nombre firma sus SMS. Busca 
 | Lo que tienes | Qué es |
 | --- | --- |
 | `1234/12345678` | Un número de NACEX: síguelo tal cual. |
-| `123412345678` | Sin la barra, Peek no lo reconoce como NACEX: no sabe de quién es y solo propone transportistas posibles. Si es de NACEX, falta la barra entre agencia y albarán, que en el ejemplo de la casilla va tras la cuarta cifra. |
+| `123412345678` | Sin la barra, Peek no lo reconoce como NACEX: no sabe de quién es y solo propone [transportistas posibles](guide:tracking-number-formats). Si es de NACEX, falta la barra entre agencia y albarán, que en el ejemplo de la casilla va tras la cuarta cifra. |
 | `2345678901` | Hasta 10 cifras: quizá la «referencia alternativa» que NACEX imprime en la etiqueta. |
 | 16 o 23 cifras | Puede ser de [Correos Express](carrier:correos-express). |
 
 ## Estados del seguimiento NACEX: qué significa cada uno
 
-NACEX no publica una lista de sus estados ni los explica. Su seguimiento agrupa los pasos por días, sin hora. Estas son las palabras que muestra, en el orden en que suele verlas un paquete:
+NACEX no publica una lista de sus estados ni los explica. Su seguimiento agrupa los pasos por días, sin hora. Estas son las palabras que muestra, en el [orden en que suele verlas un paquete](guide:tracking-statuses):
 
 | Estado | Qué significa para ti |
 | --- | --- |
@@ -68,7 +68,7 @@ Puedes rehusar el paquete en el momento de la entrega, diciéndoselo al mensajer
 
 La página de Reclamaciones de NACEX se dirige a su cliente, quien contrató el envío (normalmente la tienda), y cualquier abono se trata con la franquicia de ese cliente. La mercancía viaja «a riesgo y cuenta del remitente», así que, para un reembolso o un nuevo envío, habla con la tienda.
 
-- **No llega o no se mueve:** la FAQ de NACEX dice que escribas a atencion.cliente@nacex.com o llames al 900 100 000, sin dar un plazo de espera. Sus condiciones avisan de que en Black Friday y Navidad la entrega a particulares puede verse afectada. Más en [el seguimiento de mi paquete no se actualiza](guide:tracking-not-updating).
+- **No llega o no se mueve:** la FAQ de NACEX dice que escribas a atencion.cliente@nacex.com o llames al 900 100 000, sin dar un plazo de espera. Sus condiciones avisan de que en [Black Friday y Navidad](guide:christmas-posting-dates) la entrega a particulares puede verse afectada. Más en [el seguimiento de mi paquete no se actualiza](guide:tracking-not-updating).
 - **Con retraso:** el cliente de NACEX puede reclamar en un máximo de 31 días naturales si la entrega quedó fuera del servicio contratado sin causa justificada.
 - **Perdido o robado:** plazo máximo de 7 días naturales, con la factura del contenido.
 - **Dañado o con falta de contenido:** NACEX aconseja avisar al recibirlo; se puede reclamar en 7 días naturales desde la entrega, y para los daños NACEX pide fotos. La Ley 15/2009 (art. 60) pide al destinatario reservas por escrito en la entrega, o en los siete días naturales siguientes si el daño no se veía.

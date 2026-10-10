@@ -19,7 +19,7 @@ Yuntrack demande « your YunExpress tracking number (starting with YT) », sans 
 | `YT123456789012345` | YT et 15 chiffres : pas une forme YunExpress. Vérifie s'il manque un chiffre. |
 | `LP12345678901234` | LP et 14 chiffres : pas YunExpress. Cette forme renvoie plutôt à [Cainiao](carrier:cainiao). |
 
-Pas de numéro dans les messages de la boutique ? Lis [où trouver son numéro de suivi](guide:find-tracking-number).
+Pas de numéro dans les messages de la boutique ? Lis [où trouver son numéro de suivi](guide:find-tracking-number). Un numéro d'une autre forme ? Vois [à quel transporteur il appartient](guide:tracking-number-formats).
 
 Quand un transporteur local prend le relais, le colis peut recevoir un second numéro : yuntrack l'affiche dans la colonne « Last Mile Tracking ». Si yuntrack répond `Not Found`, vérifie le YT et les 16 chiffres, puis demande à la boutique de confirmer le numéro.
 
@@ -43,11 +43,11 @@ Yuntrack n'existe qu'en anglais, sans choix de langue. Chaque colis y est rangé
 
 Le statut qui trompe le plus, c'est `Delivered to local carrier` : YunExpress a seulement remis le colis au transporteur du pays de destination, dont les lignes suivent, en anglais elles aussi. La ligne de bpost `Your shipment has been delivered to the postal operator of the country of destination and will be delivered in the coming days.` n'est pas non plus une livraison : le colis passe à la poste du pays de destination. Et `Sender goods issue`, de DPD, est un enregistrement créé quand le colis est encore en Chine, pas un problème avec ta marchandise.
 
-`Transit` veut dire en route ; la colonne « Last Event » montre le dernier scan. YunExpress ne définit pas `Alert`, son onglet des colis à problème : lis la ligne en dessous et écris à la boutique si rien ne bouge. Le code de yuntrack prévoit aussi une barre de progression dont l'étape `Pickup` désigne l'enlèvement chez le vendeur, pas un retrait en point relais.
+`Transit` veut dire en route ; la colonne « Last Event » montre le dernier scan. YunExpress ne définit pas `Alert`, son onglet des colis à problème : lis la ligne en dessous et écris à la boutique si rien ne bouge. Le code de yuntrack prévoit aussi une barre de progression dont l'étape `Pickup` désigne l'enlèvement chez le vendeur, pas un retrait en point relais. Les étapes communes à tous les colis sont détaillées dans [ce que veulent dire les statuts de suivi](guide:tracking-statuses).
 
 ## Qui livre les colis YunExpress en France, en Belgique et en Suisse
 
-YunExpress fait voler les colis depuis la Chine, les fait dédouaner, puis les remet à un transporteur local. Il a, selon lui, des lignes vers la France depuis 2016 et vers la Suisse depuis 2020, et ses lignes desservent aussi la Belgique. Mais ses pages ne nomment aucun partenaire de livraison dans ces pays. Tu as peut-être lu que Colissimo ou Colis Privé livrent les colis YunExpress : aucune page de YunExpress ne le confirme. Des lignes de bpost et de DHL apparaissent dans des historiques YunExpress, sans que le pays soit noté. Pour savoir qui a ton colis, regarde les lignes après `Delivered to local carrier` et la colonne « Last Mile Tracking ».
+YunExpress fait voler les colis depuis la Chine, les fait dédouaner, puis les remet à un transporteur local. Ce trajet est détaillé, étape par étape, dans [suivre un colis venu de Chine](guide:tracking-from-china). Il a, selon lui, des lignes vers la France depuis 2016 et vers la Suisse depuis 2020, et ses lignes desservent aussi la Belgique. Mais ses pages ne nomment aucun partenaire de livraison dans ces pays. Tu as peut-être lu que Colissimo ou [Colis Privé](carrier:colis-prive) livrent les colis YunExpress : aucune page de YunExpress ne le confirme. Des lignes de bpost et de DHL apparaissent dans des historiques YunExpress, sans que le pays soit noté. Pour savoir qui a ton colis, regarde les lignes après `Delivered to local carrier` et la colonne « Last Mile Tracking ».
 
 En France, ses lignes « 云选 » couvrent selon lui 95 % des codes postaux, une liste que le transporteur local met à jour. Ses lignes standard ne livrent pas les îles rattachées aux pays d'Europe. En Suisse, sa ligne économique livre dans tout le pays.
 
@@ -61,7 +61,7 @@ YunExpress ne donne aux destinataires ni démarche, ni formulaire, ni délai pou
 
 Bloqué à `Customs inspection - Import` ? Selon le blog de YunExpress pour les vendeurs, être choisi pour un contrôle ne veut pas dire à lui seul un long blocage : c'est le niveau atteint par le contrôle qui fixe la durée. Ses durées habituelles, pas des promesses : un contrôle des documents prend de quelques jours ouvrés à une semaine, un passage au scanner ou une inspection physique souvent une à deux semaines de plus, parfois avec des frais, et un examen par les autorités des semaines, voire plus d'un mois. Pour l'UE, YunExpress annonçait le 18 juin 2026 la fin, au 1er juillet 2026, de l'exonération de droits de douane pour les colis jusqu'à 150 €, remplacée par un droit provisoire de 3 € par article, sans dire qui le paie sur ta commande. Ce que tu peux devoir en France, en Belgique ou en Suisse : [colis bloqué en douane](guide:customs).
 
-Marqué livré mais rien reçu ? La page de suivi peut proposer une preuve de livraison, qui demande le nom du destinataire. Demande ensuite au transporteur local et à la boutique. `Returned` est l'onglet de yuntrack pour les colis retournés ; YunExpress ne publie pas de règles de retour pour les destinataires, vois donc avec la boutique.
+Marqué livré mais rien reçu ? La page de suivi peut proposer une preuve de livraison, qui demande le nom du destinataire. Demande ensuite au transporteur local et à la boutique, puis suis [les étapes pour un colis livré mais non reçu](guide:delivered-not-received). `Returned` est l'onglet de yuntrack pour les colis retournés ; YunExpress ne publie pas de règles de retour pour les destinataires, vois donc avec la boutique.
 
 ## YunExpress contact en France : téléphone et e-mail
 

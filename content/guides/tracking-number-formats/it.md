@@ -4,7 +4,7 @@ description: Dal formato del codice si risale spesso al corriere: prefissi, lung
 slug: corriere-dal-numero-di-tracking
 picture: Tre codici di tracking divisi in parti colorate, una lente sul codice paese CH e Pip che osserva incuriosito.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Spesso bastano le lettere e la lunghezza del numero di tracking per capire quale corriere ha il tuo pacco. `1Z` seguito da 16 lettere e cifre è UPS, 18 cifre che iniziano con `99` sono la Posta svizzera, e un codice di 13 caratteri come `RR123456785CH` (due lettere, nove cifre, due lettere) di solito è di una posta nazionale, con il Paese che l'ha emesso nelle ultime due lettere. Il caso difficile sono i codici di sole cifre: 14 cifre, per esempio, possono essere di BRT come di DPD. In quei casi l'ultima parola spetta all'e-mail di spedizione, o a un tracker che prova tutti i corrieri possibili.
@@ -20,7 +20,7 @@ Quattro controlli, in quest'ordine:
 - Prova sui siti dei corrieri | Inserisci il codice sul sito di ogni corriere possibile. Quello che mostra delle scansioni ha il tuo pacco.
 :::
 
-Se non hai voglia di fare il detective, incolla il codice, un link del corriere o l'intera e-mail di spedizione in [Peek](/): trova il numero e riconosce il corriere tra più di 3.500.
+Se non hai voglia di fare il detective, incolla il codice, un link del corriere o l'intera e-mail di spedizione in [Peek](/): trova il numero e riconosce il corriere tra più di 3.500. Come fa un tracker a riconoscerlo, e cosa non può vedere, lo spiega [la guida al tracking universale](guide:universal-tracker).
 
 ## Com'è fatto il codice di ogni corriere
 
@@ -29,14 +29,17 @@ Ecco cosa dicono i corrieri, e lo standard postale, sui codici che incontri più
 | Corriere | Com'è fatto il codice |
 | --- | --- |
 | Poste Italiane | Poste lo chiama «codice spedizione». Con Poste Delivery Web è un codice di 13 caratteri, stampato in alto a destra sulla lettera di vettura, come negli esempi di Poste `JG00000104876` ed `EG00000102369`; nel formato postale internazionale finisce con `IT` |
-| BRT (ex Bartolini) | «BRTcode» di 14 o 19 cifre, oppure «numero di spedizione» di 12 o 14 cifre |
+| [BRT (ex Bartolini)](carrier:brt) | «BRTcode» di 14 o 19 cifre, oppure «numero di spedizione» di 12 o 14 cifre |
 | GLS Italia | spedizione nazionale: due lettere, o una lettera e una cifra, seguite da al massimo 9 cifre (esempio di GLS: `Y1 550012467`); spedizione internazionale: 11 cifre |
 | InPost | il modulo «Trova il tuo pacco» accetta 8, 10, 11, 13, 15, 22, 24 o 26 cifre, oppure due formati con lettere: `LM` + 9 cifre + `IT`, o 4 lettere + 15 cifre |
 | DHL | DHL Express: 10 cifre, mai lettere. DHL in Germania: da 10 a 39 caratteri |
 | UPS | `1Z` + 16 lettere e cifre, 18 caratteri in tutto, come `1Z999AA10123456784`, un esempio con una cifra di controllo UPS valida |
 | La Posta (Svizzera) | la Posta lo chiama «numero d'invio». Sui pacchi spediti dalle aziende ha 18 cifre che iniziano con `99`, stampate con i punti come `99.34.123456.12345678` (il 99, il numero di licenza di affrancatura del mittente e un numero progressivo); altrimenti è il formato postale che finisce con `CH` |
+| [Quickpac](carrier:quickpac) | 18 cifre, dice Quickpac; nei dati dei corrieri che usa Peek iniziano con `44`. Il riquadro di tracking di Quickpac le mostra con i punti, come `44.12.345678.90123456` |
+| [Planzer](carrier:planzer) | Planzer lo chiama numero di spedizione e non ne pubblica il formato. Nei dati dei corrieri che usa Peek: 20 cifre che iniziano con `91346097`, o 13 cifre che iniziano con `99990` per le spedizioni condivise |
 | Amazon | Amazon non pubblica un formato; i codici `IT…` sono spiegati più sotto |
-| YunExpress | `YT` + 16 cifre |
+| [YunExpress](carrier:yunexpress) | `YT` + 16 cifre |
+| [Cainiao](carrier:cainiao) (AliExpress) | Cainiao non descrive i suoi formati e come esempio mostra un numero postale che finisce con `HK`. Nei dati dei corrieri che usa Peek, `LP` o `CNG` + 14 cifre sono probabilmente Cainiao; `DOFR` o `CNFR` + 13 cifre + `HD` sono Cainiao |
 | China Post, EMS | il formato postale che finisce con `CN`; i numeri EMS internazionali iniziano con `E` |
 
 ### Codice che inizia con YT, LP, 5P o 1Z: di chi è?
@@ -144,6 +147,9 @@ Un codice che non dà risultati non è per forza sbagliato. Le poste portoghesi 
 - [InPost: Trova il tuo pacco](https://inpost.it/) – i formati accettati dal modulo di ricerca
 - [La Posta: Monitorare gli invii](https://www.post.ch/it/ricezione/monitorare-gli-invii) – numero d'invio
 - [La Posta: Barcode for Business Customers, gennaio 2026](https://handbuch.post.ch/-/media/post/gk/dokumente/1864-Anleitung-Barcodes-GK.pdf) – 18 cifre che iniziano con 99, stampate con i punti
+- [Quickpac: FAQ](https://quickpac.ch/en/faq) – il numero di 18 cifre
+- [Quickpac: Sendung verfolgen](https://quickpac.ch/de/tracking) – il numero con i punti nel riquadro di tracking
+- [Planzer Pacchi: Contatti](https://www.planzer-paket.ch/it/contatti/) – numero di spedizione
 - [DHL Express Netherlands: DHL Express or DHL eCommerce number](https://www.dhlexpress.nl/en/consumer/faq/express-account-zendingsnummer/my-shipment-number-dhl-express-or-dhl-ecommerce) – 10 cifre
 - [DHL: Sendungsverfolgung, Probleme und Lösungen](https://www.dhl.de/de/privatkunden/hilfe-kundenservice/sendungsverfolgung/probleme-loesungen.html) – da 10 a 39 caratteri, non è un numero d'ordine
 - [MyDHL Express Svizzera: FAQ Ricerca e Monitoraggio](https://mydhl.express.dhl/ch/it/help-and-support/faqs/tracking-monitoring.html) – numeri delle lettere di vettura riciclati
@@ -153,8 +159,9 @@ Un codice che non dà risultati non è per forza sbagliato. Le poste portoghesi 
 - [UPS: sample package label](https://www.pld-certify.ups.com/CerttoolHelp/PLD0200/WebHelp_pld0200/LeadPackage.htm) – il numero 1Z
 - [YunExpress: YunTrack](https://www.yuntrack.com/) – numeri che iniziano con YT
 - [Cainiao: Help centre](https://global.cainiao.com/helpDoc.htm) – niente tracking dopo la consegna al corriere locale con le spedizioni economiche, chiedere al venditore
+- [Cainiao: Tracciamento espresso globale](https://global.cainiao.com/) – il numero postale di esempio
 - [Amazon.it: Consegne effettuate tramite Amazon Logistics](https://www.amazon.it/gp/help/customer/display.html?nodeId=GEW3XT9JEMBLTKRV) – partner di consegna locali e regionali, tracking in I miei ordini
-- [Universal Parcel Scraper: carrier catalog](https://github.com/plhery/universal-parcel-scraper/blob/main/data/catalog.json) – i formati IT, TBA, LP, 5P e YT nei dati dei corrieri di Peek
+- [Universal Parcel Scraper: carrier catalog](https://github.com/plhery/universal-parcel-scraper/blob/main/data/catalog.json) – i formati IT, TBA, LP, 5P e YT, e quelli di Cainiao, Quickpac e Planzer, nei dati dei corrieri di Peek
 - [bpost: Puis-je suivre mon colis en ligne ?](https://www.bpost.be/fr/faq/puis-je-suivre-mon-colis-en-ligne) – i codici che iniziano con U non si possono seguire
 - [CTT: Encontrar o código de envio](https://www.ctt.pt/ajuda/particulares/seguir-ou-alterar-entrega/seguir/encontrar-o-codigo-de-envio) – codici PT per invii dall'estero, codici che non danno risultati, contattare il mittente
 :::

@@ -10,7 +10,7 @@ Cainiao è il gruppo logistico di Alibaba: spedisce all'estero i pacchi dei vend
 
 ## Numero di tracking Cainiao: come riconoscerlo
 
-Il sito di Cainiao chiede solo lettere e cifre, accetta fino a 100 numeri in una ricerca e come esempio mostra un numero postale: due lettere, nove cifre e HK. Le forme LP, CNG, DOFR e CNFR, invece, nessuna pagina di Cainiao le descrive. Ecco le forme che Peek collega a Cainiao e alcune che le somigliano, con cifre inventate:
+Il sito di Cainiao chiede solo lettere e cifre, accetta fino a 100 numeri in una ricerca e come esempio mostra un [numero postale](guide:tracking-number-formats): due lettere, nove cifre e HK. Le forme LP, CNG, DOFR e CNFR, invece, nessuna pagina di Cainiao le descrive. Ecco le forme che Peek collega a Cainiao e alcune che le somigliano, con cifre inventate:
 
 | Numero | Di chi è |
 | --- | --- |
@@ -21,7 +21,7 @@ Il sito di Cainiao chiede solo lettere e cifre, accetta fino a 100 numeri in una
 | `RR123456785CN` | Numero postale: il sito di Cainiao traccia questa forma, ma la traccia anche la posta, qui China Post. |
 | `YT1234567890123456` | Non è Cainiao ma [YunExpress](carrier:yunexpress). |
 
-Il tracking di Cainiao risponde anche ad altre forme, per esempio AP e 14 cifre. Le voci «My Orders» e «Tracking» sono quelle della guida di AliExpress, che è in inglese anche nella versione italiana. Fuori da AliExpress nessuna pagina di Cainiao dice dove trovi il numero, e nessuna parla di SMS ai destinatari.
+Il tracking di Cainiao risponde anche ad altre forme, per esempio AP e 14 cifre. Le voci «My Orders» e «Tracking» sono quelle della guida di AliExpress, che è in inglese anche nella versione italiana. Fuori da AliExpress nessuna pagina di Cainiao dice dove trovi il numero, e nessuna parla di SMS ai destinatari: vedi [dove cercare il codice tracking](guide:find-tracking-number).
 
 Se il sito non trova niente, Cainiao ti chiede prima di tutto di controllare che sia davvero un numero Cainiao o AliExpress. Se il messaggio d'errore in italiano non ha senso, passa all'inglese: `That's not a valid tracking number` vuol dire che il numero non è valido.
 
@@ -43,7 +43,7 @@ Il sito di Cainiao si apre in inglese, a meno che tu non scelga un'altra lingua 
 | `Arrived at pick-up point. Package available for collection.` | Ti aspetta in un punto di ritiro. |
 | `Package delivered` | Consegnato a te, o ritirato da te. |
 
-`Carrier update` è un avviso di Cainiao: il pacco è in viaggio. `Accepted for transportation by postal service` è un partner postale che prende il pacco dopo il passaggio di consegne, non la prima scansione; `Delivery Carrier Accepted` vuol dire che ce l'ha il corriere locale. La riga del punto di ritiro la firma il punto di ritiro, non tu: `Package delivered` arriva quando lo ritiri. `Processing delay at sorting center` è un ritardo nello smistamento, non un'anomalia. `Delivery failed`, invece, chiude la consegna come fallita dopo i tentativi.
+`Carrier update` è un avviso di Cainiao: il pacco è in viaggio. `Accepted for transportation by postal service` è un partner postale che prende il pacco dopo il passaggio di consegne, non la prima scansione; `Delivery Carrier Accepted` vuol dire che ce l'ha il corriere locale. La riga del punto di ritiro la firma il punto di ritiro, non tu: `Package delivered` arriva quando lo ritiri. `Processing delay at sorting center` è un ritardo nello smistamento, non un'anomalia. `Delivery failed`, invece, chiude la consegna come fallita dopo i tentativi. Le fasi comuni a tutti i corrieri, con le diciture italiane di Poste, UPS e la Posta, sono in [cosa vogliono dire gli stati della spedizione](guide:tracking-statuses).
 
 ## Consegna Cainiao in Italia: mancata consegna e punti di ritiro
 
@@ -59,7 +59,7 @@ Chi consegna in Italia e in Ticino i pacchi dalla Cina, e cosa può toccarti in 
 
 **Ancora nessun tracking.** Secondo le FAQ di Cainiao, dopo la spedizione del venditore di solito il tracking compare entro 11 giorni al massimo; se dopo 12 giorni è ancora tutto fermo, puoi chiedere al venditore. `Not Found` può voler dire anche un numero sbagliato o scaduto, o che il corriere non ha ancora preso in carico o registrato il pacco. Se il venditore non spedisce entro il tempo indicato nell'ordine, AliExpress chiude l'ordine e ti restituisce tutto.
 
-**Fermo dopo l'arrivo.** Le FAQ di Cainiao dicono che di solito è il Paese di destinazione a non aver aggiornato i dati, e consigliano di chiedere all'ufficio postale locale. Anche un indirizzo o un telefono non validi possono rallentarlo: allora Cainiao ti manda da chi consegna, l'ufficio postale nella versione inglese e il partner dell'ultimo miglio in quella francese. Se è in dogana, Cainiao chiede ai destinatari di mettersi in contatto con la dogana. Se il tracking resta fermo per giorni, leggi [perché il tracking non si aggiorna](guide:tracking-not-updating).
+**Fermo dopo l'arrivo.** Le FAQ di Cainiao dicono che di solito è il Paese di destinazione a non aver aggiornato i dati, e consigliano di chiedere all'ufficio postale locale. Anche un indirizzo o un telefono non validi possono rallentarlo: allora Cainiao ti manda da chi consegna, l'ufficio postale nella versione inglese e il partner dell'ultimo miglio in quella francese. Se è in dogana, Cainiao chiede ai destinatari di mettersi in contatto con la dogana: tempi e costi sono in [pacco fermo in dogana](guide:customs). Se il tracking resta fermo per giorni, leggi [perché il tracking non si aggiorna](guide:tracking-not-updating).
 
 **Molto in ritardo o perso.** Cainiao ti chiede di aspettare fino all'ultima data di consegna promessa. Dopo, per un ordine AliExpress, apri su AliExpress «Help» e poi «Customer Service», oppure «Disputes&Reports». Per chi riceve in Italia Cainiao non offre un modulo di reclamo: rimborsi e contestazioni passano da AliExpress o dal venditore.
 

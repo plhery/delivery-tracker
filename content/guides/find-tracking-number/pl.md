@@ -4,7 +4,7 @@ description: Gdzie znaleźć numer przesyłki: e-mail, SMS, zamówienie w sklepi
 slug: gdzie-znalezc-numer-przesylki
 picture: E-mail o wysyłce z numerem przesyłki RR123456785CH zaznaczonym na żółto, obok etykieta z kodem kreskowym i uśmiechnięty Pip.
 published: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 Numer przesyłki zwykle znajdziesz w e-mailu lub SMS-ie o wysyłce albo w szczegółach zamówienia na stronie czy w aplikacji sklepu, o jedno kliknięcie dalej niż numer zamówienia. Jeśli to Ty nadajesz paczkę, numer jest na potwierdzeniu nadania. Żaden przewoźnik nie wyszuka paczki po nazwisku ani adresie, ale numer może Ci dać awizo albo nadawca, a aplikacja przewoźnika sama pokaże paczki wysłane na Twój numer telefonu.
@@ -36,7 +36,7 @@ Masz e-maila, ale nie wiesz, który numer jest który? Wklej całą wiadomość 
 
 Nie widzisz numeru? Może jeszcze nie powstał albo przesyłka w ogóle go nie ma. Allegro nic nie pokaże, jeśli „sprzedający nie dodał do zamówienia numeru listu przewozowego”. Amazon.pl uprzedza, że niektórych przesyłek, „takich jak standardowe przesyłki międzynarodowe”, nie da się śledzić. Shein pisze, że brak numeru oznacza, że zamówienie jest jeszcze w magazynie, a Temu prosi o 1 do 3 dni roboczych na obsługę zamówienia w magazynie.
 
-Zamawiasz z AliExpress albo innego chińskiego sklepu? Zajrzyj do poradnika o [śledzeniu paczki z Chin](guide:tracking-from-china).
+Zamawiasz z AliExpress albo innego chińskiego sklepu? Zajrzyj do poradnika o [śledzeniu paczki z Chin](guide:tracking-from-china). Gdzie AliExpress pokazuje numer, opisuje strona o [śledzeniu Cainiao](carrier:cainiao).
 
 ### Na awizie, także w SMS-ie lub e-mailu
 
@@ -81,7 +81,7 @@ Jeśli nadawca poda Ci swój numer referencyjny, na przykład numer faktury, w n
 
 Po nazwisku i adresie się nie da. Wyszukiwarki Poczty Polskiej, InPost i DPD przyjmują tylko numer przesyłki (DPD także kod nadania). Niemiecki DHL pisze wprost, że śledzenie jest możliwe tylko z ważnym numerem przesyłki, a bez niego statusu nie sprawdzi nawet obsługa klienta.
 
-Po numerze telefonu: tylko w aplikacji przewoźnika i tylko paczki wysłane na numer, na który masz w niej konto (tabela wyżej). Trackery paczek też nie szukają po nazwisku, Peek również: żeby zapytać przewoźnika o paczkę, potrzebuje jej numeru.
+Po numerze telefonu: tylko w aplikacji przewoźnika i tylko paczki wysłane na numer, na który masz w niej konto (tabela wyżej). [Trackery paczek](guide:universal-tracker) też nie szukają po nazwisku, Peek również: żeby zapytać przewoźnika o paczkę, potrzebuje jej numeru.
 
 > Strona, która obiecuje znaleźć wszystkie paczki wysłane na Twoje nazwisko, adres albo numer telefonu, nie korzysta ze śledzenia przewoźnika: żaden przewoźnik nie udostępnia publicznie takiej wyszukiwarki. Nie podawaj tam swoich danych.
 
