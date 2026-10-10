@@ -265,9 +265,9 @@ first byte: `<html lang>`, the words, the title and the link preview.
 
 For search engines, `/robots.txt` lets everything be fetched and `/sitemap.xml` lists the
 pages meant to be found: the landing, the guides' list and every guide in each language,
-the carriers' list in each language and every carrier's page in each of its languages, and
-the privacy notice. A guide or a carrier's page is dated by the day its facts were last
-checked. Each
+the carriers' list in each language and every carrier's page in each of its languages,
+the privacy notice and the help page. A guide or a carrier's page is dated by the day its
+facts were last checked. Each
 landing's HTML carries its title, description and canonical address, the address of every
 other language (`hreflang`, with `/` for a reader of none of them), and a schema.org
 description of the site and the app

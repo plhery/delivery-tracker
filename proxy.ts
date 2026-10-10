@@ -10,11 +10,11 @@ import { MAIL_LINK_BOOTSTRAP } from './src/lib/mailLinkConfig';
 import { publicSupabaseOrigin } from './src/server/runtime';
 import { legacyHostRedirect } from './src/server/siteHosts';
 
-// The app and static privacy document use this exact, fixed prepaint script.
+// The app and the static documents (the privacy notice and the help page) use this exact, fixed prepaint script.
 const appearanceScriptHash = createHash('sha256').update(APPEARANCE_BOOTSTRAP).digest('base64');
 // The app's second prepaint script: who is about to see the landing.
 const entryHintScriptHash = createHash('sha256').update(ENTRY_HINT_BOOTSTRAP).digest('base64');
-// The static privacy document's own script: it writes its scrambled addresses back.
+// The static documents' own script: it writes their scrambled addresses back.
 const mailLinkScriptHash = createHash('sha256').update(MAIL_LINK_BOOTSTRAP).digest('base64');
 
 export function proxy(request: NextRequest) {

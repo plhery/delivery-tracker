@@ -45,7 +45,7 @@ test('robots.txt lets everything be fetched and names the sitemap by its whole a
   expect(lines).toEqual(['User-Agent: *', 'Allow: /', `Sitemap: ${baseURL}/sitemap.xml`]);
 });
 
-test('sitemap.xml lists the landing, the guides and the carriers’ pages in every language and the privacy notice, dating only the guides and the carriers’ pages', async ({ request, baseURL }) => {
+test('sitemap.xml lists the landing, the guides and the carriers’ pages in every language, the privacy notice and the help page, dating only the guides and the carriers’ pages', async ({ request, baseURL }) => {
   const response = await request.get('/sitemap.xml');
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type']).toContain('application/xml');
@@ -53,14 +53,14 @@ test('sitemap.xml lists the landing, the guides and the carriers’ pages in eve
   const addresses = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((match) => match[1]);
   const landings = [`${baseURL}/`, ...languages.map((language) => `${baseURL}/${language}`)];
   expect(addresses.slice(0, landings.length)).toEqual(landings);
-  expect(addresses.at(-1)).toBe(`${baseURL}/privacy.html`);
+  expect(addresses.slice(-2)).toEqual([`${baseURL}/privacy.html`, `${baseURL}/support.html`]);
   // Between them, the guides: their own page in every language, then each guide in every language.
   const under = (section: string) => (address: string) => new RegExp(`^(?:/(?:de|fr|it|es|pt|pl))?/${section}(?:/[a-z0-9-]+)?$`).test(new URL(address).pathname);
-  const guides = addresses.slice(landings.length, -1).filter(under('guides'));
+  const guides = addresses.slice(landings.length, -2).filter(under('guides'));
   expect(guides.slice(0, 7)).toEqual([`${baseURL}/guides`, ...languages.map((language) => `${baseURL}/${language}/guides`)]);
   expect(guides.length % 7).toBe(0);
   // Then the carriers' pages: their own page in every language, then each carrier's page in each of its languages.
-  const carriers = addresses.slice(landings.length + guides.length, -1);
+  const carriers = addresses.slice(landings.length + guides.length, -2);
   expect(carriers.slice(0, 7)).toEqual([`${baseURL}/carriers`, ...languages.map((language) => `${baseURL}/${language}/carriers`)]);
   expect(carriers.length).toBeGreaterThan(7);
   for (const address of carriers) expect(under('carriers')(address), address).toBe(true);
@@ -81,7 +81,7 @@ test('sitemap.xml lists the landing, the guides and the carriers’ pages in eve
   }
   // The carriers' own page names every language, dated by its newest carrier's page; a carrier's page names only
   // the languages it is written in, English first and for a reader of none, dated by the day it was checked.
-  const [hubs, pages] = [entries.slice(landings.length + guides.length, landings.length + guides.length + 7), entries.slice(landings.length + guides.length + 7, -1)];
+  const [hubs, pages] = [entries.slice(landings.length + guides.length, landings.length + guides.length + 7), entries.slice(landings.length + guides.length + 7, -2)];
   hubs.forEach((entry, at) => {
     expect(Object.keys(Object.fromEntries(alternates(entry)))).toEqual(['en', ...languages, 'x-default']);
     const own = new URL(carriers[at]).pathname;
@@ -94,8 +94,10 @@ test('sitemap.xml lists the landing, the guides and the carriers’ pages in eve
     expect(Object.values(named)).toContain(/<loc>([^<]*)<\/loc>/.exec(entry)![1]);
     expect(entry).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
   }
-  expect(entries.at(-1)).not.toContain('xhtml:link');
-  expect(entries.at(-1)).not.toContain('<lastmod>');
+  for (const entry of entries.slice(-2)) {
+    expect(entry).not.toContain('xhtml:link');
+    expect(entry).not.toContain('<lastmod>');
+  }
   // Every address in it answers.
   for (const address of addresses) expect((await request.get(address)).status(), address).toBe(200);
 });

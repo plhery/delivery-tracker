@@ -16,6 +16,8 @@ const { manifestEntries, count, size, warnings } = await getManifest({
     '.next/static/**/*',
     // Only files the browser uses. Fonts, social images and email templates in
     // public/ are read by the server, and the manifest is rendered per request.
+    // The help page (support.html) is not precached: nothing in the app links to it,
+    // and read from the network it is always the current text.
     'public/{icons/*,privacy.html,privacy.css,theme.css,push-sw.js}',
   ],
   // Modern browsers skip the nomodule polyfills, and only Sentry reads the source maps.

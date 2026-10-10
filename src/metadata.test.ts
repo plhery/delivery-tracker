@@ -216,7 +216,7 @@ describe('public product metadata', () => {
     const local = alternates('https://delivery.example.test');
     const here = await sitemap();
     expect(here.slice(0, SUPPORTED_LOCALES.length)).toEqual(SUPPORTED_LOCALES.map((locale) => ({ url: local[locale], alternates: { languages: local } })));
-    expect(here.at(-1)).toEqual({ url: 'https://delivery.example.test/privacy.html' });
+    expect(here.slice(-2)).toEqual([{ url: 'https://delivery.example.test/privacy.html' }, { url: 'https://delivery.example.test/support.html' }]);
     vi.stubEnv('CANONICAL_ORIGIN', 'https://peek.example.test');
     const origin = 'https://peek.example.test';
     const entries = await sitemap();
@@ -242,14 +242,15 @@ describe('public product metadata', () => {
       ...SUPPORTED_LOCALES.map((locale) => `${origin}${carrierPath(locale)}`),
       ...carrierPages.map(({ id, locale }) => carriers(id)[locale]),
       'https://peek.example.test/privacy.html',
+      'https://peek.example.test/support.html',
     ]);
     const articlesEnd = 14 + ids.length * SUPPORTED_LOCALES.length;
     const [landings, indexes, articles] = [entries.slice(0, 7), entries.slice(7, 14), entries.slice(14, articlesEnd)];
-    const [hubs, pages] = [entries.slice(articlesEnd, articlesEnd + 7), entries.slice(articlesEnd + 7, -1)];
+    const [hubs, pages] = [entries.slice(articlesEnd, articlesEnd + 7), entries.slice(articlesEnd + 7, -2)];
     // Each language's landing names all of them, itself included, and `/` for a reader of none.
     for (const entry of landings) expect(entry.alternates?.languages).toEqual(alternates(origin));
     // No date is claimed for a page whose last change nobody recorded.
-    for (const entry of [...landings, entries.at(-1)!]) expect(entry).not.toHaveProperty('lastModified');
+    for (const entry of [...landings, ...entries.slice(-2)]) expect(entry).not.toHaveProperty('lastModified');
     // A guide is dated by the day its facts were last checked, and its list by its newest guide.
     const updated = (id: string, locale: Locale) => /^updated: (\S+)$/m.exec(readFileSync(`content/guides/${id}/${locale}.md`, 'utf8'))![1];
     SUPPORTED_LOCALES.forEach((locale, at) => {

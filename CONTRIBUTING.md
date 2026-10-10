@@ -46,6 +46,8 @@ The browser tests use the fictional demo data at desktop and mobile sizes.
   carrier catalog in the contract by hand.
 - **Privacy notice**: edit `PRIVACY.md`, then run `npm run privacy`. It writes
   `public/privacy.html`, the page both apps open.
+- **Help page**: edit `SUPPORT.md`, then run `npm run support`. It writes
+  `public/support.html`.
 - Keep commits small enough to review on their own.
 
 By contributing, you agree that your contribution is licensed under the

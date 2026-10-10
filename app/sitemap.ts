@@ -23,9 +23,9 @@ const carriersChecked = (locale: Locale) => CARRIER_LINKS[locale].map(({ id }) =
  * The pages meant to be found: the landing in each language, the guides' own
  * page and every guide in each language, each naming the others, the
  * carriers' own page in each language and every carrier's page in each of its
- * languages, naming only those, and the privacy notice. A guide or a carrier's
- * page is dated by the day its facts were last checked. A parcel, an
- * invitation and the demo are not listed.
+ * languages, naming only those, the privacy notice and the help page. A guide
+ * or a carrier's page is dated by the day its facts were last checked. A
+ * parcel, an invitation and the demo are not listed.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const origin = await siteOrigin();
@@ -45,5 +45,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       return carrierLanguages(id).map((locale) => ({ url: addresses[locale]!, lastModified: carrierText(locale, id).updated, alternates: { languages: addresses } }));
     }),
     { url: xml(new URL('/privacy.html', origin).href) },
+    { url: xml(new URL('/support.html', origin).href) },
   ];
 }

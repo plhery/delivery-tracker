@@ -58,6 +58,8 @@ scanner, a Share extension and widgets.
 Peek shows no ads and sells no data. A parcel followed without an account is forgotten 30
 days after it arrives. The [privacy notice](PRIVACY.md) has the rest.
 
+Stuck? [Help](SUPPORT.md) says what to check and where to write.
+
 ## Carriers live next door
 
 Reading carriers is a job of its own, so it has a repository of its own:

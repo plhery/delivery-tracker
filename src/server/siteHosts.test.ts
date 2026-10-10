@@ -91,6 +91,7 @@ describe('legacyHostRedirect', () => {
     ['/de', 'https://peek.example.test/de'],
     ['/pl?utm_source=chat', 'https://peek.example.test/pl?utm_source=chat'],
     ['/privacy.html', 'https://peek.example.test/privacy.html'],
+    ['/support.html', 'https://peek.example.test/support.html'],
     ['/apiary', 'https://peek.example.test/apiary'],
   ])('sends the page %s to the same address on the canonical origin', (path, target) => {
     expect(redirect(path)).toBe(target);
