@@ -17,7 +17,7 @@ describe('universal tracking dispatch', () => {
     // The third argument is the lookup's signal and budget, which the scraper passes on.
     expect(spy).toHaveBeenCalledWith(number, null, expect.any(Object));
     // A carrier without an adapter of its own passes its postcode to the providers.
-    await adapter.fetch('omgo', number, null, '01234');
+    await adapter.fetch('zto', number, null, '01234');
     expect(spy).toHaveBeenLastCalledWith(number, '01234', expect.any(Object));
   });
 

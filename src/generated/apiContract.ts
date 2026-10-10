@@ -262,6 +262,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^SYAE\\d{9}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^SY[A-Z]{2}\\d{9}$",
+        "confidence": "high"
       }
     ],
     "aliases": [
@@ -2036,6 +2040,10 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^[A-Z]{2}\\d{9}BE$",
         "confidence": "high",
         "checksum": "s10"
+      },
+      {
+        "pattern": "^JJBE[A-Z]\\d{18}$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://track.bpost.cloud/",
@@ -2608,6 +2616,11 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "usps"
       },
       {
+        "pattern": "^(?!9261)92\\d{3}9\\d{20}$",
+        "confidence": "high",
+        "checksum": "usps"
+      },
+      {
         "pattern": "^9[1-5]\\d{20}(?:\\d{4})?$",
         "confidence": "low",
         "checksum": "usps",
@@ -2712,6 +2725,11 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^[0-5]\\d{11}$",
+        "confidence": "low",
+        "checksum": "luhn"
+      },
+      {
+        "pattern": "^6\\d{11}$",
         "confidence": "low",
         "checksum": "luhn"
       },
@@ -3307,6 +3325,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^\\d{20}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{16}[A-Z]{3}\\d{3}[A-Z]{2}$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://www.nzpost.co.nz/tools/tracking?trackid={trackingNumber}",
@@ -3724,7 +3746,8 @@ export const CARRIER_CAPABILITIES = {
           "dtdc.com"
         ],
         "params": [
-          "trackingId"
+          "trackingId",
+          "awb"
         ]
       }
     ],
@@ -3859,6 +3882,10 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^[A-Z]{2}\\d{9}MY$",
         "confidence": "high",
         "checksum": "s10"
+      },
+      {
+        "pattern": "^[A-Z]{3}\\d{9}MY$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://tracking.pos.com.my/tracking/{trackingNumber}",
@@ -3884,7 +3911,8 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [
       {
         "domains": [
-          "ninjavan.co"
+          "ninjavan.co",
+          "ninjaxpress.co"
         ],
         "params": [
           "id"
@@ -3897,7 +3925,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       },
       {
-        "pattern": "^NV(?:SG|MY|PH|ID|TH|VN)[A-Z0-9]{8,20}$",
+        "pattern": "^NV(?:SG|MY|PH|ID|TH|VN)(?!STAMP[A-Z0-9]{9}$)[A-Z0-9]{8,20}$",
         "confidence": "low"
       },
       {
@@ -3914,7 +3942,10 @@ export const CARRIER_CAPABILITIES = {
       "TH",
       "VN"
     ],
-    "trackingSearchUrl": "https://www.ninjavan.co/en-my/tracking"
+    "trackingSearchUrl": "https://www.ninjavan.co/en-my/tracking",
+    "aliases": [
+      "Ninja Xpress"
+    ]
   },
   "china-post": {
     "displayName": "China Post",
@@ -4291,6 +4322,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^(?:DD|LD)[A-Z0-9]{6}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^LL[A-Z0-9]{6}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://portal.thecourierguy.co.za/track?ref={trackingNumber}",
@@ -4397,9 +4432,10 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "omgo",
+      "recognitionRank": 1
     },
-    "trackingUrlTemplate": "https://omgoexpress.cn/",
+    "trackingUrlTemplate": "https://omgoexpress.cn/track-package/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -4407,7 +4443,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       }
     ],
-    "trackingSearchUrl": "https://omgoexpress.cn/"
+    "trackingSearchUrl": "https://omgoexpress.cn/track-package/"
   },
   "dhl-express": {
     "displayName": "DHL Express",
@@ -4971,8 +5007,9 @@ export const CARRIER_CAPABILITIES = {
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
-      "mode": "link-only",
-      "adapter": null
+      "mode": "automatic",
+      "adapter": "j-and-t-cargo",
+      "recognitionRank": 47
     },
     "trackingUrlTemplate": "https://www.jtcargo.id/networkQuery?waybillNo={trackingNumber}&type=0",
     "linkRules": [
@@ -4988,6 +5025,10 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^20\\d{10}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^20\\d{13}$",
         "confidence": "low"
       }
     ],
@@ -5252,6 +5293,100 @@ export const CARRIER_CAPABILITIES = {
       }
     ],
     "trackingSearchUrl": "https://www.emileps.com/tracking"
+  },
+  "gofo-fr": {
+    "displayName": "GOFO France",
+    "aliases": [
+      "GOFO FR",
+      "CIRRO Parcel France"
+    ],
+    "countries": [
+      "FR"
+    ],
+    "color": "#fc4c02",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "gofo-fr",
+      "recognitionRank": 3
+    },
+    "trackingUrlTemplate": "https://www.gofo.com/fr/tracking-results/?id={trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "gofo.com"
+        ],
+        "pathPattern": "^/fr(?:/|$)",
+        "params": [
+          "id"
+        ]
+      },
+      {
+        "domains": [
+          "gofoexpress.fr"
+        ],
+        "params": [
+          "id"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^(?:GF|CI)FR\\d{13,14}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^PK\\d{20}$",
+        "confidence": "low"
+      }
+    ],
+    "trackingSearchUrl": "https://www.gofo.com/fr/tracking-results/"
+  },
+  "gofo-it": {
+    "displayName": "GOFO Italy",
+    "aliases": [
+      "GOFO IT",
+      "CIRRO Parcel Italy"
+    ],
+    "countries": [
+      "IT"
+    ],
+    "color": "#fc4c02",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "gofo-it",
+      "recognitionRank": 2
+    },
+    "trackingUrlTemplate": "https://www.gofo.com/it/tracking-results/?id={trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "gofo.com"
+        ],
+        "pathPattern": "^/it(?:/|$)",
+        "params": [
+          "id"
+        ]
+      },
+      {
+        "domains": [
+          "gofoexpress.it"
+        ],
+        "params": [
+          "id"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^(?:GF|CI)IT\\d{13,14}$",
+        "confidence": "high"
+      }
+    ],
+    "trackingSearchUrl": "https://www.gofo.com/it/tracking-results/"
   }
 } as const;
 
@@ -5413,7 +5548,9 @@ export const CARRIER_IDS = [
   "dhl-ecommerce-pl",
   "dhl-ecommerce-uk",
   "dpd-pl",
-  "emile"
+  "emile",
+  "gofo-fr",
+  "gofo-it"
 ] as const;
 export type ApiCarrierId = (typeof CARRIER_IDS)[number];
 
