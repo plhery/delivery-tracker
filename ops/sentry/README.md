@@ -24,7 +24,9 @@ failure that recovers never opens an issue. See [OBSERVABILITY.md](../../docs/OB
   sample alone, so one outage opens one incident.
 - Missing input, genuine not-found and a provider's answer that it has no history for the
   number yet are healthy. They count toward recovery, never toward an outage, so a parcel
-  added before its first scan can't open a provider incident.
+  added before its first scan can't open a provider incident. So are Ukrposhta's misses,
+  inconclusive with the reason `status_api_not_found` or `portal_not_found`, so the
+  hand-off probes of mail bound for Ukraine can't open one either.
 - A step skipped during a cooldown is not a success. A check that contacted nobody because
   everything was cooling down records nothing.
 - A parcel whose own carrier says not-found stays `waiting` even if every fallback fails.

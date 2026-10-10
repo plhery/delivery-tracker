@@ -19,9 +19,16 @@ const observations = new AsyncLocalStorage<Map<string, HealthSample>>();
 const answered = new Set(['ok', 'not_found', 'input_required']);
 
 /**
+ * Ukrposhta's misses: its status API, then its portal, does not know the item.
+ * Each source answered, but neither may prove absence, so the adapter raises
+ * them as inconclusive with these reasons.
+ */
+const UNKNOWN_ITEM_REASONS = new Set(['status_api_not_found', 'portal_not_found']);
+/**
  * A provider with no history for a number yet has answered, like not-found
  * (routing treats it the same way). Counted as a failure, every parcel added
- * before its first scan looked like a provider outage.
+ * before its first scan looked like a provider outage, and the hourly hand-off
+ * probes of one item bound for Ukraine could open a Ukrposhta incident.
  */
 function category(record: StepRecord | LookupRecord): string {
   // A number the carrier does not issue is an answer too. It is filed with the
@@ -29,7 +36,9 @@ function category(record: StepRecord | LookupRecord): string {
   const outcome = record.outcome === 'invalid_input' ? 'input_required' : record.outcome;
   let current = record.error;
   for (let depth = 0; current instanceof Error && depth < 8; depth++, current = current.cause) {
-    if (current instanceof CarrierError) return current instanceof NoHistoryError ? 'not_found' : outcome;
+    if (current instanceof CarrierError) {
+      return current instanceof NoHistoryError || UNKNOWN_ITEM_REASONS.has(current.reason ?? '') ? 'not_found' : outcome;
+    }
   }
   return outcome;
 }

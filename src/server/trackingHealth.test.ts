@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { NoHistoryError, NotFoundError, SchemaError, UpstreamHttpError } from 'universal-parcel-scraper';
+import { IndeterminateError, NoHistoryError, NotFoundError, SchemaError, UpstreamHttpError } from 'universal-parcel-scraper';
 import { TrackingCaptureError } from 'universal-parcel-scraper/node';
 import { healthMessage, healthStepRecorder, observeTrackingHealth, type HealthSample } from './trackingHealth';
 import { TrackingSyncAudit } from './trackingAudit';
@@ -65,6 +65,27 @@ describe('tracking health evidence', () => {
       expect.objectContaining({ subject: 'Postal Ninja', healthy: true,
         details: expect.objectContaining({ category: 'not_found', error_type: 'NoHistoryError' }) }),
       expect.objectContaining({ subject: '17TRACK', healthy: false, details: expect.objectContaining({ category: 'indeterminate' }) }),
+    ]);
+  });
+
+  it("counts Ukrposhta's misses as answers, and other inconclusive lookups as failures", async () => {
+    const samples = new Map<string, HealthSample>();
+    const miss = (reason?: string) => new IndeterminateError('ukrposhta', undefined, reason ? { reason } : undefined);
+    await observeTrackingHealth(samples, async () => {
+      healthStepRecorder.step({ ...step, carrier: 'ukrposhta', outcome: 'indeterminate', errorType: 'IndeterminateError',
+        error: miss('status_api_not_found') });
+      healthStepRecorder.lookup({ carrier: 'ukrposhta', finalStep: 'browser', outcome: 'indeterminate', errorType: 'IndeterminateError',
+        durationMs: 3000, attempts: 2, error: new Error('lookup failed', { cause: miss('portal_not_found') }) });
+      healthStepRecorder.lookup({ carrier: 'dhl-ecommerce', finalStep: 'direct', outcome: 'indeterminate', errorType: 'IndeterminateError',
+        durationMs: 1, attempts: 1, error: new IndeterminateError('DHL eCommerce', undefined, { reason: 'webtrack_not_found' }) });
+      healthStepRecorder.lookup({ carrier: 'seur', finalStep: 'direct', outcome: 'indeterminate', errorType: 'IndeterminateError',
+        durationMs: 1, attempts: 1, error: miss() });
+    });
+    expect([...samples.values()].map(({ kind, subject, healthy, details }) => [kind, subject, healthy, details.category])).toEqual([
+      ['direct', 'ukrposhta', true, 'not_found'],
+      ['provider', 'ukrposhta', true, 'not_found'],
+      ['provider', 'dhl-ecommerce', false, 'indeterminate'],
+      ['provider', 'seur', false, 'indeterminate'],
     ]);
   });
 
