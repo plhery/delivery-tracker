@@ -296,7 +296,10 @@ guide is drawn by the server alone, with the site's base styles and its own
 usage count. A carrier's page is drawn the same way, and adds one more: its tracking box,
 which notes the number in the tab's session storage for the landing to look up
 ([`carrierHandoff.ts`](../src/lib/carrierHandoff.ts)). Without it, the box opens the landing
-alone.
+alone. A guide that places a number checker (`:::checker`) adds the same box, which also
+names the carrier of what is typed as the landing reads it: the carrier data it needs is
+fetched once the reader starts typing ([`numberReading.ts`](../src/guides/numberReading.ts)),
+and nothing typed is sent.
 
 ## Data lifecycle
 

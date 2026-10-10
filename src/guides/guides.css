@@ -121,6 +121,15 @@ a.guide__crumb:hover { color: var(--ink); }
 .carrier-tracker textarea { flex: 1 1 260px; max-height: 168px; resize: none; field-sizing: content; line-height: 1.5; }
 .carrier-tracker .button { flex: 0 0 auto; min-height: 54px; }
 .carrier-tracker__note { margin: 12px 0 0; color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
+.guide-body .number-checker { margin-top: 28px; }
+.number-checker__result { margin-top: 12px; font-size: 14.5px; line-height: 1.5; }
+.number-checker__result p { margin: 0; }
+.guide-body .number-checker__result ul { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.guide-body .number-checker__result li { display: grid; justify-items: start; gap: 8px; margin: 0; }
+.number-checker__carriers { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.number-checker__carriers > span:first-child { margin-right: 2px; color: var(--ink-soft); }
+.number-checker__carrier { display: inline-flex; align-items: center; gap: 7px; padding: 3px 11px; border-radius: 999px; background: var(--control); color: var(--ink); font-weight: 600; }
+.guide-body a.number-checker__carrier { color: var(--blue); text-decoration: underline; text-underline-offset: 2px; }
 .carrier-swatch { flex: none; width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 14%, transparent); }
 .guide-card.carrier-card { padding-top: 20px; }
 .carrier-card__name { display: flex; align-items: center; gap: 8px; padding: 0 20px 4px; color: var(--ink-soft); font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1.2px; text-transform: uppercase; }

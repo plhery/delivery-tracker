@@ -1,9 +1,8 @@
 'use client';
 
 import { useRef, type FormEvent, type KeyboardEvent } from 'react';
-import { writeCarrierHandoff } from '../lib/carrierHandoff';
-import { LANDING_PATH } from '../lib/experience';
-import { languagePath, type Locale } from '../lib/locale';
+import { carrierHandoffLanding, writeCarrierHandoff } from '../lib/carrierHandoff';
+import type { Locale } from '../lib/locale';
 import { CarrierSwatch } from './CarrierIndex';
 
 /**
@@ -25,7 +24,7 @@ export function CarrierTracker({ locale, color, label, placeholder, action, note
   note: string;
 }) {
   const field = useRef<HTMLTextAreaElement>(null);
-  const landing = locale === 'en' ? LANDING_PATH : languagePath(locale);
+  const landing = carrierHandoffLanding(locale);
 
   function track(event: FormEvent) {
     event.preventDefault();

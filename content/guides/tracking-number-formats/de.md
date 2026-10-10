@@ -9,6 +9,9 @@ updated: 2026-10-10
 
 Buchstaben und Länge einer Sendungsnummer verraten oft, welcher Paketdienst dein Paket hat. Beginnt sie mit `1Z` und hat 18 Zeichen, ist es UPS. 18 Ziffern ab `99`, gedruckt wie `99.34.123456.12345678`, kommen von der Schweizerischen Post, und 13 Zeichen wie `RR123456785CH` (zwei Buchstaben, neun Ziffern, zwei Buchstaben) stammen meist von einer nationalen Post, deren Land in den letzten zwei Buchstaben steht. Schwierig wird es bei reinen Ziffern: 10, 14 oder 22 Stellen passen jeweils zu mehreren Paketdiensten. Dann entscheidet die Versandmail oder ein Tracker, der die infrage kommenden Paketdienste durchprobiert.
 
+:::checker
+:::
+
 ## Wie erkenne ich den Paketdienst an der Sendungsnummer?
 
 Vier Schritte, in dieser Reihenfolge:

@@ -9,6 +9,9 @@ updated: 2026-10-10
 
 Las letras y la longitud de un número de seguimiento suelen decirte qué empresa tiene tu paquete. `1Z` seguido de 16 letras y cifras es UPS, y un código de 13 caracteres como `RR123456785CH` (dos letras, nueve cifras, dos letras) suele ser de Correos o de otro operador postal: las dos últimas letras dicen qué país lo emitió, y `ES` es España. Los números que solo llevan cifras son el caso difícil: 12, 14 o 22 cifras encajan con varias empresas, así que la última palabra la tiene el correo de envío de la tienda, o una web de seguimiento que pruebe con todas las candidatas.
 
+:::checker
+:::
+
 ## ¿Cómo saber de qué empresa es un número de seguimiento?
 
 Cuatro comprobaciones, en este orden:

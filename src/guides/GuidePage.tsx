@@ -2,6 +2,7 @@ import type { GuideLink } from '../generated/guides';
 import { languagePath, type Locale } from '../lib/locale';
 import { languageTags, type Translate } from '../lib/messages';
 import { GuideBody } from './GuideBody';
+import type { CheckerWords } from './NumberChecker';
 import { GuideCard } from './GuideIndex';
 import { GuideScene } from './scenes';
 import { wordCount, type Block, type Guide } from './markdown';
@@ -30,16 +31,21 @@ export function GuideText({ blocks, locale, t, links }: { blocks: readonly Block
   const contents = blocks.filter((block) => block.type === 'heading' && block.level === 2);
   const [lead, rest] = [blocks.slice(0, 1), blocks.slice(1)];
   const sources = t('guides.sources');
+  const checker: CheckerWords = {
+    label: t('guides.checker.label'), placeholder: t('add.trackingPlaceholder'), action: t('sample.yours.action'), hint: t('guides.checker.hint'),
+    certain: t('add.detectedCarrier'), maybe: t('guides.checker.maybe'), maybeNote: t('guides.checker.maybeNote'), none: t('guides.checker.none'),
+    typo: t('door.typo.check'), suggest: t('door.typo.suggest', { number: '{{number}}' }), orderTitle: t('door.order.title'), orderBody: t('door.order.body'),
+  };
   return <>
     {/* The answer comes first, before the list of what else the page holds. */}
-    <div className="guide-body guide-lead"><GuideBody blocks={lead} locale={locale} links={links} sources={sources} /></div>
+    <div className="guide-body guide-lead"><GuideBody blocks={lead} locale={locale} links={links} sources={sources} checker={checker} /></div>
     <div className="guide__columns">
       {contents.length > 2 && <nav className="guide-contents" aria-labelledby="guide-contents">
         <strong id="guide-contents">{t('guides.contents')}</strong>
         <ol>{contents.map((block) => block.type === 'heading' && <li key={block.id}><a href={`#${block.id}`}>{block.plain}</a></li>)}</ol>
       </nav>}
       <div className="guide-body">
-        <GuideBody blocks={rest} locale={locale} links={links} sources={sources} />
+        <GuideBody blocks={rest} locale={locale} links={links} sources={sources} checker={checker} />
       </div>
     </div>
   </>;

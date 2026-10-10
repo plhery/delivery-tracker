@@ -199,16 +199,16 @@ export const GUIDE_LINKS: Record<Locale, readonly GuideLink[]> = ${written(links
 export function carriersModule(carriers) {
   const links = Object.fromEntries(SUPPORTED_LOCALES.map((locale) => [
     locale,
-    carriers.filter(({ pages }) => pages[locale]).map(({ id, name, color, pages }) => ({ id, slug: pages[locale].slug, title: typeset(pages[locale], locale).title, name, color })),
+    carriers.filter(({ pages }) => pages[locale]).map(({ id, catalog, name, color, pages }) => ({ id, catalog, slug: pages[locale].slug, title: typeset(pages[locale], locale).title, name, color })),
   ]));
   return `// Generated from content/carriers by scripts/generate-guides.mjs. Do not edit.
 import type { Locale } from '../lib/locale';
 
 /**
- * A carrier's page in one language: the carrier's id, name and brand colour in every language, and the
- * page's address and title in this one.
+ * A carrier's page in one language: the carrier's id, its id in Universal Parcel Scraper's catalog, its name
+ * and brand colour in every language, and the page's address and title in this one.
  */
-export interface CarrierLink { id: string; slug: string; title: string; name: string; color: string }
+export interface CarrierLink { id: string; catalog: string; slug: string; title: string; name: string; color: string }
 
 export const CARRIER_LINKS: Record<Locale, readonly CarrierLink[]> = ${written(links)};
 `;

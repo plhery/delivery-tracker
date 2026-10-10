@@ -1020,5 +1020,10 @@
   "carriers.all": "All carriers",
   "carriers.more": "Other carriers",
   "carriers.track.label": "Track a {{carrier}} parcel",
-  "carriers.independent": "Peek is an independent tracker, not {{carrier}}. It shows what {{carrier}}’s own tracking publishes."
+  "carriers.independent": "Peek is an independent tracker, not {{carrier}}. It shows what {{carrier}}’s own tracking publishes.",
+  "guides.checker.label": "Which carrier is this number?",
+  "guides.checker.hint": "Type or paste a number, a link or the whole shipping message: Peek names the carrier from the number’s shape.",
+  "guides.checker.maybe": "Could be",
+  "guides.checker.maybeNote": "Its shape fits without proving whose it is. The shipping email names the carrier, and when you track it, Peek asks the likely ones in turn.",
+  "guides.checker.none": "No carrier Peek knows writes numbers like this. Check it for a typo, or find the carrier in the shipping email."
 }

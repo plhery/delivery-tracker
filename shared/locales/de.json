@@ -1020,5 +1020,10 @@
   "carriers.all": "Alle Paketdienste",
   "carriers.more": "Weitere Paketdienste",
   "carriers.track.label": "Sendung von {{carrier}} verfolgen",
-  "carriers.independent": "Peek ist ein unabhängiger Dienst zur Sendungsverfolgung, nicht {{carrier}}. Er zeigt, was {{carrier}} in der eigenen Sendungsverfolgung veröffentlicht."
+  "carriers.independent": "Peek ist ein unabhängiger Dienst zur Sendungsverfolgung, nicht {{carrier}}. Er zeigt, was {{carrier}} in der eigenen Sendungsverfolgung veröffentlicht.",
+  "guides.checker.label": "Welcher Paketdienst steckt hinter der Nummer?",
+  "guides.checker.hint": "Tippe oder füge eine Nummer, einen Link oder die ganze Versandmail ein: Peek erkennt den Paketdienst an der Form der Nummer.",
+  "guides.checker.maybe": "Könnte sein",
+  "guides.checker.maybeNote": "Die Form passt, beweist aber nicht, wem die Nummer gehört. Die Versandmail nennt den Paketdienst, und beim Verfolgen fragt Peek die wahrscheinlichen nacheinander.",
+  "guides.checker.none": "Kein Paketdienst, den Peek kennt, schreibt Nummern so. Prüfe sie auf Tippfehler oder such den Paketdienst in der Versandmail."
 }

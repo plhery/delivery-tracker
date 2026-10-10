@@ -1020,5 +1020,10 @@
   "carriers.all": "Todas as transportadoras",
   "carriers.more": "Outras transportadoras",
   "carriers.track.label": "Seguir uma encomenda {{carrier}}",
-  "carriers.independent": "O Peek é um serviço de seguimento independente, não é {{carrier}}. Mostra o que a transportadora {{carrier}} publica no seu próprio seguimento."
+  "carriers.independent": "O Peek é um serviço de seguimento independente, não é {{carrier}}. Mostra o que a transportadora {{carrier}} publica no seu próprio seguimento.",
+  "guides.checker.label": "De que transportadora é este número?",
+  "guides.checker.hint": "Escreve ou cola um número, uma ligação ou o e-mail de envio inteiro: o Peek reconhece a transportadora pela forma do número.",
+  "guides.checker.maybe": "Pode ser",
+  "guides.checker.maybeNote": "A forma encaixa, mas não prova de quem é o número. O e-mail de envio indica a transportadora e, quando começas a seguir, o Peek pergunta à vez às mais prováveis.",
+  "guides.checker.none": "Nenhuma transportadora que o Peek conheça escreve os números assim. Verifica se há alguma gralha ou procura a transportadora no e-mail de envio."
 }

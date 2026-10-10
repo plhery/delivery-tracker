@@ -35,6 +35,8 @@ export type Block =
   | { type: 'anatomy'; parts: { text: string; label: Inline[] }[] }
   /** A parcel's way, stop by stop. */
   | { type: 'journey'; stops: { icon: JourneyIcon; title: Inline[]; note: Inline[] }[] }
+  /** A field that names the carrier of a number as it is typed, and tracks it on the landing. */
+  | { type: 'checker' }
   | { type: 'sources'; items: Inline[][] };
 
 export interface Guide {
@@ -53,7 +55,7 @@ export type CarrierText = Omit<Guide, 'picture'>;
 
 const FIELDS = ['title', 'description', 'slug', 'picture', 'published', 'updated'] as const;
 type Field = (typeof FIELDS)[number];
-const DIRECTIVES = ['steps', 'anatomy', 'journey', 'sources'] as const;
+const DIRECTIVES = ['steps', 'anatomy', 'journey', 'checker', 'sources'] as const;
 type Directive = (typeof DIRECTIVES)[number];
 
 export const GUIDE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -177,6 +179,10 @@ function listItems(lines: string[], mark: RegExp, where: string): string[] {
 }
 
 function directive(name: Directive, argument: string, lines: string[], where: string): Block {
+  if (name === 'checker') {
+    if (argument || lines.some((line) => line.trim())) throw new Error(`${where}: ":::checker" holds nothing: the field draws itself`);
+    return { type: 'checker' };
+  }
   const inline = (text: string) => parseInline(text, where);
   const rows = listItems(lines.filter((line) => line.trim()), /^- /, where).map(cells);
   if (!rows.length) throw new Error(`${where}: ":::${name}" is empty`);
@@ -317,6 +323,7 @@ function checked<Text extends CarrierText>(text: Text, where: string, kind: stri
   if (text.updated < text.published) throw new Error(`${where}: a ${kind} cannot be updated before it is published`);
   if (!text.blocks.length) throw new Error(`${where}: the ${kind} has no text`);
   if (text.blocks[0].type !== 'paragraph') throw new Error(`${where}: a ${kind} opens with a paragraph, which the page sets as its lead`);
+  if (text.blocks.filter((block) => block.type === 'checker').length > 1) throw new Error(`${where}: a ${kind} holds one ":::checker" at most`);
   return text;
 }
 
@@ -368,6 +375,7 @@ function spacedBlock(block: Block): Block {
     case 'steps': return { ...block, items: block.items.map(({ title, note }) => ({ title: spacedRun(title), note: spacedRun(note) })) };
     case 'anatomy': return { ...block, parts: block.parts.map(({ text, label }) => ({ text, label: spacedRun(label) })) };
     case 'journey': return { ...block, stops: block.stops.map(({ icon, title, note }) => ({ icon, title: spacedRun(title), note: spacedRun(note) })) };
+    case 'checker': return block;
   }
 }
 
@@ -396,6 +404,7 @@ function runsOf(block: Block): Inline[][] {
     case 'steps': return block.items.flatMap(({ title, note }) => [title, note]);
     case 'anatomy': return block.parts.map(({ label }) => label);
     case 'journey': return block.stops.flatMap(({ title, note }) => [title, note]);
+    case 'checker': return [];
   }
 }
 
@@ -454,6 +463,7 @@ export function figureShape(blocks: readonly Block[]): string[] {
       case 'steps': return [`steps:${block.items.length}`];
       case 'journey': return [`journey:${block.stops.map(({ icon }) => icon).join(',')}`];
       case 'anatomy': return [`anatomy:${block.parts.map(({ text }) => text).join(' ')}`];
+      case 'checker': return ['checker'];
       default: return [];
     }
   });

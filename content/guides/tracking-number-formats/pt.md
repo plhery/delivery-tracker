@@ -9,6 +9,9 @@ updated: 2026-10-10
 
 As letras e o comprimento de um número de seguimento dizem muitas vezes que transportadora tem a tua encomenda. `1Z` seguido de 16 letras e algarismos é UPS, e 13 caracteres como `RR123456785CH` (duas letras, nove algarismos, duas letras) costumam ser de um operador postal, com o país que emitiu o número nas duas últimas letras: `PT` é Portugal. Os números só com algarismos são o caso difícil: 10, 12 ou 14 algarismos podem ser de várias transportadoras, e aí quem decide é o e-mail de envio, ou um serviço de seguimento que as experimente uma a uma.
 
+:::checker
+:::
+
 ## Como saber qual é a transportadora da minha encomenda?
 
 Quatro passos, por esta ordem:

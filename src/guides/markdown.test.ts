@@ -103,6 +103,18 @@ describe('a guide’s Markdown', () => {
     expect(wordCount(blocks)).toBe(31);
   });
 
+  it('reads a number checker, which holds nothing and is drawn in every translation, once at most', () => {
+    const blocks = parseBlocks(['A paragraph.', '', ':::checker', ':::', '', ':::steps', '- Read | The letters.', ':::'].join('\n'));
+    expect(blocks.map((block) => block.type)).toEqual(['paragraph', 'checker', 'steps']);
+    expect(figureShape(blocks)).toEqual(['checker', 'steps:1']);
+    expect(wordCount(blocks)).toBe(5);
+    expect(() => parseBlocks(':::checker now\n:::')).toThrow(/":::checker" holds nothing/);
+    expect(() => parseBlocks(':::checker\n- A number\n:::')).toThrow(/":::checker" holds nothing/);
+    const head = ['---', 'title: Formats', 'description: Which carrier.', 'slug: formats', 'picture: Pip reads.', 'published: 2026-10-04', 'updated: 2026-10-04', '---', ''];
+    expect(() => parseGuide([...head, 'The lead.', '', ':::checker', ':::', '', ':::checker', ':::'].join('\n'), 'content/guides/x/en.md'))
+      .toThrow('content/guides/x/en.md: a guide holds one ":::checker" at most');
+  });
+
   it('refuses a drawing it does not know or cannot finish', () => {
     expect(() => parseBlocks(':::gallery\n- A\n:::')).toThrow(/there is no ":::gallery"/);
     for (const opening of [':::', ':::Steps', '::: steps', ':::steps:']) {

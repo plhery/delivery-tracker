@@ -1020,5 +1020,10 @@
   "carriers.all": "Wszyscy przewoźnicy",
   "carriers.more": "Inni przewoźnicy",
   "carriers.track.label": "Śledź przesyłkę {{carrier}}",
-  "carriers.independent": "Peek to niezależny serwis do śledzenia przesyłek, a nie {{carrier}}. Pokazuje to, co {{carrier}} publikuje we własnym śledzeniu."
+  "carriers.independent": "Peek to niezależny serwis do śledzenia przesyłek, a nie {{carrier}}. Pokazuje to, co {{carrier}} publikuje we własnym śledzeniu.",
+  "guides.checker.label": "Do którego przewoźnika należy ten numer?",
+  "guides.checker.hint": "Wpisz lub wklej numer, link albo cały e-mail o wysyłce: Peek rozpozna przewoźnika po kształcie numeru.",
+  "guides.checker.maybe": "Możliwe, że to",
+  "guides.checker.maybeNote": "Kształt pasuje, ale nie przesądza, czyj to numer. E-mail o wysyłce podaje przewoźnika, a gdy zaczniesz śledzić, Peek po kolei zapyta najbardziej prawdopodobnych.",
+  "guides.checker.none": "Żaden przewoźnik znany Peek nie zapisuje numerów w ten sposób. Sprawdź, czy nie ma literówki, albo poszukaj przewoźnika w e-mailu o wysyłce."
 }

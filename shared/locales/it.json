@@ -1020,5 +1020,10 @@
   "carriers.all": "Tutti i corrieri",
   "carriers.more": "Altri corrieri",
   "carriers.track.label": "Traccia una spedizione {{carrier}}",
-  "carriers.independent": "Peek è un servizio di tracciamento indipendente, non {{carrier}}. Mostra quello che {{carrier}} pubblica nel proprio tracciamento."
+  "carriers.independent": "Peek è un servizio di tracciamento indipendente, non {{carrier}}. Mostra quello che {{carrier}} pubblica nel proprio tracciamento.",
+  "guides.checker.label": "Di quale corriere è questo numero?",
+  "guides.checker.hint": "Scrivi o incolla un numero, un link o l’intera e-mail di spedizione: Peek riconosce il corriere dalla forma del numero.",
+  "guides.checker.maybe": "Potrebbe essere",
+  "guides.checker.maybeNote": "La forma corrisponde ma non prova di chi sia il numero. L’e-mail di spedizione indica il corriere, e quando avvii il tracciamento Peek interroga a turno i più probabili.",
+  "guides.checker.none": "Nessun corriere che Peek conosce scrive i numeri così. Controlla che non ci siano errori di battitura, o cerca il corriere nell’e-mail di spedizione."
 }

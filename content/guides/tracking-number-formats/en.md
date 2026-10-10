@@ -9,6 +9,9 @@ updated: 2026-10-10
 
 A tracking number's letters and length often tell you which carrier has your parcel or package. `1Z` followed by 16 letters and digits is UPS, 22 digits starting `92` to `95` is USPS, and 13 characters shaped like `RR123456785CH` (two letters, nine digits, two letters) usually belong to a national post, with the issuing country in the last two letters. Plain digits are the hard case: 10, 12 or 14 digits each fit several carriers, so the shipping email, or a tracker that checks the candidates, has the final word.
 
+:::checker
+:::
+
 ## How do I tell which carrier a tracking number is from?
 
 Four checks, in this order:

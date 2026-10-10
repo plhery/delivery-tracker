@@ -1,3 +1,6 @@
+import { LANDING_PATH } from './experience';
+import { languagePath, type Locale } from './locale';
+
 /**
  * The text typed into a carrier's page's box, on its way to the tracker. A
  * tracking number never goes into an address, so the box notes it for this
@@ -8,6 +11,14 @@ export const CARRIER_HANDOFF_STORAGE_KEY = 'sdt.peek.carrierHandoff.v1'; // gitl
 const MAX_AGE_MS = 10 * 60_000;
 // The most the landing's field is handed, as from the share sheet.
 const MAX_LENGTH = 10_000;
+
+/**
+ * The landing a page's box opens: the one in the page's language, at the landing's own address, where
+ * someone signed in sees it too (at `/` they see their deliveries).
+ */
+export function carrierHandoffLanding(locale: Locale): string {
+  return locale === 'en' ? LANDING_PATH : languagePath(locale);
+}
 
 /** Notes the typed text for the landing. Without session storage the landing opens with its field empty. */
 export function writeCarrierHandoff(text: string, now = Date.now()): void {

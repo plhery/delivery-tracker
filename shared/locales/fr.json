@@ -1020,5 +1020,10 @@
   "carriers.all": "Tous les transporteurs",
   "carriers.more": "Autres transporteurs",
   "carriers.track.label": "Suivre un envoi {{carrier}}",
-  "carriers.independent": "Peek est un service de suivi indépendant, pas {{carrier}}. Il affiche ce que {{carrier}} publie dans son propre suivi."
+  "carriers.independent": "Peek est un service de suivi indépendant, pas {{carrier}}. Il affiche ce que {{carrier}} publie dans son propre suivi.",
+  "guides.checker.label": "De quel transporteur est ce numéro ?",
+  "guides.checker.hint": "Tape ou colle un numéro, un lien ou tout l’e-mail d’expédition : Peek reconnaît le transporteur à la forme du numéro.",
+  "guides.checker.maybe": "Peut-être",
+  "guides.checker.maybeNote": "Sa forme correspond sans prouver à qui il est. L’e-mail d’expédition nomme le transporteur, et quand tu lances le suivi, Peek interroge les plus probables tour à tour.",
+  "guides.checker.none": "Aucun transporteur connu de Peek n’écrit ses numéros ainsi. Vérifie qu’il n’y a pas de faute de frappe, ou cherche le transporteur dans l’e-mail d’expédition."
 }

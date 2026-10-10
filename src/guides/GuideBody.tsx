@@ -4,6 +4,7 @@ import { CARRIER_LINKS } from '../generated/carriers';
 import type { GuideLink } from '../generated/guides';
 import { languagePath, type Locale } from '../lib/locale';
 import type { Block, Inline, JourneyIcon } from './markdown';
+import { NumberChecker, type CheckerWords } from './NumberChecker';
 import { guidePath } from './paths';
 
 /** The tones the parts of a number and the stops of a journey take, in turn. */
@@ -31,12 +32,14 @@ function JourneyGlyph({ name }: { name: JourneyIcon }) {
  * carrier's page and to the tracker (`/`) lead to the guide's own language;
  * every other link leaves the site in a new tab.
  */
-export function GuideBody({ blocks, locale, links, sources }: {
+export function GuideBody({ blocks, locale, links, sources, checker }: {
   blocks: readonly Block[];
   locale: Locale;
   links: readonly GuideLink[];
   /** The heading above the sources, in the reader's language. */
   sources: string;
+  /** What a number checker says, in the reader's language. */
+  checker: CheckerWords;
 }) {
   function inline(nodes: readonly Inline[]): ReactNode {
     return nodes.map((node, index) => {
@@ -98,6 +101,7 @@ export function GuideBody({ blocks, locale, links, sources }: {
           <span>{inline(note)}</span>
         </li>)}
       </ol>;
+      case 'checker': return <NumberChecker key={index} locale={locale} words={checker} />;
       case 'sources': return <section key={index} className="guide-sources" aria-labelledby="guide-sources">
         <h2 id="guide-sources">{sources}</h2>
         <ul>{block.items.map((item, at) => <li key={at}>{inline(item)}</li>)}</ul>

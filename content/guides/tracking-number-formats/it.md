@@ -9,6 +9,9 @@ updated: 2026-10-10
 
 Spesso bastano le lettere e la lunghezza del numero di tracking per capire quale corriere ha il tuo pacco. `1Z` seguito da 16 lettere e cifre è UPS, 18 cifre che iniziano con `99` sono la Posta svizzera, e un codice di 13 caratteri come `RR123456785CH` (due lettere, nove cifre, due lettere) di solito è di una posta nazionale, con il Paese che l'ha emesso nelle ultime due lettere. Il caso difficile sono i codici di sole cifre: 14 cifre, per esempio, possono essere di BRT come di DPD. In quei casi l'ultima parola spetta all'e-mail di spedizione, o a un tracker che prova tutti i corrieri possibili.
 
+:::checker
+:::
+
 ## Ho il codice tracking ma non so il corriere: come faccio?
 
 Quattro controlli, in quest'ordine:

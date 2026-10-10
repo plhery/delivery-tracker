@@ -151,3 +151,46 @@ test('the guides’ own page shows a card for every guide, and its pages answer'
   // The browser reports the page's own 404 status as an error: that is the answer asked for.
   errors.set(page, errors.get(page)!.filter((error) => !/status of 404/.test(error)));
 });
+
+test('the number formats guide names a number’s carrier as it is typed, and tracks it on the landing without an address holding it', async ({ page, baseURL }) => {
+  const { GUIDE_LINKS } = await import('../src/generated/guides');
+  const { CARRIER_LINKS } = await import('../src/generated/carriers');
+  const guide = GUIDE_LINKS.en.find(({ id }) => id === 'tracking-number-formats')!;
+  await page.goto(`/guides/${guide.slug}`);
+  const seen: string[] = [];
+  page.on('framenavigated', (frame) => { if (frame === page.mainFrame()) seen.push(frame.url()); });
+  page.on('request', (request) => seen.push(request.url()));
+  const field = page.getByRole('textbox', { name: en['guides.checker.label'] });
+  await expect(field).toHaveAccessibleDescription(en['guides.checker.hint']);
+  const result = page.locator('#number-checker-result');
+  await field.fill('YT1234567890123456');
+  const yunexpress = CARRIER_LINKS.en.find(({ id }) => id === 'yunexpress')!;
+  await expect(result.getByRole('link', { name: 'YunExpress' })).toHaveAttribute('href', `/carriers/${yunexpress.slug}`);
+  await expect(result).toContainText(en['add.detectedCarrier']);
+  await field.fill('12345');
+  await expect(result).toContainText(en['guides.checker.none']);
+  expect(await overflowing(page)).toEqual([]);
+
+  await field.fill('1ZDEMO202600000001');
+  await field.press('Enter');
+  // The landing takes it as if pasted, and the carrier being certain, opens its parcel.
+  await expect(page).toHaveURL(/\/p\/[2-9A-HJ-NP-Za-km-z]{12}$/);
+  expect(seen).toContain(`${baseURL}/home`);
+  expect(seen.filter((address) => address.includes('1ZDEMO') || address.includes('YT123') || address.includes('12345'))).toEqual([]);
+});
+
+test('a translated number formats guide checks numbers in its own language, on a phone too', async ({ page }) => {
+  const { GUIDE_LINKS } = await import('../src/generated/guides');
+  await page.setViewportSize({ width: 360, height: 760 });
+  await page.goto(`/pl/guides/${GUIDE_LINKS.pl.find(({ id }) => id === 'tracking-number-formats')!.slug}`);
+  const field = page.getByRole('textbox', { name: pl['guides.checker.label'] });
+  await field.fill('CNG12345678900000');
+  const result = page.locator('#number-checker-result');
+  await expect(result.getByRole('link', { name: 'Cainiao' })).toHaveAttribute('href', /^\/pl\/carriers\//);
+  await expect(result).toContainText(pl['guides.checker.maybeNote']);
+  expect(await overflowing(page)).toEqual([]);
+  await field.fill('');
+  await page.getByRole('button', { name: pl['sample.yours.action'] }).click();
+  await expect(field).toBeFocused();
+  expect(new URL(page.url()).pathname).toMatch(/^\/pl\/guides\//);
+});

@@ -9,6 +9,9 @@ updated: 2026-10-10
 
 Litery i długość numeru przesyłki często zdradzają, który przewoźnik ma Twoją paczkę. `1Z` i 16 liter lub cyfr to UPS, `PX` i 10 cyfr to Poczta Polska, numer InPost ma 24 cyfry, a 13 znaków w układzie `RR123456785CH` (dwie litery, dziewięć cyfr, dwie litery) to zwykle numer pocztowy, w którym dwie ostatnie litery wskazują kraj poczty, która go nadała. Najtrudniej jest z samymi cyframi: 10 albo 14 cyfr pasuje do kilku firm, więc rozstrzyga e-mail o wysyłce albo narzędzie, które sprawdzi numer u wszystkich pasujących przewoźników.
 
+:::checker
+:::
+
 ## Jak rozpoznać kuriera po numerze przesyłki?
 
 Ten numer bywa różnie nazywany: numer przesyłki, numer paczki, numer listu przewozowego, a w aplikacjach często numer śledzenia. Niezależnie od nazwy sprawdzaj go po kolei:

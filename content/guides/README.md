@@ -51,7 +51,7 @@ Text.
 - A backslash before `*`, `[`, `]`, `|` or `!` writes the character itself. There are no
   pictures, rules or `*`/`+` lists.
 
-Four blocks are drawn rather than set as text:
+Five blocks are drawn rather than set as text:
 
 ```md
 :::steps
@@ -72,14 +72,18 @@ Four blocks are drawn rather than set as text:
 - home | You | Delivered
 :::
 
+:::checker
+:::
+
 :::sources
 - [Universal Postal Union](https://www.upu.int/) – the S10 standard
 :::
 ```
 
 A journey's stops are `shop`, `label`, `warehouse`, `truck`, `plane`, `ship`, `customs`,
-`handover`, `locker` and `home`. Every guide ends with its `:::sources`: the pages its
-facts were read on.
+`handover`, `locker` and `home`. `:::checker` holds nothing: it draws a field that names the
+carrier of a number as the reader types it, and tracks it on the landing, once per page at
+most. Every guide ends with its `:::sources`: the pages its facts were read on.
 
 ## Writing and translating
 

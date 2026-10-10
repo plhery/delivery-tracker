@@ -9,6 +9,9 @@ updated: 2026-10-10
 
 Les lettres et la longueur d'un numéro de suivi suffisent souvent à savoir quel transporteur a ton colis. `1Z` suivi de 16 lettres et chiffres, c'est UPS ; 18 chiffres qui commencent par `99`, c'est La Poste suisse ; 13 caractères construits comme `RR123456785CH` (deux lettres, neuf chiffres, deux lettres) viennent en général d'une poste nationale, et les deux dernières lettres donnent le pays qui a émis le numéro. Les numéros composés uniquement de chiffres sont plus délicats : 10, 12 ou 14 chiffres correspondent à plusieurs transporteurs, et c'est alors l'e-mail d'expédition, ou un outil qui teste chaque candidat, qui tranche.
 
+:::checker
+:::
+
 ## Comment savoir à quel transporteur appartient un numéro de suivi ?
 
 Quatre vérifications, dans cet ordre :

@@ -1,6 +1,6 @@
 # Peek privacy notice
 
-Effective: 9 October 2026
+Effective: 10 October 2026
 
 Peek follows parcels, on the web and in its iPhone app. This notice says what
 the official service at peektracker.com processes to do that. Peek does not
@@ -322,9 +322,11 @@ a processor must retain for security or legal obligations.
 The browser stores the Supabase session, application preferences, an offline
 application shell, and an account-scoped offline parcel snapshot. A language
 chosen in the app is also kept in a first-party cookie, so pages open in that
-language; it contains only the language code. What you type into the tracking
-box of a carrier's page waits in that tab's session storage until the landing
-opens and takes it, ten minutes at most; it never goes into an address. The
+language; it contains only the language code. A number you track from the box
+of a carrier's page or from a guide's number checker waits in that tab's
+session storage until the landing opens and takes it, ten minutes at most; it
+never goes into an address. The number checker names a carrier from the number's
+shape in your browser, without sending the number anywhere. The
 iPhone app stores its session
 in Keychain and a protected account-scoped parcel snapshot; it requests a
 current APNs token from Apple instead of persisting that token locally. It
