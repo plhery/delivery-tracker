@@ -120,9 +120,10 @@ export function routingFailure(error: unknown): { kind: RoutingFailureKind; retr
 }
 /**
  * An adapter's own inconclusive verdict (17TRACK code 400, ParcelsApp NO_DATA,
- * Postal Ninja's empty lookup) describes the number; an HTTP 5xx describes the provider.
+ * Postal Ninja's empty lookup, a national post's miss) describes the number; an
+ * HTTP 5xx describes the provider.
  */
-function answeredWithoutHistory(error: unknown): boolean {
+export function answeredWithoutHistory(error: unknown): boolean {
   let current = error;
   for (let i = 0; i < 8 && current instanceof Error; i++, current = current.cause) {
     if (current instanceof CarrierError) return current instanceof IndeterminateError;

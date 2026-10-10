@@ -38,7 +38,7 @@ import { WorkerShutdown } from './trackingAudit';
 import { UniversalTrackingError } from 'universal-parcel-scraper/node';
 import { UpstreamHttpError } from 'universal-parcel-scraper/node';
 import { NOOP_RECORDER } from 'universal-parcel-scraper/node';
-import { IndeterminateError, NotFoundError, SchemaError } from 'universal-parcel-scraper';
+import { BudgetExceededError, IndeterminateError, NotFoundError, SchemaError } from 'universal-parcel-scraper';
 import * as scraper from 'universal-parcel-scraper';
 
 // Keep the published plan configurable without changing the scraper's other exports.
@@ -2125,6 +2125,33 @@ describe('TrackingSyncService', () => {
       now = new Date(now.getTime() + 10 * 60_000);
       if (expected.length === 1) destination = 'FI';
     }
+  });
+
+  it.each([
+    ['answers inconclusively', () => new IndeterminateError('Swiss Post', 'Swiss Post returned an inconclusive response'), null],
+    ['answers inconclusively behind a wrapper', () => new Error('lookup failed', { cause: new IndeterminateError('Swiss Post') }), null],
+    ['gets a server error', () => new UpstreamHttpError('Swiss Post', 502), 'transport'],
+    // The first carrier error in the chain decides: running out of time is not an answer.
+    ['runs out of budget after an inconclusive step',
+      () => new BudgetExceededError('Swiss Post', 45_000, { cause: new IndeterminateError('Swiss Post') }), 'transport'],
+  ] as const)('reports a national-post probe that %s as provider_failed unless its first carrier error is inconclusive', async (_case, failure, category) => {
+    const report = vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
+    try {
+      const client = fakeClient();
+      const error = failure();
+      const adapter = { fetch: vi.fn(async (carrier: string): Promise<CarrierResult> => {
+        if (carrier === 'swiss-post') throw error;
+        return { status: 'in_transit', destination_country: 'CH', last_update: '2026-03-04T10:00:00Z' };
+      }) };
+      await new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null)
+        .syncPackage({ id: 'postal-miss', carrier: 'spring-gds', tracking_number: 'LX123456785NL' });
+      expect(adapter.fetch.mock.calls.map((call) => call[0])).toEqual(['spring-gds', 'swiss-post']);
+      expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ sync_status: 'ok', current_stage: 'in_transit' });
+      if (category) expect(report).toHaveBeenCalledExactlyOnceWith('provider_failed', expect.objectContaining({
+        carrier: 'spring-gds', provider: 'swiss-post', category, error,
+      }));
+      else expect(report).not.toHaveBeenCalledWith('provider_failed', expect.anything());
+    } finally { report.mockRestore(); }
   });
 
   it('does not upgrade a saved destination guess into partner evidence during an origin outage', async () => {

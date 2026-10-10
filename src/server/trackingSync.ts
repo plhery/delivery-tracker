@@ -40,7 +40,7 @@ import {
 import { isRecord, type JsonObject } from './types';
 import { UniversalTracker } from 'universal-parcel-scraper/node';
 import type { UniversalSource } from 'universal-parcel-scraper';
-import { detectionNames, directCarrier, freshnessWindow, hasRoutingProgress, RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
+import { answeredWithoutHistory, detectionNames, directCarrier, freshnessWindow, hasRoutingProgress, RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 import { upuHistory } from './upuHistory';
 import { collectedPickupPoint } from './collectedPickupPoint';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
@@ -1635,7 +1635,9 @@ export class TrackingSyncService {
           }
         } catch (error) {
           fallbackError = errorType(error);
-          if (!isUnannouncedTrackingError(error)) reportRoutingEvent('provider_failed', {
+          // A partner that does not know the item yet, or answers inconclusively
+          // (a national post's miss), is waited for, not reported as failing.
+          if (!isUnannouncedTrackingError(error) && !answeredWithoutHistory(error)) reportRoutingEvent('provider_failed', {
             carrier: carrierId, provider: candidate.carrier, trackingNumber, category: routingFailure(error).kind,
             errorClass: fallbackError, error,
           });

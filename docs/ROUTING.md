@@ -299,7 +299,8 @@ A parcel often changes carrier at the border. The origin history is always kept.
 - The partner is only adopted once its own adapter (no required inputs) returns dated,
   fresh progress. A partner whose only input is optional (DPD's postcode) is asked without
   it, and only with a reference of its own number shape, never the origin's postal number. Failed confirmations wait 55 min unless the origin history or the partner
-  changes.
+  changes. A partner that does not know the item yet, or answers inconclusively, is not
+  reported as `provider_failed`; its network failures and server errors still are.
 - Until then the parcel is followed on the origin. The cards, parcel links and the delivered email
   already name the partner the origin names (`delivery_carrier`) as who delivers, and the cards and
   links show its number (`delivery_tracking_number`) after the followed one.
@@ -389,7 +390,7 @@ parcel.
 | `operation:` | Meaning |
 | --- | --- |
 | `transport_fallback` | A direct path needed browser/TRAWL recovery, even if it then succeeded |
-| `provider_failed` | Add `failure_category:rate_limited` (needs less traffic) or `schema` (parser work) |
+| `provider_failed` | A provider failed for a parcel: `category` `rate_limited` needs less traffic, `schema` parser work (logs and breadcrumbs only) |
 | `all_providers_unavailable` | Uncovered parcel or broad outage |
 | `health_store_unavailable` | Migration or database coordination problem |
 | `carrier_auto_swapped` | A carrier correction was committed. When detection already names the new carrier for the number, the log line has `category` `detected` and no issue is opened |
