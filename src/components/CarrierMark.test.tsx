@@ -27,6 +27,13 @@ describe('carrier mark', () => {
     'singapore-post', 'geodis', 'lbc-express', 'spx-ph', 'ekart', 'xpressbees', 'cne', 'yanwen', 'sunyou', 'speedx',
     'spee-dee', 'speedpak', 'the-courier-guy', 'landmark-global', 'old-dominion', 'paack', 'c-chez-vous',
     'ecoscooting', 'correos-chile', 'delivengo', 'intelcom', 'shipup', 'heppner', 'j-and-t-cargo', 'emile',
+    'abf-freight', 'acs-courier', 'allegro-one', 'apc-overnight', 'aras-kargo', 'box-now', 'cdek',
+    'ceska-posta', 'chit-chats', 'correos-de-mexico', 'cyprus-post', 'day-ross', 'dsv', 'dx', 'dynalogic',
+    'envialia', 'epost-global', 'estes', 'fan-courier', 'gebrueder-weiss', 'geniki-taxydromiki', 'jitsu',
+    'kuehne-nagel', 'latvijas-pasts', 'loomis-express', 'lso', 'magyar-posta', 'meest', 'nationex',
+    'post-luxembourg', 'posta-slovenije', 'posta-srbije', 'ptt', 'redpack', 'rl-carriers', 'russian-post',
+    'saia', 'sameday', 'speedy', 'trans-o-flex', 'ubi-smart-parcel', 'wanbexpress', 'whistl', 'xdp', 'xpo-ltl',
+    'yurtici-kargo', 'zeleris',
   ] as const)(
     'renders the declared decoration for %s', (id) => {
       const { container } = render(<CarrierMark carrier={carrierInfo(id)} />);
