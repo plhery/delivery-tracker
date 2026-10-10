@@ -15,6 +15,7 @@ and [`truck.json`](truck.json).
 
 | Carrier | Source |
 | --- | --- |
+| `99minutos` | [99minutos.com](https://www.99minutos.com/) |
 | `abf-freight` | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:ABF_Freight_System_logo.svg) |
 | `acs-courier` | [acscourier.net](https://www.acscourier.net/) |
 | `aliexpress` | [aliexpress.com](https://www.aliexpress.com/) (sampled from the site icon) |
@@ -33,7 +34,9 @@ and [`truck.json`](truck.json).
 | `brt` | [brt.it](https://www.brt.it/) |
 | `canada-post` | [brand cheat sheet (PDF)](https://www.canadapost-postescanada.ca/cpc/doc/en/our-company/media-centre/cpc-brand-cheat-sheet.pdf) |
 | `canpar` | [canpar.com](https://www.canpar.com/) (approximate) |
+| `cargus` | [cargus.ro](https://www.cargus.ro/personal/urmareste-coletul/) |
 | `cdek` | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:CDEK_logo.svg) |
+| `cdl` | [cdldelivers.com](https://cdldelivers.com/) |
 | `ceska-posta` | [ceskaposta.cz](https://www.ceskaposta.cz/) |
 | `china-post` | [chinapost.com.cn](https://www.chinapost.com.cn/) |
 | `chit-chats` | [chitchats.com](https://chitchats.com/) |
@@ -48,13 +51,17 @@ and [`truck.json`](truck.json).
 | `ctt` | [ctt.pt](https://www.ctt.pt/) |
 | `ctt-express` | [cttexpress.com](https://www.cttexpress.com/) |
 | `cyprus-post` | [cypruspost.post](https://www.cypruspost.post/) |
+| `dao` | [dao.as stylesheet](https://dao.as/wp-content/themes/dao-wp/public/app.css) |
 | `day-ross` | [dayross.com, archived](https://web.archive.org/web/20260821021605/https://dayross.com/) |
 | `delhivery` | [delhivery.com](https://www.delhivery.com/) |
 | `dsv` | [dsv.com](https://www.dsv.com/) |
 | `dtdc` | [dtdc.com](https://www.dtdc.com/) (approximate) |
 | `dx` | [dxlogistics.com](https://www.dxlogistics.com/) |
 | `dynalogic` | [dynalogic.eu](https://www.dynalogic.eu/) (approximate) |
+| `early-bird` | [earlybird.se stylesheet](https://earlybird.se/_next/static/immutable/chunks/3459-622kn7wu.css) |
+| `econt` | [econt.com](https://www.econt.com/services/track-shipment) |
 | `ecoscooting` | [ecoscooting.com](https://www.ecoscooting.com/) |
+| `elta` | [logo PNG](https://media.elta.gr/images/0/0/home/hellenic-post-logo4.png) (approximate) |
 | `emile` | [emileps.com](https://www.emileps.com/) |
 | `ems` | [ems.post](https://www.ems.post/) (approximate) |
 | `envialia` | [envialia.com](https://www.envialia.com/) (approximate) |
@@ -62,14 +69,21 @@ and [`truck.json`](truck.json).
 | `estafeta` | [estafeta.com](https://www.estafeta.com/) |
 | `estes` | [estes-express.com](https://www.estes-express.com/) |
 | `evri` | [evri.com](https://www.evri.com/) |
+| `express-one` | [logo SVG](https://expressone.hu/assets/images/logo-black.svg) |
 | `fan-courier` | [fancourier.ro](https://www.fancourier.ro/) |
 | `four-px` | [4px.com](https://www.4px.com/) (sampled from the site icon) |
+| `foxpost` | [logo SVG](https://foxpost.hu/img/header-logo-square.svg) |
 | `gebrueder-weiss` | [gw-world.com](https://www.gw-world.com/) |
+| `geis` | [logo SVG](https://www.geis-group.cz/img/logo.svg) |
 | `geniki-taxydromiki` | [taxydromiki.com](https://taxydromiki.com/) |
 | `geodis` | [geodis.com](https://geodis.com/) (sampled from the site icon) |
+| `go-express` | [general-overnight.com](https://www.general-overnight.com/) (inline header logo fill #B9242B, CSS --bs-primary) |
 | `gofo` | [gofo.com](https://www.gofo.com/us/) |
+| `helthjem` | [logo SVG](https://helthjem.no/next-assets/images/hh_logo.svg) |
 | `hongkong-post` | [hongkongpost.hk](https://www.hongkongpost.hk/en/home/index.html) |
+| `hrvatska-posta` | [logo SVG](https://posiljka.posta.hr/assets/icons/hp-full-logo.svg) |
 | `inpost` | [inpost.pl](https://inpost.pl/) |
+| `instabox` | [favicon SVG](https://track.instabox.com/assets/icons/instabox-favicon.svg) |
 | `intelcom` | [dragonflyshipping.ca](https://dragonflyshipping.ca/) (sampled from the site icon) |
 | `j-and-t` | [jtexpress.ph](https://www.jtexpress.ph/) |
 | `j-and-t-cargo` | [jtcargo.id](https://www.jtcargo.id/) |
@@ -80,9 +94,12 @@ and [`truck.json`](truck.json).
 | `kuehne-nagel` | [kuehne-nagel.com](https://www.kuehne-nagel.com/) |
 | `landmark-global` | [landmarkglobal.com](https://landmarkglobal.com/) |
 | `latvijas-pasts` | [pasts.lv](https://pasts.lv/) |
+| `lietuvos-pastas` | [logo SVG](https://www.post.lt/themes/posttheme/images/logo.svg) |
 | `loomis-express` | [loomisexpress.com](https://loomisexpress.com/) |
 | `lso` | [lso.com](https://www.lso.com/) |
 | `magyar-posta` | [posta.hu](https://www.posta.hu/) (approximate) |
+| `maltapost` | [maltapost.com](https://www.maltapost.com/delivery/app.0994df2816c3a2de401e.js) (the delivery app's theme primary) |
+| `matkahuolto` | [matkahuolto.fi](https://www.matkahuolto.fi/) theme-color |
 | `meest` | [meest.com](https://meest.com/) |
 | `mrw` | [mrw.es](https://www.mrw.es/) |
 | `nacex` | [nacex.es](https://www.nacex.es/) |
@@ -90,9 +107,14 @@ and [`truck.json`](truck.json).
 | `ninja-van` | [ninjavan.co](https://www.ninjavan.co/) |
 | `nz-post` | [nzpost.co.nz](https://www.nzpost.co.nz/) |
 | `old-dominion` | [odfl.com](https://www.odfl.com/) |
+| `omniva` | [logo SVG](https://www.omniva.ee/wp-content/themes/omniva/assets/dist/assets/img/logo/logo-horizontal.svg) |
 | `ontrac` | [ontrac.com](https://www.ontrac.com/) |
+| `orlen-paczka` | [logo SVG](https://www.orlenpaczka.pl/wp-content/themes/orlenpaczka/img/logo.svg) |
+| `osm-worldwide` | [osmworldwide.com](https://www.osmworldwide.com/) |
 | `packeta` | [packeta.com](https://www.packeta.com/) |
+| `paquetexpress` | [paquetexpress.com.mx](https://www.paquetexpress.com.mx/) |
 | `parcelforce` | [parcelforce.com](https://www.parcelforce.com/) |
+| `passport` | [passportglobal.com](https://passportglobal.com/) (CSS #00e796, also the logo P) |
 | `poczta-polska` | [poczta-polska.pl](https://www.poczta-polska.pl/) |
 | `pos-malaysia` | [pos.com.my](https://www.pos.com.my/) |
 | `post-luxembourg` | [post.lu](https://www.post.lu/) |
@@ -101,6 +123,7 @@ and [`truck.json`](truck.json).
 | `poste-italiane` | [poste.it](https://www.poste.it/) |
 | `posti` | [posti.fi](https://www.posti.fi/) |
 | `postnord` | [postnord.com](https://www.postnord.com/) |
+| `ppl` | [logo SVG](https://www.ppl.cz/documents/20122/6525005/hlavi%C4%8Dka+logo+%281%29.svg/0ee90745-08fd-e313-dcd5-8af3a4c68f8c) |
 | `ptt` | [ptt.gov.tr](https://www.ptt.gov.tr/) |
 | `purolator` | [purolator.com](https://www.purolator.com/) (approximate) |
 | `redpack` | [redpack.com.mx](https://www.redpack.com.mx/) (approximate) |
@@ -113,9 +136,12 @@ and [`truck.json`](truck.json).
 | `sf-express` | [sf-express.com](https://www.sf-express.com/chn/en/) |
 | `shipup` | [shipup.co](https://www.shipup.co/) (sampled from the site icon) |
 | `singapore-post` | [singpost.com](https://www.singpost.com/) |
+| `slovak-parcel-service` | [logo SVG](https://www.sps-sro.sk/images/logo.svg) |
+| `slovenska-posta` | [posta.sk](https://www.posta.sk/sledovanie-zasielok) (meta theme-color) |
 | `spee-dee` | [speedeedelivery.com](https://speedeedelivery.com/) |
 | `speedx` | [speedx.io](https://speedx.io/) |
 | `speedy` | [speedy.bg](https://www.speedy.bg/) |
+| `stallion-express` | [icon PNG](https://stallion.ca/wp-content/uploads/2026/09/Stallion-Express-Logo-Icon-Black-on-Orange.png) (approximate) |
 | `sto` | [sto.cn](https://www.sto.cn/) |
 | `sunyou` | [sunyou.hk](https://www.sunyou.hk/) (sampled from the site icon) |
 | `thailand-post` | [international.thailandpost.com](https://international.thailandpost.com/) |
@@ -127,6 +153,8 @@ and [`truck.json`](truck.json).
 | `ukrposhta` | [ukrposhta.ua](https://www.ukrposhta.ua/en) |
 | `uniuni` | [uniuni.com](https://www.uniuni.com/) |
 | `usps` | [usps.com](https://www.usps.com/) |
+| `venipak` | [logo SVG](https://venipak.com/wp-content/uploads/venipak-logo-mob.svg) |
+| `vinted-go` | [vintedgo.com](https://vintedgo.com/) (header background, CSS --primary-dark 0,70,84) |
 | `wanbexpress` | [AfterShip's copy of the logo](https://assets.aftership.com/couriers/svg/wanbexpress.svg) (approximate) |
 | `whistl` | [whistl.co.uk](https://www.whistl.co.uk/) |
 | `xdp` | [xdp.co.uk](https://xdp.co.uk/) |
@@ -145,7 +173,7 @@ and [`truck.json`](truck.json).
 | Decal (carriers) | Mark | Reference |
 | --- | --- | --- |
 | `fedex` | Orange forward arrow on purple | [fedex.com](https://www.fedex.com/) |
-| `dpd` (`dpd`, `dpd-fr`, `dpd-de`, `dpd-uk`, `brt`) | White parcel cube on red; BRT's own logo carries the same cube | [dpd.com](https://www.dpd.com/), [brt.it](https://www.brt.it/) |
+| `dpd` (`dpd`, `dpd-fr`, `dpd-de`, `dpd-uk`, `dpd-ie`, `brt`) | White parcel cube on red; BRT's own logo carries the same cube | [dpd.com](https://www.dpd.com/), [brt.it](https://www.brt.it/) |
 | `amazon` (`amazon-logistics`, `amazon-shipping`) | Orange smile on a dark truck | [shipping.amazon.com](https://shipping.amazon.com/) |
 | `japan-post` | White postal mark on red | [post.japanpost.jp](https://www.post.japanpost.jp/) |
 | `swiss-post` (Swiss Post, Swiss Post Cargo, PostLogistics) | Red Swiss cross and black P on yellow | [Swiss Post brand](https://site.post.ch/en/about-us/company/the-brand-swiss-post) |
@@ -291,3 +319,31 @@ and [`truck.json`](truck.json).
 | `xpo-ltl` | White capitals on red | [xpo.com](https://www.xpo.com/) |
 | `yurtici-kargo` | White chevron and slash beside an orange chevron, the logo's YK symbol, on blue | [yurticikargo.com](https://www.yurticikargo.com/) |
 | `zeleris` | Cluster of five dots and the name, in near-black on lime | [zeleris.com](https://www.zeleris.com/) |
+| `99minutos` | White 99 in a stopwatch ring on green | [99minutos.com](https://www.99minutos.com/) — navbar logo |
+| `cargus` | White Cargus shield, a bar over a folded band, above the name, on orange | [logo](https://www.cargus.ro/wp-content/uploads/CG_LOGO_OGB_RGB-1.svg) |
+| `cdl` | White cube on a red flame beside white CDL, on blue | [cdldelivers.com](https://cdldelivers.com/) — header logo |
+| `dao` | White heavy lowercase dao on red | [logo SVG](https://dao.as/wp-content/uploads/2024/01/DAO-logo-1.svg) |
+| `early-bird` | White name on two lines on orange | [logo SVG](https://earlybird.se/images/earlybird-logo.svg) |
+| `econt` | White slanted ECONT, the E a bracket with a dot, on dark blue | [logo SVG](https://www.econt.com/images/main/econt-logo-en-white.svg) |
+| `elta` | Yellow Greek name ΕΛΤΑ on blue; the blue is the header logo's, the yellow the yellow logo variant's | [logo PNG](https://media.elta.gr/images/0/0/home/hellenic-post-logo4.png) |
+| `express-one` | White double loop with rising tails on orange | [expressone.hu](https://expressone.hu/) |
+| `foxpost` | White fox face, chevron ears over two cheeks with black eyes and nose, on red | [foxpost.hu](https://foxpost.hu/) |
+| `geis` | Navy Geis on a yellow truck edged red | [logo SVG](https://www.geis-group.cz/img/logo.svg) |
+| `go-express` | White GO! on red | [general-overnight.com](https://www.general-overnight.com/) |
+| `helthjem` | Black parcel lid and side over black helthjem on yellow | [logo SVG](https://helthjem.no/next-assets/images/hh_logo.svg) |
+| `hrvatska-posta` | Black crescent post horn on yellow; the black is the wordmark fill in the logo SVG | [posta.hr](https://www.posta.hr/) |
+| `instabox` | White lowercase name on two lines on red | [instabox.com](https://instabox.com/) |
+| `lietuvos-pastas` | Black post horn with the Columns of Gediminas on yellow | [post.lt](https://www.post.lt/) |
+| `maltapost` | White italic name malta post on two lines on red | [maltapost.com](https://www.maltapost.com/) |
+| `matkahuolto` | White ring broken by the white Matkahuolto wordmark, on navy | [matkahuolto.fi](https://www.matkahuolto.fi/) home page logo |
+| `omniva` | White Omniva sign on orange | [omniva.ee](https://www.omniva.ee/) |
+| `orlen-paczka` | White ORLEN over paczka on red | [logo SVG](https://www.orlenpaczka.pl/wp-content/themes/orlenpaczka/img/logo.svg) |
+| `osm-worldwide` | White italic OSM with speed lines and worldwide underneath, on crimson | [osmworldwide.com](https://www.osmworldwide.com/) — header logo |
+| `paquetexpress` | White name on two lines, framed by two L rules, on navy | [paquetexpress.com.mx](https://www.paquetexpress.com.mx/) — header logo |
+| `passport` | Dark P with its paper plane on green | [header logo](https://passportglobal.com/wp-content/uploads/2025/07/passportglobal-horiz-logo.webp) |
+| `ppl` | White speed bars and italic PPL on blue | [ppl.cz](https://www.ppl.cz/) header logo |
+| `slovak-parcel-service` | White SPS loop and swoosh on orange | [logo SVG](https://www.sps-sro.sk/images/logo.svg) |
+| `slovenska-posta` | Black envelope and post horn on yellow | [posta.sk](https://www.posta.sk/sledovanie-zasielok) logo (SPLogo) |
+| `stallion-express` | Black horse-head line mark on orange | [stallion.ca](https://stallion.ca/) |
+| `venipak` | White Venipak V on purple | [venipak.com](https://venipak.com/) |
+| `vinted-go` | White name on two lines on dark teal, Vinted slanted | [logo SVG](https://vintedgo.com/assets/logo.svg) |

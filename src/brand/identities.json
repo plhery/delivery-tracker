@@ -1,4 +1,7 @@
 {
+  "99minutos": {
+    "decal": "99minutos"
+  },
   "abf-freight": {
     "decal": "abf-freight"
   },
@@ -76,8 +79,14 @@
   "canpar": {
     "decal": "canpar"
   },
+  "cargus": {
+    "decal": "cargus"
+  },
   "cdek": {
     "decal": "cdek"
+  },
+  "cdl": {
+    "decal": "cdl"
   },
   "ceska-posta": {
     "decal": "ceska-posta",
@@ -163,6 +172,9 @@
   "dachser": {
     "decal": "dachser"
   },
+  "dao": {
+    "decal": "dao"
+  },
   "day-ross": {
     "decal": "day-ross",
     "palette": {
@@ -217,6 +229,9 @@
   "dpd-fr": {
     "family": "dpd"
   },
+  "dpd-ie": {
+    "family": "dpd"
+  },
   "dpd-uk": {
     "family": "dpd"
   },
@@ -237,11 +252,23 @@
       "accent": "#66839c"
     }
   },
+  "early-bird": {
+    "decal": "early-bird"
+  },
+  "econt": {
+    "decal": "econt"
+  },
   "ecoscooting": {
     "decal": "ecoscooting"
   },
   "ekart": {
     "decal": "ekart"
+  },
+  "elta": {
+    "decal": "elta",
+    "palette": {
+      "accent": "#ebb811"
+    }
   },
   "emile": {
     "decal": "emile",
@@ -278,6 +305,9 @@
   "evri-uk": {
     "family": "evri"
   },
+  "express-one": {
+    "decal": "express-one"
+  },
   "fan-courier": {
     "decal": "fan-courier"
   },
@@ -290,8 +320,19 @@
   "four-px": {
     "decal": "four-px"
   },
+  "foxpost": {
+    "decal": "foxpost"
+  },
   "gebrueder-weiss": {
     "decal": "gebrueder-weiss"
+  },
+  "geis": {
+    "decal": "geis",
+    "palette": {
+      "truck": "#ffe501",
+      "edge": "#ff0001",
+      "accent": "#0a2363"
+    }
   },
   "geniki-taxydromiki": {
     "decal": "geniki-taxydromiki"
@@ -326,8 +367,17 @@
   "gls-it": {
     "family": "gls"
   },
+  "go-express": {
+    "decal": "go-express"
+  },
   "gofo": {
     "decal": "gofo"
+  },
+  "helthjem": {
+    "decal": "helthjem",
+    "palette": {
+      "accent": "#050505"
+    }
   },
   "heppner": {
     "decal": "heppner"
@@ -341,6 +391,12 @@
   "hongkong-post": {
     "decal": "hongkong-post"
   },
+  "hrvatska-posta": {
+    "decal": "hrvatska-posta",
+    "palette": {
+      "accent": "#1d1d1b"
+    }
+  },
   "india-post": {
     "decal": "india-post",
     "palette": {
@@ -353,6 +409,9 @@
       "brand-light": "#1d1d1d"
     },
     "decal": "inpost"
+  },
+  "instabox": {
+    "decal": "instabox"
   },
   "intelcom": {
     "decal": "intelcom"
@@ -398,6 +457,12 @@
   "lbc-express": {
     "decal": "lbc-express"
   },
+  "lietuvos-pastas": {
+    "decal": "lietuvos-pastas",
+    "palette": {
+      "accent": "#000000"
+    }
+  },
   "loomis-express": {
     "decal": "loomis-express",
     "palette": {
@@ -421,6 +486,12 @@
       "edge": "#346631",
       "accent": "#329822"
     }
+  },
+  "maltapost": {
+    "decal": "maltapost"
+  },
+  "matkahuolto": {
+    "decal": "matkahuolto"
   },
   "meest": {
     "decal": "meest",
@@ -464,8 +535,17 @@
   "old-dominion": {
     "decal": "old-dominion"
   },
+  "omniva": {
+    "decal": "omniva"
+  },
   "ontrac": {
     "decal": "ontrac"
+  },
+  "orlen-paczka": {
+    "decal": "orlen-paczka"
+  },
+  "osm-worldwide": {
+    "decal": "osm-worldwide"
   },
   "paack": {
     "decal": "paack"
@@ -473,8 +553,17 @@
   "packeta": {
     "decal": "packeta"
   },
+  "paquetexpress": {
+    "decal": "paquetexpress"
+  },
   "parcelforce": {
     "decal": "parcelforce"
+  },
+  "passport": {
+    "decal": "passport",
+    "palette": {
+      "accent": "#333333"
+    }
   },
   "planzer": {
     "decal": "planzer"
@@ -520,6 +609,9 @@
   },
   "postnord": {
     "decal": "postnord"
+  },
+  "ppl": {
+    "decal": "ppl"
   },
   "ptt": {
     "decal": "ptt"
@@ -578,6 +670,15 @@
   "singapore-post": {
     "decal": "singapore-post"
   },
+  "slovak-parcel-service": {
+    "decal": "slovak-parcel-service"
+  },
+  "slovenska-posta": {
+    "decal": "slovenska-posta",
+    "palette": {
+      "accent": "#1c2024"
+    }
+  },
   "spee-dee": {
     "decal": "spee-dee"
   },
@@ -595,6 +696,12 @@
   },
   "spx-ph": {
     "decal": "spx"
+  },
+  "stallion-express": {
+    "decal": "stallion-express",
+    "palette": {
+      "accent": "#221e20"
+    }
   },
   "sto": {
     "decal": "sto"
@@ -665,6 +772,12 @@
       "edge": "#004b87",
       "accent": "#004b87"
     }
+  },
+  "venipak": {
+    "decal": "venipak"
+  },
+  "vinted-go": {
+    "decal": "vinted-go"
   },
   "wanbexpress": {
     "decal": "wanbexpress",

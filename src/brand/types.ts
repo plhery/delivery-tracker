@@ -44,7 +44,12 @@ export type CarrierDecal = 'default' | 'dhl' | 'ups' | 'fedex' | 'dpd' | 'amazon
   | 'latvijas-pasts' | 'loomis-express' | 'lso' | 'magyar-posta' | 'meest' | 'nationex'
   | 'post-luxembourg' | 'posta-slovenije' | 'posta-srbije' | 'ptt' | 'redpack' | 'rl-carriers'
   | 'russian-post' | 'saia' | 'sameday' | 'speedy' | 'trans-o-flex' | 'ubi-smart-parcel'
-  | 'wanbexpress' | 'whistl' | 'xdp' | 'xpo-ltl' | 'yurtici-kargo' | 'zeleris';
+  | 'wanbexpress' | 'whistl' | 'xdp' | 'xpo-ltl' | 'yurtici-kargo' | 'zeleris' | '99minutos'
+  | 'cargus' | 'cdl' | 'dao' | 'early-bird' | 'econt' | 'elta' | 'express-one' | 'foxpost' | 'geis'
+  | 'go-express' | 'helthjem' | 'hrvatska-posta' | 'instabox' | 'lietuvos-pastas' | 'maltapost'
+  | 'matkahuolto' | 'omniva' | 'orlen-paczka' | 'osm-worldwide' | 'paquetexpress' | 'passport'
+  | 'ppl' | 'slovak-parcel-service' | 'slovenska-posta' | 'stallion-express' | 'venipak'
+  | 'vinted-go';
 
 /** How one property is mixed out of the carrier's catalog color. */
 export interface BrandDerivationStep {
