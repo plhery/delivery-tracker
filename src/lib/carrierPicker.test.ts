@@ -25,7 +25,7 @@ const names = (query: string, preferred?: CarrierId[]) => search(query, preferre
 describe('carrier search', () => {
   it('finds a name by its start, then by a later word', () => {
     expect(names('dpd').slice(0, 2)).toEqual(['DPD France', 'DPD Germany']);
-    expect(names('post').slice(0, 3)).toEqual(['Poste Italiane', 'Posti', 'PostLogistics']);
+    expect(names('post').slice(0, 3)).toEqual(['POST Luxembourg', 'Pošta Slovenije', 'Pošta Srbije']);
     expect(names('post')).toContain('Swiss Post');
   });
 

@@ -165,6 +165,56 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
     static let emile = CarrierID(rawValue: "emile")
     static let gofoFr = CarrierID(rawValue: "gofo-fr")
     static let gofoIt = CarrierID(rawValue: "gofo-it")
+    static let abfFreight = CarrierID(rawValue: "abf-freight")
+    static let acsCourier = CarrierID(rawValue: "acs-courier")
+    static let allegroOne = CarrierID(rawValue: "allegro-one")
+    static let apcOvernight = CarrierID(rawValue: "apc-overnight")
+    static let arasKargo = CarrierID(rawValue: "aras-kargo")
+    static let boxNow = CarrierID(rawValue: "box-now")
+    static let cdek = CarrierID(rawValue: "cdek")
+    static let ceskaPosta = CarrierID(rawValue: "ceska-posta")
+    static let chitChats = CarrierID(rawValue: "chit-chats")
+    static let correosDeMexico = CarrierID(rawValue: "correos-de-mexico")
+    static let cyprusPost = CarrierID(rawValue: "cyprus-post")
+    static let dayRoss = CarrierID(rawValue: "day-ross")
+    static let dsv = CarrierID(rawValue: "dsv")
+    static let dx = CarrierID(rawValue: "dx")
+    static let dynalogic = CarrierID(rawValue: "dynalogic")
+    static let envialia = CarrierID(rawValue: "envialia")
+    static let epostGlobal = CarrierID(rawValue: "epost-global")
+    static let estes = CarrierID(rawValue: "estes")
+    static let fanCourier = CarrierID(rawValue: "fan-courier")
+    static let gebruederWeiss = CarrierID(rawValue: "gebrueder-weiss")
+    static let genikiTaxydromiki = CarrierID(rawValue: "geniki-taxydromiki")
+    static let glsEs = CarrierID(rawValue: "gls-es")
+    static let glsIt = CarrierID(rawValue: "gls-it")
+    static let jitsu = CarrierID(rawValue: "jitsu")
+    static let kuehneNagel = CarrierID(rawValue: "kuehne-nagel")
+    static let latvijasPasts = CarrierID(rawValue: "latvijas-pasts")
+    static let loomisExpress = CarrierID(rawValue: "loomis-express")
+    static let lso = CarrierID(rawValue: "lso")
+    static let magyarPosta = CarrierID(rawValue: "magyar-posta")
+    static let meest = CarrierID(rawValue: "meest")
+    static let mngKargo = CarrierID(rawValue: "mng-kargo")
+    static let nationex = CarrierID(rawValue: "nationex")
+    static let postLuxembourg = CarrierID(rawValue: "post-luxembourg")
+    static let postaSlovenije = CarrierID(rawValue: "posta-slovenije")
+    static let postaSrbije = CarrierID(rawValue: "posta-srbije")
+    static let ptt = CarrierID(rawValue: "ptt")
+    static let redpack = CarrierID(rawValue: "redpack")
+    static let rlCarriers = CarrierID(rawValue: "rl-carriers")
+    static let russianPost = CarrierID(rawValue: "russian-post")
+    static let saia = CarrierID(rawValue: "saia")
+    static let sameday = CarrierID(rawValue: "sameday")
+    static let speedy = CarrierID(rawValue: "speedy")
+    static let transOFlex = CarrierID(rawValue: "trans-o-flex")
+    static let ubiSmartParcel = CarrierID(rawValue: "ubi-smart-parcel")
+    static let wanbexpress = CarrierID(rawValue: "wanbexpress")
+    static let whistl = CarrierID(rawValue: "whistl")
+    static let xdp = CarrierID(rawValue: "xdp")
+    static let xpoLtl = CarrierID(rawValue: "xpo-ltl")
+    static let yurticiKargo = CarrierID(rawValue: "yurtici-kargo")
+    static let zeleris = CarrierID(rawValue: "zeleris")
 
     static let allCases: [CarrierID] = [
         .swissPost,
@@ -295,6 +345,56 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
         .emile,
         .gofoFr,
         .gofoIt,
+        .abfFreight,
+        .acsCourier,
+        .allegroOne,
+        .apcOvernight,
+        .arasKargo,
+        .boxNow,
+        .cdek,
+        .ceskaPosta,
+        .chitChats,
+        .correosDeMexico,
+        .cyprusPost,
+        .dayRoss,
+        .dsv,
+        .dx,
+        .dynalogic,
+        .envialia,
+        .epostGlobal,
+        .estes,
+        .fanCourier,
+        .gebruederWeiss,
+        .genikiTaxydromiki,
+        .glsEs,
+        .glsIt,
+        .jitsu,
+        .kuehneNagel,
+        .latvijasPasts,
+        .loomisExpress,
+        .lso,
+        .magyarPosta,
+        .meest,
+        .mngKargo,
+        .nationex,
+        .postLuxembourg,
+        .postaSlovenije,
+        .postaSrbije,
+        .ptt,
+        .redpack,
+        .rlCarriers,
+        .russianPost,
+        .saia,
+        .sameday,
+        .speedy,
+        .transOFlex,
+        .ubiSmartParcel,
+        .wanbexpress,
+        .whistl,
+        .xdp,
+        .xpoLtl,
+        .yurticiKargo,
+        .zeleris,
     ]
 
     init(from decoder: Decoder) throws {
