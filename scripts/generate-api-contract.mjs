@@ -230,6 +230,7 @@ const swiftInlineNames = {
 };
 
 const swiftEnumCaseNames = {
+  'CarrierId.99minutos': 'ninetyNineMinutos',
   'CarrierId.intl-post': 'internationalPost',
   'CarrierId.spring-gds': 'springGDS',
 };
@@ -318,7 +319,9 @@ function upperFirst(value) {
 
 function lowerCamelIdentifier(value) {
   const words = value.split(/[-_]/).filter(Boolean);
-  if (words.length === 0) throw new Error(`Cannot generate a Swift identifier for ${value}`);
+  if (words.length === 0 || /^[0-9]/.test(words[0])) {
+    throw new Error(`Cannot generate a Swift identifier for ${value}; name it in swiftEnumCaseNames`);
+  }
   return words[0] + words.slice(1).map(upperFirst).join('');
 }
 

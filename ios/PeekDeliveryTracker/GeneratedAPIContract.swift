@@ -215,7 +215,7 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
     static let xpoLtl = CarrierID(rawValue: "xpo-ltl")
     static let yurticiKargo = CarrierID(rawValue: "yurtici-kargo")
     static let zeleris = CarrierID(rawValue: "zeleris")
-    static let 99minutos = CarrierID(rawValue: "99minutos")
+    static let ninetyNineMinutos = CarrierID(rawValue: "99minutos")
     static let cargus = CarrierID(rawValue: "cargus")
     static let cdl = CarrierID(rawValue: "cdl")
     static let dao = CarrierID(rawValue: "dao")
@@ -424,7 +424,7 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
         .xpoLtl,
         .yurticiKargo,
         .zeleris,
-        .99minutos,
+        .ninetyNineMinutos,
         .cargus,
         .cdl,
         .dao,
