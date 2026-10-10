@@ -183,14 +183,14 @@ export function ParcelDetail({
     notes: feedbackNotes,
     send: async (answer) => { await sendFeedback?.(parcel.id, answer); },
   });
-  const backButton = useRef<HTMLButtonElement>(null);
   const actionsMenu = useRef<HTMLDetailsElement>(null);
   const header = useRef<HTMLElement>(null);
   const hero = useRef<HTMLElement>(null);
   // The second mark stands over the map, which keeps clear of it.
   const [deliveryMark, deliveryMarkBox] = useCoveredBox<HTMLSpanElement>(hero, placed && !!deliveryLabel);
   // The page opens out of its card and goes back into it: the hero is the card's counterpart.
-  const [dialog, onBack] = useCardDialog<HTMLDivElement>(onDismissed, backButton, {
+  // The page itself takes the focus: a back button focused on a cold start, as from a notification, would wear its focus ring.
+  const [dialog, onBack] = useCardDialog<HTMLDivElement>(onDismissed, undefined, {
     origin: openingOrigin,
     findCard: () => document.querySelector<HTMLElement>(`.parcel-card-swipe[data-parcel-id="${CSS.escape(parcel.id)}"] .parcel-card`),
     anchor: () => hero.current,
@@ -392,7 +392,7 @@ export function ParcelDetail({
       onPointerCancel={() => { swipeStart.current = null; }}
     >
       <header ref={header} className="detail__header">
-        <button ref={backButton} type="button" className="detail__back" onClick={onBack}>
+        <button type="button" className="detail__back" onClick={onBack}>
           <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m13 4-6 6 6 6" /></svg>
           {t('detail.back')}
         </button>
