@@ -215,6 +215,35 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
     static let xpoLtl = CarrierID(rawValue: "xpo-ltl")
     static let yurticiKargo = CarrierID(rawValue: "yurtici-kargo")
     static let zeleris = CarrierID(rawValue: "zeleris")
+    static let 99minutos = CarrierID(rawValue: "99minutos")
+    static let cargus = CarrierID(rawValue: "cargus")
+    static let cdl = CarrierID(rawValue: "cdl")
+    static let dao = CarrierID(rawValue: "dao")
+    static let dpdIe = CarrierID(rawValue: "dpd-ie")
+    static let earlyBird = CarrierID(rawValue: "early-bird")
+    static let econt = CarrierID(rawValue: "econt")
+    static let elta = CarrierID(rawValue: "elta")
+    static let expressOne = CarrierID(rawValue: "express-one")
+    static let foxpost = CarrierID(rawValue: "foxpost")
+    static let geis = CarrierID(rawValue: "geis")
+    static let goExpress = CarrierID(rawValue: "go-express")
+    static let helthjem = CarrierID(rawValue: "helthjem")
+    static let hrvatskaPosta = CarrierID(rawValue: "hrvatska-posta")
+    static let instabox = CarrierID(rawValue: "instabox")
+    static let lietuvosPastas = CarrierID(rawValue: "lietuvos-pastas")
+    static let maltapost = CarrierID(rawValue: "maltapost")
+    static let matkahuolto = CarrierID(rawValue: "matkahuolto")
+    static let omniva = CarrierID(rawValue: "omniva")
+    static let orlenPaczka = CarrierID(rawValue: "orlen-paczka")
+    static let osmWorldwide = CarrierID(rawValue: "osm-worldwide")
+    static let paquetexpress = CarrierID(rawValue: "paquetexpress")
+    static let passport = CarrierID(rawValue: "passport")
+    static let ppl = CarrierID(rawValue: "ppl")
+    static let slovakParcelService = CarrierID(rawValue: "slovak-parcel-service")
+    static let slovenskaPosta = CarrierID(rawValue: "slovenska-posta")
+    static let stallionExpress = CarrierID(rawValue: "stallion-express")
+    static let venipak = CarrierID(rawValue: "venipak")
+    static let vintedGo = CarrierID(rawValue: "vinted-go")
 
     static let allCases: [CarrierID] = [
         .swissPost,
@@ -395,6 +424,35 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
         .xpoLtl,
         .yurticiKargo,
         .zeleris,
+        .99minutos,
+        .cargus,
+        .cdl,
+        .dao,
+        .dpdIe,
+        .earlyBird,
+        .econt,
+        .elta,
+        .expressOne,
+        .foxpost,
+        .geis,
+        .goExpress,
+        .helthjem,
+        .hrvatskaPosta,
+        .instabox,
+        .lietuvosPastas,
+        .maltapost,
+        .matkahuolto,
+        .omniva,
+        .orlenPaczka,
+        .osmWorldwide,
+        .paquetexpress,
+        .passport,
+        .ppl,
+        .slovakParcelService,
+        .slovenskaPosta,
+        .stallionExpress,
+        .venipak,
+        .vintedGo,
     ]
 
     init(from decoder: Decoder) throws {

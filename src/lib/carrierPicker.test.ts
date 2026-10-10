@@ -74,7 +74,7 @@ describe('carrier sections', () => {
     const sections = alphabetSections(SELECTABLE_CARRIERS, 'en-CH');
     expect(sections.flatMap((section) => section.carriers)).toHaveLength(SELECTABLE_CARRIERS.length);
     expect(sections[0].letter).toBe('A');
-    expect(sections.at(-1)).toEqual({ letter: '#', carriers: [carrierInfo('four-px')] });
+    expect(sections.at(-1)).toEqual({ letter: '#', carriers: [carrierInfo('four-px'), carrierInfo('99minutos')] });
     expect(sections.find((section) => section.letter === 'C')?.carriers.map((carrier) => carrier.name))
       .toContain('Colis Privé');
   });
