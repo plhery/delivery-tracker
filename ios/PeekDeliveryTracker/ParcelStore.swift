@@ -31,7 +31,8 @@ final class ParcelStore: ObservableObject {
     }
 
     /// Live Activities are switched off: the store ends any still showing and withdraws this
-    /// iPhone's registration, so the server starts no more.
+    /// iPhone's registration, so the server starts no more. `NSSupportsLiveActivities` in
+    /// Info.plist is off with it, so iOS shows no switch for them either: turn both on together.
     static let offersLiveActivities = false
 
     @Published private(set) var parcels: [Parcel] = [] {

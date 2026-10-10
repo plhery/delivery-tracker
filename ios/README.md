@@ -75,14 +75,24 @@ carrier detection do not need a check. Debug uses development App Attest keys,
 Release uses production keys; only a separate development server accepts the
 former. Server settings are in [DEPLOYMENT.md](../docs/DEPLOYMENT.md).
 
+## App Store builds
+
+- Each of the three targets carries a `PrivacyInfo.xcprivacy`. The app's lists the data
+  [PRIVACY.md](../PRIVACY.md) describes; change the two together.
+- The App Store doesn't take Google sign-in without Sign in with Apple. Ship with
+  `SDT_GOOGLE_AUTH_ENABLED = NO` until `SDT_APPLE_AUTH_ENABLED` is on.
+- The app and its extensions share one version: `MARKETING_VERSION` and
+  `CURRENT_PROJECT_VERSION` in the project.
+
 ## Notifications and widgets
 
 - The app asks for notification permission only after the user taps Enable (from a small
   prompt above the tab bar, or from Account). The device token goes to the API and isn't
   stored locally. Debug builds use the APNs sandbox and Release builds use production.
-- **Live Activities** are switched off (`ParcelStore.offersLiveActivities`). Settings has no
-  switch for them, and the app ends any still showing and withdraws the iPhone's
-  registration, so the server starts none.
+- **Live Activities** are switched off (`ParcelStore.offersLiveActivities`, and
+  `NSSupportsLiveActivities` in `Info.plist`). Settings has no switch for them, and the
+  app ends any still showing and withdraws the iPhone's registration, so the server
+  starts none.
 - **The widget** shows the next parcel and up to two out-for-delivery parcels. Tapping one
   opens it.
 - **The delivery email** belongs to the account, not the device. Settings › Delivery updates
