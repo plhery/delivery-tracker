@@ -439,9 +439,13 @@ describe('carrier detection', () => {
     expect(detectCarrier('LF123456789DE')).toBe('unknown');
     expect(detectCarrier('LF123456785US')).toBe('intl-post');
     // MERCHANT EXAMPLE, Fnac Darty JD family (JD + 18 digits, distinct from JJD/JVGL
-    // and from InPost legacy JD + 16 digits).
+    // and from InPost legacy JD + 16 digits). In the JD01 range it is a DHL Express
+    // piece; outside it, a DHL Paket plate typed without its J only suggests DHL.
     // Source: https://marketplace.fnacdarty.com/s/article/Dois-je-obligatoirement-renseigner-un-num%C3%A9ro-de-suivi-tracking-pour-ma-commande?language=fr_BE
-    expect(detectCarrier('JD014600011678034918')).toBe('dhl');
+    expect(detectCarrier('JD014600011678034918')).toBe('dhl-express');
+    expect(detectCarrierMatch('JD000123456789012345')).toEqual({
+      carrier: 'unknown', confidence: 'low', candidates: ['dhl'], preferred: [],
+    });
     // REPORTED REAL 20-digit DHL shipment in the 00340434 range.
     // Source: https://www.paketda.de/fragen-antworten
     expect(detectCarrierMatch('00340434633751428115')).toEqual({
@@ -1597,6 +1601,7 @@ describe('expanded carrier catalog', () => {
     ['https://gls-group.com/DE/de/paketverfolgung?match=12345678901', 'gls-de', '12345678901'],
     ['https://gls-group.eu/FR/fr/suivi-colis?match=12345678901', 'gls-fr', '12345678901'],
     ['https://gls-group.eu/CH/en/parcel-tracking?match=12345678901', 'gls-ch', '12345678901'],
+    ['https://gls-group.eu/EU/en/parcel-tracking?match=12345678901', 'gls-de', '12345678901'],
     ['https://t.17track.net/en#nums=1Z999AA10123456784', 'ups', '1Z999AA10123456784'],
     ['https://parcelsapp.com/fr/tracking/ZZ12345678900', 'unknown', 'ZZ12345678900'],
     ['https://t.17track.net/fr#nums=ZZ12345678900', 'unknown', 'ZZ12345678900'],
@@ -1828,7 +1833,7 @@ describe('parseTrackingInput', () => {
     ['dhl', '1234567890'],
     ['ups', '1Z999AA10123456784'],
     ['fedex', '123456789012'],
-    ['gls-ch', '993990103198'],
+    ['gls-de', '10272483975'],
     ['dpd', '01234567890123'],
     ['dpd-fr', '250123456789012'],
     ['la-poste', '8G12345678901'],

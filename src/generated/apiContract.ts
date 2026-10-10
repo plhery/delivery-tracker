@@ -480,7 +480,7 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       },
       {
-        "pattern": "^JJD(?!\\d{16}$)[A-Z0-9]{8,}$",
+        "pattern": "^JJD(?!\\d{16}$)(?!0146\\d{14}$)[A-Z0-9]{8,}$",
         "confidence": "high"
       },
       {
@@ -488,12 +488,12 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       },
       {
-        "pattern": "^\\d{10}$",
+        "pattern": "^JD(?!01)\\d{18}$",
         "confidence": "low"
       },
       {
-        "pattern": "^JD\\d{18}$",
-        "confidence": "high"
+        "pattern": "^\\d{10}$",
+        "confidence": "low"
       },
       {
         "pattern": "^0034043[345]\\d{12}$",
@@ -828,9 +828,9 @@ export const CARRIER_CAPABILITIES = {
           "autoComplete": "postal-code"
         }
       ],
-      "recognitionRank": 60
+      "recognitionRank": 50
     },
-    "trackingUrlTemplate": "https://gls-group.eu/EU/en/parcel-tracking?match={trackingNumber}",
+    "trackingUrlTemplate": "https://gls-group.eu/GROUP/en/parcel-tracking?match={trackingNumber}",
     "linkRules": [
       {
         "domains": [
@@ -841,7 +841,7 @@ export const CARRIER_CAPABILITIES = {
           "parcelNumber",
           "matchParcelNumber"
         ],
-        "pathPattern": "^/(?:EU|CH)/"
+        "pathPattern": "^/CH/"
       }
     ],
     "detectionRules": [
@@ -871,7 +871,7 @@ export const CARRIER_CAPABILITIES = {
       "CH",
       "LI"
     ],
-    "trackingSearchUrl": "https://gls-group.eu/EU/en/parcel-tracking"
+    "trackingSearchUrl": "https://gls-group.eu/GROUP/en/parcel-tracking"
   },
   "dpd": {
     "displayName": "DPD Switzerland",
@@ -1699,16 +1699,16 @@ export const CARRIER_CAPABILITIES = {
           "autoComplete": "postal-code"
         }
       ],
-      "recognitionRank": 50
+      "recognitionRank": 60
     },
-    "trackingUrlTemplate": "https://gls-group.eu/DE/de/paketverfolgung?match={trackingNumber}",
+    "trackingUrlTemplate": "https://gls-group.eu/EU/en/parcel-tracking?match={trackingNumber}",
     "linkRules": [
       {
         "domains": [
           "gls-group.eu",
           "gls-group.com"
         ],
-        "pathPattern": "^/DE/",
+        "pathPattern": "^/(?:DE|EU)/",
         "params": [
           "match",
           "parcelNumber",
@@ -1747,7 +1747,7 @@ export const CARRIER_CAPABILITIES = {
     "countries": [
       "DE"
     ],
-    "trackingSearchUrl": "https://gls-group.eu/DE/de/paketverfolgung"
+    "trackingSearchUrl": "https://gls-group.eu/EU/en/parcel-tracking"
   },
   "delivengo": {
     "displayName": "Delivengo",
@@ -4491,6 +4491,14 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low",
         "checksum": "dhl-express",
         "preferred": true
+      },
+      {
+        "pattern": "^JD01\\d{16}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^JJD0146\\d{14}$",
+        "confidence": "high"
       }
     ],
     "trackingSearchUrl": "https://www.dhl.com/gb-en/home/tracking.html"

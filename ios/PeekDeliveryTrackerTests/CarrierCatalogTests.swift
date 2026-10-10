@@ -259,7 +259,7 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(ambiguous.confidence, .low)
         XCTAssertEqual(ambiguous.carrier, .unknown)
         // The scraper may add a network to the shape; the known ones keep their order.
-        XCTAssertEqual(asked.filter { [.glsCh, .glsDe, .postlogistics].contains($0) }, [.glsCh, .glsDe, .postlogistics])
+        XCTAssertEqual(asked.filter { [.glsCh, .glsDe, .postlogistics].contains($0) }, [.glsDe, .glsCh, .postlogistics])
         XCTAssertTrue(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: false))
         XCTAssertFalse(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: true))
         XCTAssertFalse(CarrierRecognition.applies(to: ambiguous, amazon: true, demo: false))

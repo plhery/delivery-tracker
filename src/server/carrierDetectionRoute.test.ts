@@ -49,7 +49,7 @@ const fourteen = recognitionAskedCarriers('06080000000002');
 
 // Answers are cached per number for a few minutes, so every test uses its own numbers.
 
-it('uses the device region to order queries, partitions its cache and preserves same-brand settlement', async () => {
+it('uses the device region to order queries, partitions its cache and settles a brand on the region\'s network', async () => {
   const number = '00000000051';
   recognize.mockImplementation(knows('gls-ch', 'gls-de'));
   const detect = (country: string) => POST(new NextRequest('https://delivery.example/api/carriers/detect', {
@@ -58,11 +58,12 @@ it('uses the device region to order queries, partitions its cache and preserves 
     body: JSON.stringify({ trackingNumber: number, lookupCountryHint: country }),
   }), { params: Promise.resolve({}) });
   const german = await (await detect('DE')).json();
-  expect(german.carrier).toBe('gls-ch');
+  expect(german.carrier).toBe('gls-de');
   expect(german.asked).toEqual(recognitionAskedCarriers(number, { countryHint: 'DE' }));
   expect(german.asked[0]).toBe('gls-de');
   const count = recognize.mock.calls.length;
   const swiss = await (await detect('CH')).json();
+  expect(swiss.carrier).toBe('gls-ch');
   expect(swiss.asked[0]).toBe('gls-ch');
   expect(recognize.mock.calls.length).toBeGreaterThan(count);
   const answered = recognize.mock.calls.length;
@@ -109,7 +110,7 @@ it('returns the one carrier that knows an ambiguous number', async () => {
 it('offers a carrier that needs a postcode so the sheet can ask for it', async () => {
   // Both GLS networks answer from one overview: the more common one is returned.
   recognize.mockImplementation(knows('gls-ch', 'gls-de'));
-  expect(await (await request('12345678901')).json()).toMatchObject({ trackingNumber: '12345678901', carrier: 'gls-ch' });
+  expect(await (await request('12345678901')).json()).toMatchObject({ trackingNumber: '12345678901', carrier: 'gls-de' });
 });
 
 it.each([

@@ -644,18 +644,18 @@ describe('persistent tracking routing', () => {
       const result = await router.fetch(parcel({ tracking_number: '12345678901' }), false);
       expect(asked(recognize)).toEqual(recognitionAskedCarriers('12345678901'));
       expect(direct).not.toHaveBeenCalled();
-      expect(result.result.routing).toMatchObject({ input_needed: { carrier: 'gls-ch', field: 'dpdPostcode' } });
-      expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('carrier_input_needed', expect.objectContaining({ provider: 'gls-ch' }));
+      expect(result.result.routing).toMatchObject({ input_needed: { carrier: 'gls-de', field: 'dpdPostcode' } });
+      expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('carrier_input_needed', expect.objectContaining({ provider: 'gls-de' }));
       // Once the user files it under GLS with the postcode and it tracks, nothing is left to ask.
       const next = setup(new Date('2026-09-10T13:30:00Z'));
-      next.direct.mockResolvedValue(directValue('gls-ch'));
-      const tracked = await next.router.fetch(parcel({ carrier: 'gls-ch', dpd_postcode: '8000', tracking_number: '12345678901',
+      next.direct.mockResolvedValue(directValue('gls-de'));
+      const tracked = await next.router.fetch(parcel({ carrier: 'gls-de', dpd_postcode: '10115', tracking_number: '12345678901',
         carrier_data: result.result }), false);
       expect(tracked.result.routing).not.toHaveProperty('input_needed');
       // Nor once the carrier, asked again, no longer knows the number.
       const later = setup(new Date('2026-09-11T13:30:00Z'));
       const forgotten = await later.router.fetch(parcel({ tracking_number: '12345678901', carrier_data: result.result }), false);
-      expect(asked(later.recognize)).toContain('gls-ch');
+      expect(asked(later.recognize)).toContain('gls-de');
       expect(forgotten.result.routing).not.toHaveProperty('input_needed');
     });
     it.each([
