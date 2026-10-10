@@ -920,6 +920,8 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         case "fedex-ground-96": isValidFedExGround96Barcode(number)
         case "fedex-1d": isValidFedEx1DBarcode(number)
         case "identcode": isValidDhlIdentcode(number)
+        case "fedex-ground-economy": isValidFedExGroundEconomyNumber(number)
+        case "pos-laju": isValidPosLajuConsignment(number)
         default: nil
         }
     }
@@ -1012,6 +1014,12 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     /// its GS1 mod 10 check covers only those fifteen digits.
     static func isValidFedExGround96Barcode(_ value: String) -> Bool {
         matches(value, pattern: "^96[0-9]{20}$") && hasGs1CheckDigit(String(value.dropFirst(7)))
+    }
+
+    /// FedEx Ground Economy's 20-digit number is a USPS package identifier without its `92`
+    /// channel; its check digit is the identifier's MOD10, computed with the `92` in front.
+    static func isValidFedExGroundEconomyNumber(_ value: String) -> Bool {
+        matches(value, pattern: "^[0-9]{20}$") && hasGs1CheckDigit("92" + value)
     }
 
     /// FedEx's 34-digit barcode carries a 12-digit FedEx number behind two zeros in positions
@@ -1121,17 +1129,28 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         return alphabet[(37 - remainder) % 36] == value.last
     }
 
+    /// The ninth of nine digits checks the first eight: weights 8, 6, 4, 2, 3, 5, 9, 7, then
+    /// 11 minus the sum mod 11, where 10 becomes 0 and 11 becomes 5.
+    private static func hasS10CheckDigit(_ digits: Substring) -> Bool {
+        let values = digits.compactMap(\.wholeNumberValue)
+        guard values.count == 9 else { return false }
+        let weights = [8, 6, 4, 2, 3, 5, 9, 7]
+        let sum = weights.enumerated().reduce(0) { $0 + values[$1.offset] * $1.element }
+        let rawCheck = 11 - sum % 11
+        let expected = rawCheck == 10 ? 0 : (rawCheck == 11 ? 5 : rawCheck)
+        return values[8] == expected
+    }
+
     static func isValidS10(_ raw: String) -> Bool {
         let value = normalize(raw)
         guard matches(value, pattern: "^[A-Z]{2}[0-9]{9}[A-Z]{2}$") else { return false }
-        let characters = Array(value)
-        let weights = [8, 6, 4, 2, 3, 5, 9, 7]
-        let sum = weights.enumerated().reduce(0) { partial, item in
-            partial + (characters[item.offset + 2].wholeNumberValue ?? 0) * item.element
-        }
-        let rawCheck = 11 - sum % 11
-        let expected = rawCheck == 10 ? 0 : (rawCheck == 11 ? 5 : rawCheck)
-        return characters[10].wholeNumberValue == expected
+        return hasS10CheckDigit(value.dropFirst(2).prefix(9))
+    }
+
+    /// A Pos Laju consignment: three letters, nine digits and MY. The ninth digit is the S10
+    /// check digit of the eight before it; the extra letter is outside the check.
+    static func isValidPosLajuConsignment(_ value: String) -> Bool {
+        matches(value, pattern: "^[A-Z]{3}[0-9]{9}MY$") && hasS10CheckDigit(value.dropFirst(3).prefix(9))
     }
 
     static func supportsSwissPostHandoff(_ raw: String) -> Bool {

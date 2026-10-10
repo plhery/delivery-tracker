@@ -1031,6 +1031,47 @@ final class CarrierCatalogTests: XCTestCase {
         }
     }
 
+    /// Made-up Ground Economy numbers: a USPS package identifier without its `92` channel,
+    /// whose check digit counts the `92` it left out.
+    func testFedExGroundEconomyNumbersCheckWithTheUspsChannelInFront() {
+        for number in ["61299999999900000010", "74899999999900000023", "61299999999900000034"] {
+            XCTAssertTrue(CarrierCatalog.isValidFedExGroundEconomyNumber(number), number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("fedex-ground-economy", number), true, number)
+            // The check over the twenty digits alone proves nothing.
+            XCTAssertEqual(CarrierCatalog.checksumPasses("gs1", number), false, number)
+        }
+        for number in [
+            "61299999999900000011", "74899999999900000020",
+            // The 22-digit identifier is not the twenty-digit number.
+            "9261299999999900000010", "6129999999990000001", "612999999999000000100",
+            "61299999999900000010\n", "\u{0669}1299999999900000010", "6129 9999999900000010",
+        ] {
+            XCTAssertFalse(CarrierCatalog.isValidFedExGroundEconomyNumber(number), number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("fedex-ground-economy", number), false, number)
+        }
+    }
+
+    /// Made-up Pos Laju consignments: the S10 check digit on the nine digits after three letters.
+    func testPosLajuConsignmentsCarryTheS10CheckDigit() {
+        // 0 + … = 0 closes with 5; 8 × 7 = 56 leaves 1, so 10 closes with 0.
+        for number in ["EHE000000005MY", "ERA123456785MY", "XYZ000000080MY"] {
+            XCTAssertTrue(CarrierCatalog.isValidPosLajuConsignment(number), number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("pos-laju", number), true, number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("s10", number), false, number)
+        }
+        for number in [
+            "EHE000000006MY", "ERA123456780MY", "XYZ000000085MY", "XYZ000000081MY",
+            "HE000000005MY", "EEHE000000005MY", "EH1000000005MY", "EHE000000005MX", "EHE000000005M",
+            "ehe000000005MY", "EHE 000000005 MY", "EHE000000005MY\n", "EHE\u{0669}00000005MY",
+        ] {
+            XCTAssertFalse(CarrierCatalog.isValidPosLajuConsignment(number), number)
+            XCTAssertEqual(CarrierCatalog.checksumPasses("pos-laju", number), false, number)
+        }
+        // The two-letter S10 check is unchanged.
+        XCTAssertTrue(CarrierCatalog.isValidS10("EH000000005MY"))
+        XCTAssertFalse(CarrierCatalog.isValidS10("EH000000006MY"))
+    }
+
     func testPostlogisticsPrintedReferenceAndTrackingLink() throws {
         let printed = "12345678-001"
         let compact = "12345678001"
