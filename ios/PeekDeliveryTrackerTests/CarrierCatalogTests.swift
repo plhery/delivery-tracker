@@ -939,16 +939,20 @@ final class CarrierCatalogTests: XCTestCase {
         // Synthetic PICs, with independently calculated MOD10 check digits.
         let pic = "9210090000000012345679"
         let longPic = "92000000000123456789012344"
-        let routed = ["42000000" + pic, "420000000000" + pic, "42000000" + longPic]
-        for number in [longPic] + routed {
+        // Behind the 420 routing code and a ZIP or ZIP+4, a PIC the bare rule selects selects USPS too.
+        let routed = ["42000000" + pic, "420000000000" + pic]
+        // A 26-digit PIC stays a suggestion, bare or routed, and so does a routed 22-digit PIC whose
+        // Mailer ID does not fit its channel or whose family DHL eCommerce also tracks.
+        let suggested = [longPic, "42000000" + longPic, "42000000" + "9205510000000012345670", "42000000" + "9261290000000012345677"]
+        for number in suggested {
             XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode(number), number)
             let match = catalog.detect(number)
             XCTAssertEqual(match.carrier, .unknown, number)
             XCTAssertEqual(match.confidence, .low, number)
-            XCTAssertEqual(match.preferred, [.usps], number)
+            XCTAssertTrue(match.preferred.contains(.usps), number)
         }
-        // 22-digit PICs that follow the IMpb layout are selected outright.
-        for number in [pic, "9300000000000000000000", "9400000000000000000009"] {
+        // 22-digit PICs that follow the IMpb layout are selected outright, bare or routed.
+        for number in [pic, "9300000000000000000000", "9400000000000000000009"] + routed {
             XCTAssertTrue(CarrierCatalog.isValidUspsPackageBarcode(number), number)
             let match = catalog.detect(number)
             XCTAssertEqual(match.carrier, .usps, number)
@@ -982,9 +986,13 @@ final class CarrierCatalogTests: XCTestCase {
                 XCTAssertFalse(catalog.detect(number).candidates.contains(.usps), number)
             }
         }
+        // A selected barcode needs no carrier asked; a suggested one is asked of USPS through the browser.
         for number in routed {
-            XCTAssertEqual(catalog.recognitionCandidates(for: number), [])
-            XCTAssertTrue(catalog.recognitionCandidates(for: number, browser: true).contains(.usps))
+            XCTAssertEqual(catalog.recognitionCandidates(for: number, browser: true), [], number)
+        }
+        for number in suggested.dropFirst() {
+            XCTAssertFalse(catalog.recognitionCandidates(for: number).contains(.usps), number)
+            XCTAssertTrue(catalog.recognitionCandidates(for: number, browser: true).contains(.usps), number)
         }
     }
 
