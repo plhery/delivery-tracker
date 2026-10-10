@@ -193,7 +193,8 @@ order by opened_at desc
 limit 30;
 ```
 
-If `accepted_for` stays well above eight hours, sessions can be kept longer before
+On 10 October 2026 DPD still accepted the first session saved here after over eighteen
+hours. If `accepted_for` stays well above eight hours, sessions can be kept longer before
 opening the next; if it falls below, lookups meet refused sessions and wait for a new one.
 Each process also logs the session it takes up at start and how each opening ended
 (`dpd_app_session` in [Logs](#logs)); `dpd_app_session_total` counts them.
