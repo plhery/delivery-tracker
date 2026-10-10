@@ -12,7 +12,12 @@
     "decal": "aliexpress"
   },
   "allegro-one": {
-    "decal": "allegro-one"
+    "decal": "allegro-one",
+    "palette": {
+      "truck": "#006d57",
+      "edge": "#005746",
+      "accent": "#7edf00"
+    }
   },
   "amazon-logistics": {
     "decal": "amazon",
@@ -98,12 +103,7 @@
     "decal": "china-post"
   },
   "chit-chats": {
-    "decal": "chit-chats",
-    "palette": {
-      "truck": "#011e41",
-      "edge": "#011834",
-      "accent": "#f32735"
-    }
+    "decal": "chit-chats"
   },
   "chronopost": {
     "decal": "chronopost",
@@ -136,12 +136,7 @@
     "decal": "correos-chile"
   },
   "correos-de-mexico": {
-    "decal": "correos-de-mexico",
-    "palette": {
-      "truck": "#ffffff",
-      "edge": "#5e5f5d",
-      "accent": "#ed007d"
-    }
+    "decal": "correos-de-mexico"
   },
   "correos-express": {
     "palette": {
@@ -245,12 +240,7 @@
     "decal": "dx"
   },
   "dynalogic": {
-    "decal": "dynalogic",
-    "palette": {
-      "truck": "#ffffff",
-      "edge": "#66839c",
-      "accent": "#66839c"
-    }
+    "decal": "dynalogic"
   },
   "early-bird": {
     "decal": "early-bird"
@@ -464,28 +454,13 @@
     }
   },
   "loomis-express": {
-    "decal": "loomis-express",
-    "palette": {
-      "truck": "#ffffff",
-      "edge": "#004b8e",
-      "accent": "#004b8e"
-    }
+    "decal": "loomis-express"
   },
   "lso": {
-    "decal": "lso",
-    "palette": {
-      "truck": "#ffffff",
-      "edge": "#0047ba",
-      "accent": "#000000"
-    }
+    "decal": "lso"
   },
   "magyar-posta": {
-    "decal": "magyar-posta",
-    "palette": {
-      "truck": "#ffffff",
-      "edge": "#346631",
-      "accent": "#329822"
-    }
+    "decal": "magyar-posta"
   },
   "maltapost": {
     "decal": "maltapost"
@@ -494,12 +469,7 @@
     "decal": "matkahuolto"
   },
   "meest": {
-    "decal": "meest",
-    "palette": {
-      "truck": "#ffffff",
-      "edge": "#0061af",
-      "accent": "#0061af"
-    }
+    "decal": "meest"
   },
   "mng-kargo": {
     "family": "dhl"
@@ -575,12 +545,7 @@
     "decal": "pos-malaysia"
   },
   "post-luxembourg": {
-    "decal": "post-luxembourg",
-    "palette": {
-      "truck": "#ffffff",
-      "edge": "#008736",
-      "accent": "#008736"
-    }
+    "decal": "post-luxembourg"
   },
   "posta-slovenije": {
     "decal": "posta-slovenije",
@@ -614,7 +579,12 @@
     "decal": "ppl"
   },
   "ptt": {
-    "decal": "ptt"
+    "decal": "ptt",
+    "palette": {
+      "truck": "#ffc72c",
+      "edge": "#cc9f23",
+      "accent": "#007a99"
+    }
   },
   "purolator": {
     "decal": "purolator",
@@ -780,12 +750,7 @@
     "decal": "vinted-go"
   },
   "wanbexpress": {
-    "decal": "wanbexpress",
-    "palette": {
-      "truck": "#ffffff",
-      "edge": "#da381b",
-      "accent": "#000000"
-    }
+    "decal": "wanbexpress"
   },
   "whistl": {
     "decal": "whistl"
