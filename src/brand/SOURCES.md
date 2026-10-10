@@ -40,6 +40,7 @@ and [`truck.json`](truck.json).
 | `delhivery` | [delhivery.com](https://www.delhivery.com/) |
 | `dtdc` | [dtdc.com](https://www.dtdc.com/) (approximate) |
 | `ecoscooting` | [ecoscooting.com](https://www.ecoscooting.com/) |
+| `emile` | [emileps.com](https://www.emileps.com/) |
 | `ems` | [ems.post](https://www.ems.post/) (approximate) |
 | `estafeta` | [estafeta.com](https://www.estafeta.com/) |
 | `evri` | [evri.com](https://www.evri.com/) |
@@ -195,3 +196,4 @@ and [`truck.json`](truck.json).
 | `shipup` | Dark green S on lime | [shipup.co](https://www.shipup.co/) |
 | `heppner` | Green figure with its arms raised on blue | [heppner-group.com](https://www.heppner-group.com/) |
 | `j-and-t-cargo` | White slanted J&T over a bar standing for CARGO, on green | [jtcargo.id](https://www.jtcargo.id/) |
+| `emile` | The logo's cube on a white truck: a red top, a squared e cut into the red side and an m into the grey side; the grey is sampled from the logo | [emileps.com](https://www.emileps.com/) |

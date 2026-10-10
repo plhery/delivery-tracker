@@ -173,6 +173,14 @@
   "ekart": {
     "decal": "ekart"
   },
+  "emile": {
+    "decal": "emile",
+    "palette": {
+      "truck": "#ffffff",
+      "edge": "#e42920",
+      "accent": "#e42920"
+    }
+  },
   "ems": {
     "decal": "ems"
   },

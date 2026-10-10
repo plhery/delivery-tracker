@@ -142,6 +142,11 @@ export const CARRIER_PALETTES: Record<string, Partial<CarrierPalette>> = {
     "edge": "#b88d16",
     "accent": "#d40511"
   },
+  "emile": {
+    "truck": "#ffffff",
+    "edge": "#e42920",
+    "accent": "#e42920"
+  },
   "evri": {
     "accent": "#53efef"
   },
@@ -308,6 +313,7 @@ export const CARRIER_DECALS: Record<string, CarrierDecal> = {
   "dtdc": "dtdc",
   "ecoscooting": "ecoscooting",
   "ekart": "ekart",
+  "emile": "emile",
   "ems": "ems",
   "estafeta": "estafeta",
   "evri": "evri",
@@ -2070,6 +2076,43 @@ export const CARRIER_TRUCK: TruckGeometry = {
         "d": "M4.65 12.05L16.75 12.05",
         "stroke": "accent",
         "strokeWidth": 0.8
+      }
+    ],
+    "emile": [
+      {
+        "type": "polygon",
+        "d": "M11 4.35L7.03 6.65L11 8.96L14.97 6.65Z",
+        "fill": "accent"
+      },
+      {
+        "type": "polygon",
+        "d": "M6.41 7.02L10.71 9.51L10.71 14.46L6.41 11.96Z",
+        "fill": "accent"
+      },
+      {
+        "type": "polygon",
+        "d": "M11.29 9.51L15.59 7.02L15.59 11.96L11.29 14.46Z",
+        "fill": "#454c51"
+      },
+      {
+        "type": "polygon",
+        "d": "M7.23 8.51L9.75 9.97L9.75 10.85L7.23 9.39Z",
+        "fill": "truck"
+      },
+      {
+        "type": "polygon",
+        "d": "M7.23 10.52L10.71 12.53L10.71 13.42L7.23 11.41Z",
+        "fill": "truck"
+      },
+      {
+        "type": "polygon",
+        "d": "M12.11 9.93L12.93 9.45L12.93 13.5L12.11 13.98Z",
+        "fill": "truck"
+      },
+      {
+        "type": "polygon",
+        "d": "M13.89 8.9L14.7 8.42L14.7 12.48L13.89 12.96Z",
+        "fill": "truck"
       }
     ]
   }
