@@ -3291,6 +3291,27 @@
     ]
   },
   {
+    "input": "13499302309359E",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dpd-pl",
+      "dpd",
+      "chronopost",
+      "dpd-de",
+      "dpd-uk"
+    ],
+    "preferred": [
+      "dpd-pl"
+    ],
+    "asked": [
+      "dpd-pl",
+      "dpd",
+      "dpd-de",
+      "chronopost"
+    ]
+  },
+  {
     "input": "1351378503",
     "carrier": "unknown",
     "confidence": "low",
@@ -14638,10 +14659,36 @@
     ]
   },
   {
+    "input": "EM100047250023CA",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "emile"
+    ]
+  },
+  {
+    "input": "EM100048497916CA",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "emile"
+    ]
+  },
+  {
     "input": "EM200006549049CA",
     "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "confidence": "low",
+    "candidates": [
+      "emile"
+    ]
+  },
+  {
+    "input": "EM200009946130CA",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "emile"
+    ]
   },
   {
     "input": "EM385783825KR",

@@ -4515,7 +4515,7 @@ export const CARRIER_CAPABILITIES = {
         "domains": [
           "tracking.dpd.de"
         ],
-        "path": "^/status/[a-z]{2}_[A-Z]{2}/parcel/(\\d{14})/?$"
+        "path": "^/status/[a-z]{2}_[A-Z]{2}/parcel/(\\d{14}[0-9A-Z]?)/?$"
       },
       {
         "domains": [
@@ -5208,9 +5208,49 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^13\\d{12}$",
         "confidence": "low",
         "preferred": true
+      },
+      {
+        "pattern": "^13\\d{12}[0-9A-Z]$",
+        "confidence": "low",
+        "checksum": "dpd",
+        "preferred": true
       }
     ],
     "trackingSearchUrl": "https://tracktrace.dpd.com.pl/EN/findParcel"
+  },
+  "emile": {
+    "displayName": "Emile",
+    "aliases": [
+      "Emile Express"
+    ],
+    "countries": [
+      "CA"
+    ],
+    "color": "#e42920",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "link-only",
+      "adapter": null
+    },
+    "trackingUrlTemplate": "https://www.emileps.com/tracking?tracking={trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "emileps.com"
+        ],
+        "params": [
+          "tracking"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^EM\\d{12}CA$",
+        "confidence": "low"
+      }
+    ],
+    "trackingSearchUrl": "https://www.emileps.com/tracking"
   }
 } as const;
 
@@ -5371,7 +5411,8 @@ export const CARRIER_IDS = [
   "dhl-ecommerce-nl",
   "dhl-ecommerce-pl",
   "dhl-ecommerce-uk",
-  "dpd-pl"
+  "dpd-pl",
+  "emile"
 ] as const;
 export type ApiCarrierId = (typeof CARRIER_IDS)[number];
 
