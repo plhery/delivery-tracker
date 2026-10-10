@@ -133,12 +133,14 @@ export function FrontDoor({ onTracked, onSample, onSignIn, covered = false }: {
   }, [send, touch]);
 
   // A number typed into a carrier's page's box arrives here, never in the address: once the page is live it is
-  // put in the field as if pasted, which looks it up.
+  // put in the field as if pasted, which looks it up. Not while a saved sign-in is still being restored: the
+  // landing drawn meanwhile gives way to the account's, which takes it.
   useEffect(() => {
+    if (account === 'checking') return;
     const handed = takeCarrierHandoff();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- session storage, which only the live page can read
     if (handed) put(handed);
-  }, [put]);
+  }, [account, put]);
 
   // Where going on stopped is where the visitor continues: the choice to make or the input to give.
   // Without either, the focus stays where it is; only a focus left nowhere is brought back.

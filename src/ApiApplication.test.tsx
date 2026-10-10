@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiApplication } from './ApiApplication';
+import { CARRIER_HANDOFF_STORAGE_KEY, writeCarrierHandoff } from './lib/carrierHandoff';
 import './test/accountCode';
 import './test/parcelCode';
 import { onKeepOutcome, pendingKeep, rememberPendingKeep, type KeepOutcome } from './peek/pending';
@@ -236,6 +237,22 @@ describe('ApiApplication', () => {
     expect(screen.getByText(`Parcel page ${LINK_ID} for signed-in with 0 deliveries`)).toBeVisible();
     act(() => { history.replaceState(null, '', '/home'); window.dispatchEvent(new PopStateEvent('popstate')); });
     expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+  });
+
+  it('takes a number from a carrier’s page into the landing of someone signed in, once their sign-in is restored', () => {
+    mocks.auth.status = 'loading';
+    history.replaceState(null, '', '/home');
+    // Several numbers wait in the field for a choice, so nothing is looked up.
+    const message = 'Your order has shipped:\nUPS 1Z999AA10123456784\nSwiss Post 99.34.123456.78901234';
+    writeCarrierHandoff(message);
+    const result = render(<ApiApplication landingRoute />);
+    expect(screen.getByRole('textbox', { name: 'Tracking number or link' })).toHaveValue('');
+    mocks.auth.status = 'authenticated'; mocks.auth.user = USER;
+    result.rerender(<ApiApplication landingRoute />);
+    expect(screen.getAllByRole('link', { name: 'My deliveries' })[0]).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Tracking number or link' })).toHaveValue(message);
+    expect(screen.getByRole('group', { name: '2 tracking numbers in this text' }).querySelectorAll('input[type="radio"]')).toHaveLength(2);
+    expect(sessionStorage.getItem(CARRIER_HANDOFF_STORAGE_KEY)).toBeNull();
   });
 
   it('shows the landing at a language’s address to someone signed in, like at its own: their deliveries, a lookup and Back', async () => {

@@ -653,6 +653,21 @@ describe('FrontDoor', () => {
     expect(door().field).toHaveValue('');
     expect(mocks.lookup).toHaveBeenCalledOnce();
   });
+
+  it('leaves a number from a carrier’s page for later while it makes sure whose the landing is', async () => {
+    const { PeekSessionProvider } = await import('./session');
+    writeCarrierHandoff(UPS);
+    const view = render(<PeekSessionProvider value={{ account: 'checking', signIn: () => undefined }}><FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} /></PeekSessionProvider>);
+    expect(document.querySelector('textarea')).toHaveValue('');
+    expect(sessionStorage.getItem(CARRIER_HANDOFF_STORAGE_KEY)).not.toBeNull();
+    // Nobody is signed in after all: this landing takes it.
+    view.rerender(<PeekSessionProvider value={{ account: 'visitor', signIn: () => undefined }}><FrontDoor onTracked={onTracked} onSample={onSample} onSignIn={onSignIn} /></PeekSessionProvider>);
+    expect(document.querySelector('textarea')).toHaveValue(UPS);
+    expect(mocks.lookup).toHaveBeenCalledWith({ trackingNumber: UPS, carrier: 'ups' }, expect.any(AbortSignal));
+    expect(sessionStorage.getItem(CARRIER_HANDOFF_STORAGE_KEY)).toBeNull();
+    await waitFor(() => expect(onTracked).toHaveBeenCalledOnce());
+    view.unmount();
+  });
 });
 
 describe('FrontDoor: on this device', () => {
