@@ -3,6 +3,7 @@
 - This is an open-source project. Repository files, code comments, commit messages, and pull request descriptions are publicly readable. Keep secrets, private tracking numbers, postcodes, and internal database-testing details out of them; use synthetic fixtures and supply private live-test inputs outside the repository.
 - After completing a requested change in this repository, stage the files for that change, commit them, and push the commit directly to `main` without asking for separate permission.
 - Do not create a feature branch or pull request unless the user explicitly asks for one.
+- When a change needs a database migration, apply it to production yourself without asking for separate permission: dry-run it in a transaction that is rolled back, apply it in one transaction, and push the code that depends on it only once it is applied.
 - Before pushing, run validation appropriate to the changed areas and confirm that no secrets or unrelated generated artifacts are included.
 - Carrier behaviour (catalog, detection, adapters, status wording, provider order, places) lives in [Universal Parcel Scraper](https://github.com/plhery/universal-parcel-scraper), an exact npm dependency. Change it there, release, then update the dependency here ([docs/SCRAPER.md](docs/SCRAPER.md)). Import only its published entry points.
 
