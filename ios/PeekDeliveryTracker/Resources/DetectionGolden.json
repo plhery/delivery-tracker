@@ -13982,7 +13982,31 @@
     ]
   },
   {
-    "input": "61299994738840303974",
+    "input": "61290274420320913673",
+    "carrier": "fedex",
+    "confidence": "high",
+    "candidates": [
+      "fedex"
+    ]
+  },
+  {
+    "input": "61290367906223222924",
+    "carrier": "fedex",
+    "confidence": "high",
+    "candidates": [
+      "fedex"
+    ]
+  },
+  {
+    "input": "61290381371820112600",
+    "carrier": "fedex",
+    "confidence": "high",
+    "candidates": [
+      "fedex"
+    ]
+  },
+  {
+    "input": "61290983483523829637",
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
@@ -13991,6 +14015,34 @@
     ],
     "asked": [
       "nz-post"
+    ]
+  },
+  {
+    "input": "61299994738840303974",
+    "carrier": "fedex",
+    "confidence": "high",
+    "candidates": [
+      "fedex"
+    ]
+  },
+  {
+    "input": "61299998825428896854",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "usps",
+      "nz-post"
+    ],
+    "asked": [
+      "nz-post"
+    ]
+  },
+  {
+    "input": "61299998825468864607",
+    "carrier": "fedex",
+    "confidence": "high",
+    "candidates": [
+      "fedex"
     ]
   },
   {
@@ -15079,15 +15131,27 @@
     ]
   },
   {
-    "input": "74890983300058417827",
-    "carrier": "unknown",
-    "confidence": "low",
+    "input": "74890360845720131731",
+    "carrier": "fedex",
+    "confidence": "high",
     "candidates": [
-      "usps",
-      "nz-post"
-    ],
-    "asked": [
-      "nz-post"
+      "fedex"
+    ]
+  },
+  {
+    "input": "74890408776522880345",
+    "carrier": "fedex",
+    "confidence": "high",
+    "candidates": [
+      "fedex"
+    ]
+  },
+  {
+    "input": "74890983300058417827",
+    "carrier": "fedex",
+    "confidence": "high",
+    "candidates": [
+      "fedex"
     ]
   },
   {
@@ -18547,6 +18611,12 @@
     "candidates": []
   },
   {
+    "input": "A26344563",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
     "input": "A7Z0364716",
     "carrier": "unknown",
     "confidence": "low",
@@ -18787,7 +18857,23 @@
     ]
   },
   {
+    "input": "B02708086",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
+  },
+  {
     "input": "B5001412134",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
+  },
+  {
+    "input": "B50502449",
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
@@ -19027,6 +19113,14 @@
     ]
   },
   {
+    "input": "C46177877",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
+  },
+  {
     "input": "C80 000 227 409",
     "carrier": "unknown",
     "confidence": "low",
@@ -19140,10 +19234,10 @@
   },
   {
     "input": "CC085829728EN",
-    "carrier": "intl-post",
-    "confidence": "high",
+    "carrier": "unknown",
+    "confidence": "low",
     "candidates": [
-      "intl-post"
+      "chronopost"
     ],
     "asked": [
       "chronopost"
@@ -20041,6 +20135,14 @@
     ]
   },
   {
+    "input": "D13097360",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
+  },
+  {
     "input": "D3009327142",
     "carrier": "unknown",
     "confidence": "low",
@@ -20568,6 +20670,14 @@
     ]
   },
   {
+    "input": "EHE302555624MY",
+    "carrier": "pos-malaysia",
+    "confidence": "high",
+    "candidates": [
+      "pos-malaysia"
+    ]
+  },
+  {
     "input": "EJ205870830AU",
     "carrier": "intl-post",
     "confidence": "high",
@@ -20979,7 +21089,23 @@
     ]
   },
   {
+    "input": "ES1003265855393SP0102035900N",
+    "carrier": "speedpak",
+    "confidence": "high",
+    "candidates": [
+      "speedpak"
+    ]
+  },
+  {
     "input": "ES1003278992201DC0101061900N",
+    "carrier": "speedpak",
+    "confidence": "high",
+    "candidates": [
+      "speedpak"
+    ]
+  },
+  {
+    "input": "ES1003287306769SP0102010900N",
     "carrier": "speedpak",
     "confidence": "high",
     "candidates": [
@@ -21090,10 +21216,20 @@
     ]
   },
   {
+    "input": "F07429859",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
+  },
+  {
     "input": "F32864330",
     "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
   },
   {
     "input": "FGRC45BKLM",
@@ -21746,6 +21882,14 @@
     ]
   },
   {
+    "input": "H18246062",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
+  },
+  {
     "input": "H5002649686",
     "carrier": "unknown",
     "confidence": "low",
@@ -21829,6 +21973,14 @@
     "confidence": "high",
     "candidates": [
       "chronopost"
+    ]
+  },
+  {
+    "input": "I00519027",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
     ]
   },
   {
@@ -22598,6 +22750,14 @@
     "confidence": "low",
     "candidates": [
       "ups"
+    ]
+  },
+  {
+    "input": "K64224490",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
     ]
   },
   {
@@ -23831,6 +23991,14 @@
     "candidates": []
   },
   {
+    "input": "M89265730",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
+  },
+  {
     "input": "ML545911751MH",
     "carrier": "intl-post",
     "confidence": "high",
@@ -23963,6 +24131,14 @@
     ],
     "asked": [
       "colis-prive"
+    ]
+  },
+  {
+    "input": "N94437672",
+    "carrier": "dtdc",
+    "confidence": "high",
+    "candidates": [
+      "dtdc"
     ]
   },
   {
@@ -24250,7 +24426,47 @@
     ]
   },
   {
-    "input": "OMGO0000002369780",
+    "input": "OMGO0000000393548",
+    "carrier": "omgo",
+    "confidence": "high",
+    "candidates": [
+      "omgo"
+    ]
+  },
+  {
+    "input": "OMGO0000000749558",
+    "carrier": "omgo",
+    "confidence": "high",
+    "candidates": [
+      "omgo"
+    ]
+  },
+  {
+    "input": "OMGO0000000962247",
+    "carrier": "omgo",
+    "confidence": "high",
+    "candidates": [
+      "omgo"
+    ]
+  },
+  {
+    "input": "OMGO0000001377584",
+    "carrier": "omgo",
+    "confidence": "high",
+    "candidates": [
+      "omgo"
+    ]
+  },
+  {
+    "input": "OMGO0000001546648",
+    "carrier": "omgo",
+    "confidence": "high",
+    "candidates": [
+      "omgo"
+    ]
+  },
+  {
+    "input": "OMGO0000002085760",
     "carrier": "omgo",
     "confidence": "high",
     "candidates": [
@@ -25173,13 +25389,29 @@
     ]
   },
   {
-    "input": "RR123456785MI",
+    "input": "RR123456785EN",
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
       "chronopost"
     ],
     "asked": [
+      "chronopost"
+    ]
+  },
+  {
+    "input": "RR123456785MI",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "aliexpress",
+      "chronopost"
+    ],
+    "preferred": [
+      "aliexpress"
+    ],
+    "asked": [
+      "aliexpress",
       "chronopost"
     ]
   },
@@ -25815,9 +26047,14 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "aliexpress",
       "chronopost"
     ],
+    "preferred": [
+      "aliexpress"
+    ],
     "asked": [
+      "aliexpress",
       "chronopost"
     ]
   },
@@ -25826,9 +26063,14 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "aliexpress",
       "chronopost"
     ],
+    "preferred": [
+      "aliexpress"
+    ],
     "asked": [
+      "aliexpress",
       "chronopost"
     ]
   },
@@ -26762,6 +27004,14 @@
     ]
   },
   {
+    "input": "V12240261",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
+  },
+  {
     "input": "VD2090015682",
     "carrier": "unknown",
     "confidence": "low",
@@ -26881,6 +27131,14 @@
     ],
     "asked": [
       "colis-prive"
+    ]
+  },
+  {
+    "input": "X03206965",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
     ]
   },
   {
@@ -27306,6 +27564,14 @@
     ]
   },
   {
+    "input": "Z29527178",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
+  },
+  {
     "input": "Z3110953842",
     "carrier": "packeta",
     "confidence": "high",
@@ -27378,8 +27644,10 @@
   {
     "input": "Z73449105",
     "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
   },
   {
     "input": "Z8328162946",
@@ -27403,6 +27671,14 @@
     "confidence": "high",
     "candidates": [
       "packeta"
+    ]
+  },
+  {
+    "input": "Z88704068",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
     ]
   },
   {
@@ -27642,6 +27918,14 @@
     "confidence": "high",
     "candidates": [
       "ekart"
+    ]
+  },
+  {
+    "input": "p23764763",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
     ]
   },
   {

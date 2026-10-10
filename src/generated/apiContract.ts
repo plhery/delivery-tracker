@@ -222,6 +222,12 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low",
         "checksum": "s10",
         "preferred": true
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}MI$",
+        "confidence": "low",
+        "checksum": "s10",
+        "preferred": true
       }
     ],
     "aliases": [
@@ -791,6 +797,11 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low",
         "checksum": "fedex-1d",
         "preferred": true
+      },
+      {
+        "pattern": "^(?:612|748)9\\d{16}$",
+        "confidence": "high",
+        "checksum": "fedex-ground-economy"
       }
     ],
     "trackingSearchUrl": "https://www.fedex.com/en-ch/tracking.html"
@@ -1781,7 +1792,7 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XR|XT|XU|XW|XY))[A-Z]{2}\\d{9}(?!CA$|CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$|TS$|JF$|JB$|RV$|VF$|TY$|MI$|YW$|CS$|CL$)[A-Z]{2}$",
+        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XR|XT|XU|XW|XY))[A-Z]{2}\\d{9}(?!CA$|CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$|TS$|JF$|JB$|RV$|VF$|TY$|MI$|YW$|CS$|EN$|CL$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }
@@ -3767,6 +3778,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^V\\d{8}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^[B-DFHIKMPXZ]\\d{8}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://web.mydtdc.in/",
@@ -3885,7 +3900,8 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^[A-Z]{3}\\d{9}MY$",
-        "confidence": "high"
+        "confidence": "high",
+        "checksum": "pos-laju"
       }
     ],
     "trackingUrlTemplate": "https://tracking.pos.com.my/tracking/{trackingNumber}",
